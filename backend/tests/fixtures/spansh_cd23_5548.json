@@ -1,0 +1,232 @@
+{
+ "system": {
+  "id64": 633809670858,
+  "name": "CD-23 5548",
+  "bodyCount": 31,
+  "coords": {
+   "x": 99.90625,
+   "y": -5.625,
+   "z": -60.375
+  },
+  "bodies": [
+   {
+    "argOfPeriapsis": 259.382007,
+    "ascendingNode": -63.468539,
+    "atmosphereComposition": {
+     "Argon": 100.0
+    },
+    "atmosphereType": "Thin Argon",
+    "axialTilt": -0.221961,
+    "bodyId": 19,
+    "distanceToArrival": 2604.933392,
+    "earthMasses": 0.050189,
+    "gravity": 0.239027939227083,
+    "id64": 684547777169986250,
+    "isLandable": true,
+    "materials": {
+     "Cadmium": 1.159622,
+     "Carbon": 19.209013,
+     "Chromium": 6.715906,
+     "Iron": 14.933087,
+     "Manganese": 6.167212,
+     "Nickel": 11.294762,
+     "Phosphorus": 12.297941,
+     "Sulphur": 22.843496,
+     "Tungsten": 0.819977,
+     "Vanadium": 3.667047,
+     "Yttrium": 0.891935
+    },
+    "meanAnomaly": 232.184907,
+    "name": "CD-23 5548 AB 1 i",
+    "orbitalEccentricity": 0.000397,
+    "orbitalInclination": 1.668275,
+    "orbitalPeriod": 150.61924716941,
+    "parents": [
+     {
+      "Star": 4
+     },
+     {
+      "Null": 0
+     }
+    ],
+    "radius": 2921.2305,
+    "rotationalPeriod": 150.625054695139,
+    "rotationalPeriodTidallyLocked": true,
+    "semiMajorAxis": 0.135486636764023,
+    "signals": {
+     "genuses": [
+      "$Codex_Ent_Fungoids_Genus_Name;",
+      "$Codex_Ent_Bacterial_Genus_Name;",
+      "$Codex_Ent_Osseus_Genus_Name;"
+     ],
+     "signals": {
+      "$PlanetaryMiningLocation_Name;": 20,
+      "$SAA_SignalType_Biological;": 3
+     },
+     "updateTime": "2026-10-11T01:45:48Z"
+    },
+    "solidComposition": {
+     "Ice": 47.4729,
+     "Metal": 4.6859,
+     "Rock": 47.8412
+    },
+    "subType": "Rocky Ice world",
+    "surfacePressure": 0.0150756167283494,
+    "surfaceTemperature": 79.239471,
+    "terraformingState": "Not terraformable",
+    "type": "Planet",
+    "updateTime": "2026-10-11T01:45:49Z",
+    "volcanismType": "No volcanism"
+   },
+   {
+    "argOfPeriapsis": 88.030736,
+    "ascendingNode": 88.364954,
+    "atmosphereComposition": {
+     "Argon": 87.389252,
+     "Nitrogen": 12.610753
+    },
+    "atmosphereType": "Thin Argon",
+    "axialTilt": 0.03784,
+    "bodyId": 21,
+    "distanceToArrival": 2558.093509,
+    "earthMasses": 0.066033,
+    "gravity": 0.263453451616192,
+    "id64": 756605371207914186,
+    "isLandable": true,
+    "materials": {
+     "Carbon": 19.737705,
+     "Chromium": 6.900749,
+     "Iron": 15.344093,
+     "Mercury": 0.670051,
+     "Nickel": 11.605629,
+     "Niobium": 1.048687,
+     "Phosphorus": 12.636418,
+     "Selenium": 3.673602,
+     "Sulphur": 23.472223,
+     "Tellurium": 1.142871,
+     "Vanadium": 3.767975
+    },
+    "meanAnomaly": 68.488764,
+    "name": "CD-23 5548 AB 1 j",
+    "orbitalEccentricity": 0.0094,
+    "orbitalInclination": 0.11267,
+    "orbitalPeriod": 219.207684750914,
+    "parents": [
+     {
+      "Star": 4
+     },
+     {
+      "Null": 0
+     }
+    ],
+    "radius": 3191.63875,
+    "rotationalPeriod": 0.868050683252315,
+    "rotationalPeriodTidallyLocked": false,
+    "semiMajorAxis": 0.173998965096409,
+    "signals": {
+     "genuses": [
+      "$Codex_Ent_Osseus_Genus_Name;",
+      "$Codex_Ent_Fungoids_Genus_Name;",
+      "$Codex_Ent_Bacterial_Genus_Name;"
+     ],
+     "signals": {
+      "$PlanetaryMiningLocation_Name;": 13,
+      "$SAA_SignalType_Biological;": 3
+     },
+     "updateTime": "2026-10-11T01:47:29Z"
+    },
+    "solidComposition": {
+     "Ice": 47.4729,
+     "Metal": 4.6859,
+     "Rock": 47.8412
+    },
+    "subType": "Rocky Ice world",
+    "surfacePressure": 0.0218286897804096,
+    "surfaceTemperature": 79.358978,
+    "terraformingState": "Not terraformable",
+    "type": "Planet",
+    "updateTime": "2026-10-14T17:10:59Z",
+    "volcanismType": "No volcanism"
+   },
+   {
+    "absoluteMagnitude": 7.397736,
+    "age": 10926,
+    "argOfPeriapsis": 176.295976,
+    "ascendingNode": -107.646602,
+    "axialTilt": 0.0,
+    "bodyId": 1,
+    "distanceToArrival": 0.0,
+    "id64": 36029430828634826,
+    "luminosity": "V",
+    "mainStar": true,
+    "meanAnomaly": 202.998335,
+    "name": "CD-23 5548 A",
+    "orbitalEccentricity": 0.061699,
+    "orbitalInclination": 32.789793,
+    "orbitalPeriod": 1182.90315623637,
+    "parents": [
+     {
+      "Null": 0
+     }
+    ],
+    "rotationalPeriod": 3.26820946447917,
+    "semiMajorAxis": 1.16793250451943,
+    "solarMasses": 0.609375,
+    "solarRadius": 0.725707962616822,
+    "spectralClass": "M0",
+    "subType": "M (Red dwarf) Star",
+    "surfaceTemperature": 4352.0,
+    "type": "Star",
+    "updateTime": "2026-10-15T17:11:40Z"
+   },
+   {
+    "absoluteMagnitude": 23.208115,
+    "age": 10926,
+    "argOfPeriapsis": 252.43215,
+    "ascendingNode": 106.635085,
+    "axialTilt": -0.222062,
+    "bodyId": 4,
+    "distanceToArrival": 2560.482045,
+    "id64": 144115821885526730,
+    "luminosity": "V",
+    "meanAnomaly": 336.387725,
+    "name": "CD-23 5548 AB 1",
+    "orbitalEccentricity": 4.4e-05,
+    "orbitalInclination": 0.000347,
+    "orbitalPeriod": 2781.74490840347,
+    "parents": [
+     {
+      "Null": 0
+     }
+    ],
+    "rings": [
+     {
+      "id64": 180144618904490698,
+      "innerRadius": 116800000.0,
+      "mass": 7016000000000.0,
+      "name": "CD-23 5548 AB 1 A Ring",
+      "outerRadius": 590070000.0,
+      "signals": {
+       "signals": {
+        "Monazite": 5,
+        "Painite": 3,
+        "Serendibite": 2
+       },
+       "updateTime": "2026-09-19T13:27:11Z"
+      },
+      "type": "Metal Rich"
+     }
+    ],
+    "rotationalPeriod": 0.474655850393519,
+    "semiMajorAxis": 4.15984927863518,
+    "solarMasses": 0.011719,
+    "solarRadius": 0.0681152322070453,
+    "spectralClass": "Y5",
+    "subType": "Y (Brown dwarf) Star",
+    "surfaceTemperature": 336.0,
+    "type": "Star",
+    "updateTime": "2026-10-11T18:42:18Z"
+   }
+  ]
+ }
+}

@@ -1,0 +1,58 @@
+# ED Explorer Kit — architecture
+
+Local companion app for Elite Dangerous explorers (exobiology + mapping).
+A Python backend runs on the player's PC, reads the game journal, stores it in SQLite
+and serves a React UI that works on a second monitor or a phone on the LAN.
+
+```
+Journal dir ──poll 250 ms──► JournalReader (byte offsets, complete lines only)
+   └► one SQLite tx: INSERT events → Projector.apply(event) → projection upserts → COMMIT
+          └► SSE "invalidate {topics}" ──► browser refetches /api/view/{topic}
+Status.json ──poll──► LiveStatus (memory only) ──► SSE "status"
+```
+
+## Backend (`backend/`, Python 3.12, uv, FastAPI)
+
+| Module | Role |
+|---|---|
+| `app/config.py` | Paths (journal dir, data dir), port, LAN flag |
+| `app/db.py` | SQLite connection, pragmas, schema |
+| `app/journal.py` | Journal file discovery, ordering by Fileheader time, tailing by byte offset |
+| `app/status.py` | Status.json reader and flag decoding |
+| `app/projector.py` | Applies journal events to projection tables (single writer) |
+| `app/views.py` | Builds `SystemView` / `SurfaceView` / `SessionView` from SQLite; body interest/progress, orbit tree data |
+| `app/stats.py` | All-time `StatsView` (incl. death history, first discoveries/maps/footfalls) |
+| `app/enrich.py` | Community body data (Spansh, then EDSM) for the current system, cached in `ext_*` tables |
+| `app/usersettings.py` | Highlight thresholds (`settings` table, `GET/PUT /api/settings`) |
+| `app/facts.py` | Journal `Scan` → `BodyFacts`, JSON codec, `SystemFacts` loading |
+| `app/service.py` | Ingest thread, backfill, SSE fan-out |
+| `app/main.py` | FastAPI app: REST views, SSE stream, static frontend |
+| `app/models.py` | Domain dataclasses (`BodyFacts`, `SystemFacts`, `Species`, ...) |
+| `app/schemas.py` | Pydantic view models (camelCase JSON) |
+| `app/exobio/` | Species catalog (values, colony ranges) and prediction rules |
+| `app/values.py` | Cartographic value estimates (FSS / DSS) |
+
+Rules:
+- Journal files are the source of truth. Projection tables can be dropped and rebuilt.
+- Body identity is `(SystemAddress, BodyID)`; `id64 = SystemAddress | (BodyID << 55)`.
+- Order by event insertion order, never by timestamp (1-second resolution).
+- Only the ingest thread writes journal-derived data (settings are a short write from the API).
+- The journal always wins over community data; community bodies are labelled with their source.
+- 64-bit ids go to the frontend as strings.
+- No code copied from GPL projects (EDMC-BioScan, EDMC-Canonn): facts are re-derived.
+
+## Frontend (`frontend/`, Vite + React + TypeScript + Tailwind v4)
+
+- Contract: `frontend/src/api/types.ts` mirrors `backend/app/schemas.py`.
+- `GET /api/view/system|surface|session|stats`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
+- `GET /api/stream` (SSE): `hello`, `invalidate`, `status`, `ingest`, `ping`.
+- `src/map/`: 3D orbit map (react-three-fiber); `src/map/visuals/`: procedural planet/star rendering.
+- The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.
+- Dark, modern, glanceable UI; Russian labels, game names in English.
+
+## Running (dev)
+
+```
+cd backend;  uv run python -m app.main     # http://127.0.0.1:8765
+cd frontend; npm run dev                   # http://localhost:5173 (proxies /api)
+```
