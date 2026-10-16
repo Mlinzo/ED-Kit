@@ -431,3 +431,75 @@ def test_inefficient_mapping_drops_efficiency_bonus(
     )
     after = next(b for b in views.system_view(conn, "F1").bodies if b.body_id == 9).dss_value
     assert after < before  # no x1.25 efficiency bonus once we know the target was missed
+
+
+def test_scan_after_own_dss_does_not_make_you_first_mapper(
+    conn: sqlite3.Connection, proj: Projector
+) -> None:
+    # Gamma Doradus D 1: mapped by someone else, but the Scan written right after your DSS
+    # says WasMapped: false.
+    ww = {"planet_class": "Water world", "Landable": False}
+    feed(
+        conn,
+        proj,
+        CMDR,
+        JUMP,
+        star(1, "A"),
+        planet(9, "D 1", [{"Star": 1}, {"Null": 0}], WasMapped=True, **ww),
+    )
+    feed(
+        conn,
+        proj,
+        {
+            "timestamp": "2026-10-16T18:15:34Z",
+            "event": "SAAScanComplete",
+            "SystemAddress": SA,
+            "BodyID": 9,
+            "BodyName": "x",
+            "ProbesUsed": 8,
+            "EfficiencyTarget": 9,
+        },
+        planet(
+            9,
+            "D 1",
+            [{"Star": 1}, {"Null": 0}],
+            WasMapped=False,
+            timestamp="2026-10-16T18:15:35Z",
+            **ww,
+        ),
+    )
+    s = stats.stats_view(conn, "F1")
+    assert s.first_mapped == 0
+    assert not any(f.mapped for f in s.firsts)
+    body = next(b for b in views.system_view(conn, "F1").bodies if b.body_id == 9)
+    assert body.was_mapped is True and body.mapped_by_me
+
+
+def test_no_first_footfall_in_populated_systems(conn: sqlite3.Connection, proj: Projector) -> None:
+    feed(
+        conn,
+        proj,
+        CMDR,
+        {**JUMP, "Population": 42868},
+        star(1, "A"),
+        planet(
+            13,
+            "B 5",
+            [{"Star": 1}, {"Null": 0}],
+            Atmosphere="thin argon atmosphere",
+            AtmosphereType="Argon",
+            WasFootfalled=False,
+        ),
+        {
+            "timestamp": "2026-10-16T21:38:32Z",
+            "event": "Disembark",
+            "SRV": False,
+            "OnPlanet": True,
+            "SystemAddress": SA,
+            "BodyID": 13,
+            "Body": f"{SYSTEM} B 5",
+        },
+    )
+    assert stats.stats_view(conn, "F1").first_footfalls_total == 0
+    body = next(b for b in views.system_view(conn, "F1").bodies if b.body_id == 13)
+    assert not body.footfall_claimable and not body.footfall_by_me

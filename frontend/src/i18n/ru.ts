@@ -147,10 +147,20 @@ export const ru = {
     discovery: 'Открытие',
     discoveredBy: (v: boolean | null) =>
       v === null ? 'неизвестно' : v ? 'уже открыто другими' : 'не открыто — вы первый',
-    mappedBy: (v: boolean | null) =>
-      v === null ? 'неизвестно' : v ? 'уже картографировано' : 'не картографировано',
-    footfallBy: (v: boolean | null) =>
-      v === null ? 'неизвестно' : v ? 'уже были высадки' : 'нога не ступала',
+    mappedBy: (v: boolean | null, byMe = false) =>
+      byMe
+        ? v === false
+          ? 'вы первым картографировали'
+          : 'вы картографировали (не первым)'
+        : v === null
+          ? 'неизвестно'
+          : v
+            ? 'уже картографировано'
+            : 'не картографировано',
+    footfallBy: (v: boolean | null, byMe = false) =>
+      byMe ? 'вы первым высадились' : v === null ? 'неизвестно' : v ? 'уже были высадки' : 'нога не ступала',
+    footfallPopulated: 'в заселённой системе не засчитывается',
+    footfallPopulatedHint: 'В населённых системах первая высадка недоступна, хотя журнал пишет «не ступала»',
     discoveredLabel: 'Обнаружение',
     mappedLabel: 'Картография',
     footfallLabel: 'Высадка',

@@ -280,7 +280,7 @@ def _body_view(
         (*key, fid),
     ).fetchall()
     cmdr_body = conn.execute(
-        "SELECT mapped_at, efficient FROM body_cmdr "
+        "SELECT mapped_at, efficient, footfall_at FROM body_cmdr "
         "WHERE fid = ? AND system_address = ? AND body_id = ?",
         (fid, *key),
     ).fetchone()
@@ -330,6 +330,10 @@ def _body_view(
         was_mapped=facts.was_mapped,
         was_footfalled=facts.was_footfalled,
         mapped_by_me=mapped_by_me,
+        footfall_by_me=bool(cmdr_body and cmdr_body["footfall_at"]),
+        footfall_claimable=(
+            facts.landable and facts.was_footfalled is False and not system.populated
+        ),
         signals=signals,
         genuses=sorted(_genus_name(g) for g in genuses),
         species=species,

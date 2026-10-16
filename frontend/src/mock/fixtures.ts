@@ -229,6 +229,9 @@ function body(input: BodyInput): BodyView {
     genusesSource: input.genuses?.length ? source : null,
     ...rest,
     mappedByMe,
+    footfallByMe: input.footfallByMe ?? false,
+    footfallClaimable:
+      input.footfallClaimable ?? (Boolean(input.landable) && input.kind === 'planet' && !community),
     worthMapping: input.kind === 'planet' && !mappedByMe && dssValue - fssValue >= MAP_GAIN_THRESHOLD,
     signals,
     species,

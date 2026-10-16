@@ -102,12 +102,25 @@ def body_facts_from_scan(ev: dict[str, Any]) -> BodyFacts | None:
     )
 
 
+# "Was it done before you got here?" flags: the first scan knows; later scans don't.
+# The game writes WasMapped: false in the Scan right after your own DSS even when the
+# body was mapped by someone else, and your own discovery/mapping/footfall flips the
+# flags to true afterwards. Either way the earliest observed value is the one that counts.
+_FIRST_SEEN = {"was_discovered", "was_mapped", "was_footfalled"}
+
+
 def merge_facts(old: BodyFacts, new: BodyFacts) -> BodyFacts:
-    """Newer scan wins, but never erase a value with a missing one."""
+    """Newer scan wins, but never erase a value with a missing one; Was* flags keep the
+    earliest observed value."""
     merged = {}
     for name in _FIELDS:
         value = getattr(new, name)
-        if value is None or value == {} or value == []:
+        if (
+            value is None
+            or value == {}
+            or value == []
+            or (name in _FIRST_SEEN and getattr(old, name) is not None)
+        ):
             value = getattr(old, name)
         merged[name] = value
     return BodyFacts(**merged)

@@ -125,6 +125,10 @@ export interface BodyView {
   wasMapped: boolean | null
   wasFootfalled: boolean | null
   mappedByMe: boolean
+  /** The commander was the first to walk on it. */
+  footfallByMe: boolean
+  /** Landable, nobody walked here yet, and not in a populated system (where it never counts). */
+  footfallClaimable: boolean
   signals: SignalsView
   genuses: string[]
   species: SpeciesView[]

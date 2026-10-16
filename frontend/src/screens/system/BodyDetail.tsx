@@ -368,12 +368,22 @@ export function BodyDetail({
           </Row>
           {isPlanet && (
             <>
-              <Row label={ru.body.mappedLabel}>{ru.body.mappedBy(body.wasMapped)}</Row>
+              <Row label={ru.body.mappedLabel}>
+                <span className={body.mappedByMe && body.wasMapped === false ? 'text-emerald-300' : undefined}>
+                  {ru.body.mappedBy(body.wasMapped, body.mappedByMe)}
+                </span>
+              </Row>
               {body.landable && (
                 <Row label={ru.body.footfallLabel}>
-                  <span className={body.wasFootfalled === false ? 'text-emerald-300' : undefined}>
-                    {ru.body.footfallBy(body.wasFootfalled)}
-                  </span>
+                  {!body.footfallByMe && body.wasFootfalled === false && !body.footfallClaimable ? (
+                    <span className="text-zinc-500" title={ru.body.footfallPopulatedHint}>
+                      {ru.body.footfallPopulated}
+                    </span>
+                  ) : (
+                    <span className={body.footfallClaimable || body.footfallByMe ? 'text-emerald-300' : undefined}>
+                      {ru.body.footfallBy(body.wasFootfalled, body.footfallByMe)}
+                    </span>
+                  )}
                 </Row>
               )}
             </>

@@ -73,6 +73,8 @@ function body(bodyId: number, o: BodyOpts = {}): BodyView {
     wasMapped: null,
     wasFootfalled: null,
     mappedByMe: false,
+    footfallByMe: false,
+    footfallClaimable: false,
     signals: { bio: 0, geo: 0, human: 0, other: 0 },
     genuses: [],
     species: [],
