@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 10
+VERSION = 11
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -39,6 +39,28 @@ SIGNAL_KINDS = {
 PositionProvider = Callable[[str], tuple[float, float] | None]
 
 
+def _number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    return float(value)
+
+
+def fsd_key(fsd: dict[str, Any] | None, modules: list[dict[str, Any]]) -> str | None:
+    """What the fuel a jump burns depends on: the drive, its engineered optimal mass and an
+    FSD booster. A new key starts a new fuel curve (app.fuel)."""
+    if not fsd or not fsd.get("Item"):
+        return None
+    optimal = ""
+    for mod in (fsd.get("Engineering") or {}).get("Modifiers") or []:
+        if isinstance(mod, dict) and mod.get("Label") == "FSDOptimalMass":
+            optimal = f"{float(mod.get('Value') or 0):.1f}"
+    booster = next(
+        (str(m["Item"]).lower() for m in modules if "guardianfsdbooster" in str(m.get("Item", ""))),
+        "",
+    )
+    return f"{str(fsd['Item']).lower()}|{optimal}|{booster}"
+
+
 class Projector:
     def __init__(self, conn: sqlite3.Connection, position: PositionProvider | None = None) -> None:
         self.conn = conn
@@ -52,6 +74,10 @@ class Projector:
             "Location": self._location,
             "FSDJump": self._jump,
             "CarrierJump": self._jump,
+            "FuelScoop": self._fuel_scoop,
+            "RefuelAll": self._refuel,
+            "RefuelPartial": self._refuel,
+            "Cargo": self._cargo,
             "FSSDiscoveryScan": self._honk,
             "FSSAllBodiesFound": self._all_found,
             "Scan": self._scan,
@@ -117,7 +143,7 @@ class Projector:
         )
         return int(address)
 
-    def _arrive(self, address: int, ts: Any) -> None:
+    def _arrive(self, address: int, ts: Any, how: str) -> None:
         """Record a visit when the commander shows up in another system than before."""
         if not self.fid:
             return
@@ -125,7 +151,8 @@ class Projector:
         if state is not None and state["system_address"] == address:
             return
         self.conn.execute(
-            "INSERT INTO visits(fid, ts, system_address) VALUES(?, ?, ?)", (self.fid, ts, address)
+            "INSERT INTO visits(fid, ts, system_address, how) VALUES(?, ?, ?, ?)",
+            (self.fid, ts, address, how),
         )
 
     def _first_footfall(self, system_address: int, body_id: int) -> bool:
@@ -165,11 +192,55 @@ class Projector:
         return topics
 
     def _loadout(self, ev: dict[str, Any], _: int) -> frozenset[str]:
-        jump_range = ev.get("MaxJumpRange")
-        if not self.fid or not isinstance(jump_range, int | float) or jump_range <= 0:
+        if not self.fid:
             return frozenset()
-        self._update_state(jump_range=float(jump_range))
-        return frozenset({"route"})
+        modules = [m for m in ev.get("Modules") or [] if isinstance(m, dict)]
+        fsd = next((m for m in modules if m.get("Slot") == "FrameShiftDrive"), None)
+        capacity = (ev.get("FuelCapacity") or {}).get("Main")
+        jump_range = ev.get("MaxJumpRange")
+        scoop = any(str(m.get("Item", "")).startswith("int_fuelscoop") for m in modules)
+        values: dict[str, Any] = {
+            "ship_id": ev.get("ShipID"),
+            "fsd_item": str(fsd["Item"]).lower() if fsd and fsd.get("Item") else None,
+            "fsd_key": fsd_key(fsd, modules),
+            "unladen_mass": _number(ev.get("UnladenMass")),
+            "fuel_capacity": _number(capacity),
+            "has_scoop": int(scoop),
+        }
+        if isinstance(jump_range, int | float) and jump_range > 0:
+            values["jump_range"] = float(jump_range)
+        self._update_state(**values)
+        return frozenset({"route", "navroute"})
+
+    def _fuel_scoop(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        total = _number(ev.get("Total"))
+        if total is None:
+            return frozenset()
+        self._update_state(fuel_level=total)
+        return frozenset({"navroute"})
+
+    def _refuel(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        state = self._state()
+        if state is None:
+            return frozenset()
+        capacity = state["fuel_capacity"]
+        if ev.get("event") == "RefuelAll":
+            level = capacity
+        else:
+            level = (state["fuel_level"] or 0.0) + (_number(ev.get("Amount")) or 0.0)
+            if capacity is not None:
+                level = min(level, capacity)
+        if level is None:
+            return frozenset()
+        self._update_state(fuel_level=level)
+        return frozenset({"navroute"})
+
+    def _cargo(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        count = ev.get("Count")
+        if ev.get("Vessel", "Ship") != "Ship" or not isinstance(count, int | float):
+            return frozenset()
+        self._update_state(cargo=float(count))
+        return frozenset({"navroute"})
 
     # ------------------------------------------------------------------ travel
 
@@ -178,7 +249,7 @@ class Projector:
         if address is None:
             return frozenset()
         on_planet = ev.get("BodyType") == "Planet"
-        self._arrive(address, ev.get("timestamp"))
+        self._arrive(address, ev.get("timestamp"), "location")
         self._update_state(
             system_address=address,
             body_id=ev.get("BodyID") if on_planet else None,
@@ -190,14 +261,46 @@ class Projector:
         address = self._upsert_system(ev)
         if address is None:
             return frozenset()
-        self._arrive(address, ev.get("timestamp"))
+        how = "carrier" if ev.get("event") == "CarrierJump" else "jump"
+        self._arrive(address, ev.get("timestamp"), how)
         self._update_state(system_address=address, body_id=None, body_name=None)
         if self.fid and ev.get("event") == "FSDJump":
             self.conn.execute(
                 "INSERT INTO jumps(fid, ts, system_address, distance_ly) VALUES(?, ?, ?, ?)",
                 (self.fid, ev.get("timestamp"), address, float(ev.get("JumpDist") or 0.0)),
             )
+            self._jump_fuel(ev)
         return ALL_TOPICS
+
+    def _jump_fuel(self, ev: dict[str, Any]) -> None:
+        """Fuel left after a jump, and what the jump burnt (the drive's fuel curve)."""
+        level, used, distance = (
+            _number(ev.get("FuelLevel")),
+            _number(ev.get("FuelUsed")),
+            _number(ev.get("JumpDist")),
+        )
+        if level is None:
+            return
+        state = self._state()
+        self._update_state(fuel_level=level)
+        if state is None or not state["fsd_key"] or state["unladen_mass"] is None:
+            return
+        if not used or not distance:
+            return
+        mass = state["unladen_mass"] + level + used + (state["cargo"] or 0.0)
+        self.conn.execute(
+            "INSERT INTO fuel_jumps(fid, ship_id, fsd_key, distance_ly, fuel_used, mass, boosted) "
+            "VALUES(?, ?, ?, ?, ?, ?, ?)",
+            (
+                self.fid,
+                state["ship_id"],
+                state["fsd_key"],
+                distance,
+                used,
+                mass,
+                int(bool(ev.get("BoostUsed"))),
+            ),
+        )
 
     def _approach_body(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         if ev.get("BodyID") is None:

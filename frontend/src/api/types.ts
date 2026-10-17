@@ -253,6 +253,8 @@ export interface LiveStatus {
   altitude: number | null
   planetRadiusM: number | null
   bodyName: string | null
+  /** Tons in the main tank (in the ship only). */
+  fuelMain: number | null
 }
 
 export interface IngestState {
@@ -552,9 +554,200 @@ export interface RouteView {
   remainingLy: number
   doneCount: number
   skippedCount: number
+  /** Spansh neutron route to the next stop, once asked for. */
+  neutron: NeutronPlanView | null
 }
 
-export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history' | 'route'
+export interface NeutronWaypointView {
+  name: string
+  address: string
+  x: number
+  y: number
+  z: number
+  /** From the previous waypoint. */
+  jumps: number
+  /** Supercharge here. */
+  neutron: boolean
+  /** To the destination. */
+  leftLy: number
+  /** You have been here since the plan was made (the start always). */
+  visited: boolean
+}
+
+/** unknown_system | spansh_unavailable | no_route | internal */
+export type NeutronError = string
+
+/** Spansh's neutron route from where you were to the next stop (POST /api/route/neutron). */
+export interface NeutronPlanView {
+  building: boolean
+  error: NeutronError | null
+  createdAt: string | null
+  source: string | null
+  destination: string | null
+  /** Made for another stop than the next one. */
+  stale: boolean
+  efficiency: number | null
+  rangeLy: number | null
+  /** Supercharge: 4, or 6 for the SCO mk II. */
+  multiplier: number | null
+  totalJumps: number | null
+  /** Without supercharges, from your jump range. */
+  directJumps: number | null
+  /** The start first. */
+  waypoints: NeutronWaypointView[]
+  /** The waypoint to plot to next. */
+  nextIndex: number | null
+}
+
+/** Arrival star of a system on the plotted route: fuel scoop, supercharge, danger. */
+export type StarKind = 'scoopable' | 'neutron' | 'white_dwarf' | 'black_hole' | 'other'
+/**
+ * What the community databases know: its arrival star scanned | some bodies | only the system
+ * (seen in somebody's plotted route) | nothing | not asked yet.
+ */
+export type DiscoveryState = 'scanned' | 'bodies' | 'seen' | 'unknown' | 'pending'
+/** visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area | popular_star */
+export type DiscoveryReason = string
+
+export interface DiscoveryChanceView {
+  /** That nobody has discovered it yet; null until checked. */
+  probability: number | null
+  state: DiscoveryState
+  reasons: DiscoveryReason[]
+}
+
+export interface NavHopView {
+  /** 0: the system the route was plotted from. */
+  index: number
+  address: string
+  name: string
+  /** Journal StarClass, e.g. "K", "DA", "N", "M_RedGiant". */
+  starClass: string
+  starKind: StarKind
+  x: number
+  y: number
+  z: number
+  /** From the previous system (0 for the first). */
+  distanceLy: number
+  status: 'passed' | 'here' | 'ahead'
+  /** Estimated for the jump into it (ahead). */
+  fuelUsed: number | null
+  /** Left in the main tank on arrival, before scooping (ahead). */
+  fuelAfter: number | null
+  /** The forecast scoops the tank full here. */
+  refuel: boolean
+  /** The fuel runs out on the jump into it. */
+  short: boolean
+  discovery: DiscoveryChanceView | null
+  /** Your scan of its arrival star: first discovery (or not); null without a scan. */
+  discoveredByYou: boolean | null
+}
+
+export interface FuelForecastView {
+  /** Main tank now, t. */
+  level: number | null
+  capacity: number | null
+  hasScoop: boolean
+  /** Unboosted jumps of this drive behind the estimate (0: no estimate yet). */
+  learntFrom: number
+  /** For every jump left, without refuelling, t. */
+  needed: number | null
+  /** The forecast reaches the destination (scooping on the way). */
+  enough: boolean | null
+  /** Index of the hop where the fuel runs out. */
+  shortAt: number | null
+  /** To the next scoopable arrival star ahead (null: none). */
+  jumpsToScoop: number | null
+  /** Left on arrival there, t. */
+  fuelAtScoop: number | null
+  /** Most jumps ahead from one scoopable star to the next (or the end). */
+  longestDry: number
+  /** What those jumps need from a full tank, t. */
+  longestDryFuel: number | null
+}
+
+/** fuel_short | refuel_here | fuel_tight | dry_stretch | neutron_next | white_dwarf_next | off_route */
+export type NavWarning = string
+
+/** The route plotted in the game (NavRoute.json) and what lies ahead on it. */
+export interface NavRouteView {
+  /** Discovery lookups available (not --offline). */
+  online: boolean
+  /** Discovery lookups in progress. */
+  checking: boolean
+  plottedAt: string | null
+  /** [] when no route is plotted. */
+  hops: NavHopView[]
+  /** You are at this hop; null: not on the route. */
+  hereIndex: number | null
+  jumpsLeft: number
+  lyLeft: number
+  fuel: FuelForecastView
+  nextNeutron: number | null
+  nextWhiteDwarf: number | null
+  neutronsAhead: number
+  whiteDwarfsAhead: number
+  /** Sum of the chances ahead: first discoveries to expect. */
+  undiscoveredExpected: number
+  warnings: NavWarning[]
+}
+
+/** A visited system on the galaxy map. */
+export interface GalaxySystemView {
+  address: string
+  name: string
+  /** Galactic coordinates, ly. */
+  x: number
+  y: number
+  z: number
+  visits: number
+  firstVisitAt: string
+  lastVisitAt: string
+  /** Your scans and analysed species there, earned or pending (estimate). */
+  value: number
+  unsoldValue: number
+  /** First discoveries + first maps + first footfalls. */
+  firsts: number
+  /** Analysed. */
+  species: number
+  /** Journal StarType of its arrival star (colour). */
+  starType: string | null
+  notable: string[]
+}
+
+export interface GalaxyDeathView {
+  at: string
+  /** Index into GalaxyView.systems. */
+  system: number | null
+  name: string | null
+  /** Unsold data lost (estimate). */
+  lostValue: number
+  killers: string[]
+}
+
+export interface GalaxyView {
+  commander: string | null
+  /** Every visited system with known coordinates, oldest first. */
+  systems: GalaxySystemView[]
+  /**
+   * Your travels: runs of indices into `systems` in arrival order, broken where you did not fly
+   * (a respawn, a login somewhere else).
+   */
+  path: number[][]
+  /** Index of the system you are in. */
+  current: number | null
+  deaths: GalaxyDeathView[]
+  /** Stops of the planned route still to do, the next first. */
+  route: RoutePoint[]
+  /** The route plotted in the game, from where you are. */
+  plotted: RoutePoint[]
+  /** Jumped, all time. */
+  distanceLy: number
+  /** Value in ly. */
+  farthestFromSol: NamedValue | null
+}
+
+export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history' | 'route' | 'navroute' | 'galaxy'
 
 // Server-Sent Events on GET /api/stream:
 //   event: hello      data: { seq: number }

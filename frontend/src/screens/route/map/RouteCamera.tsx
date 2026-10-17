@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { Spherical, Vector3, type PerspectiveCamera } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { CAMERA_RANGE, overview, SCENE_RADIUS, topView, type Vec3 } from './geometry'
+import { CAMERA_RANGE, overview, SCENE_RADIUS, topView, type FitLimits, type Vec3 } from './geometry'
 
 export interface RouteCameraApi {
   /** The whole route, tilted; automatic re-fitting (as the route changes) resumes. */
@@ -12,6 +12,8 @@ export interface RouteCameraApi {
   top: () => void
   /** Centre the view on a point, moving closer when far out. */
   focus: (p: Vec3) => void
+  /** Frame these points, tilted (the camera stays the user's: no automatic re-fitting). */
+  show: (points: Vec3[]) => void
 }
 
 interface Goal {
@@ -46,6 +48,9 @@ export function RouteCamera({
   routeKey,
   reducedMotion,
   register,
+  range = CAMERA_RANGE,
+  limits,
+  focusDistance = FOCUS_DISTANCE,
 }: {
   /** Points the whole-route view frames (scene units). */
   frame: Vec3[]
@@ -53,6 +58,12 @@ export function RouteCamera({
   routeKey: string
   reducedMotion: boolean
   register: (api: RouteCameraApi | null) => void
+  /** Camera distance limits of the controls (another map's scale); keep the object stable. */
+  range?: FitLimits
+  /** Distance limits of the fitted views (default: the route map's). */
+  limits?: FitLimits
+  /** How close a focus flight comes at most. */
+  focusDistance?: number
 }) {
   const controls = useRef<OrbitControlsImpl>(null)
   const camera = useThree((s) => s.camera) as PerspectiveCamera
@@ -66,7 +77,7 @@ export function RouteCamera({
 
   const aspect = size.width / Math.max(1, size.height)
   const fov = camera.fov ?? 40
-  const home = useMemo(() => overview(frame, fov, aspect), [frame, fov, aspect])
+  const home = useMemo(() => overview(frame, fov, aspect, limits), [frame, fov, aspect, limits])
 
   const api = useMemo<RouteCameraApi>(() => {
     /** Flies to the goal, or jumps there (first view, reduced motion). */
@@ -74,7 +85,7 @@ export function RouteCamera({
       const f = flight.current
       f.target.set(...goal.target)
       // The controls clamp the distance every frame: a goal outside their range is never reached.
-      f.distance = Math.min(CAMERA_RANGE.max, Math.max(CAMERA_RANGE.min, goal.distance))
+      f.distance = Math.min(range.max, Math.max(range.min, goal.distance))
       f.polar = goal.polar
       f.azimuth = goal.azimuth
       const c = controls.current
@@ -99,16 +110,20 @@ export function RouteCamera({
       },
       top: () => {
         userMoved.current = true
-        go(topView(frame, fov, aspect), true)
+        go(topView(frame, fov, aspect, limits), true)
       },
       focus: (p) => {
         userMoved.current = true
         const c = controls.current
-        const now = c ? camera.position.distanceTo(c.target) : FOCUS_DISTANCE
-        go({ target: p, distance: Math.min(now, FOCUS_DISTANCE), polar: null, azimuth: null }, true)
+        const now = c ? camera.position.distanceTo(c.target) : focusDistance
+        go({ target: p, distance: Math.min(now, focusDistance), polar: null, azimuth: null }, true)
+      },
+      show: (points) => {
+        userMoved.current = true
+        go(overview(points, fov, aspect, limits), true)
       },
     }
-  }, [aspect, camera, fov, frame, home, reducedMotion])
+  }, [aspect, camera, focusDistance, fov, frame, home, limits, range, reducedMotion])
   useEffect(() => {
     register(api)
     return () => register(null)
@@ -200,8 +215,8 @@ export function RouteCamera({
       zoomSpeed={0.9}
       minPolarAngle={0.01}
       maxPolarAngle={Math.PI - 0.01}
-      minDistance={CAMERA_RANGE.min}
-      maxDistance={CAMERA_RANGE.max}
+      minDistance={range.min}
+      maxDistance={range.max}
       screenSpacePanning={false}
     />
   )

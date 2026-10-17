@@ -85,6 +85,7 @@ function route(stops: RouteStopView[], extra: Partial<RouteView> = {}): RouteVie
     remainingLy: 0,
     doneCount: 0,
     skippedCount: 0,
+    neutron: null,
     ...extra,
   }
 }

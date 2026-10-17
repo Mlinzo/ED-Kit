@@ -15,6 +15,7 @@ from typing import Any
 from app import db, enrich, projector
 from app.config import Settings
 from app.journal import JournalDirectory, JournalFile, JournalLine, read_new_lines
+from app.navroute import NavRouteReader
 from app.projector import Projector
 from app.schemas import IngestState, LiveStatus
 from app.status import StatusReader
@@ -23,6 +24,9 @@ log = logging.getLogger(__name__)
 
 BATCH_LINES = 2000
 LIVE_EVENT_MAX_AGE_S = 120  # newer events may use the current Status.json position
+FUEL_STEP_T = 0.5  # a fuel level change this big (scooping, jumping) refreshes the forecast
+# Views built from nearly everything the journal-derived ones are: refreshed with any of them.
+DERIVED_TOPICS = frozenset({"stats", "history", "route", "navroute", "galaxy"})
 
 
 def _parse_ts(ts: str | None) -> datetime | None:
@@ -85,6 +89,7 @@ class IngestService(threading.Thread):
         self.enricher = enrich.Enricher() if settings.online else None
         self._enrich_checked: int | None = None  # last system looked up
         self._enrich_wanted: SimpleQueue[int] = SimpleQueue()  # opened in the UI
+        self.navroute = NavRouteReader(settings.journal_dir / "NavRoute.json")
         self.ready = threading.Event()
         self._halt = threading.Event()
         self._rebuild = False
@@ -122,8 +127,12 @@ class IngestService(threading.Thread):
         self._backfill(conn, files)
         last_rescan = time.monotonic()
 
+        if self.navroute.poll():
+            self._invalidate({"navroute", "galaxy"})
         while not self._halt.is_set():
             self._poll_status(status_reader)
+            if self.navroute.poll():
+                self._invalidate({"navroute", "galaxy"})
             if time.monotonic() - last_rescan >= self.settings.rescan_interval:
                 files = directory.discover()
                 last_rescan = time.monotonic()
@@ -298,6 +307,12 @@ class IngestService(threading.Thread):
             or previous.on_foot != status.on_foot
         ):
             self._invalidate({"surface"})
+        if (previous.fuel_main is None) != (status.fuel_main is None) or (
+            previous.fuel_main is not None
+            and status.fuel_main is not None
+            and abs(previous.fuel_main - status.fuel_main) >= FUEL_STEP_T
+        ):
+            self._invalidate({"navroute"})
 
     def _position_for(self, ts: str) -> tuple[float, float] | None:
         """Current position, but only for events happening now (not during backfill)."""
@@ -324,8 +339,6 @@ class IngestService(threading.Thread):
 
     def _invalidate(self, topics: set[str] | frozenset[str]) -> None:
         self.seq += 1
-        # All-time statistics, the history and the route progress depend on nearly everything
-        # the journal-derived views do.
-        journal = set(topics) - {"surface", "route"}
-        topics = set(topics) | ({"stats", "history", "route"} if journal else set())
+        journal = set(topics) - {"surface"} - DERIVED_TOPICS
+        topics = set(topics) | (DERIVED_TOPICS if journal else set())
         self.bus.publish("invalidate", {"seq": self.seq, "topics": sorted(topics)})

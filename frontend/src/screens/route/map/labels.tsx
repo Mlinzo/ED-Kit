@@ -36,7 +36,7 @@ const PRIORITY: Record<StopLabel | 'you' | 'destination' | 'start', number> = {
   start: 40,
 }
 
-interface LabelEntry {
+export interface LabelEntry {
   el: HTMLElement
   pos: Vec3
   priority: number
@@ -44,7 +44,7 @@ interface LabelEntry {
   always: boolean
 }
 
-const PILL =
+export const PILL =
   'flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] leading-none font-medium whitespace-nowrap shadow-lg ring-1 shadow-black/40 backdrop-blur-sm ring-inset'
 
 const STATUS: Record<StopState, string> = {
@@ -58,7 +58,7 @@ const STATUS: Record<StopState, string> = {
  * A label at a point, `lift` px away from it on the side the placer picks (--tx / --ty), hidden
  * until placed. Marked so a click on it is not a click on the map behind.
  */
-function Anchor({
+export function Anchor({
   id,
   pos,
   priority,
@@ -114,7 +114,7 @@ function Anchor({
 const anchor = new Vector3()
 
 /** Places the labels every frame (a handful: cheap), around their points as the view turns. */
-function LabelPlacer({ entries }: { entries: Map<string, LabelEntry> }) {
+export function LabelPlacer({ entries }: { entries: Map<string, LabelEntry> }) {
   useFrame(({ camera, size }) => {
     const items = [...entries.values()].sort((a, b) => b.priority - a.priority)
     // Reads first (positions, sizes), writes after: no layout thrashing.

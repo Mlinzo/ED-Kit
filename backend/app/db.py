@@ -133,6 +133,31 @@ CREATE TABLE IF NOT EXISTS route_bodies(
   PRIMARY KEY(system_address, body_id)
 ) STRICT;
 
+-- Community knowledge of systems on the route plotted in the game (app.discovery):
+-- spansh: 0 unknown, 1 the system only, 2 some bodies, 3 its arrival star;
+-- edsm: 0 unknown, 1 the system only, 2 its arrival star; NULL: not asked or the lookup failed.
+CREATE TABLE IF NOT EXISTS discovery(
+  id64 INTEGER PRIMARY KEY,
+  fetched_at TEXT NOT NULL,
+  spansh INTEGER,
+  edsm INTEGER
+) STRICT;
+
+-- The Spansh neutron route to the route's next stop (app.neutron). One at a time.
+-- waypoints: JSON [{name, id64, x, y, z, jumps, neutron, left_ly}], the start first.
+CREATE TABLE IF NOT EXISTS neutron_plan(
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  created_at TEXT NOT NULL,
+  source TEXT NOT NULL,
+  destination TEXT NOT NULL,
+  destination_address INTEGER,
+  range_ly REAL NOT NULL,
+  efficiency INTEGER NOT NULL,
+  multiplier INTEGER NOT NULL,
+  total_jumps INTEGER NOT NULL,
+  waypoints TEXT NOT NULL
+) STRICT;
+
 -- Commander position (from Status.json) at the moment of a ScanOrganic event.
 -- Not derivable from the journal, so it lives outside the rebuildable projections.
 CREATE TABLE IF NOT EXISTS sample_positions(
@@ -158,6 +183,7 @@ PROJECTION_TABLES = (
     "visits",
     "deaths",
     "codex_entries",
+    "fuel_jumps",
 )
 
 PROJECTION_SCHEMA = """
@@ -176,7 +202,16 @@ CREATE TABLE IF NOT EXISTS cmdr_state(
   on_foot INTEGER NOT NULL DEFAULT 0,
   in_srv INTEGER NOT NULL DEFAULT 0,
   odyssey INTEGER NOT NULL DEFAULT 1,
-  jump_range REAL  -- MaxJumpRange of the current ship (Loadout), ly
+  jump_range REAL,  -- MaxJumpRange of the current ship (Loadout), ly
+  -- The current ship (Loadout) and what it carries: the fuel forecast (app.fuel).
+  ship_id INTEGER,
+  fsd_item TEXT,  -- FrameShiftDrive module symbol
+  fsd_key TEXT,  -- the drive with its engineering and FSD booster: one fuel curve per key
+  unladen_mass REAL,  -- t, hull and modules
+  fuel_capacity REAL,  -- main tank, t
+  fuel_level REAL,  -- main tank, t, as last reported by the journal
+  cargo REAL NOT NULL DEFAULT 0,  -- t
+  has_scoop INTEGER NOT NULL DEFAULT 0
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS systems(
@@ -292,11 +327,13 @@ CREATE INDEX IF NOT EXISTS jumps_by_cmdr ON jumps(fid, ts);
 
 -- Arrivals in a system: FSD and carrier jumps, and a Location in another system than before
 -- (respawn, first login). Reloading the game where you are is not a new visit.
+-- how: jump | carrier | location (you did not fly there: the galaxy map breaks the path)
 CREATE TABLE IF NOT EXISTS visits(
   id INTEGER PRIMARY KEY,
   fid TEXT NOT NULL,
   ts TEXT NOT NULL,
-  system_address INTEGER NOT NULL
+  system_address INTEGER NOT NULL,
+  how TEXT NOT NULL DEFAULT 'jump'
 ) STRICT;
 CREATE INDEX IF NOT EXISTS visits_by_system ON visits(fid, system_address, id);
 
@@ -315,6 +352,20 @@ CREATE TABLE IF NOT EXISTS codex_entries(
   body_id INTEGER
 ) STRICT;
 CREATE INDEX IF NOT EXISTS codex_by_species ON codex_entries(fid, species);
+
+-- Fuel burnt by FSD jumps (fuel curve of the current drive, app.fuel). mass: the ship at the
+-- start of the jump (unladen + fuel + cargo), t; boosted: neutron / white dwarf / injection.
+CREATE TABLE IF NOT EXISTS fuel_jumps(
+  id INTEGER PRIMARY KEY,
+  fid TEXT NOT NULL,
+  ship_id INTEGER,
+  fsd_key TEXT NOT NULL,
+  distance_ly REAL NOT NULL,
+  fuel_used REAL NOT NULL,
+  mass REAL NOT NULL,
+  boosted INTEGER NOT NULL
+) STRICT;
+CREATE INDEX IF NOT EXISTS fuel_jumps_by_drive ON fuel_jumps(fid, fsd_key, id);
 
 -- context: ship | srv | on_foot; killers: JSON [{"name","ship","rank"}]
 CREATE TABLE IF NOT EXISTS deaths(

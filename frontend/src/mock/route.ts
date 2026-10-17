@@ -1,7 +1,16 @@
 // Demo route for ?mock=1: a run from the demo system for mapping and biology, a few stops
 // done. Planning a new one "takes" a moment and invents stops for the chosen kinds.
 
-import type { BodyKind, BodyView, RouteBodyView, RouteRequest, RouteStopView, RouteView, SystemView } from '../api/types'
+import type {
+  BodyKind,
+  BodyView,
+  NeutronPlanView,
+  RouteBodyView,
+  RouteRequest,
+  RouteStopView,
+  RouteView,
+  SystemView,
+} from '../api/types'
 
 const SECTORS = ['Oochoss Brou', 'Oochost Flyoo', 'Phroi Bluae']
 const VALUES: Record<Exclude<BodyKind, 'bio'>, [number, number]> = {
@@ -121,6 +130,22 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
     })
   }
   return stops
+}
+
+const EMPTY_NEUTRON: NeutronPlanView = {
+  building: false,
+  error: null,
+  createdAt: null,
+  source: null,
+  destination: null,
+  stale: false,
+  efficiency: null,
+  rangeLy: null,
+  multiplier: null,
+  totalJumps: null,
+  directJumps: null,
+  waypoints: [],
+  nextIndex: null,
 }
 
 const DEFAULT_REQUEST: RouteRequest = {
@@ -253,6 +278,52 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       remainingLy: next ? stops.filter((s) => s.seq >= next.seq).reduce((n, s) => n + s.hopLy, 0) : 0,
       doneCount: stops.filter((s) => s.done).length,
       skippedCount: stops.filter((s) => s.skipped && !s.done).length,
+      neutron: neutron && { ...neutron, stale: neutron.destination !== next?.name },
+    }
+  }
+
+  /** A demo neutron route: supercharges every ~4 jumps along the straight line to the next stop. */
+  let neutron: NeutronPlanView | null = null
+  const planNeutron = () => {
+    const next = stops.find((s) => !s.done && !s.skipped)
+    if (!next) return
+    const from = where()
+    const a: Xyz = [from.x, from.y, from.z]
+    const b: Xyz = [next.x, next.y, next.z]
+    const total = dist(a, b)
+    const legs = Math.max(2, Math.round(total / 140))
+    const random = rng(Math.round(total))
+    const waypoints = Array.from({ length: legs + 1 }, (_, i) => {
+      const t = i / legs
+      const p: Xyz = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
+      const end = i === 0 || i === legs
+      const name = i === 0 ? from.name : i === legs ? next.name : `PSR J${1700 + Math.floor(random() * 99)}-${1000 + Math.floor(random() * 8999)}`
+      return {
+        name,
+        address: String(9_000_000 + i),
+        x: p[0],
+        y: p[1],
+        z: p[2],
+        jumps: i === 0 ? 0 : end ? 1 : 3 + Math.floor(random() * 3),
+        neutron: !end,
+        leftLy: Math.round(total * (1 - t) * 100) / 100,
+        visited: i === 0,
+      }
+    })
+    neutron = {
+      building: false,
+      error: null,
+      createdAt: new Date().toISOString(),
+      source: from.name,
+      destination: next.name,
+      stale: false,
+      efficiency: 60,
+      rangeLy: 34.9,
+      multiplier: 4,
+      totalJumps: waypoints.reduce((n, w) => n + w.jumps, 0),
+      directJumps: Math.ceil(total / 34.9),
+      waypoints,
+      nextIndex: 1,
     }
   }
 
@@ -272,6 +343,19 @@ export function createMockRoute(system: SystemView, emit: () => void) {
     if (method === 'DELETE' && path === '/api/route') {
       params = null
       stops = []
+      neutron = null
+      return null
+    }
+    if (method === 'POST' && path === '/api/route/neutron') {
+      neutron = { ...(neutron ?? EMPTY_NEUTRON), building: true }
+      setTimeout(() => {
+        planNeutron()
+        emit()
+      }, BUILD_MS)
+      return null
+    }
+    if (method === 'DELETE' && path === '/api/route/neutron') {
+      neutron = null
       return null
     }
     const stopPath = /^\/api\/route\/stops\/(\d+)$/.exec(path)

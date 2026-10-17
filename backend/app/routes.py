@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app import db, exobio, routeplan
+from app import db, exobio, neutron, routeplan
 from app.routeplan import BodyProgress, Plan, PlanError, PlanRequest, Point
 from app.schemas import (
     RouteBodyView,
@@ -260,6 +260,7 @@ def clear(conn: sqlite3.Connection) -> None:
     conn.execute("DELETE FROM route")
     conn.execute("DELETE FROM route_stops")
     conn.execute("DELETE FROM route_bodies")
+    conn.execute("DELETE FROM neutron_plan")  # it led to one of the stops
     conn.execute("COMMIT")
 
 
@@ -352,7 +353,12 @@ def _jumps(distance: float, jump_range: float | None) -> int | None:
     return max(1, math.ceil(distance / jump_range)) if distance > 0 else 0
 
 
-def route_view(conn: sqlite3.Connection, fid: str | None, planner: RoutePlanner) -> RouteView:
+def route_view(
+    conn: sqlite3.Connection,
+    fid: str | None,
+    planner: RoutePlanner,
+    neutron_planner: neutron.NeutronPlanner | None = None,
+) -> RouteView:
     state = cmdr_state(conn, fid)
     jump_range = state["jump_range"] if state else None
     here: tuple[int, tuple[float, float, float] | None, str] | None = None
@@ -399,6 +405,7 @@ def route_view(conn: sqlite3.Connection, fid: str | None, planner: RoutePlanner)
             remaining_ly=0.0,
             done_count=0,
             skipped_count=0,
+            neutron=None,
         )
 
     # Species you analysed on the route's bodies, and what they paid (incl. bonuses).
@@ -504,4 +511,12 @@ def route_view(conn: sqlite3.Connection, fid: str | None, planner: RoutePlanner)
         remaining_ly=round(sum(s.hop_ly for s in stops if nxt and s.seq >= nxt.seq), 2),
         done_count=sum(1 for s in stops if s.done),
         skipped_count=sum(1 for s in stops if s.skipped and not s.done),
+        neutron=neutron.plan_view(
+            conn,
+            fid,
+            neutron_planner,
+            int(nxt.address) if nxt else None,
+            here[0] if here else None,
+            jump_range,
+        ),
     )

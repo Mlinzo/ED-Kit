@@ -15,6 +15,7 @@ import {
 } from './fixtures'
 import { buildHistory, buildPastSystem, withHistory } from './history'
 import { createMockRoute } from './route'
+import { buildGalaxy, buildNavRoute } from './travel'
 import { buildStats } from './stats'
 
 /** What the backend answers for an address it does not know. */
@@ -77,6 +78,7 @@ function simulatedStatus(seconds: number): LiveStatus {
     altitude: 0,
     planetRadiusM: PLANET_RADIUS_M,
     bodyName: SURFACE_BODY_NAME,
+    fuelMain: null,
   }
 }
 
@@ -90,6 +92,7 @@ export function createMockTransport(): Transport {
   const stats = buildStats()
   let notify: ((topics: Topic[]) => void) | null = null
   const route = createMockRoute(system, () => notify?.(['route']))
+  const navroute = buildNavRoute(system)
   const startedAt = performance.now()
   const elapsed = () => (performance.now() - startedAt) / 1_000
 
@@ -113,6 +116,8 @@ export function createMockTransport(): Transport {
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,
     '/api/view/route': () => route.view(),
+    '/api/view/navroute': () => navroute,
+    '/api/view/galaxy': () => buildGalaxy(history, route.view(), navroute),
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,
   }

@@ -4,6 +4,7 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { BottomTabs } from './components/TabBar'
 import { panelId, tabId, TABS, type Tab } from './components/tabs'
 import { TopBar } from './components/TopBar'
+import { GalaxyScreen } from './screens/galaxy/GalaxyScreen'
 import { HistoryScreen } from './screens/history/HistoryScreen'
 import { RouteScreen } from './screens/route/RouteScreen'
 import { SessionScreen } from './screens/session/SessionScreen'
@@ -106,6 +107,7 @@ export default function App() {
         {tab === 'route' && <RouteScreen />}
         {tab === 'session' && <SessionScreen />}
         {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
+        {tab === 'galaxy' && <GalaxyScreen onOpenSystem={openSystem} onShowHistory={() => goTo('history')} />}
         {tab === 'stats' && <StatsScreen />}
       </main>
       <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />

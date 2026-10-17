@@ -17,13 +17,30 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app import __version__, db, history, routes, stats, usersettings, views
+from app import (
+    __version__,
+    db,
+    discovery,
+    fuel,
+    galaxy,
+    history,
+    navroute,
+    neutron,
+    routes,
+    stats,
+    usersettings,
+    views,
+)
 from app.config import Settings
 from app.schemas import (
+    GalaxyView,
     HighlightSettings,
     HistoryView,
     IngestState,
     LiveStatus,
+    NavRouteView,
+    NeutronRequest,
+    RoutePoint,
     RouteRequest,
     RouteStopUpdate,
     RouteView,
@@ -51,6 +68,12 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     service = IngestService(settings, bus)
     planner = routes.RoutePlanner(
         settings.db_path, settings.online, lambda: service.invalidate({"route"})
+    )
+    neutrons = neutron.NeutronPlanner(settings.db_path, lambda: service.invalidate({"route"}))
+    checker = (
+        discovery.DiscoveryChecker(settings.db_path, lambda: service.invalidate({"navroute"}))
+        if settings.online
+        else None
     )
     if rebuild:
         service.request_rebuild()
@@ -112,7 +135,71 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     @app.get("/api/view/route", response_model=RouteView, response_model_by_alias=True)
     def view_route() -> RouteView:
         conn = read_conn()
-        return routes.route_view(conn, active_fid(conn), planner)
+        return routes.route_view(conn, active_fid(conn), planner, neutrons)
+
+    def plotted_view(conn: sqlite3.Connection) -> NavRouteView:
+        live = service.live.fuel_main if service.live.in_ship else None
+        return navroute.navroute_view(
+            conn, active_fid(conn), service.navroute.current, live, checker
+        )
+
+    @app.get("/api/view/navroute", response_model=NavRouteView, response_model_by_alias=True)
+    def view_navroute() -> NavRouteView:
+        return plotted_view(read_conn())
+
+    @app.get("/api/view/galaxy", response_model=GalaxyView, response_model_by_alias=True)
+    def view_galaxy() -> GalaxyView:
+        conn = read_conn()
+        fid = active_fid(conn)
+        route = routes.route_view(conn, fid, planner)
+        remaining = [
+            RoutePoint(name=s.name, x=s.x, y=s.y, z=s.z)
+            for s in route.stops
+            if not s.done and not s.skipped and (route.next_seq is None or s.seq >= route.next_seq)
+        ]
+        plotted = plotted_view(conn)
+        ahead = [
+            RoutePoint(name=h.name, x=h.x, y=h.y, z=h.z)
+            for h in plotted.hops
+            if h.status != "passed"
+        ]
+        return galaxy.galaxy_view(conn, fid, remaining, ahead)
+
+    @app.post("/api/route/neutron", status_code=202)
+    def plan_neutron(body: NeutronRequest) -> None:
+        """Spansh neutron route from where you are to the route's next stop (worker thread)."""
+        if not planner.online:
+            raise HTTPException(409, "offline: neutron routes need Spansh")
+        conn = read_conn()
+        fid = active_fid(conn)
+        route = routes.route_view(conn, fid, planner)
+        stop = next((s for s in route.stops if s.seq == route.next_seq), None)
+        if stop is None or route.current_system is None:
+            raise HTTPException(409, "no next stop, or your position is unknown")
+        state = views.cmdr_state(conn, fid)
+        jump_range = state["jump_range"] if state else None
+        if not jump_range:
+            raise HTTPException(409, "jump range unknown")
+        neutrons.start(
+            neutron.NeutronRequest(
+                source=route.current_system,
+                destination=stop.name,
+                destination_address=int(stop.address),
+                range_ly=jump_range,
+                efficiency=body.efficiency,
+                multiplier=fuel.supercharge_multiplier(state["fsd_item"] if state else None),
+            )
+        )
+
+    @app.delete("/api/route/neutron", status_code=204)
+    def clear_neutron() -> None:
+        neutrons.forget()
+        conn = db.connect(settings.db_path)
+        try:
+            neutron.clear(conn)
+        finally:
+            conn.close()
+        service.invalidate({"route"})
 
     @app.post("/api/route", status_code=202, response_model=RouteView, response_model_by_alias=True)
     def plan_route(body: RouteRequest) -> RouteView:

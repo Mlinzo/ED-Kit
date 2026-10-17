@@ -37,6 +37,9 @@ export function useRouteActions() {
       makeNext: (seq: number, position: number) =>
         run(() => store.transport.send('PUT', `/api/route/stops/${seq}`, { skipped: false, position })),
       remove: (seq: number) => run(() => store.transport.send('DELETE', `/api/route/stops/${seq}`)),
+      /** Spansh neutron route from here to the next stop (planned in the background). */
+      planNeutron: () => run(() => store.transport.send('POST', '/api/route/neutron', {})),
+      clearNeutron: () => run(() => store.transport.send('DELETE', '/api/route/neutron')),
     }),
     [error, run, store],
   )

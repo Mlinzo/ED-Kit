@@ -34,7 +34,9 @@ import { eventFull } from '../../lib/when'
 import { BodyChips } from './kinds'
 import { RouteMap } from './map'
 import { carto, routeLeft, spanshUrl, stopLeft, type StopActions } from './helpers'
+import { NeutronPlan } from './NeutronPlan'
 import { BodyRow, IconButton, PopulatedBadge, StopStatus } from './parts'
+import { PlottedRoute } from './PlottedRoute'
 import { RouteForm } from './RouteForm'
 import { StopCard } from './StopCard'
 import { useRouteActions } from './useRouteActions'
@@ -64,7 +66,17 @@ function Notice({ tone, children }: { tone: 'warn' | 'error' | 'info'; children:
   )
 }
 
-function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number) => void }) {
+function NextTarget({
+  route,
+  onSkip,
+  onPlanNeutron,
+  onClearNeutron,
+}: {
+  route: RouteView
+  onSkip: (seq: number) => void
+  onPlanNeutron: () => void
+  onClearNeutron: () => void
+}) {
   const stop = route.stops.find((s) => s.seq === route.nextSeq)
   if (route.stops.length === 0) {
     return (
@@ -138,6 +150,8 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
         ))}
       </ul>
       {bio && <p className="mt-2 text-xs text-zinc-600">{t.route.bioHint}</p>}
+
+      {!stop.here && <NeutronPlan route={route} onPlan={onPlanNeutron} onClear={onClearNeutron} />}
 
       <div className="mt-4 flex justify-end">
         <button
@@ -356,6 +370,7 @@ function routeSummary(route: RouteView): string | null {
 
 export function RouteScreen() {
   const { data, error, refetch } = useView('route')
+  const plotted = useView('navroute').data
   const actions = useRouteActions()
   const [formOpen, setFormOpen] = useState(false)
   const [view, setView] = useState<ViewMode>(() => readStored(VIEW_KEY, ['map', 'list'], 'map'))
@@ -436,6 +451,8 @@ export function RouteScreen() {
         )}
       </section>
 
+      {plotted && <PlottedRoute view={plotted} />}
+
       {!data.online && <Notice tone="warn">{t.route.offline}</Notice>}
       {failure && <Notice tone="error">{failure}</Notice>}
       {actions.error && (
@@ -461,7 +478,12 @@ export function RouteScreen() {
           {/* Around a point the route always takes the nearest N; cut short is news only for a corridor. */}
           {data.truncated && data.params?.mode === 'line' && <Notice tone="warn">{t.route.truncated}</Notice>}
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
-            <NextTarget route={data} onSkip={(seq) => void actions.skip(seq, true)} />
+            <NextTarget
+              route={data}
+              onSkip={(seq) => void actions.skip(seq, true)}
+              onPlanNeutron={() => void actions.planNeutron()}
+              onClearNeutron={() => void actions.clearNeutron()}
+            />
             {data.stops.length > 0 && (
               <Progress
                 route={data}

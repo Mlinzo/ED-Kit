@@ -28,6 +28,7 @@ import { SystemMap } from '../../map'
 import { routeStop, routeStripShown } from '../route/helpers'
 import { BodyDetail } from './BodyDetail'
 import { BodyList } from './BodyList'
+import { PlottedStrip } from './PlottedStrip'
 import { RouteStrip } from './RouteStrip'
 
 const SORT_KEY = 'edk.bodySort'
@@ -270,6 +271,7 @@ export function SystemScreen({
 }) {
   const { data: fresh, error, refetch } = useView('system', wantedAddress ? { address: wantedAddress } : undefined)
   const { data: route } = useView('route')
+  const { data: plotted } = useView('navroute')
   // Stepping through the history: keep the previous system on screen until the next one arrives.
   const [kept, setKept] = useState(fresh)
   if (fresh && fresh !== kept) setKept(fresh)
@@ -400,6 +402,7 @@ export function SystemScreen({
           onShowRoute={onShowRoute}
         />
       )}
+      {data.isCurrent && plotted && <PlottedStrip view={plotted} onShowRoute={onShowRoute} />}
       <SystemHeader system={data} onOpenSystem={onOpenSystem} />
 
       <div className="mt-5 grid items-start gap-6 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,400px)] xl:grid-cols-[minmax(0,1fr)_440px]">

@@ -9,6 +9,7 @@ Journal dir ──poll 250 ms──► JournalReader (byte offsets, complete lin
    └► one SQLite tx: INSERT events → Projector.apply(event) → projection upserts → COMMIT
           └► SSE "invalidate {topics}" ──► browser refetches /api/view/{topic}
 Status.json ──poll──► LiveStatus (memory only) ──► SSE "status"
+NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "invalidate {navroute, galaxy}"
 ```
 
 ## Backend (`backend/`, Python 3.12, uv, FastAPI)
@@ -27,6 +28,11 @@ Status.json ──poll──► LiveStatus (memory only) ──► SSE "status"
 | `app/routebio.py` | Exobiology value of Spansh bodies for routes: facts conversion, genus names, species-based (min, max) estimate |
 | `app/spansh.py` | Spansh search client with a SQLite cache (body pages 7 days, systems 7 days, permit list 30 days) |
 | `app/routes.py` | The route: worker-thread builder, storage (`route*` tables), `RouteView` with journal progress |
+| `app/fuel.py` | Fuel per jump of the current drive, learnt from its own `FSDJump`s (`fuel = k · (distance · mass)^power`, power by FSD size) |
+| `app/navroute.py` | The route plotted in the game (`NavRoute.json`): fuel forecast hop by hop (scooping at KGBFOAM stars), neutron stars / white dwarfs ahead, warnings, discovery chances |
+| `app/discovery.py` | How likely a system is undiscovered: Spansh, then EDSM (worker thread, `discovery` cache table, 24 h) |
+| `app/neutron.py` | Spansh neutron plotter for the hop to the route's next stop (worker thread, `neutron_plan` table), progress from visits |
+| `app/galaxy.py` | `GalaxyView`: visited systems with coordinates, the path in arrival order (broken at respawns), deaths, routes ahead |
 | `app/enrich.py` | Community body data (Spansh, then EDSM) for the current system, cached in `ext_*` tables |
 | `app/usersettings.py` | Highlight thresholds (`settings` table, `GET/PUT /api/settings`) |
 | `app/facts.py` | Journal `Scan` → `BodyFacts`, JSON codec, `SystemFacts` loading |
@@ -49,12 +55,13 @@ Rules:
 ## Frontend (`frontend/`, Vite + React + TypeScript + Tailwind v4)
 
 - Contract: `frontend/src/api/types.ts` mirrors `backend/app/schemas.py`.
-- `GET /api/view/system|surface|session|stats|history`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
+- `GET /api/view/system|surface|session|stats|history|navroute|galaxy`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
 - `GET /api/view/system?address=<SystemAddress>`: a system from the history (also requests its community data).
-- Route: `GET /api/view/route`, `POST /api/route` (plan, 202; 409 with `--offline`), `DELETE /api/route`, `PUT /api/route/stops/{seq}` (`skipped` and/or `position`: skip, move), `DELETE /api/route/stops/{seq}` (remove).
+- Route: `GET /api/view/route`, `POST /api/route` (plan, 202; 409 with `--offline`), `DELETE /api/route`, `PUT /api/route/stops/{seq}` (`skipped` and/or `position`: skip, move), `DELETE /api/route/stops/{seq}` (remove), `POST /api/route/neutron` (Spansh neutron route to the next stop, 202; 409 with `--offline`), `DELETE /api/route/neutron`.
 - `GET /api/stream` (SSE): `hello`, `invalidate`, `status`, `ingest`, `ping`.
 - `src/map/`: 3D orbit map (react-three-fiber); `src/map/visuals/`: procedural planet/star rendering.
 - `src/screens/route/map/`: 3D route map (lazy chunk). Galactic coordinates scaled to a fixed scene radius, z flipped (top view: core up, +x right); stops are screen-space dots picked on screen, labels placed without overlap.
+- `src/screens/galaxy/map/`: 3D galaxy map (lazy chunk), 100 ly per scene unit, Sol at the origin; reuses the route map's camera, markers and labels. The galaxy behind is a procedural sketch (`backdrop.ts`), not game imagery.
 - The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.
 - Dark, modern, glanceable UI. Languages: English (default), Ukrainian, Russian — chosen in Settings, stored per browser;
   switching reloads the page. `src/i18n/ru.ts` is the original dictionary and defines the shape (`Strings`); `en.ts`

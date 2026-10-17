@@ -24,6 +24,8 @@ def decode_status(data: dict[str, Any]) -> LiveStatus:
     flags = int(data.get("Flags") or 0)
     flags2 = int(data.get("Flags2") or 0)
     has_lat_long = bool(flags & FLAG_HAS_LAT_LONG) and "Latitude" in data
+    fuel = data.get("Fuel") if isinstance(data.get("Fuel"), dict) else {}
+    fuel_main = fuel.get("FuelMain")
     return LiveStatus(
         timestamp=data.get("timestamp"),
         flags=flags,
@@ -41,6 +43,7 @@ def decode_status(data: dict[str, Any]) -> LiveStatus:
         altitude=data.get("Altitude") if has_lat_long else None,
         planet_radius_m=data.get("PlanetRadius") if has_lat_long else None,
         body_name=data.get("BodyName"),
+        fuel_main=float(fuel_main) if isinstance(fuel_main, int | float) else None,
     )
 
 

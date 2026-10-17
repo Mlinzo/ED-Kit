@@ -44,6 +44,11 @@ export function formatLy(value: number): string {
   return `${formatNumber(value, value < 100 ? 1 : 0)} ${t.units.ly}`
 }
 
+/** Fuel in tons, without the unit: "0.42", "7.3", "112". */
+export function formatTons(value: number): string {
+  return formatNumber(value, value < 10 ? (value < 1 ? 2 : 1) : 0)
+}
+
 /** Metres for the surface radar: "312 м", "1.4 км". */
 export function formatMeters(value: number): string {
   if (value < 1_000) return `${Math.round(value)}${NARROW_NBSP}${t.units.m}`

@@ -1,8 +1,10 @@
 import type { ConnectionState, Transport } from './transport'
 import type {
+  GalaxyView,
   HistoryView,
   IngestState,
   LiveStatus,
+  NavRouteView,
   RouteView,
   SessionView,
   StatsView,
@@ -19,6 +21,8 @@ export interface ViewMap {
   stats: StatsView
   history: HistoryView
   route: RouteView
+  navroute: NavRouteView
+  galaxy: GalaxyView
 }
 
 /** Query parameters of a view request, e.g. `{ address }` for a system from the history. */
@@ -31,7 +35,7 @@ export interface ViewEntry<T> {
   loading: boolean
 }
 
-export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history', 'route']
+export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history', 'route', 'navroute', 'galaxy']
 
 /** Minimum gap between two requests for the same view (coalesces invalidate bursts). */
 const MIN_GAP_MS = 250

@@ -241,6 +241,7 @@ class LiveStatus(CamelModel):
     altitude: float | None = None
     planet_radius_m: float | None = None
     body_name: str | None = None
+    fuel_main: float | None = None  # t in the main tank (in the ship only)
 
 
 class IngestState(CamelModel):
@@ -481,6 +482,36 @@ class RouteStopView(CamelModel):
     here: bool  # you are in this system now
 
 
+class NeutronWaypointView(CamelModel):
+    name: str
+    address: str
+    x: float
+    y: float
+    z: float
+    jumps: int  # from the previous waypoint
+    neutron: bool  # supercharge here
+    left_ly: float  # to the destination
+    visited: bool  # you have been here since the plan was made
+
+
+class NeutronPlanView(CamelModel):
+    """Spansh's neutron route from where you were to the next stop (POST /api/route/neutron)."""
+
+    building: bool
+    error: str | None  # unknown_system | spansh_unavailable | no_route | internal
+    created_at: str | None
+    source: str | None
+    destination: str | None
+    stale: bool  # made for another stop than the next one
+    efficiency: int | None
+    range_ly: float | None
+    multiplier: int | None  # supercharge: 4, or 6 for the SCO mk II
+    total_jumps: int | None
+    direct_jumps: int | None  # without supercharges, from your jump range
+    waypoints: list[NeutronWaypointView]  # the start first
+    next_index: int | None  # the waypoint to plot to next
+
+
 class RouteView(CamelModel):
     online: bool  # route building available (not --offline)
     building: bool
@@ -506,6 +537,123 @@ class RouteView(CamelModel):
     remaining_ly: float  # from the next stop on, along the route
     done_count: int
     skipped_count: int
+    neutron: NeutronPlanView | None  # Spansh neutron route to the next stop, once asked for
 
 
-Topic = Literal["system", "surface", "session", "stats", "history", "route"]
+class NeutronRequest(CamelModel):
+    """POST /api/route/neutron: plan a neutron route from here to the route's next stop."""
+
+    efficiency: int = Field(60, ge=1, le=100)
+
+
+# Arrival star of a system on the plotted route: fuel scoop, supercharge, danger.
+StarKind = Literal["scoopable", "neutron", "white_dwarf", "black_hole", "other"]
+# What the community databases know: its arrival star scanned | some bodies | only the system
+# (seen in somebody's plotted route) | nothing | not asked yet.
+DiscoveryState = Literal["scanned", "bodies", "seen", "unknown", "pending"]
+
+
+class DiscoveryChanceView(CamelModel):
+    probability: float | None  # that nobody has discovered it yet; None until checked
+    state: DiscoveryState
+    # visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area |
+    # popular_star
+    reasons: list[str]
+
+
+class NavHopView(CamelModel):
+    index: int  # 0: the system the route was plotted from
+    address: str
+    name: str
+    star_class: str  # journal StarClass, e.g. "K", "DA", "N", "M_RedGiant"
+    star_kind: StarKind
+    x: float
+    y: float
+    z: float
+    distance_ly: float  # from the previous system (0 for the first)
+    status: Literal["passed", "here", "ahead"]
+    fuel_used: float | None  # estimated for the jump into it (ahead)
+    fuel_after: float | None  # left in the main tank on arrival, before scooping (ahead)
+    refuel: bool  # the forecast scoops the tank full here
+    short: bool  # the fuel runs out on the jump into it
+    discovery: DiscoveryChanceView | None  # ahead
+    discovered_by_you: bool | None  # your scan of its arrival star: first discovery (or not)
+
+
+class FuelForecastView(CamelModel):
+    level: float | None  # main tank now, t
+    capacity: float | None
+    has_scoop: bool
+    learnt_from: int  # unboosted jumps of this drive behind the estimate (0: no estimate yet)
+    needed: float | None  # for every jump left, without refuelling, t
+    enough: bool | None  # the forecast reaches the destination (scooping on the way)
+    short_at: int | None  # index of the hop where the fuel runs out
+    jumps_to_scoop: int | None  # to the next scoopable arrival star ahead (None: none)
+    fuel_at_scoop: float | None  # left on arrival there, t
+    longest_dry: int  # most jumps ahead from one scoopable star to the next (or the end)
+    longest_dry_fuel: float | None  # what those jumps need from a full tank, t
+
+
+class NavRouteView(CamelModel):
+    """The route plotted in the game (NavRoute.json) and what lies ahead on it."""
+
+    online: bool  # discovery lookups available (not --offline)
+    checking: bool  # discovery lookups in progress
+    plotted_at: str | None
+    hops: list[NavHopView]  # [] when no route is plotted
+    here_index: int | None  # you are at this hop; None: not on the route
+    jumps_left: int
+    ly_left: float
+    fuel: FuelForecastView
+    next_neutron: int | None  # jumps to the next neutron star ahead
+    next_white_dwarf: int | None
+    neutrons_ahead: int
+    white_dwarfs_ahead: int
+    undiscovered_expected: float  # sum of the chances ahead: first discoveries to expect
+    # fuel_short | refuel_here | fuel_tight | dry_stretch | neutron_next | white_dwarf_next |
+    # off_route
+    warnings: list[str]
+
+
+class GalaxySystemView(CamelModel):
+    """A visited system on the galaxy map."""
+
+    address: str
+    name: str
+    x: float  # galactic coordinates, ly
+    y: float
+    z: float
+    visits: int
+    first_visit_at: str
+    last_visit_at: str
+    value: int  # your scans and analysed species there, earned or pending (estimate)
+    unsold_value: int
+    firsts: int  # first discoveries + first maps + first footfalls
+    species: int  # analysed
+    star_type: str | None  # journal StarType of its arrival star (colour)
+    notable: list[str]  # as in the history: elw, neutron, ...
+
+
+class GalaxyDeathView(CamelModel):
+    at: str
+    system: int | None  # index into GalaxyView.systems
+    name: str | None
+    lost_value: int  # unsold data lost (estimate)
+    killers: list[str]
+
+
+class GalaxyView(CamelModel):
+    commander: str | None
+    systems: list[GalaxySystemView]  # every visited system with known coordinates
+    # Your travels: runs of indices into `systems` in arrival order, broken where you did not
+    # fly (a respawn, a login somewhere else).
+    path: list[list[int]]
+    current: int | None  # index of the system you are in
+    deaths: list[GalaxyDeathView]
+    route: list[RoutePoint]  # stops of the planned route still to do, the next first
+    plotted: list[RoutePoint]  # the route plotted in the game, from where you are
+    distance_ly: float  # jumped, all time
+    farthest_from_sol: NamedValue | None  # value in ly
+
+
+Topic = Literal["system", "surface", "session", "stats", "history", "route", "navroute", "galaxy"]

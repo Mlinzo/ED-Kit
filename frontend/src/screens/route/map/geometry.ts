@@ -217,11 +217,25 @@ export const TOP_POLAR = 0.02
 /** NDC extents the framed points may use: room for labels above and the overlay around. */
 const MARGIN = { x: 0.84, top: 0.7, bottom: 0.78 }
 
+/** The camera distances a fitted view stays within (scene units). */
+export interface FitLimits {
+  min: number
+  max: number
+}
+const ROUTE_LIMITS: FitLimits = { min: MIN_FIT_DISTANCE, max: CAMERA_RANGE.max }
+
 /**
  * Camera distance and look-at point that frame `points` seen from `polar` / `azimuth` within the
  * margins: bisects the distance, then shifts the target until the points are centred.
  */
-export function fitView(points: readonly Vec3[], fovDeg: number, aspect: number, polar: number, azimuth: number): View {
+export function fitView(
+  points: readonly Vec3[],
+  fovDeg: number,
+  aspect: number,
+  polar: number,
+  azimuth: number,
+  limits: FitLimits = ROUTE_LIMITS,
+): View {
   const pts = points.length > 0 ? points : [[0, 0, 0] as Vec3]
   const lo = [Infinity, Infinity, Infinity]
   const hi = [-Infinity, -Infinity, -Infinity]
@@ -285,22 +299,22 @@ export function fitView(points: readonly Vec3[], fovDeg: number, aspect: number,
     target.addScaledVector(right, cx * halfH * distance).addScaledVector(up, cy * halfV * distance)
   }
   // Within the controls' range, or a flight towards it would never arrive.
-  distance = Math.min(CAMERA_RANGE.max, Math.max(MIN_FIT_DISTANCE, distance))
+  distance = Math.min(limits.max, Math.max(limits.min, distance))
   return { target: [target.x, target.y, target.z], distance, polar, azimuth }
 }
 
 /** Tilted whole-route view, its long axis along the long side of the screen. */
-export function overview(points: readonly Vec3[], fovDeg: number, aspect: number): View {
+export function overview(points: readonly Vec3[], fovDeg: number, aspect: number, limits?: FitLimits): View {
   const azimuth = principalAzimuth(
     points.map((p) => [p[0], p[2]] as Point),
     aspect,
   )
-  return fitView(points, fovDeg, aspect, OVERVIEW_POLAR, azimuth)
+  return fitView(points, fovDeg, aspect, OVERVIEW_POLAR, azimuth, limits)
 }
 
 /** Straight down, the core up the screen: the galaxy map's orientation. */
-export function topView(points: readonly Vec3[], fovDeg: number, aspect: number): View {
-  return fitView(points, fovDeg, aspect, TOP_POLAR, 0)
+export function topView(points: readonly Vec3[], fovDeg: number, aspect: number, limits?: FitLimits): View {
+  return fitView(points, fovDeg, aspect, TOP_POLAR, 0, limits)
 }
 
 /** A stop's dot on screen (CSS px from the canvas's top-left corner). */
