@@ -468,6 +468,9 @@ export const en: Strings = {
     lastSale: 'Last sale',
     never: 'none yet',
     unsold: 'unsold',
+    headerLabel: 'Unsold',
+    headerHint: (carto: string, bio: string) =>
+      `Mapping ${carto} · exobiology ${bio}. Lost if your ship is destroyed. Open Session`,
   },
 
   // Why a body is interesting (BodyView.reasons codes).

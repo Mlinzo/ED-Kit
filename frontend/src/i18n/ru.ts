@@ -470,6 +470,9 @@ export const ru = {
     lastSale: 'Последняя продажа',
     never: 'ещё не было',
     unsold: 'не продано',
+    headerLabel: 'Не продано',
+    headerHint: (carto: string, bio: string) =>
+      `Картография ${carto} · экзобиология ${bio}. Пропадёт, если корабль погибнет. Открыть «Сессию»`,
   },
 
   // Why a body is interesting (BodyView.reasons codes).

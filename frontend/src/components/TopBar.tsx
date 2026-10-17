@@ -1,9 +1,11 @@
-import { FlaskConical, FolderX, X } from 'lucide-react'
+import { FlaskConical, FolderX, Wallet, X } from 'lucide-react'
 import { useIngest, useStream, useView } from '../api/hooks'
+import type { SessionView } from '../api/types'
 import { t } from '../i18n'
-import { formatNumber } from '../lib/format'
+import { formatCredits, formatNumber } from '../lib/format'
 import { SettingsButton } from '../settings/SettingsDialog'
 import { ConnectionIndicator } from './ConnectionIndicator'
+import { Credits } from './Credits'
 import { TopTabs } from './TabBar'
 import type { Tab } from './tabs'
 
@@ -35,6 +37,28 @@ function MockBadge() {
       <X className="size-3.5 opacity-70" aria-hidden />
       <span className="sr-only">{t.mock.exit}</span>
     </a>
+  )
+}
+
+/**
+ * What you would lose right now if the ship were destroyed: the unsold data, always in view
+ * (amber: at risk). Hidden when everything is sold. Opens the Session tab.
+ */
+function AtRisk({ session, onOpen }: { session: SessionView; onOpen: () => void }) {
+  if (session.atRiskValue <= 0) return null
+  const hint = t.session.headerHint(formatCredits(session.unsoldCartoValue), formatCredits(session.unsoldBioValue))
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title={hint}
+      aria-label={`${t.session.headerLabel}: ${formatCredits(session.atRiskValue)}. ${hint}`}
+      className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm transition-colors hover:bg-zinc-800/70"
+    >
+      <Wallet className="size-4 shrink-0 text-amber-400" aria-hidden />
+      <span className="hidden text-zinc-500 xl:inline">{t.session.headerLabel}</span>
+      <Credits value={session.atRiskValue} className="font-semibold text-amber-300 tabular-nums" />
+    </button>
   )
 }
 
@@ -96,8 +120,10 @@ export function TopBar({ tab, onTab, surfaceLive }: { tab: Tab; onTab: (t: Tab) 
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
           {mock && <MockBadge />}
+          {session.data && <AtRisk session={session.data} onOpen={() => onTab('session')} />}
+          {/* Below xl the tabs and the unsold value need the room (the name is on the Session tab too). */}
           {commander && (
-            <span className="hidden text-sm text-zinc-500 md:inline">
+            <span className="hidden text-sm text-zinc-500 xl:inline">
               {t.common.commander} <span className="font-medium text-zinc-200">{commander}</span>
             </span>
           )}

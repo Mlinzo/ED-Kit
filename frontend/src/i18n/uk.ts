@@ -471,6 +471,9 @@ export const uk: Strings = {
     lastSale: 'Останній продаж',
     never: 'ще не було',
     unsold: 'не продано',
+    headerLabel: 'Не продано',
+    headerHint: (carto: string, bio: string) =>
+      `Картографування ${carto} · екзобіологія ${bio}. Буде втрачено, якщо корабель загине. Відкрити «Сесію»`,
   },
 
   // Why a body is interesting (BodyView.reasons codes).
