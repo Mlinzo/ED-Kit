@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from queue import Empty, SimpleQueue
 from typing import Any
 
-from app import db, enrich, projector
+from app import db, enrich, game, projector
 from app.config import Settings
 from app.journal import JournalDirectory, JournalFile, JournalLine, read_new_lines
 from app.navroute import NavRouteReader
@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 
 BATCH_LINES = 2000
 LIVE_EVENT_MAX_AGE_S = 120  # newer events may use the current Status.json position
+GAME_CHECK_S = 5.0  # how often the process list is read
 FUEL_STEP_T = 0.5  # a fuel level change this big (scooping, jumping) refreshes the forecast
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
 DERIVED_TOPICS = frozenset({"stats", "history", "route", "navroute", "galaxy"})
@@ -90,6 +91,7 @@ class IngestService(threading.Thread):
         self._enrich_checked: int | None = None  # last system looked up
         self._enrich_wanted: SimpleQueue[int] = SimpleQueue()  # opened in the UI
         self.navroute = NavRouteReader(settings.journal_dir / "NavRoute.json")
+        self._last_event: str | None = None  # the latest journal event (game running fallback)
         self.ready = threading.Event()
         self._halt = threading.Event()
         self._rebuild = False
@@ -118,6 +120,9 @@ class IngestService(threading.Thread):
             self._replay(conn)
         self.projector = Projector(conn, position=self._position_for)
         self.ingest.events = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        last = conn.execute("SELECT event FROM events ORDER BY id DESC LIMIT 1").fetchone()
+        self._last_event = last["event"] if last else None
+        threading.Thread(target=self._watch_game, name="game", daemon=True).start()
         self.ready.set()
 
         directory = JournalDirectory(self.settings.journal_dir, conn)
@@ -224,6 +229,7 @@ class IngestService(threading.Thread):
         topics: set[str] = set()
         for line in lines:
             name = str(line.event.get("event"))
+            self._last_event = name
             if name in projector.SKIP_EVENTS:
                 continue
             cur = conn.execute(
@@ -293,6 +299,15 @@ class IngestService(threading.Thread):
             self.enricher.request(address)
 
     # ------------------------------------------------------------------ live status
+
+    def _watch_game(self) -> None:
+        """Whether the game runs, pushed with the ingest state when it changes."""
+        while not self._halt.is_set():
+            running = game.game_running(game.process_running(), self._last_event)
+            if running != self.ingest.game_running:
+                self.ingest.game_running = running
+                self.bus.publish("ingest", self.ingest)
+            self._halt.wait(GAME_CHECK_S)
 
     def _poll_status(self, reader: StatusReader) -> None:
         status = reader.poll()

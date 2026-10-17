@@ -103,6 +103,7 @@ export function createMockTransport(): Transport {
     events: 0,
     journalDir: 'C:\\Users\\Commander\\Saved Games\\Frontier Developments\\Elite Dangerous',
     journalDirFound: true,
+    gameRunning: true,
   }
 
   const routes: Record<string, (query: URLSearchParams) => unknown> = {

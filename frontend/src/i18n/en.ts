@@ -30,6 +30,8 @@ export const en: Strings = {
     reconnecting: 'Reconnecting…',
     offline: 'Offline',
     label: 'Server connection',
+    inGame: 'In game',
+    gameClosed: 'Game closed',
   },
 
   offline: {

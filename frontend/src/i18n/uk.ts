@@ -33,6 +33,8 @@ export const uk: Strings = {
     reconnecting: 'Перепідключення…',
     offline: 'Немає зв’язку',
     label: 'Зв’язок із сервером',
+    inGame: 'У грі',
+    gameClosed: 'Гру закрито',
   },
 
   offline: {

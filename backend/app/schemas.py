@@ -251,6 +251,7 @@ class IngestState(CamelModel):
     events: int
     journal_dir: str
     journal_dir_found: bool
+    game_running: bool | None = None  # process list, else the journal (None: unknown)
 
 
 class StatCount(CamelModel):

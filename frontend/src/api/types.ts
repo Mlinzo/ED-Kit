@@ -264,6 +264,8 @@ export interface IngestState {
   events: number
   journalDir: string
   journalDirFound: boolean
+  /** The game is running (process list, else the journal); null: unknown. */
+  gameRunning: boolean | null
 }
 
 export interface StatCount {

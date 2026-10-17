@@ -1,4 +1,4 @@
-import { useStream } from '../api/hooks'
+import { useIngest, useStream } from '../api/hooks'
 import type { ConnectionState } from '../api/transport'
 import { t } from '../i18n'
 
@@ -9,17 +9,24 @@ const SPEC: Record<ConnectionState, { dot: string; label: string; pulse: boolean
   offline: { dot: 'bg-rose-500', label: t.connection.offline, pulse: false },
 }
 
+/**
+ * The server connection, and once it is up, whether the game is running: "Online" alone read as
+ * the game's state, while it only ever meant the app's own server.
+ */
 export function ConnectionIndicator() {
   const { connection } = useStream()
-  const spec = SPEC[connection]
+  const game = useIngest()?.gameRunning ?? null
+  let spec = SPEC[connection]
+  if (connection === 'open' && game !== null) {
+    spec = game
+      ? { dot: 'bg-emerald-400', label: t.connection.inGame, pulse: false }
+      : { dot: 'bg-zinc-500', label: t.connection.gameClosed, pulse: false }
+  }
+  const server = `${t.connection.label}: ${SPEC[connection].label}`
   const label = spec.label
+  const full = label === SPEC[connection].label ? server : `${label} · ${server}`
   return (
-    <div
-      role="status"
-      aria-label={`${t.connection.label}: ${label}`}
-      title={label}
-      className="flex items-center gap-2 text-sm text-zinc-400"
-    >
+    <div role="status" aria-label={full} title={full} className="flex items-center gap-2 text-sm text-zinc-400">
       <span className="relative flex size-2.5" aria-hidden>
         {spec.pulse && (
           <span className={`absolute inset-0 rounded-full opacity-60 motion-safe:animate-ping ${spec.dot}`} />

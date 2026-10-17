@@ -36,6 +36,7 @@ NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "inva
 | `app/enrich.py` | Community body data (Spansh, then EDSM) for the current system, cached in `ext_*` tables |
 | `app/usersettings.py` | Highlight thresholds (`settings` table, `GET/PUT /api/settings`) |
 | `app/facts.py` | Journal `Scan` → `BodyFacts`, JSON codec, `SystemFacts` loading |
+| `app/game.py` | Whether the game is running (process list on Windows, else the journal's last `Shutdown`), pushed with the ingest state |
 | `app/service.py` | Ingest thread, backfill, SSE fan-out |
 | `app/main.py` | FastAPI app: REST views, SSE stream, static frontend |
 | `app/models.py` | Domain dataclasses (`BodyFacts`, `SystemFacts`, `Species`, ...) |

@@ -33,6 +33,8 @@ export const ru = {
     reconnecting: 'Переподключение…',
     offline: 'Нет связи',
     label: 'Связь с сервером',
+    inGame: 'В игре',
+    gameClosed: 'Игра закрыта',
   },
 
   offline: {
