@@ -2,6 +2,7 @@
 name = "ed-explorer-kit"
 version = "0.1.0"
 description = "Local backend for ED Explorer Kit: journal reader, SQLite store, live API"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.143.3",

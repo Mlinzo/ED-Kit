@@ -127,3 +127,7 @@ Exobiology rules are derived from [Canonn](https://canonn.science/) research dat
 
 ED Explorer Kit is a fan-made tool, not affiliated with or endorsed by Frontier Developments.
 Elite Dangerous is a trademark of Frontier Developments plc.
+
+## License
+
+[MIT](LICENSE)

@@ -125,3 +125,7 @@ cd frontend; npm test
 
 ED Explorer Kit — фанатский инструмент, не связан с Frontier Developments и не одобрен ею.
 Elite Dangerous — торговая марка Frontier Developments plc.
+
+## Лицензия
+
+[MIT](LICENSE)
