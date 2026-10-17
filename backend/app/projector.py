@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 9
+VERSION = 10
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -48,6 +48,7 @@ class Projector:
             "Commander": self._commander,
             "NewCommander": self._commander,
             "LoadGame": self._load_game,
+            "Loadout": self._loadout,
             "Location": self._location,
             "FSDJump": self._jump,
             "CarrierJump": self._jump,
@@ -162,6 +163,13 @@ class Projector:
             # On the game menu the commander is not "on foot" anywhere.
             self._update_state(odyssey=1 if ev.get("Odyssey") else 0, on_foot=0, in_srv=0)
         return topics
+
+    def _loadout(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        jump_range = ev.get("MaxJumpRange")
+        if not self.fid or not isinstance(jump_range, int | float) or jump_range <= 0:
+            return frozenset()
+        self._update_state(jump_range=float(jump_range))
+        return frozenset({"route"})
 
     # ------------------------------------------------------------------ travel
 

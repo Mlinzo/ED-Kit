@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 
@@ -403,4 +403,105 @@ class HistoryView(CamelModel):
     systems: list[HistoryEntry]  # most recently visited first
 
 
-Topic = Literal["system", "surface", "session", "stats", "history"]
+RouteMode = Literal["riches", "line"]  # around a start point | along a straight line
+# elw | terraformable water world | terraformable high metal content | water world |
+# ammonia world | terraformable rocky body (app.routeplan.BODY_TYPES, priced by mapping) |
+# bio: landable bodies with biological signals (priced by their predicted species)
+BodyKind = Literal["elw", "tww", "thmc", "ww", "aw", "trocky", "bio"]
+
+
+class RouteRequest(CamelModel):
+    """POST /api/route: plan a new route (replaces the current one)."""
+
+    mode: RouteMode
+    source: str = ""  # empty: the current system
+    destination: str | None = None  # line mode
+    radius_ly: float = Field(200, ge=10, le=1000)  # riches mode
+    deviation_ly: float = Field(25, ge=5, le=100)  # line mode: max distance from the line
+    max_systems: int = Field(100, ge=1, le=1000)  # stops at most (line: the most valuable)
+    body_types: list[BodyKind] = Field(
+        default_factory=lambda: ["elw", "tww", "thmc", "bio"], min_length=1
+    )
+    min_value: int = Field(300_000, ge=0)  # estimated payout after mapping, per body
+    min_system_value: int = Field(0, ge=0)  # still to earn in a system: mapping + biology
+    bio_min_value: int = Field(5_000_000, ge=0)  # biology per body, optimistic estimate
+    bio_require_genuses: bool = False  # only bodies whose genera are known (DSS)
+    include_populated: bool = True
+    skip_mapped: bool = True  # leave out systems where you have mapped every such body
+    refresh: bool = False  # ignore the cached Spansh data
+
+
+class RouteStopUpdate(CamelModel):
+    """PUT /api/route/stops/{seq}: any of the fields."""
+
+    skipped: bool | None = None
+    position: int | None = Field(None, ge=1)  # move the stop to this place (1-based)
+
+
+class RoutePoint(CamelModel):
+    name: str
+    x: float
+    y: float
+    z: float
+
+
+class RouteBodyView(CamelModel):
+    body_id: int
+    name: str
+    short_name: str
+    kind: BodyKind  # a mapping kind, or "bio" when the body counts for its biology only
+    distance_ls: float | None
+    mapping_value: int  # Spansh estimate (no first-discovery bonuses)
+    scanned: bool  # by you (journal)
+    mapped: bool  # by you (journal)
+    bio_signals: int  # > 0 when the body counts for its biology
+    bio_min: int  # base values of the predicted species (no first-footfall bonus)
+    bio_max: int
+    bio_done: int  # species you analysed there (journal)
+    genuses: list[str]  # English genus names confirmed by DSS (may be empty)
+    done: bool  # mapped (when it counts for mapping) and every species analysed
+
+
+class RouteStopView(CamelModel):
+    seq: int  # 1-based position in the route
+    address: str
+    name: str
+    hop_ly: float  # from the previous stop (the start for the first)
+    jumps: int | None  # estimated from your ship's jump range
+    population: int | None  # None: not known (yet)
+    bodies: list[RouteBodyView]
+    value: int  # mapping payouts + optimistic biology estimate
+    value_min: int  # with the pessimistic biology estimate
+    visited: bool  # you have been in the system
+    done: bool  # every body mapped
+    skipped: bool
+    here: bool  # you are in this system now
+
+
+class RouteView(CamelModel):
+    online: bool  # route building available (not --offline)
+    building: bool
+    error: str | None  # unknown_system | no_destination | spansh_unavailable | internal
+    error_detail: str | None
+    params: RouteRequest | None  # of the current route
+    created_at: str | None
+    data_at: str | None  # oldest Spansh data the route was built from
+    truncated: bool  # more systems qualified than the route holds
+    source: RoutePoint | None
+    destination: RoutePoint | None
+    stops: list[RouteStopView]
+    next_seq: int | None  # the first stop neither done nor skipped
+    current_system: str | None
+    distance_to_next_ly: float | None  # from where you are
+    jumps_to_next: int | None
+    jump_range_ly: float | None
+    total_value: int
+    collected_value: int  # mapping value of the route bodies you mapped
+    total_ly: float
+    direct_ly: float | None  # line mode: straight distance from the start to the destination
+    remaining_ly: float  # from the next stop on, along the route
+    done_count: int
+    skipped_count: int
+
+
+Topic = Literal["system", "surface", "session", "stats", "history", "route"]

@@ -17,6 +17,8 @@ export interface StreamHandlers {
 export interface Transport {
   readonly mock: boolean
   fetchJson<T>(path: string, signal?: AbortSignal): Promise<T>
+  /** A write (POST / PUT / DELETE) with an optional JSON body; null for an empty answer. */
+  send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T | null>
   /** Opens the event stream; returns a function that closes it. */
   stream(handlers: StreamHandlers): () => void
 }
@@ -51,6 +53,17 @@ export function createLiveTransport(): Transport {
       const res = await fetch(path, { signal, headers: { Accept: 'application/json' } })
       if (!res.ok) throw new HttpError(res.status, path)
       return (await res.json()) as T
+    },
+
+    async send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T | null> {
+      const res = await fetch(path, {
+        method,
+        headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      })
+      if (!res.ok) throw new HttpError(res.status, path)
+      const text = await res.text()
+      return text ? (JSON.parse(text) as T) : null
     },
 
     stream(handlers: StreamHandlers): () => void {

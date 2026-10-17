@@ -5,6 +5,7 @@ import { BottomTabs } from './components/TabBar'
 import { panelId, tabId, type Tab } from './components/tabs'
 import { TopBar } from './components/TopBar'
 import { HistoryScreen } from './screens/history/HistoryScreen'
+import { RouteScreen } from './screens/route/RouteScreen'
 import { SessionScreen } from './screens/session/SessionScreen'
 import { StatsScreen } from './screens/stats/StatsScreen'
 import { SurfaceScreen } from './screens/surface/SurfaceScreen'
@@ -86,6 +87,7 @@ export default function App() {
           <SystemScreen address={pastAddress} onOpenSystem={openSystem} onShowHistory={() => goTo('history')} />
         )}
         {tab === 'surface' && <SurfaceScreen />}
+        {tab === 'route' && <RouteScreen />}
         {tab === 'session' && <SessionScreen />}
         {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
         {tab === 'stats' && <StatsScreen />}

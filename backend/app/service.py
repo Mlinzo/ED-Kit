@@ -324,6 +324,8 @@ class IngestService(threading.Thread):
 
     def _invalidate(self, topics: set[str] | frozenset[str]) -> None:
         self.seq += 1
-        # All-time statistics and the history depend on nearly everything the other views do.
-        topics = set(topics) | ({"stats", "history"} if topics - {"surface"} else set())
+        # All-time statistics, the history and the route progress depend on nearly everything
+        # the journal-derived views do.
+        journal = set(topics) - {"surface", "route"}
+        topics = set(topics) | ({"stats", "history", "route"} if journal else set())
         self.bus.publish("invalidate", {"seq": self.seq, "topics": sorted(topics)})

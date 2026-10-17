@@ -3,6 +3,7 @@ import type {
   HistoryView,
   IngestState,
   LiveStatus,
+  RouteView,
   SessionView,
   StatsView,
   StreamEvent,
@@ -17,6 +18,7 @@ export interface ViewMap {
   session: SessionView
   stats: StatsView
   history: HistoryView
+  route: RouteView
 }
 
 /** Query parameters of a view request, e.g. `{ address }` for a system from the history. */
@@ -29,7 +31,7 @@ export interface ViewEntry<T> {
   loading: boolean
 }
 
-export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history']
+export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history', 'route']
 
 /** Minimum gap between two requests for the same view (coalesces invalidate bursts). */
 const MIN_GAP_MS = 250

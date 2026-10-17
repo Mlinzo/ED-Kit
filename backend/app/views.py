@@ -198,12 +198,11 @@ def _build_species(
     ranges: dict[str, tuple[int, int]] = {}
     if bio_signals > 0 or genuses:
         predictions = exobio.predict(facts, system, genuses or None)
+        ranges = exobio.genus_ranges(predictions, genuses, skip=seen_genera)
         for p in sorted(predictions, key=lambda p: -p.species.base_value):
             sp = p.species
             if sp.genus in seen_genera:
                 continue
-            lo, hi = ranges.get(sp.genus, (sp.base_value, sp.base_value))
-            ranges[sp.genus] = (min(lo, sp.base_value), max(hi, sp.base_value))
             views.append(
                 SpeciesView(
                     genus=sp.genus_name,
@@ -217,14 +216,9 @@ def _build_species(
                     codex=codex_status(codex, sp.species, system.region),
                 )
             )
-        for genus in genuses - seen_genera - ranges.keys():
-            info = exobio.get_genus(genus)
-            if info is not None:
-                ranges[genus] = (info.min_value, info.max_value)
 
     remaining = max(max(bio_signals, len(genuses)) - len(seen_genera), 0)
-    mins = sorted(lo for lo, _ in ranges.values())[:remaining]
-    maxs = sorted((hi for _, hi in ranges.values()), reverse=True)[:remaining]
+    still_low, still_high = exobio.range_total(ranges, remaining)
     confirmed = sum(confirmed_values)
     order = {"sampling": 0, "analysed": 1, "predicted": 2}
     views.sort(key=lambda v: (order[v.status], not v.certain, -v.value))
@@ -234,7 +228,7 @@ def _build_species(
     open_slots = max(max(bio_signals, len(genuses)) - len(certain_new), 0)
     codex_new = len(certain_new)
     codex_maybe = min(len(maybe_new), open_slots)
-    low, high = (confirmed + sum(mins)) * multiplier, (confirmed + sum(maxs)) * multiplier
+    low, high = (confirmed + still_low) * multiplier, (confirmed + still_high) * multiplier
     return views, low, high, codex_new, codex_maybe
 
 

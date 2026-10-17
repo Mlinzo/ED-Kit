@@ -23,6 +23,10 @@ Status.json ──poll──► LiveStatus (memory only) ──► SSE "status"
 | `app/views.py` | Builds `SystemView` (current or any visited system) / `SurfaceView` / `SessionView` from SQLite; body interest/progress, orbit tree data |
 | `app/stats.py` | All-time `StatsView` (incl. death history, first discoveries/maps/footfalls) |
 | `app/history.py` | `HistoryView`: visited systems (`visits` table) with what you did there |
+| `app/routeplan.py` | Route planning: system value = mapping payouts (Road to Riches kinds) + biology (bodies with bio signals); Spansh body searches, permit / population / value filters, stop order (nearest neighbour + 2-opt, or along a line) |
+| `app/routebio.py` | Exobiology value of Spansh bodies for routes: facts conversion, genus names, species-based (min, max) estimate |
+| `app/spansh.py` | Spansh search client with a SQLite cache (body pages 7 days, systems 7 days, permit list 30 days) |
+| `app/routes.py` | The route: worker-thread builder, storage (`route*` tables), `RouteView` with journal progress |
 | `app/enrich.py` | Community body data (Spansh, then EDSM) for the current system, cached in `ext_*` tables |
 | `app/usersettings.py` | Highlight thresholds (`settings` table, `GET/PUT /api/settings`) |
 | `app/facts.py` | Journal `Scan` → `BodyFacts`, JSON codec, `SystemFacts` loading |
@@ -37,7 +41,7 @@ Rules:
 - Journal files are the source of truth. Projection tables can be dropped and rebuilt.
 - Body identity is `(SystemAddress, BodyID)`; `id64 = SystemAddress | (BodyID << 55)`.
 - Order by event insertion order, never by timestamp (1-second resolution).
-- Only the ingest thread writes journal-derived data (settings are a short write from the API).
+- Only the ingest thread writes journal-derived data (settings and route edits are short writes from the API; the route builder writes its own tables).
 - The journal always wins over community data; community bodies are labelled with their source.
 - 64-bit ids go to the frontend as strings.
 - No code copied from GPL projects (EDMC-BioScan, EDMC-Canonn): facts are re-derived.
@@ -47,6 +51,7 @@ Rules:
 - Contract: `frontend/src/api/types.ts` mirrors `backend/app/schemas.py`.
 - `GET /api/view/system|surface|session|stats|history`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
 - `GET /api/view/system?address=<SystemAddress>`: a system from the history (also requests its community data).
+- Route: `GET /api/view/route`, `POST /api/route` (plan, 202; 409 with `--offline`), `DELETE /api/route`, `PUT /api/route/stops/{seq}` (skip).
 - `GET /api/stream` (SSE): `hello`, `invalidate`, `status`, `ingest`, `ping`.
 - `src/map/`: 3D orbit map (react-three-fiber); `src/map/visuals/`: procedural planet/star rendering.
 - The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.

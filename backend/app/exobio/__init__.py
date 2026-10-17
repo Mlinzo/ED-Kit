@@ -5,6 +5,7 @@ Public API (used by the projector and views — keep signatures stable):
     get_species(symbol)  -> Species | None   # by codex species symbol
     get_genus(symbol)    -> GenusInfo | None # by codex genus symbol
     predict(body, system, genuses=None) -> list[Prediction]
+    genus_ranges(predictions, genuses, skip) / range_total(ranges, slots)  # value estimates
     FIRST_FOOTFALL_MULTIPLIER
 
 Modules: `catalog` (names, values, colony ranges), `rules` (where each species grows),
@@ -13,6 +14,8 @@ Sources: SOURCES.md in this package.
 """
 
 from __future__ import annotations
+
+from collections.abc import Iterable
 
 from app.exobio.catalog import (
     GENERA,
@@ -40,9 +43,11 @@ __all__ = [
     "GENERA",
     "SPECIES",
     "GenusInfo",
+    "genus_ranges",
     "get_genus",
     "get_species",
     "predict",
+    "range_total",
 ]
 
 # Total payout factor when the species is the first logged on a body nobody has set foot
@@ -62,6 +67,36 @@ def get_species(symbol: str) -> Species | None:
 
 def get_genus(symbol: str) -> GenusInfo | None:
     return lookup_genus(symbol)
+
+
+def genus_ranges(
+    predictions: Iterable[Prediction],
+    genuses: Iterable[str],
+    skip: Iterable[str] = (),
+) -> dict[str, tuple[int, int]]:
+    """(min, max) base value per genus that may still be found on a body: the predicted
+    species, plus confirmed genera none of whose species matched (their whole range).
+    `skip`: genera already accounted for (e.g. sampled)."""
+    skipped = set(skip)
+    ranges: dict[str, tuple[int, int]] = {}
+    for p in predictions:
+        sp = p.species
+        if sp.genus in skipped:
+            continue
+        lo, hi = ranges.get(sp.genus, (sp.base_value, sp.base_value))
+        ranges[sp.genus] = (min(lo, sp.base_value), max(hi, sp.base_value))
+    for genus in set(genuses) - skipped - ranges.keys():
+        info = get_genus(genus)
+        if info is not None:
+            ranges[genus] = (info.min_value, info.max_value)
+    return ranges
+
+
+def range_total(ranges: dict[str, tuple[int, int]], slots: int) -> tuple[int, int]:
+    """Pessimistic and optimistic total for `slots` genera (one bio signal is one genus)."""
+    mins = sorted(lo for lo, _ in ranges.values())[: max(slots, 0)]
+    maxs = sorted((hi for _, hi in ranges.values()), reverse=True)[: max(slots, 0)]
+    return sum(mins), sum(maxs)
 
 
 def predict(

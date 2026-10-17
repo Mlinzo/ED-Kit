@@ -427,7 +427,128 @@ export interface HistoryView {
   systems: HistoryEntry[]
 }
 
-export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history'
+/** riches: around a start point; line: along a straight line between two systems. */
+export type RouteMode = 'riches' | 'line'
+/** Earth-like · terraformable water world · terraformable high metal content · water world ·
+ *  ammonia world · terraformable rocky body (priced by mapping) · bio: landable bodies with
+ *  biological signals (priced by their predicted species). */
+export type BodyKind = 'elw' | 'tww' | 'thmc' | 'ww' | 'aw' | 'trocky' | 'bio'
+
+/** POST /api/route — plan a new route (replaces the current one). */
+export interface RouteRequest {
+  mode: RouteMode
+  /** Empty: the current system. */
+  source: string
+  destination: string | null
+  radiusLy: number
+  deviationLy: number
+  maxSystems: number
+  bodyTypes: BodyKind[]
+  /** Estimated payout after mapping, per body (credits). */
+  minValue: number
+  /** Still to earn in a system: mapping + biology (credits). */
+  minSystemValue: number
+  /** Biology per body, optimistic estimate (credits). */
+  bioMinValue: number
+  /** Only bodies whose genera are known (DSS). */
+  bioRequireGenuses: boolean
+  includePopulated: boolean
+  /** Leave out systems where you have mapped every such body. */
+  skipMapped: boolean
+  /** Ignore the cached Spansh data. */
+  refresh: boolean
+}
+
+export interface RoutePoint {
+  name: string
+  x: number
+  y: number
+  z: number
+}
+
+export interface RouteBodyView {
+  bodyId: number
+  name: string
+  shortName: string
+  /** A mapping kind, or 'bio' when the body counts for its biology only. */
+  kind: BodyKind
+  distanceLs: number | null
+  /** Spansh estimate (no first-discovery bonuses). */
+  mappingValue: number
+  scanned: boolean
+  mapped: boolean
+  /** > 0 when the body counts for its biology. */
+  bioSignals: number
+  /** Base values of the predicted species (no first-footfall bonus). */
+  bioMin: number
+  bioMax: number
+  /** Species you analysed there. */
+  bioDone: number
+  /** English genus names confirmed by DSS (may be empty). */
+  genuses: string[]
+  /** Mapped (when it counts for mapping) and every species analysed. */
+  done: boolean
+}
+
+export interface RouteStopView {
+  /** 1-based position in the route. */
+  seq: number
+  address: string
+  name: string
+  /** From the previous stop (the start for the first). */
+  hopLy: number
+  /** Estimated from your ship's jump range. */
+  jumps: number | null
+  /** null: not known (yet). */
+  population: number | null
+  bodies: RouteBodyView[]
+  /** Mapping payouts + optimistic biology estimate. */
+  value: number
+  /** With the pessimistic biology estimate. */
+  valueMin: number
+  visited: boolean
+  /** Every body mapped. */
+  done: boolean
+  skipped: boolean
+  /** You are in this system now. */
+  here: boolean
+}
+
+/** unknown_system | no_destination | spansh_unavailable | internal */
+export type RouteError = string
+
+/** GET /api/view/route */
+export interface RouteView {
+  /** Route building available (not --offline). */
+  online: boolean
+  building: boolean
+  error: RouteError | null
+  errorDetail: string | null
+  params: RouteRequest | null
+  createdAt: string | null
+  /** Oldest Spansh data the route was built from. */
+  dataAt: string | null
+  truncated: boolean
+  source: RoutePoint | null
+  destination: RoutePoint | null
+  stops: RouteStopView[]
+  /** The first stop neither done nor skipped. */
+  nextSeq: number | null
+  currentSystem: string | null
+  distanceToNextLy: number | null
+  jumpsToNext: number | null
+  jumpRangeLy: number | null
+  totalValue: number
+  collectedValue: number
+  totalLy: number
+  /** Line mode: straight distance from the start to the destination. */
+  directLy: number | null
+  remainingLy: number
+  doneCount: number
+  skippedCount: number
+}
+
+export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history' | 'route'
 
 // Server-Sent Events on GET /api/stream:
 //   event: hello      data: { seq: number }

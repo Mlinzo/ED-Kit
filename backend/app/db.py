@@ -74,6 +74,65 @@ CREATE TABLE IF NOT EXISTS ext_barycentres(
   PRIMARY KEY(system_address, body_id)
 ) STRICT;
 
+-- Spansh searches of the route planner (app.spansh.CachedSearch): body pages by request,
+-- permit-locked systems (when fetched: meta spansh_permits_at), systems by id64.
+CREATE TABLE IF NOT EXISTS spansh_pages(
+  key TEXT PRIMARY KEY,
+  fetched_at TEXT NOT NULL,
+  data TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS spansh_permits(
+  id64 INTEGER PRIMARY KEY
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS spansh_systems(
+  id64 INTEGER PRIMARY KEY,
+  fetched_at TEXT NOT NULL,
+  population INTEGER,
+  needs_permit INTEGER
+) STRICT;
+
+-- The planned route (one at a time). User data: survives projection rebuilds.
+-- params: JSON of the request; source / destination: JSON {name, x, y, z}.
+CREATE TABLE IF NOT EXISTS route(
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  created_at TEXT NOT NULL,
+  params TEXT NOT NULL,
+  source TEXT NOT NULL,
+  destination TEXT,
+  truncated INTEGER NOT NULL DEFAULT 0,
+  data_at TEXT
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS route_stops(
+  seq INTEGER PRIMARY KEY,
+  system_address INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  x REAL NOT NULL,
+  y REAL NOT NULL,
+  z REAL NOT NULL,
+  hop_ly REAL NOT NULL,
+  population INTEGER,  -- from Spansh, filled in after the route is shown
+  skipped INTEGER NOT NULL DEFAULT 0
+) STRICT;
+
+-- kind: elw | tww | thmc | ww | aw | trocky (app.routeplan.BODY_TYPES) | bio
+CREATE TABLE IF NOT EXISTS route_bodies(
+  system_address INTEGER NOT NULL,
+  body_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  distance_ls REAL,
+  scan_value INTEGER NOT NULL,
+  mapping_value INTEGER NOT NULL,
+  bio_signals INTEGER NOT NULL DEFAULT 0,
+  bio_min INTEGER NOT NULL DEFAULT 0,
+  bio_max INTEGER NOT NULL DEFAULT 0,
+  genuses TEXT NOT NULL DEFAULT '[]',  -- JSON codex genus symbols
+  PRIMARY KEY(system_address, body_id)
+) STRICT;
+
 -- Commander position (from Status.json) at the moment of a ScanOrganic event.
 -- Not derivable from the journal, so it lives outside the rebuildable projections.
 CREATE TABLE IF NOT EXISTS sample_positions(
@@ -116,7 +175,8 @@ CREATE TABLE IF NOT EXISTS cmdr_state(
   body_name TEXT,
   on_foot INTEGER NOT NULL DEFAULT 0,
   in_srv INTEGER NOT NULL DEFAULT 0,
-  odyssey INTEGER NOT NULL DEFAULT 1
+  odyssey INTEGER NOT NULL DEFAULT 1,
+  jump_range REAL  -- MaxJumpRange of the current ship (Loadout), ly
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS systems(
@@ -300,10 +360,27 @@ def set_meta(conn: sqlite3.Connection, key: str, value: str | int | None) -> Non
     )
 
 
+# Columns added to user-data tables after they first shipped: (table, column, definition).
+ADDED_COLUMNS = (
+    ("route_bodies", "bio_signals", "INTEGER NOT NULL DEFAULT 0"),
+    ("route_bodies", "bio_min", "INTEGER NOT NULL DEFAULT 0"),
+    ("route_bodies", "bio_max", "INTEGER NOT NULL DEFAULT 0"),
+    ("route_bodies", "genuses", "TEXT NOT NULL DEFAULT '[]'"),
+)
+
+
+def _add_missing_columns(conn: sqlite3.Connection) -> None:
+    for table, column, definition in ADDED_COLUMNS:
+        have = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in have:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 def init_schema(conn: sqlite3.Connection) -> None:
     from app import usersettings
 
     conn.executescript(BASE_SCHEMA)
+    _add_missing_columns(conn)
     conn.executescript(usersettings.SCHEMA)
     conn.executescript(PROJECTION_SCHEMA)
     if get_meta(conn, "schema_version") is None:

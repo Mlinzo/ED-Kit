@@ -3,7 +3,7 @@
 // plus a short journal backfill so the progress bar shows.
 
 import type { StreamHandlers, Transport } from '../api/transport'
-import type { IngestState, LiveStatus, SystemView } from '../api/types'
+import type { IngestState, LiveStatus, SystemView, Topic } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
   buildSession,
@@ -14,6 +14,7 @@ import {
   SURFACE_BODY_NAME,
 } from './fixtures'
 import { buildHistory, buildPastSystem, withHistory } from './history'
+import { createMockRoute } from './route'
 import { buildStats } from './stats'
 
 /** What the backend answers for an address it does not know. */
@@ -87,6 +88,8 @@ export function createMockTransport(): Transport {
   const surface = buildSurface(system)
   const session = buildSession()
   const stats = buildStats()
+  let notify: ((topics: Topic[]) => void) | null = null
+  const route = createMockRoute(system.name ?? '?', () => notify?.(['route']))
   const startedAt = performance.now()
   const elapsed = () => (performance.now() - startedAt) / 1_000
 
@@ -109,6 +112,7 @@ export function createMockTransport(): Transport {
     '/api/view/session': () => session,
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,
+    '/api/view/route': () => route.view(),
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,
   }
@@ -119,13 +123,19 @@ export function createMockTransport(): Transport {
     async fetchJson<T>(path: string): Promise<T> {
       await delay(60 + Math.random() * 80)
       const url = new URL(path, window.location.origin)
-      const route = routes[url.pathname]
-      if (!route) throw new Error(`HTTP 404: ${path}`)
-      return structuredClone(route(url.searchParams)) as T
+      const handler = routes[url.pathname]
+      if (!handler) throw new Error(`HTTP 404: ${path}`)
+      return structuredClone(handler(url.searchParams)) as T
+    },
+
+    async send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T | null> {
+      await delay(80)
+      return structuredClone(route.send(method, path, body) ?? null) as T | null
     },
 
     stream(handlers: StreamHandlers): () => void {
       let seq = 0
+      notify = (topics) => handlers.onEvent({ type: 'invalidate', data: { seq: ++seq, topics } })
       const timers: ReturnType<typeof setTimeout>[] = []
 
       timers.push(

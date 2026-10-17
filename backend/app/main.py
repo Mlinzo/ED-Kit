@@ -12,18 +12,21 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app import __version__, db, history, stats, usersettings, views
+from app import __version__, db, history, routes, stats, usersettings, views
 from app.config import Settings
 from app.schemas import (
     HighlightSettings,
     HistoryView,
     IngestState,
     LiveStatus,
+    RouteRequest,
+    RouteStopUpdate,
+    RouteView,
     SessionView,
     StatsView,
     SurfaceView,
@@ -46,6 +49,9 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     settings = settings or Settings()
     bus = EventBus()
     service = IngestService(settings, bus)
+    planner = routes.RoutePlanner(
+        settings.db_path, settings.online, lambda: service.invalidate({"route"})
+    )
     if rebuild:
         service.request_rebuild()
     local = threading.local()
@@ -102,6 +108,55 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def view_history() -> HistoryView:
         conn = read_conn()
         return history.history_view(conn, active_fid(conn))
+
+    @app.get("/api/view/route", response_model=RouteView, response_model_by_alias=True)
+    def view_route() -> RouteView:
+        conn = read_conn()
+        return routes.route_view(conn, active_fid(conn), planner)
+
+    @app.post("/api/route", status_code=202, response_model=RouteView, response_model_by_alias=True)
+    def plan_route(body: RouteRequest) -> RouteView:
+        """Plan a new route on a worker thread; progress arrives as `route` invalidations."""
+        if not planner.online:
+            raise HTTPException(409, "offline: route planning needs Spansh")
+        planner.start(body)
+        return view_route()
+
+    @app.delete("/api/route", status_code=204)
+    def clear_route() -> None:
+        conn = db.connect(settings.db_path)
+        try:
+            routes.clear(conn)
+        finally:
+            conn.close()
+        service.invalidate({"route"})
+
+    @app.put("/api/route/stops/{seq}", status_code=204)
+    def update_stop(seq: int, body: RouteStopUpdate) -> None:
+        """Skip / unskip a stop, or move it (the route is renumbered)."""
+        conn = db.connect(settings.db_path)
+        try:
+            found = True
+            if body.skipped is not None:
+                found = routes.set_skipped(conn, seq, body.skipped)
+            if found and body.position is not None:
+                found = routes.move_stop(conn, seq, body.position)
+        finally:
+            conn.close()
+        if not found:
+            raise HTTPException(404, "no such stop")
+        service.invalidate({"route"})
+
+    @app.delete("/api/route/stops/{seq}", status_code=204)
+    def delete_stop(seq: int) -> None:
+        conn = db.connect(settings.db_path)
+        try:
+            found = routes.remove_stop(conn, seq)
+        finally:
+            conn.close()
+        if not found:
+            raise HTTPException(404, "no such stop")
+        service.invalidate({"route"})
 
     @app.get("/api/settings", response_model=HighlightSettings, response_model_by_alias=True)
     def get_settings() -> HighlightSettings:

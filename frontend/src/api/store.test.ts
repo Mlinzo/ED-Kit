@@ -11,6 +11,9 @@ function fakeTransport() {
       calls.push(path)
       return { path } as T
     },
+    async send() {
+      return null
+    },
     stream(h) {
       handlers = h
       return () => {}
