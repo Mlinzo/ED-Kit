@@ -2,14 +2,14 @@
 // where you died and the routes ahead. Hover names a system; a click opens it on the System tab.
 
 import { Canvas, useThree } from '@react-three/fiber'
-import { Crosshair, Globe, Map as MapIcon, MapPin, Maximize2 } from 'lucide-react'
+import { Crosshair, Flag, Globe, Map as MapIcon, MapPin, Maximize2 } from 'lucide-react'
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Vector3 } from 'three'
 import type { GalaxyView } from '../../../api/types'
 import { Credits } from '../../../components/Credits'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
 import { t } from '../../../i18n'
-import { formatCredits, formatLy, formatNumber } from '../../../lib/format'
+import { formatCredits, formatDateTime, formatLy, formatNumber } from '../../../lib/format'
 import { MapButton } from '../../../map/MapButton'
 import { Ticker } from '../../../map/Ticker'
 import { YOU_COLOR } from '../../route/map/colors'
@@ -19,8 +19,8 @@ import { Marker } from '../../route/map/layers'
 import { RouteCamera, type RouteCameraApi } from '../../route/map/RouteCamera'
 import { PickStore, usePick } from '../../route/map/store'
 import { at, buildGalaxyScene, FOCUS_DISTANCE, GALAXY_LIMITS, GALAXY_RANGE, LANDMARKS, RING_STEP_LY, type GalaxyScene } from './geometry'
-import { DEATH_COLOR, DOT_COLOR, PATH_NEW, PLOTTED_COLOR, ROUTE_COLOR } from './colors'
-import { Backdrop, Deaths, LandmarkMarks, Paths, Routes, Rings, SystemDots } from './layers'
+import { DEATH_COLOR, DOT_COLOR, PATH_NEW, PATH_OLD, PLOTTED_COLOR, ROUTE_COLOR, START_COLOR } from './colors'
+import { Backdrop, Deaths, LandmarkMarks, Paths, Routes, Rings, StartMark, SystemDots } from './layers'
 
 export interface GalaxyMapProps {
   view: GalaxyView
@@ -115,7 +115,7 @@ function Picking({ scene, store, onOpen }: { scene: GalaxyScene; store: PickStor
   return null
 }
 
-const PRIORITY = { hover: 60, you: 50, landmark: 30 }
+const PRIORITY = { hover: 60, you: 50, start: 45, landmark: 30 }
 
 function HoverCard({ view, index }: { view: GalaxyView; index: number }) {
   const s = view.systems[index]
@@ -171,6 +171,18 @@ function Labels({ view, scene, store, layer }: { view: GalaxyView; scene: Galaxy
       </Anchor>,
     )
   }
+  const first = scene.start ? view.systems[scene.start.index] : null
+  if (scene.start && first && hover?.index !== scene.start.index && scene.start.index !== view.current) {
+    labels.push(
+      <Anchor key="start" id="start" pos={scene.start.pos} priority={PRIORITY.start} lift={11} entries={entries} layer={layer}>
+        <div className={`${PILL} bg-zinc-950/75 text-zinc-100 ring-white/20`}>
+          <Flag className="size-3.5 shrink-0" style={{ color: START_COLOR }} aria-hidden />
+          <span className="opacity-70">{t.galaxy.map.startLabel(formatDateTime(first.firstVisitAt))}</span>
+          <span className="proportional-nums">{first.name}</span>
+        </div>
+      </Anchor>,
+    )
+  }
   for (const l of landmarks) {
     labels.push(
       <Anchor key={l.id} id={l.id} pos={l.pos} priority={PRIORITY.landmark} lift={8} entries={entries} layer={layer}>
@@ -210,10 +222,11 @@ const Scene = memo(function Scene({
       <Backdrop />
       <Rings />
       <LandmarkMarks points={landmarks} />
-      <Paths scene={scene} />
+      <Paths scene={scene} flow={!reducedMotion} />
       <Routes scene={scene} />
       <SystemDots scene={scene} />
       <Deaths scene={scene} />
+      {scene.start && <StartMark pos={scene.start.pos} />}
       {scene.you && (
         <>
           <Marker pos={scene.you} color={YOU_COLOR} size={18} inner={0.76} order={6} />
@@ -249,8 +262,12 @@ function Legend() {
   const line = (color: string, dashed = false) => (
     <span className="h-0 w-3.5 border-t-2" style={{ borderColor: color, borderStyle: dashed ? 'dashed' : 'solid' }} aria-hidden />
   )
+  const gradient = (
+    <span className="h-0.5 w-6 rounded-full" style={{ background: `linear-gradient(to right, ${PATH_OLD}, ${PATH_NEW})` }} aria-hidden />
+  )
   const items: [ReactNode, string][] = [
-    [line(PATH_NEW), t.galaxy.map.legend.path],
+    [<Flag key="start" className="size-3" style={{ color: START_COLOR }} aria-hidden />, t.galaxy.map.legend.start],
+    [gradient, t.galaxy.map.legend.path],
     [dot(DOT_COLOR.earned), t.galaxy.map.legend.earned],
     [dot(DOT_COLOR.firsts), t.galaxy.map.legend.firsts],
     [dot(DEATH_COLOR, true), t.galaxy.map.legend.death],

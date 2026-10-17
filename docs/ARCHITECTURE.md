@@ -56,6 +56,7 @@ Rules:
 ## Frontend (`frontend/`, Vite + React + TypeScript + Tailwind v4)
 
 - Contract: `frontend/src/api/types.ts` mirrors `backend/app/schemas.py`.
+- Pages have paths (`src/lib/router.ts`): `/system`, `/system/<SystemAddress>` (a system from the history), `/surface`, `/route`, `/session`, `/history`, `/galaxy`, `/stats`; `/` opens the tab used last. Clicks push the path, automatic switches (sampling → Surface) replace it. The backend serves `index.html` for these paths (`PageFiles` in `app/main.py`); the query (`?mock=1`) is kept.
 - `GET /api/view/system|surface|session|stats|history|navroute|galaxy`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
 - `GET /api/view/system?address=<SystemAddress>`: a system from the history (also requests its community data).
 - Route: `GET /api/view/route`, `POST /api/route` (plan, 202; 409 with `--offline`), `DELETE /api/route`, `PUT /api/route/stops/{seq}` (`skipped` and/or `position`: skip, move), `DELETE /api/route/stops/{seq}` (remove), `POST /api/route/neutron` (Spansh neutron route to the next stop, 202; 409 with `--offline`), `DELETE /api/route/neutron`.

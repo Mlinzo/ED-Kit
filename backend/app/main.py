@@ -16,6 +16,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
+from starlette.types import Scope
 
 from app import (
     __version__,
@@ -54,6 +57,20 @@ from app.service import EventBus, IngestService
 log = logging.getLogger("app")
 
 SSE_PING_S = 15
+
+
+class PageFiles(StaticFiles):
+    """The built frontend. A page's own path (/galaxy, /system/123) gets index.html: the app
+    routes in the browser, so a reload or a bookmark lands on the right page."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            parts = path.replace("\\", "/").split("/")  # an OS path (backslashes on Windows)
+            if exc.status_code != 404 or parts[0] == "api" or "." in parts[-1]:
+                raise
+            return await super().get_response("index.html", scope)
 
 
 def _sse(kind: str, data: Any) -> str:
@@ -295,7 +312,7 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         )
 
     if settings.static_dir is not None:
-        app.mount("/", StaticFiles(directory=settings.static_dir, html=True), name="web")
+        app.mount("/", PageFiles(directory=settings.static_dir, html=True), name="web")
     else:
 
         @app.get("/")

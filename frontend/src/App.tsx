@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLiveStatusSelector, useView } from './api/hooks'
 import { OfflineBanner } from './components/OfflineBanner'
 import { BottomTabs } from './components/TabBar'
@@ -11,9 +11,25 @@ import { SessionScreen } from './screens/session/SessionScreen'
 import { StatsScreen } from './screens/stats/StatsScreen'
 import { SurfaceScreen } from './screens/surface/SurfaceScreen'
 import { SystemScreen } from './screens/system/SystemScreen'
+import { parsePath, pathOf, type Page } from './lib/router'
 import { readSession, writeSession } from './lib/storage'
 
+/** The tab open last in this browser tab: where "/" leads. */
 const TAB_KEY = 'edk.tab'
+
+const here = () => window.location.pathname + window.location.search + window.location.hash
+const urlOf = (page: Page) => pathOf(page) + window.location.search + window.location.hash
+
+/** The page in the address bar; for "/" (or a path that is no page) the tab open last. */
+function initialPage(): Page {
+  const page = parsePath(window.location.pathname)
+  if (page) return page
+  const tab = readSession(
+    TAB_KEY,
+    TABS.map((x) => x.id),
+  )
+  return { tab: tab ?? 'system', address: null }
+}
 
 /**
  * Identifies the sampling run in progress near the commander, or null.
@@ -34,17 +50,19 @@ function useSurfaceLiveKey(): string | null {
 }
 
 export default function App() {
-  // The open tab survives a reload (a language switch reloads the page).
-  const [tab, setTab] = useState<Tab>(
-    () =>
-      readSession(
-        TAB_KEY,
-        TABS.map((x) => x.id),
-      ) ?? 'system',
-  )
+  // Every page has its path: it survives a reload (a language switch reloads the page) and Back /
+  // Forward walk through the pages.
+  const [page, setPage] = useState<Page>(initialPage)
+  const tab = page.tab
   useEffect(() => writeSession(TAB_KEY, tab), [tab])
-  /** A system from the history shown on the System tab; null: the current system. */
-  const [pastAddress, setPastAddress] = useState<string | null>(null)
+  // Pages set without a click (the first one, the automatic switches below) replace the address;
+  // clicks push it (navigate) before the page changes, so there is nothing left to do then.
+  useEffect(() => {
+    if (here() !== urlOf(page)) window.history.replaceState(null, '', urlOf(page))
+  }, [page])
+  /** The system from the history last shown on the System tab: the tab returns to it. */
+  const [pastAddress, setPastAddress] = useState<string | null>(page.address)
+  if (tab === 'system' && page.address !== pastAddress) setPastAddress(page.address)
   const liveKey = useSurfaceLiveKey()
   const surfaceLive = liveKey !== null
 
@@ -59,31 +77,44 @@ export default function App() {
     if (liveKey !== null) {
       if (tab !== 'surface' && liveKey !== dismissedKey) {
         setAutoFrom(tab)
-        setTab('surface')
+        setPage({ tab: 'surface', address: null })
       }
     } else {
-      if (tab === 'surface' && autoFrom) setTab(autoFrom)
+      if (tab === 'surface' && autoFrom) setPage({ tab: autoFrom, address: autoFrom === 'system' ? pastAddress : null })
       setAutoFrom(null)
     }
   }
 
-  const goTo = (next: Tab) => {
-    if (next !== tab) window.scrollTo({ top: 0 })
-    setTab(next)
-    setAutoFrom(null)
-    setDismissedKey(liveKey !== null && next !== 'surface' ? liveKey : null)
-  }
+  // Back / Forward: the page in the address bar, chosen by the user like a click.
+  useEffect(() => {
+    const onPop = () => {
+      setPage(parsePath(window.location.pathname) ?? { tab: 'system', address: null })
+      setAutoFrom(null)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const navigate = useCallback(
+    (next: Page) => {
+      if (next.tab !== tab || next.address !== page.address) window.scrollTo({ top: 0 })
+      if (here() !== urlOf(next)) window.history.pushState(null, '', urlOf(next))
+      setPage(next)
+      setAutoFrom(null)
+      setDismissedKey(liveKey !== null && next.tab !== 'surface' ? liveKey : null)
+    },
+    [liveKey, page.address, tab],
+  )
+
+  const goTo = (next: Tab) => navigate({ tab: next, address: next === 'system' ? pastAddress : null })
 
   const selectTab = (next: Tab) => {
     // Choosing System again while looking at a past system returns to where you are.
-    if (next === 'system' && tab === 'system') setPastAddress(null)
-    goTo(next)
+    if (next === 'system' && tab === 'system') navigate({ tab: 'system', address: null })
+    else goTo(next)
   }
 
-  const openSystem = (address: string | null) => {
-    setPastAddress(address)
-    goTo('system')
-  }
+  const openSystem = (address: string | null) => navigate({ tab: 'system', address })
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -97,7 +128,7 @@ export default function App() {
         <OfflineBanner />
         {tab === 'system' && (
           <SystemScreen
-            address={pastAddress}
+            address={page.address}
             onOpenSystem={openSystem}
             onShowHistory={() => goTo('history')}
             onShowRoute={() => goTo('route')}

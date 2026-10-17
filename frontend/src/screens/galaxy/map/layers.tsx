@@ -3,13 +3,14 @@
 
 import { Line } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { memo, useEffect, useMemo, useRef } from 'react'
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, type PerspectiveCamera, type ShaderMaterial } from 'three'
+import { memo, useEffect, useMemo, useRef, type RefObject } from 'react'
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, type PerspectiveCamera, type ShaderMaterial, type Vector3 } from 'three'
+import type { Line2, LineMaterial, LineSegments2 } from 'three-stdlib'
 import { rgb } from '../../route/map/colors'
 import { circle, type Vec3 } from '../../route/map/geometry'
 import { Marker } from '../../route/map/layers'
 import { buildBackdrop } from './backdrop'
-import { DEATH_COLOR, DOT_COLOR, LANDMARK_COLOR, PATH_NEW, PATH_OLD, PLOTTED_COLOR, ROUTE_COLOR } from './colors'
+import { DEATH_COLOR, DOT_COLOR, FLOW_COLOR, LANDMARK_COLOR, PATH_NEW, PATH_OLD, PLOTTED_COLOR, ROUTE_COLOR, START_COLOR } from './colors'
 import { at, CORE, DISK_RADIUS_LY, RING_STEP_LY, SCALE, type GalaxyScene } from './geometry'
 
 function useDisposed(geometry: BufferGeometry): BufferGeometry {
@@ -111,8 +112,40 @@ export const Rings = memo(function Rings() {
 const OLD = new Color(PATH_OLD)
 const NEW = new Color(PATH_NEW)
 
-/** Your travels: one line per run, fading from dark (oldest) to sky (latest). */
-export const Paths = memo(function Paths({ scene }: { scene: GalaxyScene }) {
+/**
+ * Dashes of a constant size on screen (px), whatever the zoom: the dash pattern of a fat line is
+ * in scene units, so it is rescaled every frame from the camera's distance. `speed` (px/s) runs
+ * the pattern along the line, from its first point towards its last. Returns the line's ref.
+ */
+function useScreenDashes(dash: number, gap: number, speed = 0): RefObject<Line2 | LineSegments2 | null> {
+  const line = useRef<Line2 | LineSegments2 | null>(null)
+  useFrame((state, dt) => {
+    const material = line.current?.material as LineMaterial | undefined
+    if (!material) return
+    const camera = state.camera as PerspectiveCamera
+    const target = (state.controls as unknown as { target?: Vector3 } | null)?.target
+    const distance = target ? camera.position.distanceTo(target) : camera.position.length()
+    const perPx = (2 * distance * Math.tan(((camera.fov ?? 40) * Math.PI) / 360)) / Math.max(1, state.size.height)
+    material.dashSize = dash * perPx
+    material.gapSize = gap * perPx
+    if (speed) material.dashOffset -= speed * perPx * Math.min(dt, 0.1)
+  })
+  return line
+}
+
+/** Short bright dashes running along a run of the path: which way you flew. */
+function Flow({ run }: { run: Vec3[] }) {
+  const line = useScreenDashes(3, 54, 42)
+  return (
+    <Line ref={line} points={run} color={FLOW_COLOR} lineWidth={2.6} dashed transparent opacity={0.9} depthWrite={false} depthTest={false} renderOrder={2} />
+  )
+}
+
+/**
+ * Your travels: one line per run, from indigo (earliest) to sky (latest), and with motion allowed
+ * a light running along them towards where you are now.
+ */
+export const Paths = memo(function Paths({ scene, flow }: { scene: GalaxyScene; flow: boolean }) {
   const runs = useMemo(() => {
     const total = scene.paths.reduce((n, run) => n + run.length, 0)
     // Where each run starts in the whole path: the colour keeps fading across the breaks.
@@ -125,11 +158,29 @@ export const Paths = memo(function Paths({ scene }: { scene: GalaxyScene }) {
   return (
     <>
       {runs.map(({ run, colors }, i) => (
-        <Line key={i} points={run} vertexColors={colors} lineWidth={1.5} transparent opacity={0.9} depthWrite={false} depthTest={false} renderOrder={2} />
+        <Line key={i} points={run} vertexColors={colors} lineWidth={1.6} transparent opacity={0.95} depthWrite={false} depthTest={false} renderOrder={2} />
       ))}
+      {flow && runs.map(({ run }, i) => <Flow key={`flow${i}`} run={run} />)}
     </>
   )
 })
+
+/** Where your travels begin: a pale ring (named by the labels). */
+export function StartMark({ pos }: { pos: Vec3 }) {
+  return (
+    <>
+      <Marker pos={pos} color={START_COLOR} size={13} inner={0.62} order={5} />
+      <Marker pos={pos} color={START_COLOR} size={4} shape="disc" order={5} />
+    </>
+  )
+}
+
+function PlannedLine({ points }: { points: Vec3[] }) {
+  const line = useScreenDashes(5, 5)
+  return (
+    <Line ref={line} points={points} color={ROUTE_COLOR} lineWidth={1.3} dashed transparent opacity={0.8} depthWrite={false} depthTest={false} renderOrder={3} />
+  )
+}
 
 const dotVertex = /* glsl */ `
   attribute float size;
@@ -190,18 +241,17 @@ export const SystemDots = memo(function SystemDots({ scene }: { scene: GalaxySce
   )
 })
 
-/** The routes ahead: the planned one (dashed sky) and the one plotted in the game (violet). */
+/** The routes ahead: the planned one (fine pale dashes, its stops as rings) and the one plotted in
+ * the game (fuchsia). */
 export const Routes = memo(function Routes({ scene }: { scene: GalaxyScene }) {
   return (
     <>
-      {scene.route.length > 1 && (
-        <Line points={scene.route} color={ROUTE_COLOR} lineWidth={1.4} dashed dashSize={0.4} gapSize={0.3} transparent opacity={0.75} depthWrite={false} depthTest={false} renderOrder={3} />
-      )}
+      {scene.route.length > 1 && <PlannedLine points={scene.route} />}
       {scene.plotted.length > 1 && (
         <Line points={scene.plotted} color={PLOTTED_COLOR} lineWidth={1.8} transparent opacity={0.85} depthWrite={false} depthTest={false} renderOrder={3} />
       )}
       {scene.route.slice(1).map((p, i) => (
-        <Marker key={`r${i}`} pos={p} color={ROUTE_COLOR} size={6} shape="disc" opacity={0.85} order={4} />
+        <Marker key={`r${i}`} pos={p} color={ROUTE_COLOR} size={7} inner={0.45} opacity={0.85} order={4} />
       ))}
       {scene.plotted.length > 1 && <Marker pos={scene.plotted.at(-1)!} color={PLOTTED_COLOR} size={9} inner={0.5} order={4} />}
     </>

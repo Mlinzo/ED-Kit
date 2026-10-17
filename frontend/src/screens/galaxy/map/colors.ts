@@ -7,8 +7,13 @@ export const DOT_COLOR: Record<DotKind, string> = {
   firsts: '#fcd34d',
 }
 export const DEATH_COLOR = '#fb7185'
-export const ROUTE_COLOR = '#7dd3fc'
-export const PLOTTED_COLOR = '#c4b5fd'
+/** The planned route: a fine pale dash, the plan rather than a path. */
+export const ROUTE_COLOR = '#e4e4e7'
+export const PLOTTED_COLOR = '#f0abfc'
 export const LANDMARK_COLOR = '#e4e4e7'
-export const PATH_OLD = '#1e3a5f'
+/** Your path fades from indigo (earliest) to sky (latest): still visible where it starts. */
+export const PATH_OLD = '#5b5bd6'
 export const PATH_NEW = '#38bdf8'
+export const START_COLOR = '#f4f4f5'
+/** The light running along the path, from the earliest jumps to the latest. */
+export const FLOW_COLOR = '#e0f2fe'

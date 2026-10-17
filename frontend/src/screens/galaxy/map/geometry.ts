@@ -48,6 +48,8 @@ export interface GalaxyScene {
   /** Your travels, run by run (scene units), oldest point first. */
   paths: Vec3[][]
   you: Vec3 | null
+  /** Where your travels begin: the first system of the path (or the first visited). */
+  start: { pos: Vec3; index: number } | null
   deaths: { pos: Vec3; index: number }[]
   /** From you through the planned route's stops still to do. */
   route: Vec3[]
@@ -101,6 +103,7 @@ export function buildGalaxyScene(view: GalaxyView): GalaxyScene {
 
   const pos = (i: number) => at(view.systems[i])
   const you = view.current !== null && view.systems[view.current] ? pos(view.current) : null
+  const first = view.path.find((run) => run.length > 0)?.[0] ?? (view.systems.length > 0 ? 0 : null)
   const line = (points: RoutePoint[]) => points.map(at)
   const route = view.route.length > 0 ? [...(you ? [you] : []), ...line(view.route)] : []
   const plotted = line(view.plotted)
@@ -112,6 +115,7 @@ export function buildGalaxyScene(view: GalaxyView): GalaxyScene {
     systems,
     paths: view.path.filter((run) => run.length > 1).map((run) => run.map(pos)),
     you,
+    start: first !== null && view.systems[first] ? { pos: pos(first), index: first } : null,
     deaths: view.deaths.filter((d) => d.system !== null && view.systems[d.system]).map((d) => ({ pos: pos(d.system!), index: d.system! })),
     route: route.length > 1 ? route : [],
     plotted: plotted.length > 1 ? plotted : [],

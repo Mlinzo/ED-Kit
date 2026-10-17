@@ -389,7 +389,8 @@ export const ru = {
       rings: (ly: string) => `Кольца вокруг ядра — каждые ${ly}`,
       backdrop: 'Галактика на фоне — схема, а не настоящие звёзды',
       legend: {
-        path: 'Путь',
+        start: 'Начало',
+        path: 'Путь: раньше → позже',
         earned: 'Заработали',
         firsts: 'Первооткрытия',
         death: 'Гибель',
@@ -406,6 +407,7 @@ export const ru = {
       unsold: (value: string) => `${value} не продано`,
       open: 'Клик — открыть на вкладке «Система»',
       fromSol: (ly: string) => `${ly} от Sol`,
+      startLabel: (date: string) => `Начало · ${date}`,
     },
   },
 

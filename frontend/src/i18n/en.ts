@@ -385,7 +385,8 @@ export const en: Strings = {
       rings: (ly: string) => `Rings around the core every ${ly}`,
       backdrop: 'The galaxy behind is a sketch, not real stars',
       legend: {
-        path: 'Path',
+        start: 'Start',
+        path: 'Path: earlier → later',
         earned: 'Earned',
         firsts: 'Firsts',
         death: 'Death',
@@ -402,6 +403,7 @@ export const en: Strings = {
       unsold: (value: string) => `${value} unsold`,
       open: 'Click to open on the System tab',
       fromSol: (ly: string) => `${ly} from Sol`,
+      startLabel: (date: string) => `Start · ${date}`,
     },
   },
 

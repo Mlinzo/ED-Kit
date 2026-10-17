@@ -389,7 +389,8 @@ export const uk: Strings = {
       rings: (ly: string) => `Кільця навколо ядра — кожні ${ly}`,
       backdrop: 'Галактика на тлі — схема, а не справжні зорі',
       legend: {
-        path: 'Шлях',
+        start: 'Початок',
+        path: 'Шлях: раніше → пізніше',
         earned: 'Заробили',
         firsts: 'Першовідкриття',
         death: 'Загибель',
@@ -406,6 +407,7 @@ export const uk: Strings = {
       unsold: (value: string) => `${value} не продано`,
       open: 'Клік — відкрити на вкладці «Система»',
       fromSol: (ly: string) => `${ly} від Sol`,
+      startLabel: (date: string) => `Початок · ${date}`,
     },
   },
 
