@@ -16,7 +16,7 @@ NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "inva
 
 | Module | Role |
 |---|---|
-| `app/config.py` | Paths (journal dir, data dir), port, LAN flag |
+| `app/config.py` | Paths (journal dir, data dir, built frontend: `frontend/dist`, or `web/` inside the exe), port, listen address |
 | `app/db.py` | SQLite connection, pragmas, schema |
 | `app/journal.py` | Journal file discovery, ordering by Fileheader time, tailing by byte offset |
 | `app/status.py` | Status.json reader and flag decoding |
@@ -38,7 +38,7 @@ NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "inva
 | `app/facts.py` | Journal `Scan` → `BodyFacts`, JSON codec, `SystemFacts` loading |
 | `app/game.py` | Whether the game is running (process list on Windows, else the journal's last `Shutdown`), pushed with the ingest state |
 | `app/service.py` | Ingest thread, backfill, SSE fan-out |
-| `app/main.py` | FastAPI app: REST views, SSE stream, static frontend |
+| `app/main.py` | FastAPI app: REST views, SSE stream, static frontend; CLI (`run`), exe niceties (opens the browser, a second start just opens the page) |
 | `app/models.py` | Domain dataclasses (`BodyFacts`, `SystemFacts`, `Species`, ...) |
 | `app/schemas.py` | Pydantic view models (camelCase JSON) |
 | `app/exobio/` | Species catalog (values, colony ranges) and prediction rules |
@@ -76,3 +76,16 @@ Rules:
 cd backend;  uv run python -m app.main     # http://127.0.0.1:8765
 cd frontend; npm run dev                   # http://localhost:5173 (proxies /api)
 ```
+
+## Packaging
+
+- **exe** (`packaging/`): PyInstaller one-file `EDExplorerKit.exe` with `frontend/dist` inside as `web/`
+  (`ed-explorer-kit.spec`, built by `build-exe.ps1`; PyInstaller is the `build` dependency group).
+  A console window shows the log; closing it stops the app.
+- **Release** (`.github/workflows/release.yml`): a `v*` tag matching `app.__version__` runs the tests,
+  builds the exe on Windows and publishes it as a GitHub release (`gh release create`).
+- **Docker** (`Dockerfile`, `docker-compose.yml`): Node stage builds the UI, Python stage runs
+  `python -m app.main --host 0.0.0.0`; journals mounted read-only at `/journals`, database in the
+  `/data` volume (`EDEK_JOURNAL_DIR`, `EDEK_DATA_DIR`). Journal polling works through Docker Desktop
+  bind mounts (no file-change notifications needed). The game process is not visible from the
+  container, so "game running" falls back to the journal.

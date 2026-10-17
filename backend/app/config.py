@@ -71,12 +71,15 @@ class Settings:
     static_dir: Path | None = field(default_factory=default_static_dir)
     port: int = 8765
     lan: bool = False
+    bind: str | None = None  # explicit listen address (Docker: 0.0.0.0); overrides `lan`
     online: bool = True  # fetch community body data (Spansh / EDSM) for the current system
     poll_interval: float = 0.25  # seconds between journal/status reads
     rescan_interval: float = 2.0  # seconds between journal directory listings
 
     @property
     def host(self) -> str:
+        if self.bind:
+            return self.bind
         return "0.0.0.0" if self.lan else "127.0.0.1"
 
     @property

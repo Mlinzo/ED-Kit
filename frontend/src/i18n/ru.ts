@@ -39,8 +39,8 @@ export const ru = {
 
   offline: {
     title: 'Сервер недоступен',
-    hint: 'Запустите бэкенд на ПК с игрой:',
-    command: '.\\start.ps1',
+    hint: 'Запустите ED Explorer Kit на ПК с игрой:',
+    command: 'EDExplorerKit.exe',
     retrying: 'Переподключаемся автоматически.',
     demo: 'Открыть демо-режим',
   },

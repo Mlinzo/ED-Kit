@@ -62,3 +62,10 @@ def test_pages_get_the_app_and_unknown_files_404(tmp_path: Path) -> None:
         assert client.get("/assets/app.js").text == "console.log(1)"
         assert client.get("/assets/missing.js").status_code == 404
         assert client.get("/api/nothing").status_code == 404
+
+
+def test_listen_address() -> None:
+    assert Settings().host == "127.0.0.1"
+    assert Settings(lan=True).host == "0.0.0.0"
+    assert Settings(bind="0.0.0.0").host == "0.0.0.0"  # Docker: --host 0.0.0.0
+    assert Settings(lan=True, bind="192.168.1.5").host == "192.168.1.5"

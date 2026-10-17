@@ -39,8 +39,8 @@ export const uk: Strings = {
 
   offline: {
     title: 'Сервер недоступний',
-    hint: 'Запустіть бекенд на ПК із грою:',
-    command: '.\\start.ps1',
+    hint: 'Запустіть ED Explorer Kit на ПК із грою:',
+    command: 'EDExplorerKit.exe',
     retrying: 'Перепідключаємося автоматично.',
     demo: 'Відкрити демо-режим',
   },

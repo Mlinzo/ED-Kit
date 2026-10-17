@@ -6,7 +6,11 @@ import json
 import logging
 import socket
 import sqlite3
+import sys
 import threading
+import time
+import urllib.request
+import webbrowser
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -340,12 +344,43 @@ def _lan_addresses() -> Iterator[str]:
     yield from sorted(a for a in seen if not a.startswith("127."))
 
 
+def _already_running(port: int) -> bool:
+    """Whether ED Explorer Kit already answers on this port (the .exe started a second time)."""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1) as resp:
+            return json.load(resp).get("status") == "ok"
+    except (OSError, ValueError):
+        return False
+
+
+def _open_browser_when_up(url: str, port: int) -> None:
+    """Open the page once the server accepts connections (it binds after the first ingest)."""
+
+    def wait() -> None:
+        for _ in range(600):
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+                    break
+            except OSError:
+                time.sleep(0.2)
+        else:
+            return
+        webbrowser.open(url)
+
+    threading.Thread(target=wait, name="open-browser", daemon=True).start()
+
+
 def run() -> None:
     import uvicorn
 
+    frozen = getattr(sys, "frozen", False)
     parser = argparse.ArgumentParser(description="ED Explorer Kit backend")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--lan", action="store_true", help="allow access from phone/tablet on LAN")
+    parser.add_argument("--host", help="listen address, e.g. 0.0.0.0 in Docker (overrides --lan)")
+    parser.add_argument(
+        "--no-browser", action="store_true", help="do not open the browser (the .exe opens it)"
+    )
     parser.add_argument("--journal-dir", help="Elite Dangerous journal folder")
     parser.add_argument("--data-dir", help="where data.db is stored")
     parser.add_argument("--rebuild", action="store_true", help="rebuild projections from events")
@@ -359,19 +394,30 @@ def run() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    settings = Settings(port=args.port, lan=args.lan, online=not args.offline)
+    settings = Settings(port=args.port, lan=args.lan, bind=args.host, online=not args.offline)
     if args.journal_dir:
         settings.journal_dir = Path(args.journal_dir)
     if args.data_dir:
         settings.data_dir = Path(args.data_dir)
 
+    url = f"http://127.0.0.1:{settings.port}"
+    open_browser = frozen and not args.no_browser
+    if open_browser and _already_running(settings.port):
+        log.info("already running, opening %s", url)
+        webbrowser.open(url)
+        return
+
     log.info("journal dir: %s", settings.journal_dir)
     log.info("database:    %s", settings.db_path)
-    log.info("open:        http://127.0.0.1:%d", settings.port)
+    log.info("open:        %s", url)
     log.info("community:   %s", "Spansh/EDSM lookups on" if settings.online else "offline")
     if settings.lan:
         for address in _lan_addresses():
             log.info("on LAN:      http://%s:%d", address, settings.port)
+    if frozen:
+        log.info("close this window to stop ED Explorer Kit")
+    if open_browser:
+        _open_browser_when_up(url, settings.port)
 
     uvicorn.run(
         create_app(settings, rebuild=args.rebuild),
@@ -382,5 +428,18 @@ def run() -> None:
     )
 
 
+def main() -> None:
+    """Entry point. The .exe keeps its console window open after a failure so it can be read."""
+    try:
+        run()
+    except (Exception, SystemExit) as exc:
+        if not getattr(sys, "frozen", False) or (isinstance(exc, SystemExit) and not exc.code):
+            raise
+        if not isinstance(exc, SystemExit):
+            log.exception("ED Explorer Kit stopped")
+        input("Press Enter to close this window...")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
-    run()
+    main()

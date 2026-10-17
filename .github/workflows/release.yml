@@ -1,0 +1,61 @@
+# Push a tag like v0.1.0 (matching backend/app/__init__.py) to build EDExplorerKit.exe and
+# publish it as a GitHub release. Run it by hand (Actions → Release → Run workflow) to get
+# the exe as a build artifact without a release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: astral-sh/setup-uv@v10.3.0
+
+      - name: Check the tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = (Select-String -Path backend/app/__init__.py -Pattern '__version__ = "(.+)"').Matches[0].Groups[1].Value
+          if ("v$version" -ne $env:TAG) { throw "tag $env:TAG does not match app version $version" }
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Test the backend
+        working-directory: backend
+        run: uv run pytest -q
+
+      - name: Test the frontend
+        working-directory: frontend
+        run: npm test
+
+      - name: Build the exe
+        run: ./packaging/build-exe.ps1
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: EDExplorerKit
+          path: dist/EDExplorerKit.exe
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create $env:TAG dist/EDExplorerKit.exe --title "ED Explorer Kit $env:TAG" --generate-notes

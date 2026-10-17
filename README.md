@@ -1,43 +1,129 @@
 # ED Explorer Kit
 
-Компаньон для исследователей Elite Dangerous: экзобиология и маппинг с простым
-и понятным интерфейсом. Работает на втором мониторе или с телефона по Wi-Fi.
+**English** · [Русский](README.ru.md)
 
-- **Система** — тела по ценности, биосигналы, предсказанные виды, стоит ли маппить.
-- **Поверхность** — радар сэмплов: где брать следующий образец и сколько ещё идти.
-- **Сессия** — сколько непроданных данных сейчас под риском.
-- **Маршрут** — системы, где можно заработать: картографирование дорогих планет (Road to Riches) и биология вместе, вокруг точки или вдоль прямой (данные Spansh). Список или 3D-карта маршрута; прогресс отмечается сам по журналу.
-- **Маршрут в игре** — проложенный в галактической карте маршрут: хватит ли топлива и где заправиться, нейтронные звёзды и белые карлики впереди, шанс, что система ещё не открыта (Spansh и EDSM). Для дальних перелётов до остановки — нейтронный маршрут Spansh.
-- **История** — все посещённые системы: что отсканировано, найдено и продано. Любую можно открыть на карте.
-- **Галактика** — все путешествия на 3D-карте галактики: путь, заработок, первооткрытия, гибели, маршруты впереди.
+A companion app for Elite Dangerous explorers: exobiology and mapping with a clean,
+glanceable interface for a second monitor. It reads the game journal on your PC and
+shows everything in your browser.
 
-Интерфейс на английском (по умолчанию), украинском или русском — переключается в настройках.
+- **System**: bodies ranked by value, bio signals, predicted species, whether a body is worth mapping.
+- **Surface**: a sampling radar showing where to take the next sample and how far you still have to go.
+- **Route**: systems worth visiting for high-value mapping (Road to Riches) and biology, around a point or along a line (Spansh data). Shown as a list or a 3D map, and stops tick off by themselves as you fly. Also covers the route you plotted in the galaxy map: fuel and where to scoop, neutron stars and white dwarfs ahead, and the chance a system is still undiscovered. Neutron routes come from Spansh.
+- **Session**: how much unsold data you are carrying right now.
+- **History**: every system you visited: what you scanned, found and sold.
+- **Galaxy**: all your journeys on a 3D galaxy map: path, earnings, first discoveries, deaths.
+- **Stats**: all-time numbers and records.
 
-Приложение читает журнал игры (`Saved Games\Frontier Developments\Elite Dangerous`).
-В интернет уходят только запросы к Spansh/EDSM: данные о текущей системе, поиск для маршрута,
-нейтронный маршрут и проверка систем проложенного маршрута. Ключ `--offline` их отключает.
+The interface is in English, Ukrainian or Russian; switch it in Settings.
 
-## Запуск
+## Quick start (Windows)
 
-Нужны [uv](https://docs.astral.sh/uv/) и Node.js 22+.
+1. Download **[EDExplorerKit.exe](../../releases/latest/download/EDExplorerKit.exe)** from the [latest release](../../releases/latest).
+2. Run it. Your browser opens **http://127.0.0.1:8765** by itself.
+3. Play. The page updates live while the game runs.
+
+Close the black console window to stop the app. Running the exe again while it is already
+running just opens the page.
+
+> Windows may show "Windows protected your PC" because the exe is not code-signed.
+> Click **More info → Run anyway**. If you would rather not trust a downloaded exe, use
+> Docker or run from source (below): both build from this repository's code.
+
+On first start the app reads your whole journal history, which takes from a few seconds
+to a minute.
+
+## Run with Docker
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/). In the repository folder:
 
 ```powershell
-.\start.ps1           # http://127.0.0.1:8765
-.\start.ps1 -Lan      # плюс доступ с телефона в той же сети (Windows спросит про firewall)
+docker compose up -d --build
 ```
 
-Данные хранятся в `%LOCALAPPDATA%\EDExplorerKit\data.db`. Удалить файл безопасно, пока
-на месте журналы: при следующем запуске всё пересоберётся из них. В базе лежат и сами события
-журнала, так что после удаления или потери журналов (переустановка, новый компьютер) история
-остаётся только в ней — такой файл лучше сохранить.
+Open **http://127.0.0.1:8765**. Stop it with `docker compose down`.
 
-## Разработка
+The journal folder `%USERPROFILE%\Saved Games\Frontier Developments\Elite Dangerous`
+is mounted read-only. If yours is elsewhere (for example, Saved Games moved to OneDrive),
+set `ED_JOURNAL_DIR` first:
 
 ```powershell
-cd backend;  uv run python -m app.main   # API на :8765
-cd frontend; npm run dev                 # UI на :5173 с прокси на API
-cd frontend; npm run dev -- --open "/?mock=1"   # UI на тестовых данных без бэкенда
+$env:ED_JOURNAL_DIR = "D:\OneDrive\Saved Games\Frontier Developments\Elite Dangerous"
+docker compose up -d --build
+```
+
+The database is kept in the `data` Docker volume between restarts. To open the page from
+other devices on your network, change the port line in `docker-compose.yml` to
+`"8765:8765"`. In a container the app can't see the game process, so "game running"
+in the header is judged from the journal.
+
+## Run from source
+
+Requires [uv](https://docs.astral.sh/uv/) and [Node.js](https://nodejs.org/) 22 or newer.
+Clone or download this repository, then in its folder (PowerShell):
+
+```powershell
+.\start.ps1            # builds the UI, then serves http://127.0.0.1:8765
+.\start.ps1 -Lan       # also reachable from other devices on your network (Windows asks about the firewall)
+.\start.ps1 -SkipBuild # start without rebuilding the UI
+```
+
+If PowerShell says running scripts is disabled, start it as
+`powershell -ExecutionPolicy Bypass -File .\start.ps1`.
+
+Or step by step:
+
+```powershell
+cd frontend; npm install; npm run build; cd ..
+cd backend;  uv run python -m app.main
+```
+
+## Options
+
+Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) or to
+`uv run python -m app.main`.
+
+| Option | What it does |
+|---|---|
+| `--lan` | Allow access from other devices on your network |
+| `--offline` | No requests to Spansh/EDSM (route planning is then off) |
+| `--port 8765` | Use another port |
+| `--journal-dir PATH` | Journal folder, if not in the standard place |
+| `--data-dir PATH` | Where `data.db` is stored |
+| `--rebuild` | Rebuild the database from the stored journal events |
+| `--no-browser` | Don't open the browser on start (the exe opens it by default) |
+
+## Your data
+
+- The app reads the game journal (`Saved Games\Frontier Developments\Elite Dangerous`) and never writes to it.
+- The database lives in `%LOCALAPPDATA%\EDExplorerKit\data.db`. Deleting it is safe while the journals are there: it is rebuilt from them on the next start. It also stores the journal events themselves, so after losing the journals (reinstall, new PC) your history survives only in this file. Keep a copy.
+- Only these requests go online: community data for the current system, route search, neutron routes and checks of the plotted route's systems (Spansh and EDSM). `--offline` turns them all off.
+
+## Development
+
+```powershell
+cd backend;  uv run python -m app.main          # API on :8765
+cd frontend; npm run dev                        # UI on :5173, proxies /api to the backend
+cd frontend; npm run dev -- --open "/?mock=1"   # UI on mock data, no backend needed
 cd backend;  uv run pytest -q
+cd frontend; npm test
 ```
 
-Архитектура: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md).
+
+### Releasing
+
+1. Bump the version in `backend/app/__init__.py` and `backend/pyproject.toml`.
+2. Tag and push: `git tag v0.1.0; git push origin v0.1.0`.
+3. The [Release workflow](.github/workflows/release.yml) tests the code, builds `EDExplorerKit.exe`
+   and publishes it as a GitHub release.
+
+To build the exe locally: `.\packaging\build-exe.ps1` produces `dist\EDExplorerKit.exe`.
+
+## Credits
+
+Community data: [Spansh](https://spansh.co.uk/) and [EDSM](https://www.edsm.net/).
+Exobiology rules are derived from [Canonn](https://canonn.science/) research data
+(details in [backend/app/exobio/SOURCES.md](backend/app/exobio/SOURCES.md)).
+
+ED Explorer Kit is a fan-made tool, not affiliated with or endorsed by Frontier Developments.
+Elite Dangerous is a trademark of Frontier Developments plc.

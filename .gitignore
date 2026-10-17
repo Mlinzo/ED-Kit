@@ -9,6 +9,9 @@ __pycache__/
 node_modules/
 dist/
 
+# PyInstaller (packaging/build-exe.ps1)
+build/
+
 # Local data
 *.db
 *.db-wal

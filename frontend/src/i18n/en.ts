@@ -36,8 +36,8 @@ export const en: Strings = {
 
   offline: {
     title: 'Server unavailable',
-    hint: 'Start the backend on the game PC:',
-    command: '.\\start.ps1',
+    hint: 'Start ED Explorer Kit on the game PC:',
+    command: 'EDExplorerKit.exe',
     retrying: 'Reconnecting automatically.',
     demo: 'Open demo mode',
   },
