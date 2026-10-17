@@ -240,7 +240,7 @@ export function BodyDetail({
         <h2 id={headingId} className="text-3xl font-semibold tracking-tight text-zinc-50 proportional-nums">
           {bodyLabel(body)}
         </h2>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500 proportional-nums">
           {body.name} · {formatLs(body.distanceLs)}
         </p>
         {(isCurrent || routeTarget) && (

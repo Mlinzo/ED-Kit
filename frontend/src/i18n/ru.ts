@@ -400,6 +400,9 @@ export const ru = {
     predicted: 'Прогноз',
     samples: (n: number) => `${n} / 3`,
     colonyRange: 'Дистанция',
+    candidates: (n: number) => `один из ${n} вариантов`,
+    candidatesHint: (genus: string) =>
+      `Один биосигнал — один род: из этих видов ${genus} на планете растёт только один. Новой записью в кодексе станет один.`,
     firstFootfall: 'Бонус первой высадки',
     baseValue: 'Базовая цена',
     withBonus: 'С бонусом первой высадки',

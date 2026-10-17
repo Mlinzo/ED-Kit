@@ -400,6 +400,9 @@ export const uk: Strings = {
     predicted: 'Прогноз',
     samples: (n: number) => `${n} / 3`,
     colonyRange: 'Дистанція',
+    candidates: (n: number) => `один із ${n} варіантів`,
+    candidatesHint: (genus: string) =>
+      `Один біосигнал — один рід: із цих видів ${genus} на планеті росте лише один. Новим записом у Кодексі стане один.`,
     firstFootfall: 'Бонус першої висадки',
     baseValue: 'Базова ціна',
     withBonus: 'З бонусом першої висадки',

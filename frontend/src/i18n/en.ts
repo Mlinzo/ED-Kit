@@ -397,6 +397,9 @@ export const en: Strings = {
     predicted: 'Predicted',
     samples: (n: number) => `${n} / 3`,
     colonyRange: 'Colony range',
+    candidates: (n: number) => `one of ${n} candidates`,
+    candidatesHint: (genus: string) =>
+      `One bio signal is one genus: only one of these ${genus} species grows on the planet, so only one becomes a new Codex entry.`,
     firstFootfall: 'First footfall bonus',
     baseValue: 'Base value',
     withBonus: 'With first footfall bonus',

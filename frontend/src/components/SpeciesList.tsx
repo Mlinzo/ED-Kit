@@ -46,8 +46,31 @@ export function SpeciesValue({ s, className = '' }: { s: SpeciesView | { value: 
   )
 }
 
-export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
+/** Predicted candidates per genus: one bio signal is one genus, so only one of them grows here. */
+function candidateCounts(species: readonly SpeciesView[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const s of species) if (s.status === 'predicted') counts.set(s.genus, (counts.get(s.genus) ?? 0) + 1)
+  return counts
+}
+
+/** Sorted, with the candidates of one genus kept together (where its best one stands). */
+function grouped(species: readonly SpeciesView[]): SpeciesView[] {
   const sorted = sortSpecies(species)
+  const out: SpeciesView[] = []
+  const placed = new Set<string>()
+  for (const s of sorted) {
+    if (s.status !== 'predicted') out.push(s)
+    else if (!placed.has(s.genus)) {
+      placed.add(s.genus)
+      out.push(...sorted.filter((x) => x.status === 'predicted' && x.genus === s.genus))
+    }
+  }
+  return out
+}
+
+export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
+  const sorted = grouped(species)
+  const candidates = candidateCounts(species)
   return (
     <ul className="divide-y divide-zinc-800/70">
       {sorted.map((s) => {
@@ -73,6 +96,14 @@ export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
                 <span>{statusLabel(s)}</span>
+                {s.status === 'predicted' && (candidates.get(s.genus) ?? 0) > 1 && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="text-zinc-400" title={t.species.candidatesHint(s.genus)}>
+                      {t.species.candidates(candidates.get(s.genus) ?? 0)}
+                    </span>
+                  </>
+                )}
                 {s.status === 'sampling' && (
                   <span className="inline-flex items-center gap-1.5">
                     <SampleDots samples={s.samples} />
