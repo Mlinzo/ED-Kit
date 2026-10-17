@@ -161,6 +161,11 @@ class BarycentreView(CamelModel):
     orbit: OrbitView | None  # None until the barycentre itself is scanned
 
 
+class SystemRef(CamelModel):
+    address: str
+    name: str
+
+
 class SystemView(CamelModel):
     address: str | None
     name: str | None
@@ -168,7 +173,15 @@ class SystemView(CamelModel):
     body_count: int | None  # from FSS honk; None until honked
     scanned_count: int
     all_bodies_found: bool
-    current_body_id: int | None  # body the commander is near/on
+    is_current: bool  # the commander is in this system now (else: a system from the history)
+    current_system: SystemRef | None  # where the commander is now
+    current_body_id: int | None  # body the commander is near/on (current system only)
+    visits: int  # arrivals in this system
+    first_visit_at: str | None
+    last_visit_at: str | None
+    # Neighbours in the history (systems ordered by their last visit), for stepping through it.
+    prev_system: SystemRef | None
+    next_system: SystemRef | None
     bodies: list[BodyView]
     barycentres: list[BarycentreView]
     totals: SystemTotals
@@ -352,4 +365,42 @@ class StatsView(CamelModel):
     timeline: list[DayStats]
 
 
-Topic = Literal["system", "surface", "session", "stats"]
+class HistoryStar(CamelModel):
+    """The arrival star of a system (journal StarType etc., for the colour dot)."""
+
+    star_type: str | None
+    star_subclass: int | None
+    luminosity: str | None
+    subtype: str  # e.g. "K5 Va · orange star"
+
+
+class HistoryEntry(CamelModel):
+    """One visited system and what you did there."""
+
+    address: str
+    name: str
+    first_visit_at: str
+    last_visit_at: str
+    visits: int
+    main_star: HistoryStar | None
+    body_count: int | None  # from FSS honk (or community data); None when unknown
+    all_bodies_found: bool
+    bodies_scanned: int  # by you
+    bodies_mapped: int  # by you
+    bio_signals: int  # biological signals found on scanned bodies
+    species_analysed: int  # by you
+    first_discoveries: int
+    first_mapped: int
+    first_footfalls: int
+    value: int  # estimated cartographic value of your scans + analysed species (incl. bonus)
+    unsold_value: int  # part of `value` not sold yet
+    lost_value: int  # data lost on death (not in `value`; mapping bonus already gone)
+    notable: list[str]  # notable finds, most remarkable first: elw, ww, neutron, ...
+
+
+class HistoryView(CamelModel):
+    current_address: str | None
+    systems: list[HistoryEntry]  # most recently visited first
+
+
+Topic = Literal["system", "surface", "session", "stats", "history"]

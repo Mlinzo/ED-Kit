@@ -20,8 +20,9 @@ Status.json ──poll──► LiveStatus (memory only) ──► SSE "status"
 | `app/journal.py` | Journal file discovery, ordering by Fileheader time, tailing by byte offset |
 | `app/status.py` | Status.json reader and flag decoding |
 | `app/projector.py` | Applies journal events to projection tables (single writer) |
-| `app/views.py` | Builds `SystemView` / `SurfaceView` / `SessionView` from SQLite; body interest/progress, orbit tree data |
+| `app/views.py` | Builds `SystemView` (current or any visited system) / `SurfaceView` / `SessionView` from SQLite; body interest/progress, orbit tree data |
 | `app/stats.py` | All-time `StatsView` (incl. death history, first discoveries/maps/footfalls) |
+| `app/history.py` | `HistoryView`: visited systems (`visits` table) with what you did there |
 | `app/enrich.py` | Community body data (Spansh, then EDSM) for the current system, cached in `ext_*` tables |
 | `app/usersettings.py` | Highlight thresholds (`settings` table, `GET/PUT /api/settings`) |
 | `app/facts.py` | Journal `Scan` → `BodyFacts`, JSON codec, `SystemFacts` loading |
@@ -44,7 +45,8 @@ Rules:
 ## Frontend (`frontend/`, Vite + React + TypeScript + Tailwind v4)
 
 - Contract: `frontend/src/api/types.ts` mirrors `backend/app/schemas.py`.
-- `GET /api/view/system|surface|session|stats`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
+- `GET /api/view/system|surface|session|stats|history`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
+- `GET /api/view/system?address=<SystemAddress>`: a system from the history (also requests its community data).
 - `GET /api/stream` (SSE): `hello`, `invalidate`, `status`, `ingest`, `ping`.
 - `src/map/`: 3D orbit map (react-three-fiber); `src/map/visuals/`: procedural planet/star rendering.
 - The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.

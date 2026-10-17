@@ -96,6 +96,7 @@ PROJECTION_TABLES = (
     "organic_samples",
     "sales",
     "jumps",
+    "visits",
     "deaths",
     "codex_entries",
 )
@@ -228,6 +229,16 @@ CREATE TABLE IF NOT EXISTS jumps(
   distance_ly REAL NOT NULL
 ) STRICT;
 CREATE INDEX IF NOT EXISTS jumps_by_cmdr ON jumps(fid, ts);
+
+-- Arrivals in a system: FSD and carrier jumps, and a Location in another system than before
+-- (respawn, first login). Reloading the game where you are is not a new visit.
+CREATE TABLE IF NOT EXISTS visits(
+  id INTEGER PRIMARY KEY,
+  fid TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  system_address INTEGER NOT NULL
+) STRICT;
+CREATE INDEX IF NOT EXISTS visits_by_system ON visits(fid, system_address, id);
 
 -- Codex discoveries. name: codex symbol (a variant for biology); species: canonical
 -- exobio species symbol when the entry is an organism; region: "$Codex_RegionName_N;".

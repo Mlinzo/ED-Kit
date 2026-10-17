@@ -1,5 +1,6 @@
 import type { ConnectionState, Transport } from './transport'
 import type {
+  HistoryView,
   IngestState,
   LiveStatus,
   SessionView,
@@ -15,7 +16,11 @@ export interface ViewMap {
   surface: SurfaceView
   session: SessionView
   stats: StatsView
+  history: HistoryView
 }
+
+/** Query parameters of a view request, e.g. `{ address }` for a system from the history. */
+export type ViewParams = Readonly<Record<string, string>>
 
 export interface ViewEntry<T> {
   data: T | null
@@ -24,7 +29,7 @@ export interface ViewEntry<T> {
   loading: boolean
 }
 
-export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats']
+export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history']
 
 /** Minimum gap between two requests for the same view (coalesces invalidate bursts). */
 const MIN_GAP_MS = 250
@@ -39,6 +44,8 @@ const FETCH_TIMEOUT_MS = 15_000
  * buffered by a proxy — fetch without it so the screens still fill.
  */
 const HELLO_GRACE_MS = 1_500
+/** Unused views with parameters kept cached, so stepping back through the history is instant. */
+const MAX_IDLE_PARAM_VIEWS = 12
 
 const EMPTY: ViewEntry<never> = { data: null, error: null, loading: false }
 
@@ -46,14 +53,33 @@ function message(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
-function perTopic<T>(value: () => T): Record<Topic, T> {
-  return { system: value(), surface: value(), session: value(), stats: value() }
+/** URL of a view; also its cache key. */
+export function viewPath(topic: Topic, params?: ViewParams): string {
+  const entries = Object.entries(params ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  const query = new URLSearchParams(entries).toString()
+  return query ? `/api/view/${topic}?${query}` : `/api/view/${topic}`
+}
+
+/** One cached view (a topic, possibly with parameters) and its fetch bookkeeping. */
+interface Slot {
+  topic: Topic
+  entry: ViewEntry<unknown>
+  /** Bumped by every invalidate; the view is fresh once `loaded` has caught up with it. */
+  wanted: number
+  loaded: number
+  inflight: boolean
+  lastStart: number
+  refs: number
+  timer: ReturnType<typeof setTimeout> | undefined
+  /** When the slot was last released (orders the eviction of idle slots). */
+  lastUsed: number
 }
 
 /**
  * Client-side state: SSE connection, live status, ingest progress and a cache of views.
  * A view is fetched while at least one component uses it, and refetched whenever the
- * backend invalidates its topic (or the stream reconnects).
+ * backend invalidates its topic (or the stream reconnects). Views with parameters (a system
+ * from the history) follow their topic's invalidations.
  */
 export class Store {
   readonly transport: Transport
@@ -61,13 +87,8 @@ export class Store {
   status: LiveStatus | null = null
   ingest: IngestState | null = null
 
-  private entries: Record<Topic, ViewEntry<unknown>> = perTopic(() => EMPTY)
-  private wanted = perTopic(() => 1)
-  private loaded = perTopic(() => 0)
-  private inflight = perTopic(() => false)
-  private lastStart = perTopic(() => 0)
-  private refs = perTopic(() => 0)
-  private timers: Partial<Record<Topic, ReturnType<typeof setTimeout>>> = {}
+  private slots = new Map<string, Slot>()
+  private clock = 0
   private listeners = new Set<() => void>()
   private stopStream: (() => void) | null = null
   /** False until the first `hello` (or the grace timeout): holds back the first fetches. */
@@ -97,9 +118,9 @@ export class Store {
     this.stopStream = null
     clearTimeout(this.graceTimer)
     this.graceTimer = undefined
-    for (const t of TOPICS) {
-      clearTimeout(this.timers[t])
-      delete this.timers[t]
+    for (const slot of this.slots.values()) {
+      clearTimeout(slot.timer)
+      slot.timer = undefined
     }
   }
 
@@ -110,26 +131,53 @@ export class Store {
     }
   }
 
-  getEntry<K extends Topic>(topic: K): ViewEntry<ViewMap[K]> {
-    return this.entries[topic] as ViewEntry<ViewMap[K]>
+  /** The cached view at `path` (see `viewPath`). */
+  getEntry(path: string): ViewEntry<unknown> {
+    return this.slots.get(path)?.entry ?? EMPTY
   }
 
   /** Marks a view as used; returns the release function. */
-  retain(topic: Topic): () => void {
-    this.refs[topic] += 1
-    this.maybeFetch(topic)
+  retain(topic: Topic, path: string): () => void {
+    let slot = this.slots.get(path)
+    if (!slot) {
+      slot = {
+        topic,
+        entry: EMPTY,
+        wanted: 1,
+        loaded: 0,
+        inflight: false,
+        lastStart: 0,
+        refs: 0,
+        timer: undefined,
+        lastUsed: 0,
+      }
+      this.slots.set(path, slot)
+    }
+    const held = slot
+    held.refs += 1
+    this.maybeFetch(path)
     return () => {
-      this.refs[topic] -= 1
+      held.refs -= 1
+      held.lastUsed = ++this.clock
+      this.evictIdle()
     }
   }
 
-  /** Forces a refetch of the given views (also used by "retry" buttons). */
+  /** Forces a refetch of every view of the given topics. */
   invalidate(topics: readonly Topic[]): void {
-    for (const t of topics) {
-      if (!TOPICS.includes(t)) continue
-      this.wanted[t] += 1
-      this.maybeFetch(t)
+    for (const [path, slot] of this.slots) {
+      if (!topics.includes(slot.topic)) continue
+      slot.wanted += 1
+      this.maybeFetch(path)
     }
+  }
+
+  /** Forces a refetch of one view (used by "retry" buttons). */
+  refresh(path: string): void {
+    const slot = this.slots.get(path)
+    if (!slot) return
+    slot.wanted += 1
+    this.maybeFetch(path)
   }
 
   private emit(): void {
@@ -166,7 +214,7 @@ export class Store {
     if (this.synced) return
     this.synced = true
     void this.refreshMeta()
-    for (const t of TOPICS) this.maybeFetch(t)
+    for (const path of this.slots.keys()) this.maybeFetch(path)
   }
 
   private async refreshMeta(): Promise<void> {
@@ -187,45 +235,55 @@ export class Store {
     if (changed) this.emit()
   }
 
-  private setEntry(topic: Topic, entry: ViewEntry<unknown>): void {
-    this.entries[topic] = entry
+  /** Drops the least recently used idle views with parameters beyond the cache size. */
+  private evictIdle(): void {
+    const idle = [...this.slots].filter(([path, slot]) => slot.refs <= 0 && path.includes('?'))
+    if (idle.length <= MAX_IDLE_PARAM_VIEWS) return
+    idle.sort((a, b) => a[1].lastUsed - b[1].lastUsed)
+    for (const [path, slot] of idle.slice(0, idle.length - MAX_IDLE_PARAM_VIEWS)) {
+      clearTimeout(slot.timer)
+      this.slots.delete(path)
+    }
+  }
+
+  private setEntry(slot: Slot, entry: ViewEntry<unknown>): void {
+    slot.entry = entry
     this.emit()
   }
 
-  private maybeFetch(topic: Topic): void {
-    if (!this.synced || this.refs[topic] <= 0 || this.inflight[topic] || this.timers[topic] !== undefined) return
-    const entry = this.entries[topic]
-    if (this.loaded[topic] === this.wanted[topic] && entry.error === null && entry.data !== null) return
-    const wait = this.lastStart[topic] + MIN_GAP_MS - Date.now()
+  private maybeFetch(path: string): void {
+    const slot = this.slots.get(path)
+    if (!slot || !this.synced || slot.refs <= 0 || slot.inflight || slot.timer !== undefined) return
+    if (slot.loaded === slot.wanted && slot.entry.error === null && slot.entry.data !== null) return
+    const wait = slot.lastStart + MIN_GAP_MS - Date.now()
     if (wait > 0) {
-      this.timers[topic] = setTimeout(() => {
-        delete this.timers[topic]
-        this.maybeFetch(topic)
+      slot.timer = setTimeout(() => {
+        slot.timer = undefined
+        this.maybeFetch(path)
       }, wait)
       return
     }
-    void this.fetchView(topic)
+    void this.fetchView(path, slot)
   }
 
-  private async fetchView(topic: Topic): Promise<void> {
-    const version = this.wanted[topic]
-    this.inflight[topic] = true
-    this.lastStart[topic] = Date.now()
-    const before = this.entries[topic]
-    if (before.data === null && !before.loading) this.setEntry(topic, { ...before, loading: true })
+  private async fetchView(path: string, slot: Slot): Promise<void> {
+    const version = slot.wanted
+    slot.inflight = true
+    slot.lastStart = Date.now()
+    if (slot.entry.data === null && !slot.entry.loading) this.setEntry(slot, { ...slot.entry, loading: true })
     const abort = new AbortController()
-    const timeout = setTimeout(() => abort.abort(new Error(`timeout: /api/view/${topic}`)), FETCH_TIMEOUT_MS)
+    const timeout = setTimeout(() => abort.abort(new Error(`timeout: ${path}`)), FETCH_TIMEOUT_MS)
     try {
-      const data = await this.transport.fetchJson<unknown>(`/api/view/${topic}`, abort.signal)
-      this.loaded[topic] = version
-      this.setEntry(topic, { data, error: null, loading: false })
+      const data = await this.transport.fetchJson<unknown>(path, abort.signal)
+      slot.loaded = version
+      this.setEntry(slot, { data, error: null, loading: false })
     } catch (err) {
-      this.loaded[topic] = version
-      this.setEntry(topic, { ...this.entries[topic], error: message(err), loading: false })
+      slot.loaded = version
+      this.setEntry(slot, { ...slot.entry, error: message(err), loading: false })
     } finally {
       clearTimeout(timeout)
-      this.inflight[topic] = false
-      if (this.wanted[topic] !== version) this.maybeFetch(topic)
+      slot.inflight = false
+      if (slot.wanted !== version) this.maybeFetch(path)
     }
   }
 }

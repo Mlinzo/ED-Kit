@@ -9,6 +9,7 @@ import logging
 import threading
 import time
 from datetime import UTC, datetime
+from queue import Empty, SimpleQueue
 from typing import Any
 
 from app import db, enrich, projector
@@ -83,6 +84,7 @@ class IngestService(threading.Thread):
         )
         self.enricher = enrich.Enricher() if settings.online else None
         self._enrich_checked: int | None = None  # last system looked up
+        self._enrich_wanted: SimpleQueue[int] = SimpleQueue()  # opened in the UI
         self.ready = threading.Event()
         self._halt = threading.Event()
         self._rebuild = False
@@ -263,6 +265,13 @@ class IngestService(threading.Thread):
                     system.source,
                 )
                 self._invalidate({"system", "surface"})
+        while True:
+            try:
+                wanted = self._enrich_wanted.get_nowait()
+            except Empty:
+                break
+            if enrich.needs_fetch(conn, wanted):
+                self.enricher.request(wanted)
         fid = self.projector.fid
         if not fid:
             return
@@ -304,12 +313,17 @@ class IngestService(threading.Thread):
             return None
         return live.lat, live.lon
 
+    def want_community_data(self, address: int) -> None:
+        """Look up community data for a system opened from the history (any thread)."""
+        if self.enricher is not None:
+            self._enrich_wanted.put(address)
+
     def invalidate(self, topics: set[str]) -> None:
         """Ask every browser to refetch these views (callable from any thread)."""
         self._invalidate(topics)
 
     def _invalidate(self, topics: set[str] | frozenset[str]) -> None:
         self.seq += 1
-        # All-time statistics depend on nearly everything the other views do.
-        topics = set(topics) | ({"stats"} if topics - {"surface"} else set())
+        # All-time statistics and the history depend on nearly everything the other views do.
+        topics = set(topics) | ({"stats", "history"} if topics - {"surface"} else set())
         self.bus.publish("invalidate", {"seq": self.seq, "topics": sorted(topics)})

@@ -17,10 +17,11 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app import __version__, db, stats, usersettings, views
+from app import __version__, db, history, stats, usersettings, views
 from app.config import Settings
 from app.schemas import (
     HighlightSettings,
+    HistoryView,
     IngestState,
     LiveStatus,
     SessionView,
@@ -75,9 +76,12 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         return {"status": "ok", "version": __version__}
 
     @app.get("/api/view/system", response_model=SystemView, response_model_by_alias=True)
-    def view_system() -> SystemView:
+    def view_system(address: int | None = None) -> SystemView:
+        """The current system, or a visited one by its SystemAddress."""
         conn = read_conn()
-        return views.system_view(conn, active_fid(conn))
+        if address is not None:
+            service.want_community_data(address)
+        return views.system_view(conn, active_fid(conn), address)
 
     @app.get("/api/view/surface", response_model=SurfaceView, response_model_by_alias=True)
     def view_surface() -> SurfaceView:
@@ -93,6 +97,11 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def view_stats() -> StatsView:
         conn = read_conn()
         return stats.stats_view(conn, active_fid(conn))
+
+    @app.get("/api/view/history", response_model=HistoryView, response_model_by_alias=True)
+    def view_history() -> HistoryView:
+        conn = read_conn()
+        return history.history_view(conn, active_fid(conn))
 
     @app.get("/api/settings", response_model=HighlightSettings, response_model_by_alias=True)
     def get_settings() -> HighlightSettings:

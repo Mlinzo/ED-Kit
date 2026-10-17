@@ -1,4 +1,4 @@
-// Local date / time labels for events (deaths, footfalls): the commander's own clock.
+// Local date / time labels for events (visits, deaths, footfalls): the commander's own clock.
 
 const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
 const dayYearFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })

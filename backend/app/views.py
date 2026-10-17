@@ -27,6 +27,7 @@ from app.schemas import (
     SignalsView,
     SpeciesView,
     SurfaceView,
+    SystemRef,
     SystemTotals,
     SystemView,
 )
@@ -504,7 +505,29 @@ def _barycentres(conn: sqlite3.Connection, system: SystemFacts) -> list[Barycent
     ]
 
 
-def _empty_system() -> SystemView:
+def _system_ref(conn: sqlite3.Connection, address: int | None) -> SystemRef | None:
+    if address is None:
+        return None
+    row = conn.execute("SELECT name FROM systems WHERE address = ?", (address,)).fetchone()
+    return SystemRef(address=str(address), name=row["name"]) if row else None
+
+
+def _neighbour(
+    conn: sqlite3.Connection, fid: str | None, last_visit_id: int, *, before: bool
+) -> SystemRef | None:
+    """The system visited last just before (or after) the given visit, by last visit."""
+    row = conn.execute(
+        "WITH last AS (SELECT system_address, MAX(id) AS id FROM visits WHERE fid = ? "
+        "GROUP BY system_address) "
+        "SELECT s.address, s.name FROM last l JOIN systems s ON s.address = l.system_address "
+        f"WHERE l.id {'<' if before else '>'} ? ORDER BY l.id {'DESC' if before else 'ASC'} "
+        "LIMIT 1",
+        (fid, last_visit_id),
+    ).fetchone()
+    return SystemRef(address=str(row["address"]), name=row["name"]) if row else None
+
+
+def _empty_system(current: SystemRef | None = None) -> SystemView:
     return SystemView(
         address=None,
         name=None,
@@ -512,26 +535,47 @@ def _empty_system() -> SystemView:
         body_count=None,
         scanned_count=0,
         all_bodies_found=False,
+        is_current=False,
+        current_system=current,
         current_body_id=None,
+        visits=0,
+        first_visit_at=None,
+        last_visit_at=None,
+        prev_system=None,
+        next_system=None,
         bodies=[],
         barycentres=[],
         totals=SystemTotals(fss=0, dss=0, bio_min=0, bio_max=0),
     )
 
 
-def system_view(conn: sqlite3.Connection, fid: str | None) -> SystemView:
+def system_view(
+    conn: sqlite3.Connection, fid: str | None, address: int | None = None
+) -> SystemView:
+    """The commander's current system, or any other system by address (history)."""
     state = cmdr_state(conn, fid)
-    if state is None or state["system_address"] is None:
-        return _empty_system()
-    system = load_system(conn, state["system_address"])
+    current_address = state["system_address"] if state else None
+    current = _system_ref(conn, current_address)
+    if address is None:
+        address = current_address
+    if address is None:
+        return _empty_system(current)
+    system = load_system(conn, address)
     if system is None:
-        return _empty_system()
+        return _empty_system(current)
+    is_current = address == current_address
     row = conn.execute(
         "SELECT s.body_count, s.all_found, e.body_count AS ext_count FROM systems s "
         "LEFT JOIN ext_systems e ON e.address = s.address WHERE s.address = ?",
         (system.address,),
     ).fetchone()
-    odyssey = bool(state["odyssey"])
+    visits = conn.execute(
+        "SELECT COUNT(*) AS n, MIN(ts) AS first_at, MAX(ts) AS last_at, MAX(id) AS last_id "
+        "FROM visits WHERE fid = ? AND system_address = ?",
+        (fid, system.address),
+    ).fetchone()
+    last_id = visits["last_id"]
+    odyssey = bool(state["odyssey"]) if state else True
     codex = codex_index(conn, fid)
     highlight = usersettings.load(conn)
     bodies = [
@@ -545,7 +589,14 @@ def system_view(conn: sqlite3.Connection, fid: str | None) -> SystemView:
         body_count=row["body_count"] if row["body_count"] is not None else row["ext_count"],
         scanned_count=sum(1 for b in bodies if b.source == "journal"),
         all_bodies_found=bool(row["all_found"]),
-        current_body_id=state["body_id"],
+        is_current=is_current,
+        current_system=current,
+        current_body_id=state["body_id"] if is_current else None,
+        visits=visits["n"],
+        first_visit_at=visits["first_at"],
+        last_visit_at=visits["last_at"],
+        prev_system=_neighbour(conn, fid, last_id, before=True) if last_id else None,
+        next_system=_neighbour(conn, fid, last_id, before=False) if last_id else None,
         bodies=bodies,
         barycentres=_barycentres(conn, system),
         totals=SystemTotals(

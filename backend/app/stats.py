@@ -33,7 +33,7 @@ NOTABLE_PLANETS = {
 }
 
 
-def _notable_star(star_type: str | None) -> str | None:
+def notable_star(star_type: str | None) -> str | None:
     code = star_type or ""
     if code == "N":
         return "neutron"
@@ -64,10 +64,13 @@ def stats_view(conn: sqlite3.Connection, fid: str | None) -> StatsView:
     # ---------------------------------------------------------------- travel
     travel = _one(
         conn,
-        "SELECT COUNT(*) AS n, COALESCE(SUM(distance_ly), 0) AS ly, "
-        "COUNT(DISTINCT system_address) AS systems FROM jumps WHERE fid = ?",
+        "SELECT COUNT(*) AS n, COALESCE(SUM(distance_ly), 0) AS ly FROM jumps WHERE fid = ?",
         fid,
     )
+    # Visits also count the system you started in and carrier jumps.
+    systems_visited = _one(
+        conn, "SELECT COUNT(DISTINCT system_address) AS n FROM visits WHERE fid = ?", fid
+    )["n"]
     longest = _one(
         conn,
         "SELECT j.distance_ly, j.ts, s.name FROM jumps j "
@@ -75,7 +78,7 @@ def stats_view(conn: sqlite3.Connection, fid: str | None) -> StatsView:
         "WHERE j.fid = ? ORDER BY j.distance_ly DESC LIMIT 1",
         fid,
     )
-    visited = "address IN (SELECT system_address FROM jumps WHERE fid = ?)"
+    visited = "address IN (SELECT system_address FROM visits WHERE fid = ?)"
     farthest = _one(
         conn,
         f"SELECT name, x, y, z FROM systems WHERE x IS NOT NULL AND {visited} "
@@ -104,7 +107,7 @@ def stats_view(conn: sqlite3.Connection, fid: str | None) -> StatsView:
         facts = facts_from_json(row["facts"])
         if facts.kind == "star":
             stars += 1
-            key = _notable_star(facts.star_type)
+            key = notable_star(facts.star_type)
         else:
             planets += 1
             key = NOTABLE_PLANETS.get(facts.planet_class or "")
@@ -266,7 +269,7 @@ def stats_view(conn: sqlite3.Connection, fid: str | None) -> StatsView:
         days_active=_one(conn, "SELECT COUNT(DISTINCT substr(ts, 1, 10)) AS n FROM events")["n"],
         jumps=travel["n"],
         distance_ly=round(travel["ly"], 2),
-        systems_visited=travel["systems"],
+        systems_visited=systems_visited,
         longest_jump=(
             NamedValue(
                 name=longest["name"] or "?",

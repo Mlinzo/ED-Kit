@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 8
+VERSION = 9
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -116,6 +116,17 @@ class Projector:
         )
         return int(address)
 
+    def _arrive(self, address: int, ts: Any) -> None:
+        """Record a visit when the commander shows up in another system than before."""
+        if not self.fid:
+            return
+        state = self._state()
+        if state is not None and state["system_address"] == address:
+            return
+        self.conn.execute(
+            "INSERT INTO visits(fid, ts, system_address) VALUES(?, ?, ?)", (self.fid, ts, address)
+        )
+
     def _first_footfall(self, system_address: int, body_id: int) -> bool:
         """Whether a first-footfall bonus applies: nobody walked here, system unpopulated."""
         row = self.conn.execute(
@@ -159,6 +170,7 @@ class Projector:
         if address is None:
             return frozenset()
         on_planet = ev.get("BodyType") == "Planet"
+        self._arrive(address, ev.get("timestamp"))
         self._update_state(
             system_address=address,
             body_id=ev.get("BodyID") if on_planet else None,
@@ -170,6 +182,7 @@ class Projector:
         address = self._upsert_system(ev)
         if address is None:
             return frozenset()
+        self._arrive(address, ev.get("timestamp"))
         self._update_state(system_address=address, body_id=None, body_name=None)
         if self.fid and ev.get("event") == "FSDJump":
             self.conn.execute(

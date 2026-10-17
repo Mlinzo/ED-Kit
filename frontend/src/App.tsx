@@ -4,6 +4,7 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { BottomTabs } from './components/TabBar'
 import { panelId, tabId, type Tab } from './components/tabs'
 import { TopBar } from './components/TopBar'
+import { HistoryScreen } from './screens/history/HistoryScreen'
 import { SessionScreen } from './screens/session/SessionScreen'
 import { StatsScreen } from './screens/stats/StatsScreen'
 import { SurfaceScreen } from './screens/surface/SurfaceScreen'
@@ -29,6 +30,8 @@ function useSurfaceLiveKey(): string | null {
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('system')
+  /** A system from the history shown on the System tab; null: the current system. */
+  const [pastAddress, setPastAddress] = useState<string | null>(null)
   const liveKey = useSurfaceLiveKey()
   const surfaceLive = liveKey !== null
 
@@ -51,11 +54,22 @@ export default function App() {
     }
   }
 
-  const selectTab = (next: Tab) => {
+  const goTo = (next: Tab) => {
     if (next !== tab) window.scrollTo({ top: 0 })
     setTab(next)
     setAutoFrom(null)
     setDismissedKey(liveKey !== null && next !== 'surface' ? liveKey : null)
+  }
+
+  const selectTab = (next: Tab) => {
+    // Choosing System again while looking at a past system returns to where you are.
+    if (next === 'system' && tab === 'system') setPastAddress(null)
+    goTo(next)
+  }
+
+  const openSystem = (address: string | null) => {
+    setPastAddress(address)
+    goTo('system')
   }
 
   return (
@@ -68,9 +82,12 @@ export default function App() {
         className="mx-auto w-full max-w-[1600px] flex-1 px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:px-6 lg:pt-8 lg:pb-12"
       >
         <OfflineBanner />
-        {tab === 'system' && <SystemScreen />}
+        {tab === 'system' && (
+          <SystemScreen address={pastAddress} onOpenSystem={openSystem} onShowHistory={() => goTo('history')} />
+        )}
         {tab === 'surface' && <SurfaceScreen />}
         {tab === 'session' && <SessionScreen />}
+        {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
         {tab === 'stats' && <StatsScreen />}
       </main>
       <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />

@@ -8,7 +8,7 @@ import { exactCredits, formatCredits, formatNumber } from '../../lib/format'
 import { bigNumber } from './numbers'
 import { shipName } from './ships'
 import { Card, MoreButton } from './ui'
-import { eventDay, eventFull, eventTime } from './when'
+import { eventDay, eventFull, eventTime } from '../../lib/when'
 
 const CONTEXT_ICON: Record<DeathView['context'], LucideIcon> = {
   ship: Rocket,

@@ -650,7 +650,14 @@ export function buildSystem(): SystemView {
     // As the backend counts: only your own scans are "found".
     scannedCount: bodies.filter((b) => b.source === 'journal').length,
     allBodiesFound: false,
+    isCurrent: true,
+    currentSystem: { address: ADDRESS.toString(), name: SYSTEM_NAME },
     currentBodyId: SURFACE_BODY_ID,
+    visits: 1,
+    firstVisitAt: '2026-10-16T19:40:12Z',
+    lastVisitAt: '2026-10-16T19:40:12Z',
+    prevSystem: null,
+    nextSystem: null,
     bodies,
     barycentres: buildBarycentres(),
     totals: {

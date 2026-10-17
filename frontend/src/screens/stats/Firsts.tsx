@@ -7,7 +7,7 @@ import { formatNumber } from '../../lib/format'
 import { groupFirsts, markCounts, type FirstsFilter, type MarkKind, type SystemGroup } from './firstGroups'
 import { bigNumber } from './numbers'
 import { Card, MoreButton, SubLabel } from './ui'
-import { eventDay, eventDayTime, eventFull } from './when'
+import { eventDay, eventDayTime, eventFull } from '../../lib/when'
 
 const MARK_ICON: Record<MarkKind, LucideIcon> = { discovered: Flag, mapped: MapIcon, footfall: Footprints }
 

@@ -170,6 +170,12 @@ export interface SystemTotals {
   bioMax: number
 }
 
+export interface SystemRef {
+  address: string
+  name: string
+}
+
+/** GET /api/view/system — the current system; ?address=<SystemAddress> — any visited one. */
 export interface SystemView {
   address: string | null
   name: string | null
@@ -177,7 +183,18 @@ export interface SystemView {
   bodyCount: number | null
   scannedCount: number
   allBodiesFound: boolean
+  /** The commander is in this system now (false: a system from the history). */
+  isCurrent: boolean
+  /** Where the commander is now. */
+  currentSystem: SystemRef | null
+  /** Body the commander is near/on (current system only). */
   currentBodyId: number | null
+  visits: number
+  firstVisitAt: string | null
+  lastVisitAt: string | null
+  /** Neighbours in the history (systems ordered by their last visit). */
+  prevSystem: SystemRef | null
+  nextSystem: SystemRef | null
   bodies: BodyView[]
   barycentres: BarycentreView[]
   totals: SystemTotals
@@ -366,7 +383,51 @@ export interface StatsView {
   timeline: DayStats[]
 }
 
-export type Topic = 'system' | 'surface' | 'session' | 'stats'
+/** The arrival star of a system (for the colour dot). */
+export interface HistoryStar {
+  starType: string | null
+  starSubclass: number | null
+  luminosity: string | null
+  /** e.g. "K5 Va · orange star" */
+  subtype: string
+}
+
+/** One visited system and what you did there. */
+export interface HistoryEntry {
+  address: string
+  name: string
+  firstVisitAt: string
+  lastVisitAt: string
+  visits: number
+  mainStar: HistoryStar | null
+  /** From the FSS honk (or community data); null when unknown. */
+  bodyCount: number | null
+  allBodiesFound: boolean
+  bodiesScanned: number
+  bodiesMapped: number
+  bioSignals: number
+  speciesAnalysed: number
+  firstDiscoveries: number
+  firstMapped: number
+  firstFootfalls: number
+  /** Estimated cartographic value of your scans + analysed species (incl. bonus); lost data excluded. */
+  value: number
+  /** Part of `value` not sold yet. */
+  unsoldValue: number
+  /** Data lost on death (not in `value`). */
+  lostValue: number
+  /** Notable finds, most remarkable first: elw, black_hole, neutron, ww, ... */
+  notable: string[]
+}
+
+/** GET /api/view/history */
+export interface HistoryView {
+  currentAddress: string | null
+  /** Most recently visited first. */
+  systems: HistoryEntry[]
+}
+
+export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history'
 
 // Server-Sent Events on GET /api/stream:
 //   event: hello      data: { seq: number }

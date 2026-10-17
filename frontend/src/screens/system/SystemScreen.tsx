@@ -1,7 +1,18 @@
-import { ArrowDownWideNarrow, CircleCheck, List, Orbit, Ruler } from 'lucide-react'
+import {
+  ArrowDownWideNarrow,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  History,
+  List,
+  LocateFixed,
+  Orbit,
+  Ruler,
+  SearchX,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
-import type { SystemView } from '../../api/types'
+import type { SystemRef, SystemView } from '../../api/types'
 import { Credits } from '../../components/Credits'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
@@ -9,6 +20,7 @@ import { useIsDesktop } from '../../hooks/useMediaQuery'
 import { ru } from '../../i18n/ru'
 import { bodyLabel, sortBodies, type BodySort } from '../../lib/body'
 import { exactCredits, formatCredits } from '../../lib/format'
+import { eventDayTime, eventFull } from '../../lib/when'
 import { SystemMap } from '../../map'
 import { BodyDetail } from './BodyDetail'
 import { BodyList } from './BodyList'
@@ -80,13 +92,110 @@ function BioRange({ min, max }: { min: number; max: number }) {
   )
 }
 
-function SystemHeader({ system }: { system: SystemView }) {
+/** Opens a system from the history; null opens the current system. */
+type OpenSystem = (address: string | null) => void
+
+function openRef(system: SystemView, target: SystemRef, onOpen: OpenSystem) {
+  onOpen(target.address === system.currentSystem?.address ? null : target.address)
+}
+
+function StepButton({
+  target,
+  direction,
+  system,
+  onOpenSystem,
+}: {
+  target: SystemRef | null
+  direction: 'prev' | 'next'
+  system: SystemView
+  onOpenSystem: OpenSystem
+}) {
+  const Icon = direction === 'prev' ? ChevronLeft : ChevronRight
+  const label = direction === 'prev' ? ru.system.prev : ru.system.next
+  let title: string
+  if (target) title = (direction === 'prev' ? ru.system.prevTo : ru.system.nextTo)(target.name)
+  else title = direction === 'prev' ? ru.system.noPrev : ru.system.noNext
+  return (
+    <button
+      type="button"
+      disabled={!target}
+      title={title}
+      aria-label={target ? title : label}
+      onClick={() => target && openRef(system, target, onOpenSystem)}
+      className="focus-ring relative flex size-6 items-center justify-center rounded-md text-zinc-400 ring-1 ring-zinc-800 after:absolute after:-inset-1.5 hover:bg-zinc-800 hover:text-zinc-100 disabled:pointer-events-none disabled:text-zinc-700"
+    >
+      <Icon className="size-4" aria-hidden />
+    </button>
+  )
+}
+
+/** Shown above a system from the history: it must never pass for the one you are in. */
+function PastBanner({
+  system,
+  onOpenSystem,
+  onShowHistory,
+}: {
+  system: SystemView
+  onOpenSystem: OpenSystem
+  onShowHistory: () => void
+}) {
+  const when = eventDayTime(system.lastVisitAt)
+  const current = system.currentSystem
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-sky-500/10 px-4 py-2.5 ring-1 ring-sky-500/25 ring-inset">
+      <p className="flex min-w-0 items-center gap-2.5 text-sm text-zinc-300">
+        <History className="size-4 shrink-0 text-accent" aria-hidden />
+        <span className="min-w-0">
+          <span className="font-medium text-zinc-50">{ru.system.past}</span>
+          <span className="sr-only">. {ru.system.pastHint}</span>
+          {when && (
+            <span title={eventFull(system.lastVisitAt) ?? undefined}>
+              {' · '}
+              {ru.system.visitedAt(when)}
+            </span>
+          )}
+          {system.visits > 1 && <span className="text-zinc-400"> · {ru.system.visits(system.visits)}</span>}
+        </span>
+      </p>
+      <div className="ml-auto flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={onShowHistory}
+          className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50"
+        >
+          <List className="size-4" aria-hidden />
+          {ru.system.allHistory}
+        </button>
+        {current && (
+          <button
+            type="button"
+            onClick={() => onOpenSystem(null)}
+            title={`${ru.system.nowIn} ${current.name}`}
+            className="focus-ring inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg bg-sky-500/15 px-3 text-sm font-medium text-accent-strong ring-1 ring-sky-400/30 ring-inset hover:bg-sky-500/25"
+          >
+            <LocateFixed className="size-4 shrink-0" aria-hidden />
+            {ru.system.toCurrent}
+            <span className="hidden max-w-[16rem] truncate font-normal text-sky-200/70 xl:inline">· {current.name}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSystem: OpenSystem }) {
   const { bodyCount, scannedCount, allBodiesFound, totals } = system
   const pct = bodyCount ? Math.min(100, (scannedCount / bodyCount) * 100) : 0
   return (
     <section aria-labelledby="system-title" className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="min-w-0">
-        <Label>{ru.tabs.system}</Label>
+        <div className="flex items-center gap-3">
+          <Label>{system.isCurrent ? ru.tabs.system : ru.system.past}</Label>
+          <div className="flex items-center gap-1.5">
+            <StepButton target={system.prevSystem} direction="prev" system={system} onOpenSystem={onOpenSystem} />
+            <StepButton target={system.nextSystem} direction="next" system={system} onOpenSystem={onOpenSystem} />
+          </div>
+        </div>
         <h1
           id="system-title"
           className="mt-1 text-2xl font-semibold tracking-tight break-words text-zinc-50 proportional-nums sm:text-3xl"
@@ -190,8 +299,29 @@ const VIEW_OPTIONS = [
   { id: 'list' as const, label: ru.map.list, icon: List },
 ]
 
-export function SystemScreen() {
-  const { data, error, refetch } = useView('system')
+export function SystemScreen({
+  address: wantedAddress,
+  onOpenSystem,
+  onShowHistory,
+}: {
+  /** A system from the history; null: the current system. */
+  address: string | null
+  onOpenSystem: OpenSystem
+  onShowHistory: () => void
+}) {
+  const { data: fresh, error, refetch } = useView('system', wantedAddress ? { address: wantedAddress } : undefined)
+  // Stepping through the history: keep the previous system on screen until the next one arrives.
+  const [kept, setKept] = useState(fresh)
+  if (fresh && fresh !== kept) setKept(fresh)
+  const data = fresh ?? (error ? null : kept)
+  const switching = !fresh && data !== null
+
+  // You jumped into the system you were looking at (or opened the current one): show it live.
+  const reachedPast = wantedAddress !== null && fresh?.isCurrent === true
+  useEffect(() => {
+    if (reachedPast) onOpenSystem(null)
+  }, [reachedPast, onOpenSystem])
+
   const isDesktop = useIsDesktop()
   const [sort, setSort] = useState<BodySort>(() => readStored(SORT_KEY, ['value', 'distance'], 'value'))
   const [view, setView] = useState<ViewMode>(() => readStored(VIEW_KEY, ['map', 'list'], 'map'))
@@ -260,13 +390,29 @@ export function SystemScreen() {
   if (!data) {
     return <ViewFallback error={error} onRetry={refetch} />
   }
+  if (wantedAddress !== null && !data.address && !switching) {
+    return (
+      <div className="flex flex-col items-center">
+        <EmptyState icon={<SearchX className="size-10" />} title={ru.system.notFound} hint={ru.system.notFoundHint} />
+        <button
+          type="button"
+          onClick={() => onOpenSystem(null)}
+          className="focus-ring -mt-8 inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-800 px-4 text-sm font-medium text-zinc-100 hover:bg-zinc-700"
+        >
+          <LocateFixed className="size-4" aria-hidden />
+          {ru.system.toCurrent}
+        </button>
+      </div>
+    )
+  }
   if (!data.name && data.bodies.length === 0) {
     return <EmptyState icon={<Orbit className="size-10" />} title={ru.system.noData} hint={ru.system.noDataHint} />
   }
 
   return (
-    <div>
-      <SystemHeader system={data} />
+    <div className={`transition-opacity duration-150 ${switching ? 'opacity-60' : ''}`} aria-busy={switching}>
+      {!data.isCurrent && <PastBanner system={data} onOpenSystem={onOpenSystem} onShowHistory={onShowHistory} />}
+      <SystemHeader system={data} onOpenSystem={onOpenSystem} />
 
       <div className="mt-5 grid items-start gap-6 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,400px)] xl:grid-cols-[minmax(0,1fr)_440px]">
         <section aria-labelledby="bodies-title" className="min-w-0">
@@ -287,7 +433,12 @@ export function SystemScreen() {
               selectedId={isDesktop ? (detail?.id64 ?? null) : selectedId}
               onSelect={select}
               onShowList={() => changeView('list')}
-              className="h-[max(20rem,calc(100dvh-23.5rem))] lg:h-[max(28rem,calc(100dvh-22rem))] xl:h-[max(30rem,calc(100dvh-16.5rem))]"
+              className={
+                data.isCurrent
+                  ? 'h-[max(20rem,calc(100dvh-23.5rem))] lg:h-[max(28rem,calc(100dvh-22rem))] xl:h-[max(30rem,calc(100dvh-16.5rem))]'
+                  : // The history banner takes 4.5rem.
+                    'h-[max(20rem,calc(100dvh-28rem))] lg:h-[max(28rem,calc(100dvh-26.5rem))] xl:h-[max(30rem,calc(100dvh-21rem))]'
+              }
             />
           ) : bodies.length > 0 ? (
             <BodyList

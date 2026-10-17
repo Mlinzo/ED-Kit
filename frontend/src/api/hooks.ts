@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useSyncExternalStore } from 'react'
 import { StoreContext } from './context'
-import type { Store, ViewEntry, ViewMap } from './store'
+import { viewPath, type Store, type ViewEntry, type ViewMap, type ViewParams } from './store'
 import type { ConnectionState } from './transport'
 import type { IngestState, LiveStatus, Topic } from './types'
 
@@ -52,11 +52,15 @@ export interface ViewResult<T> extends ViewEntry<T> {
   refetch: () => void
 }
 
-/** A server view, fetched on first use and refetched on every `invalidate` of its topic. */
-export function useView<K extends Topic>(topic: K): ViewResult<ViewMap[K]> {
+/**
+ * A server view, fetched on first use and refetched on every `invalidate` of its topic.
+ * `params` select a variant of the view, e.g. `{ address }` for a system from the history.
+ */
+export function useView<K extends Topic>(topic: K, params?: ViewParams): ViewResult<ViewMap[K]> {
   const store = useStore()
-  useEffect(() => store.retain(topic), [store, topic])
-  const entry = useSyncExternalStore(store.subscribe, () => store.getEntry(topic))
-  const refetch = useCallback(() => store.invalidate([topic]), [store, topic])
+  const path = viewPath(topic, params)
+  useEffect(() => store.retain(topic, path), [store, topic, path])
+  const entry = useSyncExternalStore(store.subscribe, () => store.getEntry(path)) as ViewEntry<ViewMap[K]>
+  const refetch = useCallback(() => store.refresh(path), [store, path])
   return { ...entry, refetch }
 }

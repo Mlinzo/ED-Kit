@@ -3,7 +3,7 @@
 // plus a short journal backfill so the progress bar shows.
 
 import type { StreamHandlers, Transport } from '../api/transport'
-import type { IngestState, LiveStatus } from '../api/types'
+import type { IngestState, LiveStatus, SystemView } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
   buildSession,
@@ -13,7 +13,31 @@ import {
   SITE_ORIGIN,
   SURFACE_BODY_NAME,
 } from './fixtures'
+import { buildHistory, buildPastSystem, withHistory } from './history'
 import { buildStats } from './stats'
+
+/** What the backend answers for an address it does not know. */
+function emptySystem(system: SystemView): SystemView {
+  return {
+    ...system,
+    address: null,
+    name: null,
+    starPos: null,
+    bodyCount: null,
+    scannedCount: 0,
+    allBodiesFound: false,
+    isCurrent: false,
+    currentBodyId: null,
+    visits: 0,
+    firstVisitAt: null,
+    lastVisitAt: null,
+    prevSystem: null,
+    nextSystem: null,
+    bodies: [],
+    barycentres: [],
+    totals: { fss: 0, dss: 0, bioMin: 0, bioMax: 0 },
+  }
+}
 
 const STATUS_INTERVAL_MS = 250
 const INGEST_INTERVAL_MS = 300
@@ -58,7 +82,8 @@ function simulatedStatus(seconds: number): LiveStatus {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function createMockTransport(): Transport {
-  const system = buildSystem()
+  const history = buildHistory(buildSystem())
+  const system = withHistory(buildSystem(), history)
   const surface = buildSurface(system)
   const session = buildSession()
   const stats = buildStats()
@@ -74,11 +99,16 @@ export function createMockTransport(): Transport {
     journalDirFound: true,
   }
 
-  const routes: Record<string, () => unknown> = {
-    '/api/view/system': () => system,
+  const routes: Record<string, (query: URLSearchParams) => unknown> = {
+    '/api/view/system': (query) => {
+      const address = query.get('address')
+      if (address === null) return system
+      return buildPastSystem(system, history, address) ?? { ...emptySystem(system), currentSystem: system.currentSystem }
+    },
     '/api/view/surface': () => surface,
     '/api/view/session': () => session,
     '/api/view/stats': () => stats,
+    '/api/view/history': () => history,
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,
   }
@@ -88,9 +118,10 @@ export function createMockTransport(): Transport {
 
     async fetchJson<T>(path: string): Promise<T> {
       await delay(60 + Math.random() * 80)
-      const route = routes[path]
+      const url = new URL(path, window.location.origin)
+      const route = routes[url.pathname]
       if (!route) throw new Error(`HTTP 404: ${path}`)
-      return structuredClone(route()) as T
+      return structuredClone(route(url.searchParams)) as T
     },
 
     stream(handlers: StreamHandlers): () => void {
