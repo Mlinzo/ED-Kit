@@ -80,6 +80,12 @@ const PLACEHOLDER_SIZE = { star: 1.3, planet: 0.42 }
 const MOON_RATIO = 0.72
 const CLEARANCE = { star: 1.9, planet: 1.22, ringsDefault: 2.4, ringsMin: 1.6, ringsMax: 3.2 }
 const GAP = { factor: 0.4, min: 0.15 }
+/**
+ * Least distance between two barycentre components, in the sum of their body radii: a close
+ * planet pair (A 8 b + A 8 c) keeps about 1.6 radii of space between the surfaces, room for the
+ * selection ring. Components with subsystems are farther apart anyway.
+ */
+const PAIR_SPREAD = 1.8
 const ROOT_GAP = 6
 
 const INTEREST_RANK: Record<Interest, number> = { low: 0, medium: 1, high: 2 }
@@ -502,7 +508,7 @@ function layoutBarycentre(node: MapNode) {
     edge = comps[0].extent
   } else if (k === 2) {
     const [a, b] = comps
-    const total = a.extent + b.extent + gap
+    const total = Math.max(a.extent + b.extent + gap, (a.size + b.size) * PAIR_SPREAD)
     // Share of the separation on a's side: real orbit sizes, else masses, else the bigger disc inside.
     const sa = smaOf(a)
     const sb = smaOf(b)
@@ -520,7 +526,11 @@ function layoutBarycentre(node: MapNode) {
     for (let i = 0; i < k; i++) {
       for (let j = i + 1; j < k; j++) {
         const m = Math.min(j - i, k - (j - i))
-        r = Math.max(r, (comps[i].extent + comps[j].extent + gap) / (2 * Math.sin((Math.PI * m) / k)))
+        const apart = Math.max(
+          comps[i].extent + comps[j].extent + gap,
+          (comps[i].size + comps[j].size) * PAIR_SPREAD,
+        )
+        r = Math.max(r, apart / (2 * Math.sin((Math.PI * m) / k)))
       }
     }
     for (const c of comps) c.orbitRadius = r

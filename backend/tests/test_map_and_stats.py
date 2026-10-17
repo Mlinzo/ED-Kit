@@ -167,6 +167,7 @@ def test_interest_and_done(conn: sqlite3.Connection, proj: Projector) -> None:
             AtmosphereType="Argon",
         ),
         planet(6, "A 6", [{"Star": 1}, {"Null": 0}]),
+        planet(7, "A 7", [{"Star": 1}, {"Null": 0}]),
         {
             "timestamp": "2026-10-16T18:02:00Z",
             "event": "FSSBodySignals",
@@ -175,10 +176,20 @@ def test_interest_and_done(conn: sqlite3.Connection, proj: Projector) -> None:
             "BodyName": "x",
             "Signals": [{"Type": "$SAA_SignalType_Biological;", "Count": 1}],
         },
+        {
+            "timestamp": "2026-10-16T18:02:10Z",
+            "event": "FSSBodySignals",
+            "SystemAddress": SA,
+            "BodyID": 7,
+            "BodyName": "x",
+            "Signals": [{"Type": "$SAA_SignalType_Geological;", "Count": 2}],
+        },
     )
     bodies = {b.body_id: b for b in views.system_view(conn, "F1").bodies}
     assert bodies[5].interest == "high" and "bio" in bodies[5].reasons and not bodies[5].done
     assert bodies[6].interest == "low" and not bodies[6].done
+    # Geological signals alone are not worth a label (materials, no exploration value).
+    assert bodies[7].interest == "low" and "geo" in bodies[7].reasons
     assert bodies[1].interest in ("medium", "high")  # stars are never dimmed
 
     organic = {

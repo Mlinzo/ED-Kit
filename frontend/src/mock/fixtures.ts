@@ -153,7 +153,7 @@ function deriveInterest(b: Omit<BodyView, 'interest' | 'reasons' | 'done'>): {
   if (b.signals.geo > 0) reasons.push('geo')
   if (b.visual.rings.length > 0) reasons.push('rings')
   const done = tasks.length > 0 && tasks.every(Boolean)
-  const notable = reasons.some((r) => r === 'first_discovery' || r === 'landable_atmo' || r === 'geo')
+  const notable = reasons.some((r) => r === 'first_discovery' || r === 'landable_atmo')
   const interest: Interest =
     (tasks.length > 0 && !done) || rare ? 'high' : done || notable || b.kind === 'star' ? 'medium' : 'low'
   return { interest, reasons, done }

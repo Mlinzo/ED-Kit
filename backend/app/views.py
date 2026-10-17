@@ -357,7 +357,9 @@ def _body_view(
 
 
 HIGH_VALUE_CLASSES = {"Earthlike body": "elw", "Water world": "ww", "Ammonia world": "aw"}
-NOTABLE_REASONS = {"first_discovery", "landable_atmo", "geo"}
+# Reasons that make a body worth a label on its own. Geological signals do not: they are
+# materials, worth nothing to exploration (still shown as a badge in the body details).
+NOTABLE_REASONS = {"first_discovery", "landable_atmo"}
 PARENT_KINDS = ("Star", "Planet", "Null", "Ring")
 
 

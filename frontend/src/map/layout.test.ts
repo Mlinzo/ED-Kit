@@ -326,6 +326,9 @@ describe('layoutSystem', () => {
     // Moons are smaller than the planet they orbit, even through barycentres.
     expect(node(layout, 6).size).toBeLessThan(node(layout, 3).size)
     expect(node(layout, 7).size).toBeLessThan(node(layout, 3).size)
+    // A close moon pair still keeps clear space between the surfaces.
+    const [m6, m7] = [node(layout, 6), node(layout, 7)]
+    expect(m6.orbitRadius + m7.orbitRadius - m6.size - m7.size).toBeGreaterThanOrEqual(1.5 * Math.max(m6.size, m7.size))
     check(layout)
   })
 
