@@ -6,7 +6,7 @@ import { useView } from '../../api/hooks'
 import type { BodyVisual, HistoryEntry, HistoryStar } from '../../api/types'
 import { Credits } from '../../components/Credits'
 import { EmptyState, ViewFallback } from '../../components/States'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { exactCredits } from '../../lib/format'
 import { eventDay, eventDayTime, eventTime } from '../../lib/when'
 import { bodyColor } from '../../map/visuals/colors'
@@ -83,7 +83,7 @@ function Dash() {
 
 function Bodies({ e }: { e: HistoryEntry }) {
   return (
-    <span className="flex items-center gap-1 tabular-nums" title={ru.history.bodiesHint(e.bodiesScanned, e.bodyCount)}>
+    <span className="flex items-center gap-1 tabular-nums" title={t.history.bodiesHint(e.bodiesScanned, e.bodyCount)}>
       <span>
         {e.bodiesScanned}
         <span className="text-zinc-600">/{e.bodyCount ?? '?'}</span>
@@ -91,7 +91,7 @@ function Bodies({ e }: { e: HistoryEntry }) {
       {e.allBodiesFound && (
         <>
           <CircleCheck className="size-3.5 text-emerald-400" aria-hidden />
-          <span className="sr-only">, {ru.history.allFound}</span>
+          <span className="sr-only">, {t.history.allFound}</span>
         </>
       )}
     </span>
@@ -104,7 +104,7 @@ function Bio({ e }: { e: HistoryEntry }) {
   return (
     <span
       className={`flex items-center gap-1 tabular-nums ${done ? 'text-emerald-300' : 'text-zinc-200'}`}
-      title={ru.history.bioHint(e.speciesAnalysed, e.bioSignals)}
+      title={t.history.bioHint(e.speciesAnalysed, e.bioSignals)}
     >
       <Leaf className="size-3.5 shrink-0 text-emerald-400/80" aria-hidden />
       <span>
@@ -117,9 +117,9 @@ function Bio({ e }: { e: HistoryEntry }) {
 
 function Firsts({ e }: { e: HistoryEntry }) {
   const marks = [
-    { n: e.firstDiscoveries, icon: Flag, label: ru.history.firstDiscoveries },
-    { n: e.firstMapped, icon: MapIcon, label: ru.history.firstMapped },
-    { n: e.firstFootfalls, icon: Footprints, label: ru.history.firstFootfalls },
+    { n: e.firstDiscoveries, icon: Flag, label: t.history.firstDiscoveries },
+    { n: e.firstMapped, icon: MapIcon, label: t.history.firstMapped },
+    { n: e.firstFootfalls, icon: Footprints, label: t.history.firstFootfalls },
   ].filter((m) => m.n > 0)
   if (marks.length === 0) return <Dash />
   return (
@@ -140,15 +140,15 @@ function Mark({ className, label }: { className: string; label: string }) {
 }
 
 function Value({ e, dim }: { e: HistoryEntry; dim: boolean }) {
-  const lost = ru.history.lost(exactCredits(e.lostValue))
+  const lost = t.history.lost(exactCredits(e.lostValue))
   return (
     <span className="flex items-center justify-end gap-1.5 tabular-nums">
       {e.lostValue > 0 && e.value > 0 && <Mark className="bg-rose-400" label={lost} />}
       {/* Every jump leaves an unsold arrival-star scan: mark only systems you explored. */}
-      {e.unsoldValue > 0 && !dim && <Mark className="bg-amber-400" label={ru.history.unsold(exactCredits(e.unsoldValue))} />}
+      {e.unsoldValue > 0 && !dim && <Mark className="bg-amber-400" label={t.history.unsold(exactCredits(e.unsoldValue))} />}
       {e.lostValue > 0 && e.value === 0 ? (
         <span className="text-rose-300/80" title={lost}>
-          {ru.history.lostShort}
+          {t.history.lostShort}
         </span>
       ) : e.value === 0 ? (
         <Dash />
@@ -167,7 +167,7 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
       <button
         type="button"
         onClick={() => onOpen(e)}
-        title={e.visits > 1 && first ? ru.history.visitsHint(e.visits, first) : undefined}
+        title={e.visits > 1 && first ? t.history.visitsHint(e.visits, first) : undefined}
         className={`focus-ring grid w-full ${GRID} items-center gap-x-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800/40 ${
           current ? 'bg-emerald-500/[0.06]' : ''
         } ${transit ? 'text-zinc-500' : 'text-zinc-300'}`}
@@ -175,18 +175,18 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
         <span className="text-zinc-500 tabular-nums">{eventTime(e.lastVisitAt)}</span>
         <span className="flex min-w-0 items-center gap-2.5">
           <StarDot star={e.mainStar} />
-          <span className={`truncate font-medium ${transit ? 'text-zinc-400' : 'text-zinc-100'}`}>{e.name}</span>
+          <span className={`truncate font-medium proportional-nums ${transit ? 'text-zinc-400' : 'text-zinc-100'}`}>{e.name}</span>
           {e.visits > 1 && <span className="shrink-0 text-xs text-zinc-500 tabular-nums">×{e.visits}</span>}
           {current && (
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-300">
               <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
-              {ru.history.youAreHere}
+              {t.history.youAreHere}
             </span>
           )}
           {e.notable.length > 0 && (
             <span className="flex shrink-0 items-center gap-0.5">
               {e.notable.slice(0, MAX_GLYPHS).map((kind) => (
-                <span key={kind} title={ru.stats.notableLabel[kind as keyof typeof ru.stats.notableLabel]?.replace(/­/g, '') ?? kind}>
+                <span key={kind} title={t.stats.notableLabel[kind as keyof typeof t.stats.notableLabel]?.replace(/­/g, '') ?? kind}>
                   <NotableGlyph kind={kind} size={18} />
                 </span>
               ))}
@@ -196,7 +196,7 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
         <span className="hidden md:block">
           <Bodies e={e} />
         </span>
-        <span className="hidden tabular-nums lg:block" title={ru.history.mappedHint(e.bodiesMapped)}>
+        <span className="hidden tabular-nums lg:block" title={t.history.mappedHint(e.bodiesMapped)}>
           {e.bodiesMapped > 0 ? e.bodiesMapped : <Dash />}
         </span>
         <span className="hidden md:block">
@@ -213,9 +213,9 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
 
 function dayLabel(group: DayGroup): string {
   const relative = relativeDay(group.day)
-  if (relative === 'today') return ru.history.today
-  if (relative === 'yesterday') return ru.history.yesterday
-  return eventDay(group.at) ?? ru.common.unknown
+  if (relative === 'today') return t.history.today
+  if (relative === 'yesterday') return t.history.yesterday
+  return eventDay(group.at) ?? t.common.unknown
 }
 
 function ColumnHeader() {
@@ -225,14 +225,14 @@ function ColumnHeader() {
       aria-hidden
       className={`sticky top-14 z-10 grid ${GRID} gap-x-3 rounded-t-2xl border-b border-zinc-800 bg-zinc-950/90 px-4 py-2.5 backdrop-blur`}
     >
-      <span className={th}>{ru.history.colTime}</span>
-      <span className={th}>{ru.history.colSystem}</span>
-      <span className={`${th} hidden md:block`}>{ru.history.colBodies}</span>
-      <span className={`${th} hidden lg:block`}>{ru.history.colMapped}</span>
-      <span className={`${th} hidden md:block`}>{ru.history.colBio}</span>
-      <span className={`${th} hidden lg:block`}>{ru.history.colFirsts}</span>
-      <span className={`${th} text-right`} title={ru.history.valueHint}>
-        {ru.history.colValue}
+      <span className={th}>{t.history.colTime}</span>
+      <span className={th}>{t.history.colSystem}</span>
+      <span className={`${th} hidden md:block`}>{t.history.colBodies}</span>
+      <span className={`${th} hidden lg:block`}>{t.history.colMapped}</span>
+      <span className={`${th} hidden md:block`}>{t.history.colBio}</span>
+      <span className={`${th} hidden lg:block`}>{t.history.colFirsts}</span>
+      <span className={`${th} text-right`} title={t.history.valueHint}>
+        {t.history.colValue}
       </span>
     </div>
   )
@@ -246,8 +246,8 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={ru.history.search}
-        aria-label={ru.history.search}
+        placeholder={t.history.search}
+        aria-label={t.history.search}
         spellCheck={false}
         className="focus-ring h-10 w-full rounded-xl bg-zinc-900 pr-10 pl-9 text-sm text-zinc-100 ring-1 ring-zinc-800 placeholder:text-zinc-500 focus:ring-zinc-700 [&::-webkit-search-cancel-button]:hidden"
       />
@@ -255,8 +255,8 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         <button
           type="button"
           onClick={() => onChange('')}
-          title={ru.history.searchClear}
-          aria-label={ru.history.searchClear}
+          title={t.history.searchClear}
+          aria-label={t.history.searchClear}
           className="focus-ring absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
         >
           <X className="size-4" aria-hidden />
@@ -276,7 +276,7 @@ function FilterChips({
   onChange: (f: HistoryFilter) => void
 }) {
   return (
-    <div role="group" aria-label={ru.history.filterLabel} className="flex flex-wrap gap-2">
+    <div role="group" aria-label={t.history.filterLabel} className="flex flex-wrap gap-2">
       {HISTORY_FILTERS.map((f) => {
         const active = f === value
         return (
@@ -285,14 +285,14 @@ function FilterChips({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(f)}
-            title={ru.history.filterHint[f]}
+            title={t.history.filterHint[f]}
             className={`focus-ring inline-flex h-8 items-center gap-2 rounded-full px-3.5 text-sm font-medium ring-1 transition-colors ring-inset ${
               active
                 ? 'bg-zinc-100 text-zinc-900 ring-zinc-100'
                 : 'text-zinc-400 ring-zinc-800 hover:bg-zinc-900 hover:text-zinc-200'
             }`}
           >
-            {ru.history.filter[f]}
+            {t.history.filter[f]}
             <span className={`tabular-nums ${active ? 'text-zinc-500' : 'text-zinc-600'}`}>{counts[f]}</span>
           </button>
         )
@@ -351,15 +351,15 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
 
   if (!data) return <ViewFallback error={error} onRetry={refetch} />
   if (data.systems.length === 0) {
-    return <EmptyState icon={<History className="size-10" />} title={ru.history.empty} hint={ru.history.emptyHint} />
+    return <EmptyState icon={<History className="size-10" />} title={t.history.empty} hint={t.history.emptyHint} />
   }
 
   return (
     <div>
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">{ru.history.title}</h1>
-          <p className="mt-1 text-sm text-zinc-500">{ru.history.summary(data.systems.length)}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">{t.history.title}</h1>
+          <p className="mt-1 text-sm text-zinc-500">{t.history.summary(data.systems.length)}</p>
         </div>
         <SearchBox value={query} onChange={setQuery} />
       </section>
@@ -371,7 +371,7 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
       {shown.length === 0 ? (
         <Frame>
           <div className="flex flex-col items-center pb-10">
-            <EmptyState icon={<Search className="size-8" />} title={ru.history.noMatch} hint={ru.history.noMatchHint} />
+            <EmptyState icon={<Search className="size-8" />} title={t.history.noMatch} hint={t.history.noMatchHint} />
             <button
               type="button"
               onClick={() => {
@@ -380,7 +380,7 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
               }}
               className="focus-ring -mt-10 inline-flex h-9 items-center rounded-lg bg-zinc-800 px-4 text-sm font-medium text-zinc-100 hover:bg-zinc-700"
             >
-              {ru.history.resetFilters}
+              {t.history.resetFilters}
             </button>
           </div>
         </Frame>
@@ -391,7 +391,7 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
             <section key={g.day} aria-label={dayLabel(g)}>
               <h2 className="flex items-baseline justify-between gap-4 border-b border-zinc-800/70 bg-zinc-900/60 px-4 py-2 text-xs">
                 <span className="font-semibold tracking-wide text-zinc-300 uppercase">{dayLabel(g)}</span>
-                <span className="text-zinc-500">{ru.history.daySystems(g.entries.length)}</span>
+                <span className="text-zinc-500">{t.history.daySystems(g.entries.length)}</span>
               </h2>
               <ol className="divide-y divide-zinc-800/50">
                 {g.rows.map((e) => (
@@ -407,7 +407,7 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
                 onClick={showMore}
                 className="focus-ring inline-flex h-9 items-center rounded-lg px-4 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 hover:bg-zinc-800 hover:text-zinc-50"
               >
-                {ru.history.more(Math.min(PAGE, shown.length - limit))}
+                {t.history.more(Math.min(PAGE, shown.length - limit))}
               </button>
             </div>
           )}

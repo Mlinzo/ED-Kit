@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { BodyView, InterestReason } from '../api/types'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 
 type Tone = 'value' | 'accent' | 'neutral' | 'muted'
 
@@ -40,21 +40,21 @@ export type RouteTarget = 'open' | 'done'
 
 function badgesFor(body: BodyView, omitProgress: boolean, routeTarget: RouteTarget | null): BadgeSpec[] {
   const out: BadgeSpec[] = []
-  if (routeTarget === 'open') out.push({ key: 'route', icon: Route, label: ru.badges.routeTarget, tone: 'accent' })
-  if (routeTarget === 'done') out.push({ key: 'route', icon: Route, label: ru.badges.routeTargetDone, tone: 'muted' })
+  if (routeTarget === 'open') out.push({ key: 'route', icon: Route, label: t.badges.routeTarget, tone: 'accent' })
+  if (routeTarget === 'done') out.push({ key: 'route', icon: Route, label: t.badges.routeTargetDone, tone: 'muted' })
   if (body.signals.bio > 0 && !omitProgress)
-    out.push({ key: 'bio', icon: Leaf, label: ru.badges.bio, count: body.signals.bio, tone: 'value' })
+    out.push({ key: 'bio', icon: Leaf, label: t.badges.bio, count: body.signals.bio, tone: 'value' })
   if (body.signals.geo > 0)
-    out.push({ key: 'geo', icon: Mountain, label: ru.badges.geo, count: body.signals.geo, tone: 'neutral' })
+    out.push({ key: 'geo', icon: Mountain, label: t.badges.geo, count: body.signals.geo, tone: 'neutral' })
   if (body.wasDiscovered === false)
-    out.push({ key: 'first', icon: Sparkles, label: ru.badges.firstDiscovery, tone: 'accent' })
+    out.push({ key: 'first', icon: Sparkles, label: t.badges.firstDiscovery, tone: 'accent' })
   if (body.worthMapping && !body.mappedByMe && !omitProgress)
-    out.push({ key: 'worth', icon: MapIcon, label: ru.badges.worthMapping, tone: 'value' })
+    out.push({ key: 'worth', icon: MapIcon, label: t.badges.worthMapping, tone: 'value' })
   if (body.terraformable)
-    out.push({ key: 'tf', icon: Earth, label: ru.badges.terraformable, tone: 'neutral' })
+    out.push({ key: 'tf', icon: Earth, label: t.badges.terraformable, tone: 'neutral' })
   if (body.mappedByMe && !omitProgress)
-    out.push({ key: 'mapped', icon: MapPinCheck, label: ru.badges.mapped, tone: 'muted' })
-  if (body.landable) out.push({ key: 'land', icon: PlaneLanding, label: ru.badges.landable, tone: 'muted' })
+    out.push({ key: 'mapped', icon: MapPinCheck, label: t.badges.mapped, tone: 'muted' })
+  if (body.landable) out.push({ key: 'land', icon: PlaneLanding, label: t.badges.landable, tone: 'muted' })
   return out
 }
 
@@ -127,7 +127,7 @@ const REASONS: Record<string, { icon: LucideIcon; tone: Tone }> = {
 const REASON_ORDER = Object.keys(REASONS)
 
 function reasonLabel(code: string): string {
-  const labels = ru.reasons as Record<string, string>
+  const labels = t.reasons as Record<string, string>
   return code !== 'title' && labels[code] ? labels[code] : code
 }
 
@@ -140,7 +140,7 @@ export function ReasonChips({ reasons, className = '' }: { reasons: readonly Int
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
   })
   return (
-    <ul className={`flex flex-wrap items-center gap-1.5 ${className}`} aria-label={ru.reasons.title}>
+    <ul className={`flex flex-wrap items-center gap-1.5 ${className}`} aria-label={t.reasons.title}>
       {sorted.map((code) => {
         const spec = REASONS[code] ?? { icon: Sparkles, tone: 'neutral' as Tone }
         const Icon = spec.icon

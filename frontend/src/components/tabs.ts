@@ -1,15 +1,15 @@
 import { ChartNoAxesColumn, History, Orbit, Radar, Route, Wallet, type LucideIcon } from 'lucide-react'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 
 export type Tab = 'system' | 'surface' | 'route' | 'session' | 'history' | 'stats'
 
 export const TABS: ReadonlyArray<{ id: Tab; label: string; icon: LucideIcon }> = [
-  { id: 'system', label: ru.tabs.system, icon: Orbit },
-  { id: 'surface', label: ru.tabs.surface, icon: Radar },
-  { id: 'route', label: ru.tabs.route, icon: Route },
-  { id: 'session', label: ru.tabs.session, icon: Wallet },
-  { id: 'history', label: ru.tabs.history, icon: History },
-  { id: 'stats', label: ru.tabs.stats, icon: ChartNoAxesColumn },
+  { id: 'system', label: t.tabs.system, icon: Orbit },
+  { id: 'surface', label: t.tabs.surface, icon: Radar },
+  { id: 'route', label: t.tabs.route, icon: Route },
+  { id: 'session', label: t.tabs.session, icon: Wallet },
+  { id: 'history', label: t.tabs.history, icon: History },
+  { id: 'stats', label: t.tabs.stats, icon: ChartNoAxesColumn },
 ]
 
 export const tabId = (tab: Tab) => `tab-${tab}`

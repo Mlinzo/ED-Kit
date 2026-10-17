@@ -35,13 +35,14 @@ from app.values import estimate_body_value
 
 DEFAULT_COLONY_RANGE_M = 100
 
+# As the game names the classes ("F (White) Star", "G (White-Yellow) Star", ...).
 STAR_NAMES = {
     "O": "blue-white star",
     "B": "blue-white star",
-    "A": "white star",
-    "F": "yellow-white star",
-    "G": "yellow star",
-    "K": "orange star",
+    "A": "blue-white star",
+    "F": "white star",
+    "G": "white-yellow star",
+    "K": "yellow-orange star",
     "M": "red dwarf",
     "L": "brown dwarf",
     "T": "brown dwarf",

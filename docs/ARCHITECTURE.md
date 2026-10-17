@@ -56,7 +56,10 @@ Rules:
 - `src/map/`: 3D orbit map (react-three-fiber); `src/map/visuals/`: procedural planet/star rendering.
 - `src/screens/route/map/`: 3D route map (lazy chunk). Galactic coordinates scaled to a fixed scene radius, z flipped (top view: core up, +x right); stops are screen-space dots picked on screen, labels placed without overlap.
 - The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.
-- Dark, modern, glanceable UI; Russian labels, game names in English.
+- Dark, modern, glanceable UI. Languages: English (default), Ukrainian, Russian — chosen in Settings, stored per browser;
+  switching reloads the page. `src/i18n/ru.ts` is the original dictionary and defines the shape (`Strings`); `en.ts`
+  and `uk.ts` follow it, checked by `dictionaries.test.ts`. Game names (systems, bodies, species, planet and star
+  classes) stay in English in every language.
 
 ## Running (dev)
 

@@ -27,7 +27,7 @@ import { CopyButton } from '../../components/CopyButton'
 import { CreditRange, Credits } from '../../components/Credits'
 import { Segmented } from '../../components/Segmented'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { exactCredits, formatCredits, formatLs, formatLy, formatRelative } from '../../lib/format'
 import { readStored, writeStored } from '../../lib/storage'
 import { eventFull } from '../../lib/when'
@@ -42,8 +42,8 @@ import { useRouteActions } from './useRouteActions'
 const VIEW_KEY = 'edk.routeView'
 type ViewMode = 'map' | 'list'
 const VIEW_OPTIONS = [
-  { id: 'map' as const, label: ru.map.map, icon: Orbit },
-  { id: 'list' as const, label: ru.map.list, icon: List },
+  { id: 'map' as const, label: t.map.map, icon: Orbit },
+  { id: 'list' as const, label: t.map.list, icon: List },
 ]
 
 function Notice({ tone, children }: { tone: 'warn' | 'error' | 'info'; children: ReactNode }) {
@@ -69,14 +69,14 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
   if (route.stops.length === 0) {
     return (
       <section className="rounded-2xl bg-zinc-900/40 ring-1 ring-zinc-800">
-        <EmptyState icon={<Route className="size-10" />} title={ru.route.empty} hint={ru.route.emptyHint} />
+        <EmptyState icon={<Route className="size-10" />} title={t.route.empty} hint={t.route.emptyHint} />
       </section>
     )
   }
   if (!stop) {
     return (
       <section className="rounded-2xl bg-emerald-500/[0.07] ring-1 ring-emerald-500/25">
-        <EmptyState icon={<Flag className="size-10 text-emerald-400" />} title={ru.route.finished} hint={ru.route.finishedHint} />
+        <EmptyState icon={<Flag className="size-10 text-emerald-400" />} title={t.route.finished} hint={t.route.finishedHint} />
       </section>
     )
   }
@@ -86,7 +86,7 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
     <section aria-labelledby="route-next" className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-sky-500/25 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <Label as="h2" id="route-next">
-          {ru.route.next} · {ru.route.stopOf(stop.seq, route.stops.length)}
+          {t.route.next} · <span className="normal-case">{t.route.stopOf(stop.seq, route.stops.length)}</span>
         </Label>
         <a
           href={spanshUrl(stop.address)}
@@ -94,7 +94,7 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
           rel="noreferrer"
           className="focus-ring inline-flex items-center gap-1 rounded-md text-xs text-zinc-500 hover:text-zinc-300"
         >
-          {ru.route.spansh}
+          {t.route.spansh}
           <ExternalLink className="size-3.5" aria-hidden />
         </a>
       </div>
@@ -102,19 +102,19 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
       <div className="mt-2 flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <h3 className="min-w-0 text-2xl font-semibold tracking-tight break-words text-zinc-50 sm:text-3xl">{stop.name}</h3>
+            <h3 className="min-w-0 text-2xl font-semibold tracking-tight break-words text-zinc-50 proportional-nums sm:text-3xl">{stop.name}</h3>
             <CopyButton text={stop.name} label />
           </div>
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-400">
             {stop.here ? (
               <span className="inline-flex items-center gap-1.5 font-medium text-emerald-300">
                 <MapPin className="size-4" aria-hidden />
-                {ru.route.youAreHere}
+                {t.route.youAreHere}
               </span>
             ) : route.distanceToNextLy !== null ? (
               <span>
-                {ru.route.fromYou(formatLy(route.distanceToNextLy))}
-                {route.jumpsToNext ? <span className="text-zinc-500"> · {ru.route.jumps(route.jumpsToNext)}</span> : null}
+                {t.route.fromYou(formatLy(route.distanceToNextLy))}
+                {route.jumpsToNext ? <span className="text-zinc-500"> · {t.route.jumps(route.jumpsToNext)}</span> : null}
               </span>
             ) : null}
             <PopulatedBadge population={stop.population} />
@@ -122,7 +122,7 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
         </div>
         {left.max > 0 && (
           <div className="shrink-0 sm:text-right">
-            <p className="text-xs font-medium text-zinc-500">{ru.route.stopLeft}</p>
+            <p className="text-xs font-medium text-zinc-500">{t.route.stopLeft}</p>
             <CreditRange
               min={left.min}
               max={left.max}
@@ -137,7 +137,7 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
           <BodyRow key={b.bodyId} body={b} />
         ))}
       </ul>
-      {bio && <p className="mt-2 text-xs text-zinc-600">{ru.route.bioHint}</p>}
+      {bio && <p className="mt-2 text-xs text-zinc-600">{t.route.bioHint}</p>}
 
       <div className="mt-4 flex justify-end">
         <button
@@ -146,7 +146,7 @@ function NextTarget({ route, onSkip }: { route: RouteView; onSkip: (seq: number)
           className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 hover:bg-zinc-800 hover:text-zinc-50"
         >
           <SkipForward className="size-4" aria-hidden />
-          {ru.route.skip}
+          {t.route.skip}
         </button>
       </div>
     </section>
@@ -160,13 +160,13 @@ function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onR
   return (
     <section aria-labelledby="route-progress" className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-zinc-800 sm:p-6">
       <Label as="h2" id="route-progress">
-        {ru.route.progress}
+        {t.route.progress}
       </Label>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50">{ru.route.stopsDone(route.doneCount, total)}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50">{t.route.stopsDone(route.doneCount, total)}</p>
       <div
         className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-zinc-800"
         role="progressbar"
-        aria-label={ru.route.progress}
+        aria-label={t.route.progress}
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={route.doneCount}
@@ -176,47 +176,47 @@ function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onR
       </div>
       <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
         <div>
-          <dt className="text-zinc-500">{ru.route.collected}</dt>
+          <dt className="text-zinc-500">{t.route.collected}</dt>
           <dd className="mt-0.5">
             <Credits value={route.collectedValue} className="text-lg font-semibold text-emerald-300" />{' '}
             <span className="text-zinc-500" title={exactCredits(route.totalValue)}>
-              {ru.route.ofTotal(formatCredits(route.totalValue))}
+              {t.route.ofTotal(formatCredits(route.totalValue))}
             </span>
           </dd>
         </div>
         <div>
-          <dt className="text-zinc-500" title={ru.route.routeLeftHint}>
-            {ru.route.routeLeft}
+          <dt className="text-zinc-500" title={t.route.routeLeftHint}>
+            {t.route.routeLeft}
           </dt>
           <dd className="mt-0.5">
             <CreditRange min={left.min} max={left.max} className="text-lg font-semibold text-zinc-100" />
           </dd>
-          {route.skippedCount > 0 && <dd className="text-xs text-zinc-500">{ru.route.withoutSkipped}</dd>}
+          {route.skippedCount > 0 && <dd className="text-xs text-zinc-500">{t.route.withoutSkipped}</dd>}
         </div>
         <div>
-          <dt className="text-zinc-500">{ru.route.remaining}</dt>
+          <dt className="text-zinc-500">{t.route.remaining}</dt>
           <dd className="mt-0.5 text-lg font-semibold text-zinc-100">{formatLy(route.remainingLy)}</dd>
           <dd className="text-xs text-zinc-500">
-            {ru.route.total}: <span className="whitespace-nowrap">{formatLy(route.totalLy)}</span>
+            {t.route.total}: <span className="whitespace-nowrap">{formatLy(route.totalLy)}</span>
             {route.directLy !== null && (
-              <span className="block whitespace-nowrap">{ru.route.direct(formatLy(route.directLy))}</span>
+              <span className="block whitespace-nowrap">{t.route.direct(formatLy(route.directLy))}</span>
             )}
           </dd>
         </div>
       </dl>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 pt-4 text-xs text-zinc-500">
         <span title={route.dataAt ? (eventFull(route.dataAt) ?? undefined) : undefined}>
-          {route.dataAt ? ru.route.dataFrom(formatRelative(route.dataAt)) : null}
+          {route.dataAt ? t.route.dataFrom(formatRelative(route.dataAt)) : null}
         </span>
         <button
           type="button"
           onClick={onRefresh}
           disabled={refreshDisabled}
-          title={ru.route.refreshHint}
+          title={t.route.refreshHint}
           className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 font-medium text-zinc-400 ring-1 ring-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-40"
         >
           <RefreshCw className="size-3.5" aria-hidden />
-          {ru.route.refresh}
+          {t.route.refresh}
         </button>
       </div>
     </section>
@@ -248,10 +248,10 @@ function StopRow({
       <span className="text-zinc-500 tabular-nums">{stop.seq}</span>
       <span className="hidden tabular-nums md:block">
         {formatLy(stop.hopLy)}
-        {stop.jumps ? <span className="block text-xs text-zinc-600">{ru.route.jumps(stop.jumps)}</span> : null}
+        {stop.jumps ? <span className="block text-xs text-zinc-600">{t.route.jumps(stop.jumps)}</span> : null}
       </span>
       <span className="flex min-w-0 items-center gap-1.5">
-        <span className={`truncate font-medium ${dim ? 'text-zinc-500' : 'text-zinc-100'} ${stop.skipped ? 'line-through' : ''}`} title={stop.name}>
+        <span className={`truncate font-medium proportional-nums ${dim ? 'text-zinc-500' : 'text-zinc-100'} ${stop.skipped ? 'line-through' : ''}`} title={stop.name}>
           {stop.name}
         </span>
         <CopyButton text={stop.name} />
@@ -266,7 +266,7 @@ function StopRow({
               b.name,
               formatLs(b.distanceLs),
               carto(b) ? exactCredits(b.mappingValue) : null,
-              b.bioSignals > 0 ? `${ru.route.bioSignals(b.bioSignals)}: ${exactCredits(b.bioMin)} – ${exactCredits(b.bioMax)}` : null,
+              b.bioSignals > 0 ? `${t.route.bioSignals(b.bioSignals)}: ${exactCredits(b.bioMin)} – ${exactCredits(b.bioMax)}` : null,
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -287,26 +287,26 @@ function StopRow({
         {/* Editing: shown on hover or keyboard focus, so the list stays quiet. */}
         <span className="ml-1 flex items-center opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
           {!stop.done && !next && nextSeq !== null && stop.seq > nextSeq && (
-            <IconButton label={label(ru.route.makeNext)} onClick={() => actions.makeNext(stop.seq, nextSeq)}>
+            <IconButton label={label(t.route.makeNext)} onClick={() => actions.makeNext(stop.seq, nextSeq)}>
               <ChevronsUp className="size-4" aria-hidden />
             </IconButton>
           )}
           {stop.seq > 1 && (
-            <IconButton label={label(ru.route.moveUp)} onClick={() => actions.move(stop.seq, stop.seq - 1)}>
+            <IconButton label={label(t.route.moveUp)} onClick={() => actions.move(stop.seq, stop.seq - 1)}>
               <ArrowUp className="size-4" aria-hidden />
             </IconButton>
           )}
           {!last && (
-            <IconButton label={label(ru.route.moveDown)} onClick={() => actions.move(stop.seq, stop.seq + 1)}>
+            <IconButton label={label(t.route.moveDown)} onClick={() => actions.move(stop.seq, stop.seq + 1)}>
               <ArrowDown className="size-4" aria-hidden />
             </IconButton>
           )}
           {!stop.done && (
-            <IconButton label={label(stop.skipped ? ru.route.unskip : ru.route.skip)} onClick={() => actions.skip(stop.seq, !stop.skipped)}>
+            <IconButton label={label(stop.skipped ? t.route.unskip : t.route.skip)} onClick={() => actions.skip(stop.seq, !stop.skipped)}>
               {stop.skipped ? <Undo2 className="size-4" aria-hidden /> : <SkipForward className="size-4" aria-hidden />}
             </IconButton>
           )}
-          <IconButton label={label(ru.route.remove)} onClick={() => actions.remove(stop.seq)} danger>
+          <IconButton label={label(t.route.remove)} onClick={() => actions.remove(stop.seq)} danger>
             <X className="size-4" aria-hidden />
           </IconButton>
         </span>
@@ -318,14 +318,14 @@ function StopRow({
 function StopList({ route, actions }: { route: RouteView; actions: StopActions }) {
   const th = 'text-[11px] font-medium tracking-wide text-zinc-500 uppercase'
   return (
-    <section aria-label={ru.route.title} className="rounded-2xl bg-zinc-900/30 ring-1 ring-zinc-800">
+    <section aria-label={t.route.title} className="rounded-2xl bg-zinc-900/30 ring-1 ring-zinc-800">
       <div aria-hidden className={`sticky top-14 z-10 grid ${GRID} gap-x-3 rounded-t-2xl border-b border-zinc-800 bg-zinc-950/90 px-4 py-2.5 backdrop-blur`}>
-        <span className={th}>{ru.route.colStop}</span>
-        <span className={`${th} hidden md:block`}>{ru.route.colHop}</span>
-        <span className={th}>{ru.route.colSystem}</span>
-        <span className={`${th} hidden xl:block`}>{ru.route.colBodies}</span>
-        <span className={`${th} text-right`}>{ru.route.colValue}</span>
-        <span className={`${th} hidden text-right md:block`}>{ru.route.colStatus}</span>
+        <span className={th}>{t.route.colStop}</span>
+        <span className={`${th} hidden md:block`}>{t.route.colHop}</span>
+        <span className={th}>{t.route.colSystem}</span>
+        <span className={`${th} hidden xl:block`}>{t.route.colBodies}</span>
+        <span className={`${th} text-right`}>{t.route.colValue}</span>
+        <span className={`${th} hidden text-right md:block`}>{t.route.colStatus}</span>
       </div>
       <ol className="divide-y divide-zinc-800/50">
         {route.stops.map((s, i) => (
@@ -349,8 +349,8 @@ function routeSummary(route: RouteView): string | null {
   if (!p) return null
   const where =
     p.mode === 'line'
-      ? ru.route.summary.line(source, route.destination?.name ?? p.destination ?? '?', p.deviationLy)
-      : ru.route.summary.riches(source, p.radiusLy, route.stops.length)
+      ? t.route.summary.line(source, route.destination?.name ?? p.destination ?? '?', p.deviationLy)
+      : t.route.summary.riches(source, p.radiusLy, route.stops.length)
   return where
 }
 
@@ -386,7 +386,7 @@ export function RouteScreen() {
   if (!data) return <ViewFallback error={error} onRetry={refetch} />
   const hasRoute = data.params !== null
   const showForm = !hasRoute || formOpen
-  const failure = data.error ? (ru.route.errors[data.error] ?? ru.route.errors.internal)(data.errorDetail) : null
+  const failure = data.error ? (t.route.errors[data.error] ?? t.route.errors.internal)(data.errorDetail) : null
 
   const plan = async (req: Parameters<typeof actions.plan>[0]) => {
     if (await actions.plan(req)) setFormOpen(false)
@@ -406,8 +406,8 @@ export function RouteScreen() {
     <div className="space-y-5">
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">{ru.route.title}</h1>
-          <p className="mt-1 text-sm text-zinc-500">{hasRoute ? routeSummary(data) : ru.route.intro}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">{t.route.title}</h1>
+          <p className="mt-1 text-sm text-zinc-500 proportional-nums">{hasRoute ? routeSummary(data) : t.route.intro}</p>
         </div>
         {hasRoute && !formOpen && (
           <div className="flex flex-wrap items-center gap-2">
@@ -415,19 +415,19 @@ export function RouteScreen() {
               type="button"
               onClick={() => setFormOpen(true)}
               disabled={!data.online}
-              title={ru.route.editHint}
+              title={t.route.editHint}
               className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg bg-zinc-800 px-3 text-sm font-medium text-zinc-100 hover:bg-zinc-700 disabled:opacity-40"
             >
               <Pencil className="size-4" aria-hidden />
-              {ru.route.editRoute}
+              {t.route.editRoute}
             </button>
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(ru.route.clearConfirm)) void actions.clear()
+                if (window.confirm(t.route.clearConfirm)) void actions.clear()
               }}
-              title={ru.route.clear}
-              aria-label={ru.route.clear}
+              title={t.route.clear}
+              aria-label={t.route.clear}
               className="focus-ring inline-flex size-9 items-center justify-center rounded-lg text-zinc-500 ring-1 ring-zinc-800 hover:bg-zinc-800 hover:text-rose-300"
             >
               <Trash2 className="size-4" aria-hidden />
@@ -436,14 +436,14 @@ export function RouteScreen() {
         )}
       </section>
 
-      {!data.online && <Notice tone="warn">{ru.route.offline}</Notice>}
+      {!data.online && <Notice tone="warn">{t.route.offline}</Notice>}
       {failure && <Notice tone="error">{failure}</Notice>}
       {actions.error && (
         <Notice tone="error">
-          {ru.route.sendError}: {actions.error}
+          {t.route.sendError}: {actions.error}
         </Notice>
       )}
-      {data.building && hasRoute && !showForm && <Notice tone="info">{ru.route.building}</Notice>}
+      {data.building && hasRoute && !showForm && <Notice tone="info">{t.route.building}</Notice>}
 
       {showForm && (
         <RouteForm
@@ -459,7 +459,7 @@ export function RouteScreen() {
       {hasRoute && !formOpen && (
         <>
           {/* Around a point the route always takes the nearest N; cut short is news only for a corridor. */}
-          {data.truncated && data.params?.mode === 'line' && <Notice tone="warn">{ru.route.truncated}</Notice>}
+          {data.truncated && data.params?.mode === 'line' && <Notice tone="warn">{t.route.truncated}</Notice>}
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <NextTarget route={data} onSkip={(seq) => void actions.skip(seq, true)} />
             {data.stops.length > 0 && (
@@ -474,9 +474,9 @@ export function RouteScreen() {
             <section aria-labelledby="route-stops">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 id="route-stops" className="text-sm font-medium text-zinc-400">
-                  {ru.route.stops} <span className="text-zinc-600">{data.stops.length}</span>
+                  {t.route.stops} <span className="text-zinc-600">{data.stops.length}</span>
                 </h2>
-                <Segmented label={ru.map.viewLabel} value={view} options={VIEW_OPTIONS} onChange={changeView} />
+                <Segmented label={t.map.viewLabel} value={view} options={VIEW_OPTIONS} onChange={changeView} />
               </div>
               {view === 'map' ? (
                 <RouteMap

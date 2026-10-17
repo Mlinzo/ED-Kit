@@ -3,18 +3,18 @@
 // Text helpers shared by the <CodexBadge> components.
 
 import type { BodyView, CodexStatus } from '../api/types'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 
 const LABELS: Record<CodexStatus, string> = {
-  new: ru.codex.new,
-  new_region: ru.codex.newRegion,
-  logged: ru.codex.logged,
+  new: t.codex.new,
+  new_region: t.codex.newRegion,
+  logged: t.codex.logged,
 }
 
 const HINTS: Record<CodexStatus, string> = {
-  new: ru.codex.newHint,
-  new_region: ru.codex.newRegionHint,
-  logged: ru.codex.loggedHint,
+  new: t.codex.newHint,
+  new_region: t.codex.newRegionHint,
+  logged: t.codex.loggedHint,
 }
 
 /** "Новое в кодексе" / "Новое для региона" / "В кодексе"; unknown codes read as logged. */
@@ -28,8 +28,8 @@ export function codexLabel(status: CodexStatus): string {
  */
 export function codexTitle(status: CodexStatus, tentative = false): string {
   const lines = [codexLabel(status), HINTS[status] ?? HINTS.logged]
-  if (tentative && codexNewStatus(status)) lines.push(ru.codex.tentativeHint)
-  lines.push(ru.codex.note)
+  if (tentative && codexNewStatus(status)) lines.push(t.codex.tentativeHint)
+  lines.push(t.codex.note)
   return lines.join('\n')
 }
 
@@ -53,17 +53,17 @@ export interface BodyCodex {
 export function bodyCodex(body: Pick<BodyView, 'codexNew' | 'codexMaybe' | 'genuses'>): BodyCodex | null {
   const sure = Math.max(0, body.codexNew)
   const maybe = Math.max(0, body.codexMaybe)
-  const dss = body.genuses.length === 0 ? ` ${ru.codex.dssHint}` : ''
+  const dss = body.genuses.length === 0 ? ` ${t.codex.dssHint}` : ''
   if (sure > 0) {
-    const text = maybe > 0 ? `${ru.codex.bodyNew(sure)} · ${ru.codex.alsoMaybe(maybe)}` : ru.codex.bodyNew(sure)
-    const lines = [ru.codex.bodyNew(sure), ru.codex.bodyNewHint]
-    if (maybe > 0) lines.push(`${ru.codex.bodyMaybe(maybe)}. ${ru.codex.bodyMaybeHint}${dss}`)
-    lines.push(ru.codex.note)
+    const text = maybe > 0 ? `${t.codex.bodyNew(sure)} · ${t.codex.alsoMaybe(maybe)}` : t.codex.bodyNew(sure)
+    const lines = [t.codex.bodyNew(sure), t.codex.bodyNewHint]
+    if (maybe > 0) lines.push(`${t.codex.bodyMaybe(maybe)}. ${t.codex.bodyMaybeHint}${dss}`)
+    lines.push(t.codex.note)
     return { level: 'new', count: sure, text, title: lines.join('\n') }
   }
   if (maybe > 0) {
-    const text = ru.codex.bodyMaybe(maybe)
-    return { level: 'maybe', count: maybe, text, title: [text, `${ru.codex.bodyMaybeHint}${dss}`, ru.codex.note].join('\n') }
+    const text = t.codex.bodyMaybe(maybe)
+    return { level: 'maybe', count: maybe, text, title: [text, `${t.codex.bodyMaybeHint}${dss}`, t.codex.note].join('\n') }
   }
   return null
 }

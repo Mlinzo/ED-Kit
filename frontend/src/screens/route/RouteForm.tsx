@@ -3,7 +3,7 @@
 import { LoaderCircle, MoveRight, Orbit, Route } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import type { BodyKind, RouteMode, RouteRequest } from '../../api/types'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { ThresholdField } from '../../settings/ThresholdField'
 import { KindChip } from './kinds'
 
@@ -115,7 +115,7 @@ function TextInput({
       aria-label={label}
       spellCheck={false}
       autoComplete="off"
-      className="focus-ring h-10 w-full rounded-xl bg-zinc-900 px-3 text-sm text-zinc-100 ring-1 ring-zinc-800 placeholder:text-zinc-500 focus:ring-zinc-700"
+      className="focus-ring h-10 w-full rounded-xl bg-zinc-900 px-3 text-sm text-zinc-100 proportional-nums ring-1 ring-zinc-800 placeholder:text-zinc-500 focus:ring-zinc-700"
     />
   )
 }
@@ -156,8 +156,8 @@ export function RouteForm({
 
   return (
     <form onSubmit={submit} className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-zinc-800 sm:p-6">
-      <Field label={ru.route.mode} hint={ru.route.modeHint[req.mode]}>
-        <div role="group" aria-label={ru.route.mode} className="inline-flex rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+      <Field label={t.route.mode} hint={t.route.modeHint[req.mode]}>
+        <div role="group" aria-label={t.route.mode} className="inline-flex rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
           {modes.map(({ id, icon: Icon }) => (
             <button
               key={id}
@@ -169,41 +169,41 @@ export function RouteForm({
               }`}
             >
               <Icon className="size-4" aria-hidden />
-              {ru.route.modes[id]}
+              {t.route.modes[id]}
             </button>
           ))}
         </div>
       </Field>
 
       <div className="mt-6 grid gap-x-8 gap-y-6 lg:grid-cols-2">
-        <Field label={ru.route.source} hint={ru.route.sourceHint}>
+        <Field label={t.route.source} hint={t.route.sourceHint}>
           <TextInput
             value={req.source}
             onChange={(v) => set('source', v)}
-            placeholder={ru.route.sourcePlaceholder(currentSystem)}
-            label={ru.route.source}
+            placeholder={t.route.sourcePlaceholder(currentSystem)}
+            label={t.route.source}
           />
         </Field>
         {req.mode === 'line' ? (
-          <Field label={ru.route.destination}>
+          <Field label={t.route.destination}>
             <TextInput
               value={req.destination ?? ''}
               onChange={(v) => set('destination', v)}
-              placeholder={ru.route.destinationPlaceholder}
-              label={ru.route.destination}
+              placeholder={t.route.destinationPlaceholder}
+              label={t.route.destination}
             />
           </Field>
         ) : (
-          <Field label={ru.route.radius}>
-            <Choice value={req.radiusLy} options={RADII} format={ru.route.ly} onChange={(v) => set('radiusLy', v)} />
+          <Field label={t.route.radius}>
+            <Choice value={req.radiusLy} options={RADII} format={t.route.ly} onChange={(v) => set('radiusLy', v)} />
           </Field>
         )}
         {req.mode === 'line' && (
-          <Field label={ru.route.deviation}>
-            <Choice value={req.deviationLy} options={DEVIATIONS} format={ru.route.ly} onChange={(v) => set('deviationLy', v)} />
+          <Field label={t.route.deviation}>
+            <Choice value={req.deviationLy} options={DEVIATIONS} format={t.route.ly} onChange={(v) => set('deviationLy', v)} />
           </Field>
         )}
-        <Field label={ru.route.maxSystems} hint={req.mode === 'line' ? ru.route.maxSystemsLineHint : undefined}>
+        <Field label={t.route.maxSystems} hint={req.mode === 'line' ? t.route.maxSystemsLineHint : undefined}>
           <Choice
             value={req.maxSystems}
             options={req.mode === 'line' ? LINE_SYSTEM_COUNTS : SYSTEM_COUNTS}
@@ -211,7 +211,7 @@ export function RouteForm({
             onChange={(v) => set('maxSystems', v)}
           />
         </Field>
-        <Field label={ru.route.bodyTypes} hint={ru.route.bodyTypesHint}>
+        <Field label={t.route.bodyTypes} hint={t.route.bodyTypesHint}>
           <div className="flex flex-wrap gap-1.5">
             {KINDS.map((kind) => {
               const on = req.bodyTypes.includes(kind)
@@ -221,12 +221,12 @@ export function RouteForm({
                   type="button"
                   aria-pressed={on}
                   onClick={() => toggleKind(kind)}
-                  className={`focus-ring inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm ring-1 ring-inset ${
+                  className={`focus-ring inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm proportional-nums ring-1 ring-inset ${
                     on ? 'bg-zinc-800 text-zinc-100 ring-zinc-600' : 'bg-zinc-900 text-zinc-500 ring-zinc-800 hover:text-zinc-300'
                   }`}
                 >
                   <KindChip kind={kind} dim={!on} />
-                  {ru.route.kinds[kind]}
+                  {t.route.kinds[kind]}
                 </button>
               )
             })}
@@ -237,8 +237,8 @@ export function RouteForm({
       <div className="mt-2 grid gap-x-8 lg:grid-cols-3">
         {carto && (
           <ThresholdField
-            label={ru.route.minValue}
-            hint={ru.route.minValueHint}
+            label={t.route.minValue}
+            hint={t.route.minValueHint}
             presets={VALUE_PRESETS}
             value={req.minValue}
             onChange={(v) => set('minValue', v)}
@@ -247,8 +247,8 @@ export function RouteForm({
         )}
         {bio && (
           <ThresholdField
-            label={ru.route.bioMinValue}
-            hint={ru.route.bioMinValueHint}
+            label={t.route.bioMinValue}
+            hint={t.route.bioMinValueHint}
             presets={BIO_VALUE_PRESETS}
             value={req.bioMinValue}
             onChange={(v) => set('bioMinValue', v)}
@@ -256,8 +256,8 @@ export function RouteForm({
           />
         )}
         <ThresholdField
-          label={ru.route.minSystemValue}
-          hint={ru.route.minSystemValueHint}
+          label={t.route.minSystemValue}
+          hint={t.route.minSystemValueHint}
           presets={SYSTEM_VALUE_PRESETS}
           value={req.minSystemValue}
           onChange={(v) => set('minSystemValue', v)}
@@ -270,17 +270,17 @@ export function RouteForm({
           <Check
             checked={req.bioRequireGenuses}
             onChange={(v) => set('bioRequireGenuses', v)}
-            label={ru.route.bioRequireGenuses}
-            hint={ru.route.bioRequireGenusesHint}
+            label={t.route.bioRequireGenuses}
+            hint={t.route.bioRequireGenusesHint}
           />
         )}
         <Check
           checked={!req.includePopulated}
           onChange={(v) => set('includePopulated', !v)}
-          label={ru.route.onlyUnpopulated}
-          hint={ru.route.onlyUnpopulatedHint}
+          label={t.route.onlyUnpopulated}
+          hint={t.route.onlyUnpopulatedHint}
         />
-        <Check checked={req.skipMapped} onChange={(v) => set('skipMapped', v)} label={ru.route.skipMapped} />
+        <Check checked={req.skipMapped} onChange={(v) => set('skipMapped', v)} label={t.route.skipMapped} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
@@ -290,7 +290,7 @@ export function RouteForm({
             onClick={onCancel}
             className="focus-ring h-10 rounded-lg px-4 text-sm font-medium text-zinc-300 hover:bg-zinc-800/70"
           >
-            {ru.route.cancel}
+            {t.route.cancel}
           </button>
         )}
         <button
@@ -303,7 +303,7 @@ export function RouteForm({
           ) : (
             <Route className="size-4" aria-hidden />
           )}
-          {building ? ru.route.building : ru.route.build}
+          {building ? t.route.building : t.route.build}
         </button>
       </div>
     </form>

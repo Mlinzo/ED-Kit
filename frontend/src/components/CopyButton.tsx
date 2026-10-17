@@ -1,6 +1,6 @@
 import { Check, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { copyText } from '../lib/clipboard'
 
 const CONFIRM_MS = 1_500
@@ -10,8 +10,8 @@ export function CopyButton({ text, label = false, className = '' }: { text: stri
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
-    const t = setTimeout(() => setCopied(false), CONFIRM_MS)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setCopied(false), CONFIRM_MS)
+    return () => clearTimeout(timer)
   }, [copied])
 
   const Icon = copied ? Check : Copy
@@ -19,8 +19,8 @@ export function CopyButton({ text, label = false, className = '' }: { text: stri
     <button
       type="button"
       onClick={async () => setCopied(await copyText(text))}
-      title={`${ru.route.copy} — ${ru.route.copyHint}`}
-      aria-label={`${ru.route.copy}: ${text}`}
+      title={`${t.route.copy} — ${t.route.copyHint}`}
+      aria-label={`${t.route.copy}: ${text}`}
       className={`focus-ring inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg transition-colors ${
         label
           ? 'h-9 px-3 text-sm font-medium ring-1 ring-inset ' +
@@ -29,9 +29,9 @@ export function CopyButton({ text, label = false, className = '' }: { text: stri
       } ${className}`}
     >
       <Icon className="size-4" aria-hidden />
-      {label && (copied ? ru.route.copied : ru.route.copy)}
+      {label && (copied ? t.route.copied : t.route.copy)}
       <span className="sr-only" role="status">
-        {copied ? ru.route.copied : ''}
+        {copied ? t.route.copied : ''}
       </span>
     </button>
   )

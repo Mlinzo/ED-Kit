@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { exactCredits } from '../lib/format'
 import { shortCredits } from './credits'
-import { settingsRu as t } from './strings'
+import { t } from '../i18n'
 
 type Unit = 1_000 | 1_000_000
 
@@ -60,13 +60,13 @@ export function ThresholdField({
               }`}
               title={exactCredits(p)}
             >
-              {p === 0 ? t.off : shortCredits(p)}
+              {p === 0 ? t.settings.off : shortCredits(p)}
             </button>
           )
         })}
       </div>
       <label htmlFor={inputId} className="mt-3 block text-xs text-zinc-500">
-        {t.custom}
+        {t.settings.custom}
       </label>
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <input
@@ -83,7 +83,7 @@ export function ThresholdField({
           }}
           className="focus-ring h-9 w-32 rounded-lg bg-zinc-900 px-3 text-sm tabular-nums text-zinc-100 ring-1 ring-inset ring-zinc-800 placeholder:text-zinc-600 focus:ring-sky-500/50"
         />
-        <div role="radiogroup" aria-label={t.unit} className="inline-flex rounded-lg bg-zinc-900 p-0.5 ring-1 ring-inset ring-zinc-800">
+        <div role="radiogroup" aria-label={t.settings.unit} className="inline-flex rounded-lg bg-zinc-900 p-0.5 ring-1 ring-inset ring-zinc-800">
           {([1_000, 1_000_000] as const).map((u) => (
             <button
               key={u}
@@ -98,7 +98,7 @@ export function ThresholdField({
                 unit === u ? 'bg-zinc-700 text-zinc-50' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              {u === 1_000 ? t.thousands : t.millions}
+              {u === 1_000 ? t.settings.thousands : t.settings.millions}
             </button>
           ))}
         </div>

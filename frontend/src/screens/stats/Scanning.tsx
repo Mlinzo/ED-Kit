@@ -2,7 +2,7 @@ import { ScanSearch } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { StatsView } from '../../api/types'
 import { Meter } from '../../components/charts/Bars'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { bigNumber, percent as pctText } from './numbers'
 import { VIZ } from './palette'
@@ -45,41 +45,41 @@ function RatioStat({
 
 export function Scanning({ stats, className = '' }: { stats: StatsView; className?: string }) {
   return (
-    <Card id="stats-scanning" title={ru.stats.scanning} icon={ScanSearch} className={className}>
+    <Card id="stats-scanning" title={t.stats.scanning} icon={ScanSearch} className={className}>
       <dl className="grid gap-x-8 gap-y-7 sm:grid-cols-2 xl:grid-cols-4">
         <RatioStat
-          label={ru.stats.firstDiscoveries}
+          label={t.stats.firstDiscoveries}
           value={bigNumber(stats.firstDiscoveries)}
           part={stats.firstDiscoveries}
           total={stats.bodiesScanned}
-          detail={ru.stats.firstDiscoveriesOf(stats.bodiesScanned, formatNumber(stats.bodiesScanned))}
+          detail={t.stats.firstDiscoveriesOf(stats.bodiesScanned, formatNumber(stats.bodiesScanned))}
         />
         {/* Share of scanned planets the commander mapped; first maps go in the caption. */}
         <RatioStat
-          label={ru.stats.mapped}
+          label={t.stats.mapped}
           value={bigNumber(stats.bodiesMapped)}
           part={stats.bodiesMapped}
           total={stats.planetsScanned}
           detail={
             <>
-              {ru.stats.mappedOf(stats.planetsScanned, formatNumber(stats.planetsScanned))}
-              {stats.firstMapped > 0 && <span className="text-zinc-400"> · {ru.stats.firstMapped(stats.firstMapped, formatNumber(stats.firstMapped))}</span>}
+              {t.stats.mappedOf(stats.planetsScanned, formatNumber(stats.planetsScanned))}
+              {stats.firstMapped > 0 && <span className="text-zinc-400"> · {t.stats.firstMapped(stats.firstMapped, formatNumber(stats.firstMapped))}</span>}
             </>
           }
         />
         <RatioStat
-          label={ru.stats.efficient}
+          label={t.stats.efficient}
           value={bigNumber(stats.efficientMaps)}
           part={stats.efficientMaps}
           total={stats.bodiesMapped}
-          detail={ru.stats.efficientOf(stats.bodiesMapped, formatNumber(stats.bodiesMapped))}
+          detail={t.stats.efficientOf(stats.bodiesMapped, formatNumber(stats.bodiesMapped))}
         />
         <RatioStat
-          label={ru.stats.fullyScanned}
+          label={t.stats.fullyScanned}
           value={bigNumber(stats.systemsFullyScanned)}
           part={stats.systemsFullyScanned}
           total={stats.systemsVisited}
-          detail={ru.stats.fullyScannedOf(stats.systemsVisited, formatNumber(stats.systemsVisited))}
+          detail={t.stats.fullyScannedOf(stats.systemsVisited, formatNumber(stats.systemsVisited))}
         />
       </dl>
     </Card>

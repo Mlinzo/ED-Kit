@@ -1,6 +1,6 @@
 import { CircleCheck, CircleDashed, Dna } from 'lucide-react'
 import type { SpeciesView } from '../api/types'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { sortSpecies } from '../lib/body'
 import { exactCredits, formatMeters } from '../lib/format'
 import { codexNewStatus } from './codex'
@@ -9,9 +9,9 @@ import { Credits } from './Credits'
 import { SampleDots } from './SampleDots'
 
 function statusLabel(s: SpeciesView): string {
-  if (s.status === 'analysed') return ru.species.analysed
-  if (s.status === 'sampling') return ru.species.sampling
-  return s.certain ? ru.species.predictedCertain : ru.species.predicted
+  if (s.status === 'analysed') return t.species.analysed
+  if (s.status === 'sampling') return t.species.sampling
+  return s.certain ? t.species.predictedCertain : t.species.predicted
 }
 
 function StatusIcon({ s }: { s: SpeciesView }) {
@@ -25,8 +25,8 @@ export function SpeciesValue({ s, className = '' }: { s: SpeciesView | { value: 
   // Species missing from the catalog come with value 0: show "unknown", not "0".
   if (s.bonusValue <= 0) {
     return (
-      <span className={`inline-flex flex-col items-end ${className}`} title={ru.species.valueUnknown}>
-        {ru.common.unknown}
+      <span className={`inline-flex flex-col items-end ${className}`} title={t.species.valueUnknown}>
+        {t.common.unknown}
       </span>
     )
   }
@@ -37,9 +37,9 @@ export function SpeciesValue({ s, className = '' }: { s: SpeciesView | { value: 
       {bonus && (
         <span
           className="text-[11px] font-normal text-zinc-500"
-          title={`${ru.species.baseValue}: ${exactCredits(s.value)} · ${ru.species.withBonus}: ${exactCredits(s.bonusValue)}`}
+          title={`${t.species.baseValue}: ${exactCredits(s.value)} · ${t.species.withBonus}: ${exactCredits(s.bonusValue)}`}
         >
-          <span className="text-emerald-500/80">×{Math.round(s.bonusValue / s.value)}</span> {ru.species.firstFootfall.toLowerCase()}
+          <span className="text-emerald-500/80">×{Math.round(s.bonusValue / s.value)}</span> {t.species.firstFootfall.toLowerCase()}
         </span>
       )}
     </span>
@@ -76,11 +76,11 @@ export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
                 {s.status === 'sampling' && (
                   <span className="inline-flex items-center gap-1.5">
                     <SampleDots samples={s.samples} />
-                    <span className="text-zinc-400">{ru.species.samples(s.samples)}</span>
+                    <span className="text-zinc-400">{t.species.samples(s.samples)}</span>
                   </span>
                 )}
                 <span aria-hidden>·</span>
-                <span title={ru.species.colonyRange}>{formatMeters(s.colonyRangeM)}</span>
+                <span title={t.species.colonyRange}>{formatMeters(s.colonyRangeM)}</span>
                 {/* New codex entries stand out next to the name; a known one is a quiet note here. */}
                 {!codexNewStatus(s.codex) && <CodexBadge status={s.codex} size="sm" className="ml-1" />}
               </div>

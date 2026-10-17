@@ -3,7 +3,7 @@ import { CarFront, ChevronDown, ChevronUp, Leaf, Map as MapIcon, PersonStanding,
 import { useState, type ReactNode } from 'react'
 import type { DeathView, KillerView, StatsView } from '../../api/types'
 import { Credits } from '../../components/Credits'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { exactCredits, formatCredits, formatNumber } from '../../lib/format'
 import { bigNumber } from './numbers'
 import { shipName } from './ships'
@@ -34,7 +34,7 @@ function Killer({ k }: { k: KillerView }) {
   return (
     <li className="min-w-0">
       <div className="truncate text-zinc-100" title={k.name ?? undefined}>
-        {k.name ?? <span className="text-zinc-400">{ru.stats.unknownKiller}</span>}
+        {k.name ?? <span className="text-zinc-400">{t.stats.unknownKiller}</span>}
       </div>
       {meta && (
         <div className="truncate text-xs text-zinc-500" title={k.ship ? `${meta} (${k.ship})` : meta}>
@@ -55,7 +55,7 @@ function LostLine({ icon: Icon, iconTone, text, value, estimate }: { icon: Lucid
           <span className="text-zinc-600" aria-hidden>
             ·
           </span>
-          <span className="text-rose-300/85" title={`${estimate ? `${ru.stats.estimate}: ` : ''}${exactCredits(value)}`}>
+          <span className="text-rose-300/85" title={`${estimate ? `${t.stats.estimate}: ` : ''}${exactCredits(value)}`}>
             {estimate && '≈ '}
             {formatCredits(value)}
           </span>
@@ -70,16 +70,16 @@ function DeathRow({ d }: { d: DeathView }) {
   const bio = d.lostBioCount > 0 || d.lostBioValue > 0
   const carto = d.lostCartoBodies > 0 || d.lostCartoValue > 0
   const body = d.body && d.system && d.body.startsWith(`${d.system} `) ? d.body.slice(d.system.length + 1) : d.body
-  const option = d.rebuyOption ? (ru.stats.rebuyOption[d.rebuyOption] ?? d.rebuyOption) : null
+  const option = d.rebuyOption ? (t.stats.rebuyOption[d.rebuyOption] ?? d.rebuyOption) : null
   return (
     <tr className="align-top">
       <td className="py-3.5 pr-4" title={eventFull(d.at) ?? undefined}>
-        <div className="font-medium whitespace-nowrap text-zinc-100">{eventDay(d.at) ?? ru.common.unknown}</div>
+        <div className="font-medium whitespace-nowrap text-zinc-100">{eventDay(d.at) ?? t.common.unknown}</div>
         <div className="text-xs text-zinc-500 tabular-nums">{eventTime(d.at)}</div>
       </td>
       <td className="py-3.5 pr-4">
         <div className="truncate text-zinc-100" title={d.system ?? undefined}>
-          {d.system ?? <span className="text-zinc-400">{ru.stats.unknownSystem}</span>}
+          {d.system ?? <span className="text-zinc-400">{t.stats.unknownSystem}</span>}
         </div>
         {body && (
           <div className="truncate text-xs text-zinc-500" title={d.body ?? undefined}>
@@ -90,12 +90,12 @@ function DeathRow({ d }: { d: DeathView }) {
       <td className="py-3.5 pr-4">
         <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800/70 px-2 py-0.5 text-xs whitespace-nowrap text-zinc-300">
           <ContextIcon className="size-3.5 text-zinc-400" aria-hidden />
-          {ru.stats.deathContext[d.context] ?? d.context}
+          {t.stats.deathContext[d.context] ?? d.context}
         </span>
       </td>
       <td className="py-3.5 pr-4">
         {d.killers.length === 0 ? (
-          <span className="text-zinc-500">{ru.stats.noKiller}</span>
+          <span className="text-zinc-500">{t.stats.noKiller}</span>
         ) : (
           <ul className="space-y-1.5">
             {d.killers.map((k, i) => (
@@ -109,7 +109,7 @@ function DeathRow({ d }: { d: DeathView }) {
           <LostLine
             icon={Leaf}
             iconTone="text-emerald-400/70"
-            text={ru.stats.lostBio(d.lostBioCount, formatNumber(d.lostBioCount))}
+            text={t.stats.lostBio(d.lostBioCount, formatNumber(d.lostBioCount))}
             value={d.lostBioValue}
           />
         )}
@@ -117,12 +117,12 @@ function DeathRow({ d }: { d: DeathView }) {
           <LostLine
             icon={MapIcon}
             iconTone="text-sky-400/70"
-            text={ru.stats.lostCarto(d.lostCartoBodies, formatNumber(d.lostCartoBodies))}
+            text={t.stats.lostCarto(d.lostCartoBodies, formatNumber(d.lostCartoBodies))}
             value={d.lostCartoValue}
             estimate
           />
         )}
-        {!bio && !carto && <span className="text-zinc-600">{ru.stats.lostNothing}</span>}
+        {!bio && !carto && <span className="text-zinc-600">{t.stats.lostNothing}</span>}
       </td>
       <td className="py-3.5">
         {option ? (
@@ -135,7 +135,7 @@ function DeathRow({ d }: { d: DeathView }) {
                 {d.rebuyCost > 0 ? (
                   <Credits value={d.rebuyCost} className="text-zinc-200" />
                 ) : (
-                  <span className="text-zinc-500">{ru.stats.rebuyFree}</span>
+                  <span className="text-zinc-500">{t.stats.rebuyFree}</span>
                 )}
               </div>
             )}
@@ -143,7 +143,7 @@ function DeathRow({ d }: { d: DeathView }) {
         ) : d.rebuyCost !== null && d.rebuyCost > 0 ? (
           <Credits value={d.rebuyCost} className="text-zinc-200" />
         ) : (
-          <span className="text-zinc-600">{ru.common.unknown}</span>
+          <span className="text-zinc-600">{t.common.unknown}</span>
         )}
       </td>
     </tr>
@@ -158,7 +158,7 @@ function DeathTable({ deaths }: { deaths: readonly DeathView[] }) {
   return (
     <div className="min-w-0">
       <table className="w-full table-fixed text-sm">
-        <caption className="sr-only">{ru.stats.deathHistory}</caption>
+        <caption className="sr-only">{t.stats.deathHistory}</caption>
         <colgroup>
           <col className="w-[6.5rem]" />
           <col />
@@ -170,22 +170,22 @@ function DeathTable({ deaths }: { deaths: readonly DeathView[] }) {
         <thead className="border-b border-zinc-800">
           <tr>
             <th scope="col" className={th}>
-              {ru.stats.deathCol.when}
+              {t.stats.deathCol.when}
             </th>
             <th scope="col" className={th}>
-              {ru.stats.deathCol.where}
+              {t.stats.deathCol.where}
             </th>
             <th scope="col" className={th}>
-              {ru.stats.deathCol.context}
+              {t.stats.deathCol.context}
             </th>
             <th scope="col" className={th}>
-              {ru.stats.deathCol.killers}
+              {t.stats.deathCol.killers}
             </th>
             <th scope="col" className={th}>
-              {ru.stats.deathCol.lost}
+              {t.stats.deathCol.lost}
             </th>
             <th scope="col" className={`${th} pr-0`}>
-              {ru.stats.deathCol.rebuy}
+              {t.stats.deathCol.rebuy}
             </th>
           </tr>
         </thead>
@@ -199,7 +199,7 @@ function DeathTable({ deaths }: { deaths: readonly DeathView[] }) {
         <div className="mt-3 border-t border-zinc-800/70 pt-3">
           <MoreButton onClick={() => setExpanded((v) => !v)} expanded={expanded}>
             {expanded ? <ChevronUp className="size-3.5" aria-hidden /> : <ChevronDown className="size-3.5" aria-hidden />}
-            {expanded ? ru.stats.collapse : ru.stats.showAll(deaths.length)}
+            {expanded ? t.stats.collapse : t.stats.showAll(deaths.length)}
           </MoreButton>
         </div>
       )}
@@ -212,12 +212,12 @@ export function Deaths({ stats, className = '' }: { stats: StatsView; className?
   const deaths = Math.max(stats.deaths, history.length)
   if (deaths === 0 && stats.valueLost <= 0) {
     return (
-      <Card id="stats-deaths" title={ru.stats.deathHistory} icon={ShieldCheck} className={className}>
+      <Card id="stats-deaths" title={t.stats.deathHistory} icon={ShieldCheck} className={className}>
         <div className="flex items-center gap-4">
           <ShieldCheck className="size-9 shrink-0 text-emerald-400/80" aria-hidden />
           <div>
-            <p className="text-base font-medium text-zinc-200">{ru.stats.noDeaths}</p>
-            <p className="mt-0.5 text-sm text-zinc-500">{ru.stats.noDeathsHint}</p>
+            <p className="text-base font-medium text-zinc-200">{t.stats.noDeaths}</p>
+            <p className="mt-0.5 text-sm text-zinc-500">{t.stats.noDeathsHint}</p>
           </div>
         </div>
       </Card>
@@ -228,10 +228,10 @@ export function Deaths({ stats, className = '' }: { stats: StatsView; className?
   // Lost cartography is an estimate, so a total that includes it is one too (rows show "≈").
   const approx = history.some((d) => d.lostCartoValue > 0)
   return (
-    <Card id="stats-deaths" title={ru.stats.deathHistory} icon={Skull} className={className}>
+    <Card id="stats-deaths" title={t.stats.deathHistory} icon={Skull} className={className}>
       <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
         <dl className="flex flex-wrap gap-x-14 gap-y-5">
-          <Total value={bigNumber(deaths)} label={ru.stats.deaths(deaths)} />
+          <Total value={bigNumber(deaths)} label={t.stats.deaths(deaths)} />
           <Total
             value={
               <>
@@ -239,12 +239,12 @@ export function Deaths({ stats, className = '' }: { stats: StatsView; className?
                 <Credits value={stats.valueLost} />
               </>
             }
-            label={ru.stats.valueLost}
+            label={t.stats.valueLost}
             tone="text-rose-300/90"
           />
-          {rebuy > 0 && <Total value={<Credits value={rebuy} />} label={ru.stats.rebuyTotal} tone="text-zinc-200" />}
+          {rebuy > 0 && <Total value={<Credits value={rebuy} />} label={t.stats.rebuyTotal} tone="text-zinc-200" />}
         </dl>
-        <p className="max-w-sm text-xs leading-relaxed text-zinc-500 lg:text-right">{ru.stats.lossesHint}</p>
+        <p className="max-w-sm text-xs leading-relaxed text-zinc-500 lg:text-right">{t.stats.lossesHint}</p>
       </div>
       {history.length > 0 && (
         <div className="mt-7">

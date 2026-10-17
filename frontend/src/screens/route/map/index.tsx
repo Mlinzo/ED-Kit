@@ -3,7 +3,7 @@
 
 import { Route } from 'lucide-react'
 import { lazy, Suspense } from 'react'
-import { ru } from '../../../i18n/ru'
+import { t } from '../../../i18n'
 import { MapErrorBoundary, MapLoading, MapUnavailable } from '../../../map/shell'
 import { hasWebGL } from '../../../map/webgl'
 import type { RouteMapProps } from './RouteMapCanvas'
@@ -11,7 +11,7 @@ import type { RouteMapProps } from './RouteMapCanvas'
 const RouteMapCanvas = lazy(() => import('./RouteMapCanvas'))
 
 export function RouteMap({ onShowList, className = '', ...props }: RouteMapProps & { onShowList: () => void }) {
-  const fallback = <MapUnavailable className={className} icon={Route} hint={ru.route.map.unavailableHint} onShowList={onShowList} />
+  const fallback = <MapUnavailable className={className} icon={Route} hint={t.route.map.unavailableHint} onShowList={onShowList} />
   if (!hasWebGL()) return fallback
   return (
     <MapErrorBoundary name="Route map" fallback={fallback}>

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveStatusSelector, useView } from './api/hooks'
 import { OfflineBanner } from './components/OfflineBanner'
 import { BottomTabs } from './components/TabBar'
-import { panelId, tabId, type Tab } from './components/tabs'
+import { panelId, tabId, TABS, type Tab } from './components/tabs'
 import { TopBar } from './components/TopBar'
 import { HistoryScreen } from './screens/history/HistoryScreen'
 import { RouteScreen } from './screens/route/RouteScreen'
@@ -10,6 +10,9 @@ import { SessionScreen } from './screens/session/SessionScreen'
 import { StatsScreen } from './screens/stats/StatsScreen'
 import { SurfaceScreen } from './screens/surface/SurfaceScreen'
 import { SystemScreen } from './screens/system/SystemScreen'
+import { readSession, writeSession } from './lib/storage'
+
+const TAB_KEY = 'edk.tab'
 
 /**
  * Identifies the sampling run in progress near the commander, or null.
@@ -30,7 +33,15 @@ function useSurfaceLiveKey(): string | null {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('system')
+  // The open tab survives a reload (a language switch reloads the page).
+  const [tab, setTab] = useState<Tab>(
+    () =>
+      readSession(
+        TAB_KEY,
+        TABS.map((x) => x.id),
+      ) ?? 'system',
+  )
+  useEffect(() => writeSession(TAB_KEY, tab), [tab])
   /** A system from the history shown on the System tab; null: the current system. */
   const [pastAddress, setPastAddress] = useState<string | null>(null)
   const liveKey = useSurfaceLiveKey()

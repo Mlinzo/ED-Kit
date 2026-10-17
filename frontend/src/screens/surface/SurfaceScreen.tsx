@@ -5,7 +5,7 @@ import { CodexBadge } from '../../components/CodexBadge'
 import { SampleDots } from '../../components/SampleDots'
 import { SpeciesList, SpeciesValue } from '../../components/SpeciesList'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { bodyLabel } from '../../lib/body'
 import { formatMeters, formatNumber } from '../../lib/format'
 import { localOffset } from '../../lib/geo'
@@ -65,7 +65,7 @@ function BigDistance({ metres }: { metres: number }) {
       <span className="text-7xl leading-none font-semibold tracking-tighter text-zinc-50 sm:text-8xl xl:text-9xl">
         {value}
       </span>
-      <span className="text-3xl font-medium text-zinc-400 sm:text-4xl">{km ? ru.units.km : ru.units.m}</span>
+      <span className="text-3xl font-medium text-zinc-400 sm:text-4xl">{km ? t.units.km : t.units.m}</span>
     </span>
   )
 }
@@ -76,7 +76,7 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
       <div className="rounded-3xl bg-emerald-500/10 p-6 ring-1 ring-emerald-500/30">
         <p className="flex items-center gap-3 text-2xl font-semibold text-emerald-300">
           <CircleCheck className="size-7" aria-hidden />
-          {ru.surface.analysing}
+          {t.surface.analysing}
         </p>
       </div>
     )
@@ -87,10 +87,10 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
       <div className="rounded-3xl bg-zinc-900/60 p-6 ring-1 ring-zinc-800">
         <p className="flex items-center gap-3 text-2xl font-semibold text-zinc-300">
           <LocateOff className="size-7 shrink-0 text-zinc-500" aria-hidden />
-          {other ? ru.surface.otherBody : ru.surface.noPosition}
+          {other ? t.surface.otherBody : t.surface.noPosition}
         </p>
         <p className="mt-2 text-sm break-words text-zinc-500">
-          {other ? ru.surface.otherBodyHint(position.bodyName) : ru.surface.noPositionHint}
+          {other ? t.surface.otherBodyHint(position.bodyName) : t.surface.noPositionHint}
         </p>
       </div>
     )
@@ -107,7 +107,7 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
     >
       {nearest !== null && (
         <>
-          <Label>{ru.surface.nearest}</Label>
+          <Label>{t.surface.nearest}</Label>
           <div className="mt-2">
             <BigDistance metres={nearest} />
           </div>
@@ -125,20 +125,20 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
         )}
         <span>
           {canSample
-            ? ru.surface.canSample
+            ? t.surface.canSample
             : blockedByUnknown
-              ? ru.surface.unknownSpot
-              : ru.surface.moveAway(formatMeters(Math.ceil(moveAway)))}
+              ? t.surface.unknownSpot
+              : t.surface.moveAway(formatMeters(Math.ceil(moveAway)))}
         </span>
       </p>
       {unknown > 0 && (
         <p className="mt-3 text-sm text-zinc-400">
-          {ru.surface.unknownSamples(unknown, formatMeters(scan.colonyRangeM))}
+          {t.surface.unknownSamples(unknown, formatMeters(scan.colonyRangeM))}
         </p>
       )}
       {/* Announce only state flips, not every metre. */}
       <span className="sr-only" aria-live="polite">
-        {canSample ? ru.surface.canSample : blockedByUnknown ? ru.surface.unknownSpot : ru.surface.tooClose}
+        {canSample ? t.surface.canSample : blockedByUnknown ? t.surface.unknownSpot : t.surface.tooClose}
       </span>
     </div>
   )
@@ -156,11 +156,11 @@ export function SurfaceScreen() {
   if (!activeScan) {
     return (
       <div className="mx-auto max-w-2xl">
-        <EmptyState icon={<RadarIcon className="size-10" />} title={ru.surface.noScan} hint={ru.surface.noScanHint} />
+        <EmptyState icon={<RadarIcon className="size-10" />} title={t.surface.noScan} hint={t.surface.noScanHint} />
         {body && body.species.length > 0 && (
           <section className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-zinc-800">
             <Label>
-              {ru.surface.otherSpecies} · {bodyLabel(body)}
+              {t.surface.bodySpecies} · <span className="normal-case">{bodyLabel(body)}</span>
             </Label>
             <div className="mt-2">
               <SpeciesList species={body.species} />
@@ -173,7 +173,7 @@ export function SurfaceScreen() {
 
   const position = computePosition(activeScan, status, body)
   const geometry = position.kind === 'ok' ? position.geometry : null
-  const radarLabel = ru.surface.radarLabel(geometry?.nearest != null ? formatMeters(geometry.nearest) : ru.common.unknown)
+  const radarLabel = t.surface.radarLabel(geometry?.nearest != null ? formatMeters(geometry.nearest) : t.common.unknown)
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-10">
@@ -188,14 +188,14 @@ export function SurfaceScreen() {
             <CodexBadge status={activeScan.codex} size="md" className="mt-2" />
             <p className="mt-2 text-sm text-zinc-500">
               {body ? `${bodyLabel(body)} · ` : ''}
-              {ru.species.colonyRange} {formatMeters(activeScan.colonyRangeM)}
+              {t.species.colonyRange} {formatMeters(activeScan.colonyRangeM)}
             </p>
           </div>
           <SpeciesValue s={activeScan} className="shrink-0 text-2xl font-semibold text-emerald-300 sm:text-3xl" />
         </div>
         <div className="flex items-center gap-3">
           <SampleDots samples={activeScan.samples} size="lg" />
-          <span className="text-lg font-semibold text-zinc-200">{ru.species.samples(activeScan.samples)}</span>
+          <span className="text-lg font-semibold text-zinc-200">{t.species.samples(activeScan.samples)}</span>
         </div>
         <SampleState scan={activeScan} position={position} />
       </section>
@@ -222,14 +222,14 @@ export function SurfaceScreen() {
       {/* Other species on this body */}
       <section aria-labelledby="others-title" className="lg:col-start-2 lg:row-start-2">
         <Label as="h2" id="others-title">
-          {ru.surface.otherSpecies}
+          {t.surface.otherSpecies}
         </Label>
         {others.length > 0 ? (
           <div className="mt-1">
             <SpeciesList species={others} />
           </div>
         ) : (
-          <p className="mt-3 text-sm text-zinc-500">{ru.surface.noOtherSpecies}</p>
+          <p className="mt-3 text-sm text-zinc-500">{t.surface.noOtherSpecies}</p>
         )}
       </section>
     </div>

@@ -1,5 +1,5 @@
 import type { BodyKind, RouteBodyView } from '../../api/types'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 
 type Kind = BodyKind
 
@@ -18,12 +18,12 @@ const KIND_STYLE: Record<Kind, string> = {
 export function KindChip({ kind, dim = false }: { kind: Kind; dim?: boolean }) {
   return (
     <span
-      title={ru.route.kinds[kind]}
+      title={t.route.kinds[kind]}
       className={`inline-flex h-5 min-w-9 items-center justify-center rounded px-1 text-[10px] font-semibold tracking-wide ring-1 ring-inset ${
         dim ? 'bg-zinc-800 text-zinc-500 ring-zinc-700' : KIND_STYLE[kind]
       }`}
     >
-      {ru.route.kindShort[kind]}
+      {t.route.kindShort[kind]}
     </span>
   )
 }

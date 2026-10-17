@@ -8,7 +8,7 @@ import { communityText, isCommunity } from '../../components/source'
 import { CommunityGlyph, CommunityNotice, SourceList, SourceTag } from '../../components/SourceBadge'
 import { SpeciesList } from '../../components/SpeciesList'
 import { Label } from '../../components/States'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { bodyLabel } from '../../lib/body'
 import { formatMass, formatGravity, formatKelvin, formatKm, formatLs } from '../../lib/format'
 
@@ -102,9 +102,9 @@ function bioCounts(body: BodyView) {
 }
 
 const BIO_STATES = [
-  { key: 'done', dot: 'bg-emerald-400', label: ru.progress.analysed },
-  { key: 'sampling', dot: 'bg-accent', label: ru.progress.legendSampling },
-  { key: 'left', dot: 'bg-zinc-600', label: ru.progress.legendLeft },
+  { key: 'done', dot: 'bg-emerald-400', label: t.progress.analysed },
+  { key: 'sampling', dot: 'bg-accent', label: t.progress.legendSampling },
+  { key: 'left', dot: 'bg-zinc-600', label: t.progress.legendLeft },
 ] as const
 
 /**
@@ -156,12 +156,12 @@ function ProgressPanel({ body }: { body: BodyView }) {
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <Label as="h3" id="progress-title">
-          {ru.progress.title}
+          {t.progress.title}
         </Label>
         {body.done && (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300 ring-1 ring-emerald-400/30 ring-inset">
             <Check className="size-3.5" strokeWidth={3} aria-hidden />
-            {ru.progress.done}
+            {t.progress.done}
           </span>
         )}
       </div>
@@ -169,36 +169,36 @@ function ProgressPanel({ body }: { body: BodyView }) {
         {showDss && (
           <ProgressRow
             icon={MapIcon}
-            label={ru.progress.dss}
+            label={t.progress.dss}
             complete={body.mappedByMe}
             state={
               body.mappedByMe ? (
                 <span className="inline-flex items-center gap-1">
-                  {ru.progress.mapped}
+                  {t.progress.mapped}
                   <Check className="size-4" strokeWidth={3} aria-hidden />
                 </span>
               ) : (
-                <span className="text-sm font-medium text-zinc-300">{ru.progress.worthMapping}</span>
+                <span className="text-sm font-medium text-zinc-300">{t.progress.worthMapping}</span>
               )
             }
           >
-            {!body.mappedByMe && <p className="text-xs text-zinc-500">{ru.body.worthMappingHint}</p>}
+            {!body.mappedByMe && <p className="text-xs text-zinc-500">{t.body.worthMappingHint}</p>}
           </ProgressRow>
         )}
         {bio > 0 && (
           <ProgressRow
             icon={Leaf}
-            label={ru.progress.bio}
+            label={t.progress.bio}
             complete={bioComplete}
             state={
-              <span className="inline-flex items-center gap-1 tabular-nums" title={ru.progress.bioTitle(body.bioDone, bio)}>
-                {ru.progress.bioOf(Math.min(body.bioDone, bio), bio)}
+              <span className="inline-flex items-center gap-1 tabular-nums" title={t.progress.bioTitle(body.bioDone, bio)}>
+                {t.progress.bioOf(Math.min(body.bioDone, bio), bio)}
                 {bioComplete && <Check className="size-4" strokeWidth={3} aria-hidden />}
               </span>
             }
           >
             <BioSegments body={body} />
-            {!speciesKnown && !bioComplete && <p className="mt-2 text-xs text-zinc-500">{ru.progress.bioSpeciesUnknown}</p>}
+            {!speciesKnown && !bioComplete && <p className="mt-2 text-xs text-zinc-500">{t.progress.bioSpeciesUnknown}</p>}
           </ProgressRow>
         )}
       </div>
@@ -221,9 +221,9 @@ export function BodyDetail({
   const hasBio = body.signals.bio > 0 || body.species.length > 0
   const isPlanet = body.kind === 'planet'
   const otherSignals = [
-    { label: ru.body.signalGeo, n: body.signals.geo },
-    { label: ru.body.signalHuman, n: body.signals.human },
-    { label: ru.body.signalOther, n: body.signals.other },
+    { label: t.body.signalGeo, n: body.signals.geo },
+    { label: t.body.signalHuman, n: body.signals.human },
+    { label: t.body.signalOther, n: body.signals.other },
   ].filter((s) => s.n > 0)
   // Bio data from a community database on a body you scanned yourself (a database body says so
   // once, in the notice under the header).
@@ -248,23 +248,23 @@ export function BodyDetail({
             {isCurrent && (
               <p className="inline-flex items-center gap-1.5 text-sm font-medium text-accent">
                 <MapPin className="size-4" aria-hidden />
-                {ru.system.youAreHere}
+                {t.system.youAreHere}
               </p>
             )}
             {routeTarget && (
               <p
                 className={`inline-flex items-center gap-1.5 text-sm font-medium ${routeTarget === 'done' ? 'text-zinc-500' : 'text-accent'}`}
-                title={ru.system.route.targetHint}
+                title={t.system.route.targetHint}
               >
                 <Route className="size-4" aria-hidden />
-                {routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}
+                {routeTarget === 'done' ? t.badges.routeTargetDone : t.badges.routeTarget}
               </p>
             )}
           </div>
         )}
         {body.reasons.length > 0 && (
           <div className="pt-1">
-            <h3 className="sr-only">{ru.reasons.title}</h3>
+            <h3 className="sr-only">{t.reasons.title}</h3>
             <ReasonChips reasons={body.reasons} />
           </div>
         )}
@@ -283,38 +283,38 @@ export function BodyDetail({
       <ProgressPanel body={body} />
 
       <Section
-        title={ru.body.values}
+        title={t.body.values}
         aside={
           <span className="text-sm text-zinc-500">
-            {ru.body.total} <Credits value={body.totalValue} className="font-semibold text-zinc-200" />
+            {t.body.total} <Credits value={body.totalValue} className="font-semibold text-zinc-200" />
           </span>
         }
       >
         <div className="grid grid-cols-4 gap-2">
-          <ValueTile label={ru.system.fss}>
+          <ValueTile label={t.system.fss}>
             <Credits value={body.fssValue} />
           </ValueTile>
-          <ValueTile label={ru.system.dss} tone={body.worthMapping ? 'text-emerald-300' : 'text-zinc-100'}>
-            {isPlanet && body.dssValue > 0 ? <Credits value={body.dssValue} /> : ru.common.unknown}
+          <ValueTile label={t.system.dss} tone={body.worthMapping ? 'text-emerald-300' : 'text-zinc-100'}>
+            {isPlanet && body.dssValue > 0 ? <Credits value={body.dssValue} /> : t.common.unknown}
           </ValueTile>
           <ValueTile
-            label={ru.system.bio}
+            label={t.system.bio}
             tone={body.bioValueMax > 0 ? 'text-emerald-300' : 'text-zinc-500'}
             className="col-span-2"
           >
-            {body.bioValueMax > 0 ? <CreditRange min={body.bioValueMin} max={body.bioValueMax} /> : ru.common.unknown}
+            {body.bioValueMax > 0 ? <CreditRange min={body.bioValueMin} max={body.bioValueMax} /> : t.common.unknown}
           </ValueTile>
         </div>
       </Section>
 
       {hasBio && (
         <Section
-          title={ru.body.biology}
+          title={t.body.biology}
           aside={
             <span className="inline-flex items-center gap-1.5 text-sm text-emerald-300/90">
-              {ru.body.bioSignals(body.signals.bio)}
+              {t.body.bioSignals(body.signals.bio)}
               {signalsFromDb && (
-                <span title={`${ru.source.bioSignals}: ${communityText(signalsFromDb)}`} className="inline-flex">
+                <span title={`${t.source.bioSignals}: ${communityText(signalsFromDb)}`} className="inline-flex">
                   <CommunityGlyph className="size-3.5" />
                   <span className="sr-only">{communityText(signalsFromDb)}</span>
                 </span>
@@ -324,7 +324,7 @@ export function BodyDetail({
         >
           {body.genuses.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <ul className="contents" aria-label={ru.body.genuses}>
+              <ul className="contents" aria-label={t.body.genuses}>
                 {body.genuses.map((g) => (
                   <li key={g} className="rounded-md bg-zinc-800/80 px-2 py-0.5 text-xs font-medium text-zinc-300">
                     {g}
@@ -337,7 +337,7 @@ export function BodyDetail({
                   marker={{
                     scope: 'bio',
                     source: genusesFromDb,
-                    title: `${ru.source.genuses}: ${communityText(genusesFromDb)}`,
+                    title: `${t.source.genuses}: ${communityText(genusesFromDb)}`,
                   }}
                 />
               )}
@@ -347,57 +347,57 @@ export function BodyDetail({
             <SpeciesList species={body.species} />
           ) : (
             <p className="text-sm text-zinc-500">
-              {ru.body.noSpecies}. {ru.body.noSpeciesHint}
+              {t.body.noSpecies}. {t.body.noSpeciesHint}
             </p>
           )}
         </Section>
       )}
 
-      <Section title={ru.body.physical}>
+      <Section title={t.body.physical}>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-          {isPlanet && <Fact label={ru.body.gravity}>{formatGravity(body.gravityG)}</Fact>}
-          <Fact label={ru.body.temperature}>{formatKelvin(body.temperatureK)}</Fact>
-          <Fact label={ru.body.radius}>{formatKm(body.radiusKm)}</Fact>
-          <Fact label={ru.body.mass}>
-            <span title={isPlanet ? ru.body.massEarthHint : ru.body.massSolarHint}>
+          {isPlanet && <Fact label={t.body.gravity}>{formatGravity(body.gravityG)}</Fact>}
+          <Fact label={t.body.temperature}>{formatKelvin(body.temperatureK)}</Fact>
+          <Fact label={t.body.radius}>{formatKm(body.radiusKm)}</Fact>
+          <Fact label={t.body.mass}>
+            <span title={isPlanet ? t.body.massEarthHint : t.body.massSolarHint}>
               {formatMass(isPlanet ? body.visual.massEm : body.visual.stellarMass, body.kind)}
             </span>
           </Fact>
           {isPlanet && (
             <>
-              <Fact label={ru.body.atmosphere} className="col-span-2 sm:col-span-3">
-                {body.atmosphere || ru.body.noAtmosphere}
+              <Fact label={t.body.atmosphere} className="col-span-2 sm:col-span-3">
+                {body.atmosphere || t.body.noAtmosphere}
               </Fact>
-              <Fact label={ru.body.landable}>{body.landable ? ru.common.yes : ru.common.no}</Fact>
-              <Fact label={ru.body.terraformable}>{body.terraformable ? ru.common.yes : ru.common.no}</Fact>
+              <Fact label={t.body.landable}>{body.landable ? t.common.yes : t.common.no}</Fact>
+              <Fact label={t.body.terraformable}>{body.terraformable ? t.common.yes : t.common.no}</Fact>
             </>
           )}
         </dl>
       </Section>
 
-      <Section title={ru.body.discovery}>
+      <Section title={t.body.discovery}>
         <dl className="divide-y divide-zinc-800/70">
-          <Row label={ru.body.discoveredLabel}>
+          <Row label={t.body.discoveredLabel}>
             <span className={body.wasDiscovered === false ? 'text-accent' : undefined}>
-              {ru.body.discoveredBy(body.wasDiscovered)}
+              {t.body.discoveredBy(body.wasDiscovered)}
             </span>
           </Row>
           {isPlanet && (
             <>
-              <Row label={ru.body.mappedLabel}>
+              <Row label={t.body.mappedLabel}>
                 <span className={body.mappedByMe && body.wasMapped === false ? 'text-emerald-300' : undefined}>
-                  {ru.body.mappedBy(body.wasMapped, body.mappedByMe)}
+                  {t.body.mappedBy(body.wasMapped, body.mappedByMe)}
                 </span>
               </Row>
               {body.landable && (
-                <Row label={ru.body.footfallLabel}>
+                <Row label={t.body.footfallLabel}>
                   {!body.footfallByMe && body.wasFootfalled === false && !body.footfallClaimable ? (
-                    <span className="text-zinc-500" title={ru.body.footfallPopulatedHint}>
-                      {ru.body.footfallPopulated}
+                    <span className="text-zinc-500" title={t.body.footfallPopulatedHint}>
+                      {t.body.footfallPopulated}
                     </span>
                   ) : (
                     <span className={body.footfallClaimable || body.footfallByMe ? 'text-emerald-300' : undefined}>
-                      {ru.body.footfallBy(body.wasFootfalled, body.footfallByMe)}
+                      {t.body.footfallBy(body.wasFootfalled, body.footfallByMe)}
                     </span>
                   )}
                 </Row>
@@ -408,7 +408,7 @@ export function BodyDetail({
       </Section>
 
       {otherSignals.length > 0 && (
-        <Section title={ru.body.signals}>
+        <Section title={t.body.signals}>
           <dl className="flex flex-wrap gap-x-6 gap-y-2">
             {otherSignals.map((s) => (
               <Fact key={s.label} label={s.label}>
@@ -419,7 +419,7 @@ export function BodyDetail({
         </Section>
       )}
 
-      <Section title={ru.source.title}>
+      <Section title={t.source.title}>
         <SourceList body={body} />
       </Section>
     </article>

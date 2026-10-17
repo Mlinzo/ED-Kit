@@ -1,13 +1,13 @@
 import { LoaderCircle, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useStream } from '../api/hooks'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 
 export function Loading() {
   return (
     <div className="flex items-center justify-center gap-2 py-24 text-zinc-500" role="status">
       <LoaderCircle className="size-5 motion-safe:animate-spin" aria-hidden />
-      {ru.common.loading}
+      {t.common.loading}
     </div>
   )
 }
@@ -26,14 +26,14 @@ export function ErrorState({ error, onRetry }: { error: string; onRetry: () => v
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center" role="alert">
       <TriangleAlert className="size-8 text-rose-400" aria-hidden />
-      <p className="text-lg font-medium text-zinc-200">{ru.common.error}</p>
+      <p className="text-lg font-medium text-zinc-200">{t.common.error}</p>
       <p className="font-mono text-xs text-zinc-500">{error}</p>
       <button
         type="button"
         onClick={onRetry}
         className="focus-ring mt-2 inline-flex h-11 items-center rounded-lg bg-zinc-800 px-5 text-sm font-medium text-zinc-100 hover:bg-zinc-700"
       >
-        {ru.common.retry}
+        {t.common.retry}
       </button>
     </div>
   )

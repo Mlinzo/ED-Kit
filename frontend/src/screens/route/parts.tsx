@@ -3,7 +3,7 @@ import { CircleCheck, CircleDashed, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { RouteBodyView, RouteStopView } from '../../api/types'
 import { CreditRange, Credits } from '../../components/Credits'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatLs, formatNumber } from '../../lib/format'
 import { carto } from './helpers'
 import { BodyChips } from './kinds'
@@ -17,17 +17,17 @@ export function BodyValue({ body, className = '' }: { body: RouteBodyView; class
 export function BodyStatus({ body }: { body: RouteBodyView }) {
   if (body.done)
     return (
-      <CircleCheck className="size-4 shrink-0 text-emerald-400" aria-label={ru.route.status.done}>
-        <title>{ru.route.status.done}</title>
+      <CircleCheck className="size-4 shrink-0 text-emerald-400" aria-label={t.route.status.done}>
+        <title>{t.route.status.done}</title>
       </CircleCheck>
     )
   if (body.bioSignals > 0) {
     // Biology in progress (and mapping, if it counts, shown by the colour).
-    const label = ru.route.bioDone(body.bioDone, body.bioSignals)
+    const label = t.route.bioDone(body.bioDone, body.bioSignals)
     return (
       <span
         className={`shrink-0 text-xs tabular-nums ${body.bioDone > 0 || body.mapped ? 'text-sky-300' : 'text-zinc-500'}`}
-        title={carto(body) && body.mapped ? `${ru.route.bodyMapped} · ${label}` : label}
+        title={carto(body) && body.mapped ? `${t.route.bodyMapped} · ${label}` : label}
       >
         {body.bioDone}/{body.bioSignals}
       </span>
@@ -35,14 +35,14 @@ export function BodyStatus({ body }: { body: RouteBodyView }) {
   }
   if (body.mapped)
     return (
-      <CircleCheck className="size-4 shrink-0 text-emerald-400" aria-label={ru.route.bodyMapped}>
-        <title>{ru.route.bodyMapped}</title>
+      <CircleCheck className="size-4 shrink-0 text-emerald-400" aria-label={t.route.bodyMapped}>
+        <title>{t.route.bodyMapped}</title>
       </CircleCheck>
     )
   if (body.scanned)
     return (
-      <CircleDashed className="size-4 shrink-0 text-sky-400" aria-label={ru.route.bodyScanned}>
-        <title>{ru.route.bodyScanned}</title>
+      <CircleDashed className="size-4 shrink-0 text-sky-400" aria-label={t.route.bodyScanned}>
+        <title>{t.route.bodyScanned}</title>
       </CircleDashed>
     )
   return <span className="size-4 shrink-0" aria-hidden />
@@ -52,7 +52,7 @@ export function BodyStatus({ body }: { body: RouteBodyView }) {
  *  `compact` puts the biology under the name (narrow cards). */
 export function BodyRow({ body: b, compact = false }: { body: RouteBodyView; compact?: boolean }) {
   const bio =
-    b.bioSignals > 0 ? `${ru.route.bioSignals(b.bioSignals)} · ${b.genuses.length > 0 ? b.genuses.join(', ') : ru.route.genusUnknown}` : null
+    b.bioSignals > 0 ? `${t.route.bioSignals(b.bioSignals)} · ${b.genuses.length > 0 ? b.genuses.join(', ') : t.route.genusUnknown}` : null
   return (
     <li className={`flex items-center text-sm ${compact ? 'gap-2.5 px-3 py-2' : 'gap-3 px-3.5 py-2.5'} ${b.done ? 'text-zinc-500' : 'text-zinc-200'}`}>
       <BodyChips body={b} dim={b.done} />
@@ -76,19 +76,19 @@ export function BodyRow({ body: b, compact = false }: { body: RouteBodyView; com
 
 export function PopulatedBadge({ population, compact = false }: { population: number | null; compact?: boolean }) {
   if (!population) return null
-  const hint = ru.route.populatedHint(formatNumber(population))
+  const hint = t.route.populatedHint(formatNumber(population))
   if (compact) {
     return (
       <span title={hint} className="inline-flex shrink-0 text-zinc-500">
         <Users className="size-3.5" aria-hidden />
-        <span className="sr-only">{ru.route.populated}</span>
+        <span className="sr-only">{t.route.populated}</span>
       </span>
     )
   }
   return (
     <span title={hint} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
       <Users className="size-3" aria-hidden />
-      {ru.route.populated}
+      {t.route.populated}
     </span>
   )
 }
@@ -124,12 +124,12 @@ export function StopStatus({ stop, next }: { stop: RouteStopView; next: boolean 
     return (
       <span className="inline-flex items-center gap-1.5 text-emerald-300">
         <CircleCheck className="size-4" aria-hidden />
-        {ru.route.status.done}
+        {t.route.status.done}
       </span>
     )
-  if (stop.skipped) return <span className="text-zinc-500">{ru.route.status.skipped}</span>
-  if (stop.here) return <span className="font-medium text-emerald-300">{ru.route.status.here}</span>
-  if (next) return <span className="font-medium text-accent">{ru.route.status.next}</span>
-  if (stop.visited) return <span className="text-zinc-400">{ru.route.status.visited}</span>
+  if (stop.skipped) return <span className="text-zinc-500">{t.route.status.skipped}</span>
+  if (stop.here) return <span className="font-medium text-emerald-300">{t.route.status.here}</span>
+  if (next) return <span className="font-medium text-accent">{t.route.status.next}</span>
+  if (stop.visited) return <span className="text-zinc-400">{t.route.status.visited}</span>
   return null
 }

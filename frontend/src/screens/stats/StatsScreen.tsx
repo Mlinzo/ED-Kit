@@ -3,7 +3,7 @@ import { ChartNoAxesColumn } from 'lucide-react'
 import { useView } from '../../api/hooks'
 import type { StatsView } from '../../api/types'
 import { EmptyState, ViewFallback } from '../../components/States'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { Activity } from './Activity'
 import { Deaths } from './Deaths'
 import { Exobiology } from './Exobiology'
@@ -22,7 +22,7 @@ export function StatsScreen() {
   const { data, error, refetch } = useView('stats')
   if (!data) return <ViewFallback error={error} onRetry={refetch} />
   if (isEmpty(data)) {
-    return <EmptyState icon={<ChartNoAxesColumn className="size-10" />} title={ru.stats.noData} hint={ru.stats.noDataHint} />
+    return <EmptyState icon={<ChartNoAxesColumn className="size-10" />} title={t.stats.noData} hint={t.stats.noDataHint} />
   }
 
   return (

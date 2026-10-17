@@ -5,7 +5,7 @@ import { TooltipRow } from '../../components/charts/ChartTooltip'
 import { ColumnChart, type ColumnStack } from '../../components/charts/ColumnChart'
 import { columnGutter } from '../../components/charts/geometry'
 import { useElementWidth } from '../../components/charts/useElementWidth'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { exactCredits, formatCredits, formatNumber } from '../../lib/format'
 import { wideGroups } from './numbers'
 import { bucketize, bucketLabel, pickGranularity, type Bucket, type Granularity } from './timeline'
@@ -25,15 +25,15 @@ const fmtLy = (v: number) => formatNumber(v, v > 0 && v < 10 ? 1 : 0)
 const fmtInt = (v: number) => formatNumber(v)
 
 const SERIES: Series[] = [
-  { key: 'earnings', label: ru.stats.seriesEarnings, color: VIZ.total, format: formatCredits },
-  { key: 'distanceLy', label: ru.stats.seriesDistance, color: VIZ.activity, format: fmtLy },
-  { key: 'bodiesScanned', label: ru.stats.seriesBodies, color: VIZ.activity, format: fmtInt },
-  { key: 'speciesAnalysed', label: ru.stats.seriesSpecies, color: VIZ.bio, format: fmtInt },
+  { key: 'earnings', label: t.stats.seriesEarnings, color: VIZ.total, format: formatCredits },
+  { key: 'distanceLy', label: t.stats.seriesDistance, color: VIZ.activity, format: fmtLy },
+  { key: 'bodiesScanned', label: t.stats.seriesBodies, color: VIZ.activity, format: fmtInt },
+  { key: 'speciesAnalysed', label: t.stats.seriesSpecies, color: VIZ.bio, format: fmtInt },
 ]
 
 const UNIT: Record<SeriesKey, string> = {
-  earnings: ru.units.credits,
-  distanceLy: ru.units.ly,
+  earnings: t.units.credits,
+  distanceLy: t.units.ly,
   bodiesScanned: '',
   speciesAnalysed: '',
 }
@@ -45,8 +45,8 @@ function tickFormat(s: Series) {
 
 /** Earnings by kind: cartography and exobiology, in the Hero's series colours. */
 const SPLIT = [
-  { key: 'earningsCarto', label: ru.stats.carto, color: VIZ.carto },
-  { key: 'earningsBio', label: ru.stats.bio, color: VIZ.bio },
+  { key: 'earningsCarto', label: t.stats.carto, color: VIZ.carto },
+  { key: 'earningsBio', label: t.stats.bio, color: VIZ.bio },
 ] as const
 
 /** Sales the backend did not attribute to a kind (an older backend reports totals only). */
@@ -59,7 +59,7 @@ function earningsStack(buckets: readonly Bucket[]): ColumnStack[] {
 }
 
 function periodLabel(b: Bucket, g: Granularity): string {
-  if (g === 'week') return ru.stats.weekOf(bucketLabel(b.start, 'day'))
+  if (g === 'week') return t.stats.weekOf(bucketLabel(b.start, 'day'))
   return bucketLabel(b.start, g)
 }
 
@@ -68,10 +68,10 @@ function Tooltip({ bucket, g, source, split }: { bucket: Bucket; g: Granularity;
     <>
       <div className="mb-1 flex items-baseline justify-between gap-3">
         <span className="font-medium text-zinc-200">{periodLabel(bucket, g)}</span>
-        {g !== 'day' && <span className="text-zinc-500">{ru.stats.activeDays(bucket.activeDays)}</span>}
+        {g !== 'day' && <span className="text-zinc-500">{t.stats.activeDays(bucket.activeDays)}</span>}
       </div>
       {bucket.activeDays === 0 ? (
-        <div className="text-zinc-500">{ru.stats.noActivity}</div>
+        <div className="text-zinc-500">{t.stats.noActivity}</div>
       ) : (
         <>
           {SERIES.map((s) => {
@@ -90,7 +90,7 @@ function Tooltip({ bucket, g, source, split }: { bucket: Bucket; g: Granularity;
               </div>
             )
           })}
-          <TooltipRow value={formatNumber(bucket.jumps)} label={ru.stats.jumps(bucket.jumps)} />
+          <TooltipRow value={formatNumber(bucket.jumps)} label={t.stats.jumps(bucket.jumps)} />
         </>
       )}
     </>
@@ -102,11 +102,11 @@ function DataTable({ buckets, g, split }: { buckets: Bucket[]; g: Granularity; s
   return (
     <div className="mt-5 max-h-96 overflow-auto rounded-xl ring-1 ring-zinc-800">
       <table className={`w-full text-sm tabular-nums ${split ? 'min-w-[46rem]' : 'min-w-[34rem]'}`}>
-        <caption className="sr-only">{ru.stats.tableCaption}</caption>
+        <caption className="sr-only">{t.stats.tableCaption}</caption>
         <thead className="sticky top-0 bg-zinc-900 text-xs text-zinc-500">
           <tr>
             <th scope="col" className="sticky left-0 bg-zinc-900 px-3 py-2 text-left font-medium">
-              {ru.stats.period}
+              {t.stats.period}
             </th>
             {SERIES.map((s) => (
               <Fragment key={s.key}>
@@ -123,7 +123,7 @@ function DataTable({ buckets, g, split }: { buckets: Bucket[]; g: Granularity; s
               </Fragment>
             ))}
             <th scope="col" className="px-3 py-2 text-right font-medium">
-              {ru.stats.seriesJumps}
+              {t.stats.seriesJumps}
             </th>
           </tr>
         </thead>
@@ -212,11 +212,11 @@ export function Activity({ timeline }: { timeline: readonly DayStats[] }) {
   return (
     <Card
       id="stats-activity"
-      title={ru.stats.activity}
+      title={t.stats.activity}
       icon={ActivityIcon}
       aside={
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-zinc-800/80 px-2.5 py-1 text-xs text-zinc-400">{ru.stats.granularity[g]}</span>
+          <span className="inline-block rounded-full bg-zinc-800/80 px-2.5 py-1 text-xs text-zinc-400 first-letter:uppercase">{t.stats.granularity[g]}</span>
           <button
             type="button"
             aria-pressed={showTable}
@@ -224,7 +224,7 @@ export function Activity({ timeline }: { timeline: readonly DayStats[] }) {
             className="focus-ring relative inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-zinc-400 ring-1 ring-zinc-800 after:absolute after:-inset-1.5 hover:bg-zinc-800 hover:text-zinc-200"
           >
             {showTable ? <X className="size-3.5" aria-hidden /> : <Table2 className="size-3.5" aria-hidden />}
-            {showTable ? ru.stats.hideTable : ru.stats.showTable}
+            {showTable ? t.stats.hideTable : t.stats.showTable}
           </button>
         </div>
       }
@@ -245,8 +245,8 @@ export function Activity({ timeline }: { timeline: readonly DayStats[] }) {
                   <h3 className="text-sm font-medium text-zinc-200">{s.label}</h3>
                   <p className="mt-0.5 text-xs text-zinc-500">
                     {total > 0
-                      ? `${ru.stats.peak} ${s.format(values[peak])} · ${periodLabel(buckets[peak], g)}`
-                      : ru.stats.noActivity}
+                      ? `${t.stats.peak} ${s.format(values[peak])} · ${periodLabel(buckets[peak], g)}`
+                      : t.stats.noActivity}
                   </p>
                 </div>
                 <p className="shrink-0 text-right" title={s.key === 'earnings' ? exactCredits(total) : undefined}>
@@ -266,7 +266,7 @@ export function Activity({ timeline }: { timeline: readonly DayStats[] }) {
                   onActive={(i) => setHover(i === null ? null : { index: i, source: s.key })}
                   formatTick={tickFormat(s)}
                   xLabel={(i) => bucketLabel(buckets[i].start, g)}
-                  ariaLabel={`${s.label}, ${ru.stats.granularity[g]}: ${ru.stats.total} ${s.format(total)}${unit ? ` ${unit}` : ''}${
+                  ariaLabel={`${s.label}, ${t.stats.granularity[g]}: ${t.stats.total} ${s.format(total)}${unit ? ` ${unit}` : ''}${
                     s.key === 'earnings' && split ? ` (${splitSummary(buckets)})` : ''
                   }`}
                   showTooltip={hover?.source === s.key}

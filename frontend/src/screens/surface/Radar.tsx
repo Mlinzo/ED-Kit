@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatMeters } from '../../lib/format'
 
 export interface RadarPoint {
@@ -88,16 +88,16 @@ export function Radar({ points, rangeM, heading, canSample, label }: RadarProps)
       {/* Compass */}
       <g fontSize={8} fontWeight={600} textAnchor="middle" dominantBaseline="central">
         <text x={0} y={-109} style={{ fill: 'var(--color-accent)' }}>
-          {ru.surface.north}
+          {t.surface.north}
         </text>
         <text x={109} y={0} style={{ fill: 'var(--color-zinc-500)' }}>
-          {ru.surface.east}
+          {t.surface.east}
         </text>
         <text x={0} y={109} style={{ fill: 'var(--color-zinc-500)' }}>
-          {ru.surface.south}
+          {t.surface.south}
         </text>
         <text x={-109} y={0} style={{ fill: 'var(--color-zinc-500)' }}>
-          {ru.surface.west}
+          {t.surface.west}
         </text>
       </g>
 
@@ -154,7 +154,7 @@ export function Radar({ points, rangeM, heading, canSample, label }: RadarProps)
             className="motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-linear"
             style={{ transform: `translate(${x}px, ${y}px)` }}
           >
-            <title>{`${ru.surface.sample(p.index)}: ${formatMeters(p.distance)}`}</title>
+            <title>{`${t.surface.sample(p.index)}: ${formatMeters(p.distance)}`}</title>
             <circle r={off ? 2.5 : 3.4} strokeWidth={1} style={{ fill: 'var(--color-zinc-100)', stroke: 'var(--color-zinc-950)' }} />
             <text
               x={0}

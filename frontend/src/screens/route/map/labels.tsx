@@ -10,7 +10,7 @@ import { memo, useCallback, useMemo, useRef, useState, type ReactNode, type RefO
 import { Vector3 } from 'three'
 import type { RouteStopView } from '../../../api/types'
 import { CreditRange } from '../../../components/Credits'
-import { ru } from '../../../i18n/ru'
+import { t } from '../../../i18n'
 import { formatLy } from '../../../lib/format'
 import { BodyChips } from '../kinds'
 import { STATE_COLOR, YOU_COLOR } from './colors'
@@ -48,10 +48,10 @@ const PILL =
   'flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[12px] leading-none font-medium whitespace-nowrap shadow-lg ring-1 shadow-black/40 backdrop-blur-sm ring-inset'
 
 const STATUS: Record<StopState, string> = {
-  done: ru.route.status.done,
-  next: ru.route.status.next,
-  skipped: ru.route.status.skipped,
-  ahead: ru.route.map.legend.ahead,
+  done: t.route.status.done,
+  next: t.route.status.next,
+  skipped: t.route.status.skipped,
+  ahead: t.route.map.legend.ahead,
 }
 
 /**
@@ -162,11 +162,11 @@ function StopPill({ stop, kind, onSelect }: { stop: MapStop; kind: Exclude<StopL
       className={`focus-ring pointer-events-auto cursor-pointer hover:bg-zinc-900/90 ${PILL} ${tone}`}
     >
       {kind === 'here' ? (
-        <MapPin className="size-3.5 shrink-0" style={{ color: YOU_COLOR }} strokeWidth={2.5} aria-label={ru.route.youAreHere} />
+        <MapPin className="size-3.5 shrink-0" style={{ color: YOU_COLOR }} strokeWidth={2.5} aria-label={t.route.youAreHere} />
       ) : (
         <span className="size-1.5 shrink-0 rounded-full" style={{ background: STATE_COLOR[stop.state] }} aria-hidden />
       )}
-      {kind === 'next' && <span className="text-sky-300">{ru.route.status.next}</span>}
+      {kind === 'next' && <span className="text-sky-300">{t.route.status.next}</span>}
       <span className="proportional-nums">{stop.name}</span>
     </button>
   )
@@ -174,7 +174,7 @@ function StopPill({ stop, kind, onSelect }: { stop: MapStop; kind: Exclude<StopL
 
 function HoverCard({ stop, view }: { stop: MapStop; view: RouteStopView }) {
   const status =
-    view.here ? ru.route.status.here : stop.state === 'ahead' && view.visited ? ru.route.status.visited : STATUS[stop.state]
+    view.here ? t.route.status.here : stop.state === 'ahead' && view.visited ? t.route.status.visited : STATUS[stop.state]
   return (
     <div className="pointer-events-none w-64 rounded-xl bg-zinc-950/90 p-3 shadow-2xl ring-1 shadow-black/60 ring-white/12 backdrop-blur-md ring-inset">
       <div className="flex items-baseline gap-2">
@@ -186,7 +186,7 @@ function HoverCard({ stop, view }: { stop: MapStop; view: RouteStopView }) {
           <span className="size-1.5 rounded-full" style={{ background: STATE_COLOR[stop.state] }} aria-hidden />
           {status}
         </span>
-        <span className="tabular-nums">{ru.route.map.hop(formatLy(view.hopLy))}</span>
+        <span className="tabular-nums">{t.route.map.hop(formatLy(view.hopLy))}</span>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         {view.bodies.map((b) => (
@@ -276,7 +276,7 @@ export const Labels = memo(function Labels({
       <Anchor key="you" id="you" pos={scene.you} priority={PRIORITY.you} lift={13} entries={entries} layer={layer}>
         <PointPill
           icon={<MapPin className="size-3.5 shrink-0" style={{ color: YOU_COLOR }} strokeWidth={2.5} aria-hidden />}
-          label={ru.route.youAreHere}
+          label={t.route.youAreHere}
           name={names.current}
           tone="bg-zinc-950/75 text-emerald-50 ring-emerald-400/40"
         />
@@ -286,7 +286,7 @@ export const Labels = memo(function Labels({
   if (scene.source && !near(scene.source, scene.you)) {
     labels.push(
       <Anchor key="start" id="start" pos={scene.source} priority={PRIORITY.start} lift={10} entries={entries} layer={layer}>
-        <PointPill icon={null} label={ru.route.map.start} name={names.source} tone={point} />
+        <PointPill icon={null} label={t.route.map.start} name={names.source} tone={point} />
       </Anchor>,
     )
   }
@@ -295,7 +295,7 @@ export const Labels = memo(function Labels({
       <Anchor key="destination" id="destination" pos={scene.destination} priority={PRIORITY.destination} lift={12} entries={entries} layer={layer}>
         <PointPill
           icon={<Flag className="size-3.5 shrink-0 text-amber-300" aria-hidden />}
-          label={ru.route.map.destination}
+          label={t.route.map.destination}
           name={names.destination}
           tone={point}
         />

@@ -18,7 +18,7 @@ import { Segmented } from '../../components/Segmented'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { useIsDesktop } from '../../hooks/useMediaQuery'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { bodyLabel, sortBodies, type BodySort } from '../../lib/body'
 import { exactCredits, formatCredits } from '../../lib/format'
 import { readStored, writeStored } from '../../lib/storage'
@@ -99,10 +99,10 @@ function StepButton({
   onOpenSystem: OpenSystem
 }) {
   const Icon = direction === 'prev' ? ChevronLeft : ChevronRight
-  const label = direction === 'prev' ? ru.system.prev : ru.system.next
+  const label = direction === 'prev' ? t.system.prev : t.system.next
   let title: string
-  if (target) title = (direction === 'prev' ? ru.system.prevTo : ru.system.nextTo)(target.name)
-  else title = direction === 'prev' ? ru.system.noPrev : ru.system.noNext
+  if (target) title = (direction === 'prev' ? t.system.prevTo : t.system.nextTo)(target.name)
+  else title = direction === 'prev' ? t.system.noPrev : t.system.noNext
   return (
     <button
       type="button"
@@ -134,15 +134,15 @@ function PastBanner({
       <p className="flex min-w-0 items-center gap-2.5 text-sm text-zinc-300">
         <History className="size-4 shrink-0 text-accent" aria-hidden />
         <span className="min-w-0">
-          <span className="font-medium text-zinc-50">{ru.system.past}</span>
-          <span className="sr-only">. {ru.system.pastHint}</span>
+          <span className="font-medium text-zinc-50">{t.system.past}</span>
+          <span className="sr-only">. {t.system.pastHint}</span>
           {when && (
             <span title={eventFull(system.lastVisitAt) ?? undefined}>
               {' · '}
-              {ru.system.visitedAt(when)}
+              {t.system.visitedAt(when)}
             </span>
           )}
-          {system.visits > 1 && <span className="text-zinc-400"> · {ru.system.visits(system.visits)}</span>}
+          {system.visits > 1 && <span className="text-zinc-400"> · {t.system.visits(system.visits)}</span>}
         </span>
       </p>
       <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -152,18 +152,18 @@ function PastBanner({
           className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50"
         >
           <List className="size-4" aria-hidden />
-          {ru.system.allHistory}
+          {t.system.allHistory}
         </button>
         {current && (
           <button
             type="button"
             onClick={() => onOpenSystem(null)}
-            title={`${ru.system.nowIn} ${current.name}`}
+            title={`${t.system.nowIn} ${current.name}`}
             className="focus-ring inline-flex h-8 min-w-0 items-center gap-1.5 rounded-lg bg-sky-500/15 px-3 text-sm font-medium text-accent-strong ring-1 ring-sky-400/30 ring-inset hover:bg-sky-500/25"
           >
             <LocateFixed className="size-4 shrink-0" aria-hidden />
-            {ru.system.toCurrent}
-            <span className="hidden max-w-[16rem] truncate font-normal text-sky-200/70 xl:inline">· {current.name}</span>
+            {t.system.toCurrent}
+            <span className="hidden max-w-[16rem] truncate font-normal text-sky-200/70 proportional-nums xl:inline">· {current.name}</span>
           </button>
         )}
       </div>
@@ -178,7 +178,7 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
     <section aria-labelledby="system-title" className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <Label>{system.isCurrent ? ru.tabs.system : ru.system.past}</Label>
+          <Label>{system.isCurrent ? t.tabs.system : t.system.past}</Label>
           <div className="flex items-center gap-1.5">
             <StepButton target={system.prevSystem} direction="prev" system={system} onOpenSystem={onOpenSystem} />
             <StepButton target={system.nextSystem} direction="next" system={system} onOpenSystem={onOpenSystem} />
@@ -188,24 +188,24 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
           id="system-title"
           className="mt-1 text-2xl font-semibold tracking-tight break-words text-zinc-50 proportional-nums sm:text-3xl"
         >
-          {system.name ?? ru.common.unknown}
+          {system.name ?? t.common.unknown}
         </h1>
       </div>
       {/* Phone: one row, the bio range gets the widest tile (and wraps rather than clips at 360px). */}
       <dl className="grid grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.75fr)] gap-1.5 sm:grid-cols-4 sm:gap-3 xl:w-[min(100%,46rem)] xl:shrink-0">
         <Stat
-          label={ru.system.honk}
-          short={ru.system.bodies}
+          label={t.system.honk}
+          short={t.system.bodies}
           footer={
             bodyCount === null ? (
-              <p className="hidden truncate text-[11px] leading-tight text-zinc-500 sm:block" title={ru.system.honkUnknown}>
-                {ru.system.honkUnknown}
+              <p className="hidden truncate text-[11px] leading-tight text-zinc-500 sm:block" title={t.system.honkUnknown}>
+                {t.system.honkUnknown}
               </p>
             ) : (
               <div
                 className="h-1 overflow-hidden rounded-full bg-zinc-800"
                 role="progressbar"
-                aria-label={ru.system.honk}
+                aria-label={t.system.honk}
                 aria-valuemin={0}
                 aria-valuemax={bodyCount}
                 aria-valuenow={scannedCount}
@@ -224,21 +224,21 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
           {allBodiesFound && (
             <>
               <CircleCheck className="ml-1 hidden size-4 align-[-2px] text-emerald-400 sm:inline" aria-hidden />
-              <span className="sr-only">, {ru.system.allFound}</span>
+              <span className="sr-only">, {t.system.allFound}</span>
             </>
           )}
         </Stat>
-        <Stat label={ru.system.fssLong} short={ru.system.fss}>
+        <Stat label={t.system.fssLong} short={t.system.fss}>
           <Credits value={totals.fss} />
         </Stat>
-        <Stat label={ru.system.dssLong} short={ru.system.dss}>
+        <Stat label={t.system.dssLong} short={t.system.dss}>
           <Credits value={totals.dss} />
         </Stat>
-        <Stat label={ru.system.bioLong} short={ru.system.bio}>
+        <Stat label={t.system.bioLong} short={t.system.bio}>
           {totals.bioMax > 0 ? (
             <BioRange min={totals.bioMin} max={totals.bioMax} />
           ) : (
-            <span className="text-zinc-600">{ru.common.unknown}</span>
+            <span className="text-zinc-600">{t.common.unknown}</span>
           )}
         </Stat>
       </dl>
@@ -247,13 +247,13 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
 }
 
 const SORT_OPTIONS = [
-  { id: 'value' as const, label: ru.system.sortValue, icon: ArrowDownWideNarrow },
-  { id: 'distance' as const, label: ru.system.sortDistance, icon: Ruler },
+  { id: 'value' as const, label: t.system.sortValue, icon: ArrowDownWideNarrow },
+  { id: 'distance' as const, label: t.system.sortDistance, icon: Ruler },
 ]
 
 const VIEW_OPTIONS = [
-  { id: 'map' as const, label: ru.map.map, icon: Orbit },
-  { id: 'list' as const, label: ru.map.list, icon: List },
+  { id: 'map' as const, label: t.map.map, icon: Orbit },
+  { id: 'list' as const, label: t.map.list, icon: List },
 ]
 
 export function SystemScreen({
@@ -308,8 +308,8 @@ export function SystemScreen({
     () =>
       new Map(
         targetKey
-          ? targetKey.split(',').map((t) => {
-              const [id, done] = t.split(':')
+          ? targetKey.split(',').map((entry) => {
+              const [id, done] = entry.split(':')
               return [Number(id), done === '1'] as const
             })
           : [],
@@ -372,20 +372,20 @@ export function SystemScreen({
   if (wantedAddress !== null && !data.address && !switching) {
     return (
       <div className="flex flex-col items-center">
-        <EmptyState icon={<SearchX className="size-10" />} title={ru.system.notFound} hint={ru.system.notFoundHint} />
+        <EmptyState icon={<SearchX className="size-10" />} title={t.system.notFound} hint={t.system.notFoundHint} />
         <button
           type="button"
           onClick={() => onOpenSystem(null)}
           className="focus-ring -mt-8 inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-800 px-4 text-sm font-medium text-zinc-100 hover:bg-zinc-700"
         >
           <LocateFixed className="size-4" aria-hidden />
-          {ru.system.toCurrent}
+          {t.system.toCurrent}
         </button>
       </div>
     )
   }
   if (!data.name && data.bodies.length === 0) {
-    return <EmptyState icon={<Orbit className="size-10" />} title={ru.system.noData} hint={ru.system.noDataHint} />
+    return <EmptyState icon={<Orbit className="size-10" />} title={t.system.noData} hint={t.system.noDataHint} />
   }
 
   return (
@@ -406,13 +406,13 @@ export function SystemScreen({
         <section aria-labelledby="bodies-title" className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 id="bodies-title" className="text-sm font-medium text-zinc-400">
-              {ru.system.bodies} <span className="text-zinc-600">{bodies.length}</span>
+              {t.system.bodies} <span className="text-zinc-600">{bodies.length}</span>
             </h2>
             <div className="flex flex-wrap items-center gap-2">
               {view === 'list' && (
-                <Segmented label={ru.system.sortLabel} value={sort} options={SORT_OPTIONS} onChange={changeSort} />
+                <Segmented label={t.system.sortLabel} value={sort} options={SORT_OPTIONS} onChange={changeSort} />
               )}
-              <Segmented label={ru.map.viewLabel} value={view} options={VIEW_OPTIONS} onChange={changeView} />
+              <Segmented label={t.map.viewLabel} value={view} options={VIEW_OPTIONS} onChange={changeView} />
             </div>
           </div>
           {view === 'map' ? (
@@ -440,13 +440,13 @@ export function SystemScreen({
               routeTargets={routeTargets}
             />
           ) : (
-            <EmptyState title={ru.system.emptyList} />
+            <EmptyState title={t.system.emptyList} />
           )}
         </section>
 
         {isDesktop && (
           <aside
-            aria-label={detail ? bodyLabel(detail) : ru.system.selectHint}
+            aria-label={detail ? bodyLabel(detail) : t.system.selectHint}
             className="sticky top-20 max-h-[calc(100dvh-6.5rem)] overflow-y-auto rounded-2xl bg-zinc-900/40 p-6 ring-1 ring-zinc-800 lg:mt-[3.25rem]"
           >
             {detail ? (
@@ -458,7 +458,7 @@ export function SystemScreen({
                 routeTarget={targetOf(routeTargets, detail.bodyId)}
               />
             ) : (
-              <p className="py-12 text-center text-sm text-zinc-500">{ru.system.selectHint}</p>
+              <p className="py-12 text-center text-sm text-zinc-500">{t.system.selectHint}</p>
             )}
           </aside>
         )}

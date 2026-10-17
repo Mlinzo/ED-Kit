@@ -4,7 +4,7 @@ import { useView } from '../../api/hooks'
 import { Credits } from '../../components/Credits'
 import { Label, ViewFallback } from '../../components/States'
 import { useNow } from '../../hooks/useNow'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format'
 
 function Card({
@@ -65,7 +65,7 @@ export function SessionScreen() {
     <div className="mx-auto max-w-4xl space-y-6">
       {data.commander && (
         <p className="text-sm text-zinc-500 md:hidden">
-          {ru.common.commander} <span className="font-medium text-zinc-200">{data.commander}</span>
+          {t.common.commander} <span className="font-medium text-zinc-200">{data.commander}</span>
         </p>
       )}
 
@@ -82,7 +82,7 @@ export function SessionScreen() {
           }`}
         >
           {risky ? <ShieldAlert className="size-4" aria-hidden /> : <ShieldCheck className="size-4" aria-hidden />}
-          {ru.session.atRisk}
+          {t.session.atRisk}
         </h1>
         <div
           className={`mt-3 text-7xl leading-none font-semibold tracking-tighter sm:text-8xl ${
@@ -91,46 +91,46 @@ export function SessionScreen() {
         >
           <Credits value={atRisk} />
         </div>
-        <p className="mt-4 text-sm text-zinc-400">{risky ? ru.session.atRiskHint : ru.session.allSold}</p>
+        <p className="mt-4 text-sm text-zinc-400">{risky ? t.session.atRiskHint : t.session.allSold}</p>
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card
           icon={Leaf}
-          title={ru.session.bio}
+          title={t.session.bio}
           tone="text-emerald-300"
           value={<Credits value={data.unsoldBioValue} />}
-          detail={`${ru.session.bioCount(data.unsoldBioCount)} ${ru.session.unsold}`}
+          detail={`${t.session.bioCount(data.unsoldBioCount)} ${t.session.unsold}`}
         />
         <Card
           icon={MapIcon}
-          title={ru.session.carto}
+          title={t.session.carto}
           tone="text-zinc-50"
           value={<Credits value={data.unsoldCartoValue} />}
-          detail={`${ru.session.cartoBodies(data.unsoldCartoBodies)} · ${ru.session.cartoSystems(data.unsoldCartoSystems)}`}
+          detail={`${t.session.cartoBodies(data.unsoldCartoBodies)} · ${t.session.cartoSystems(data.unsoldCartoSystems)}`}
         />
       </div>
 
       <section aria-labelledby="since-title" className="rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
         <Label as="h2" id="since-title" className="flex items-center gap-2">
           <Route className="size-4" aria-hidden />
-          {ru.session.sinceSale}
+          {t.session.sinceSale}
         </Label>
         <dl className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-3">
-          <Metric value={formatNumber(data.jumps)} label={ru.session.jumps(data.jumps)} />
+          <Metric value={formatNumber(data.jumps)} label={t.session.jumps(data.jumps)} />
           <Metric
             value={formatNumber(data.distanceLy, data.distanceLy < 100 ? 1 : 0)}
-            label={`${ru.units.ly} ${ru.session.distance}`}
+            label={`${t.units.ly} ${t.session.distance}`}
           />
           <Metric
             className="col-span-2 sm:col-span-1"
             value={
               <span className="inline-flex items-center gap-2">
                 <Clock className="size-6 text-zinc-500" aria-hidden />
-                {data.lastSaleAt ? formatRelative(data.lastSaleAt, now) : ru.session.never}
+                {data.lastSaleAt ? formatRelative(data.lastSaleAt, now) : t.session.never}
               </span>
             }
-            label={data.lastSaleAt ? `${ru.session.lastSale} · ${formatDateTime(data.lastSaleAt)}` : ru.session.lastSale}
+            label={data.lastSaleAt ? `${t.session.lastSale} · ${formatDateTime(data.lastSaleAt)}` : t.session.lastSale}
             title={data.lastSaleAt ?? undefined}
           />
         </dl>

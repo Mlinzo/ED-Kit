@@ -1,7 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 
 /**
  * Full-screen sheet for phones. Rendered in a portal; the app behind it is made inert,
@@ -57,7 +57,7 @@ export function Sheet({
           className="focus-ring flex h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 active:bg-zinc-900"
         >
           <ArrowLeft className="size-5" aria-hidden />
-          {ru.common.back}
+          {t.common.back}
         </button>
         <span className="truncate text-sm text-zinc-500">{title}</span>
       </div>

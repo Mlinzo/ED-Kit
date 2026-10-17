@@ -1,6 +1,8 @@
 // Turns the sparse per-day timeline into contiguous buckets (day / week / month) for charts.
 
 import type { DayStats } from '../../api/types'
+import { locale } from '../../i18n'
+import { tidyDate } from '../../lib/when'
 
 export type Granularity = 'day' | 'week' | 'month'
 
@@ -112,13 +114,13 @@ export function cumulativeEarnings(timeline: readonly DayStats[]): { start: stri
   })
 }
 
-const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', timeZone: 'UTC' })
-const monthFmt = new Intl.DateTimeFormat('ru-RU', { month: 'short', timeZone: 'UTC' })
-const monthYearFmt = new Intl.DateTimeFormat('ru-RU', { month: 'short', year: 'numeric', timeZone: 'UTC' })
-const longFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-const longNoYearFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+const dayFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' })
+const monthFmt = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' })
+const monthYearFmt = new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' })
+const longFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+const longNoYearFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', timeZone: 'UTC' })
 
-const stripDot = (s: string) => s.replace(/\.$/, '').replace(/\.(?=\s)/, '')
+const stripDot = tidyDate
 
 /** "16 окт" */
 export function shortDay(date: string): string {
@@ -132,7 +134,7 @@ export function bucketLabel(date: string, g: Granularity): string {
   if (Number.isNaN(t)) return date
   if (g === 'month') {
     const d = new Date(t)
-    return stripDot(d.getUTCMonth() === 0 ? monthYearFmt.format(t) : monthFmt.format(t)).replace(/\s?г$/, '')
+    return stripDot(d.getUTCMonth() === 0 ? monthYearFmt.format(t) : monthFmt.format(t))
   }
   return shortDay(date)
 }
@@ -142,5 +144,5 @@ export function longDate(iso: string, now = Date.now()): string {
   const t = Date.parse(iso)
   if (Number.isNaN(t)) return iso
   const sameYear = new Date(t).getUTCFullYear() === new Date(now).getUTCFullYear()
-  return (sameYear ? longNoYearFmt : longFmt).format(t).replace(/\s?г\.$/, '')
+  return tidyDate((sameYear ? longNoYearFmt : longFmt).format(t))
 }

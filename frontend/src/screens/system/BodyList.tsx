@@ -8,7 +8,7 @@ import { CodexMark } from '../../components/CodexBadge'
 import { CreditRange, Credits } from '../../components/Credits'
 import { sourceMarker } from '../../components/source'
 import { SourceTag } from '../../components/SourceBadge'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { bodyLabel } from '../../lib/body'
 import { formatLs } from '../../lib/format'
 import { bodyColor } from '../../map/visuals/colors'
@@ -60,14 +60,14 @@ export function BodyList({ bodies, selectedId, focusId, currentBodyId, onFocusBo
         className={`${GRID} hidden gap-x-4 border-b border-zinc-800 px-4 py-2 text-xs font-medium tracking-wide text-zinc-500 uppercase lg:grid`}
         aria-hidden
       >
-        <span>{ru.system.colBody}</span>
-        <span className="text-right">{ru.system.fss}</span>
-        <span className="text-right">{ru.system.dss}</span>
-        <span className="text-right">{ru.system.bio}</span>
+        <span>{t.system.colBody}</span>
+        <span className="text-right">{t.system.fss}</span>
+        <span className="text-right">{t.system.dss}</span>
+        <span className="text-right">{t.system.bio}</span>
       </div>
       <ul
         role="listbox"
-        aria-label={ru.system.listLabel}
+        aria-label={t.system.listLabel}
         aria-orientation="vertical"
         onKeyDown={onKeyDown}
         className="divide-y divide-zinc-800/70"
@@ -99,9 +99,9 @@ export function BodyList({ bodies, selectedId, focusId, currentBodyId, onFocusBo
 function BodyMarker({ body }: { body: BodyView }) {
   if (body.done) {
     return (
-      <span className="grid size-4 shrink-0 place-items-center self-center" title={ru.progress.done}>
+      <span className="grid size-4 shrink-0 place-items-center self-center" title={t.progress.done}>
         <CircleCheck className="size-4 text-emerald-400" strokeWidth={2.5} aria-hidden />
-        <span className="sr-only">{ru.progress.done}</span>
+        <span className="sr-only">{t.progress.done}</span>
       </span>
     )
   }
@@ -187,11 +187,11 @@ function BodyRow({
           >
             {bodyLabel(body)}
           </span>
-          {body.interest === 'low' && !body.done && <span className="sr-only">, {ru.progress.lowInterest}</span>}
+          {body.interest === 'low' && !body.done && <span className="sr-only">, {t.progress.lowInterest}</span>}
           {current && (
             <span className="inline-flex shrink-0 items-center gap-1 self-center text-xs font-medium text-accent">
               <MapPin className="size-3.5" aria-hidden />
-              <span className="sr-only sm:not-sr-only">{ru.system.youAreHere}</span>
+              <span className="sr-only sm:not-sr-only">{t.system.youAreHere}</span>
             </span>
           )}
           <span className={`shrink-0 text-sm ${caption}`}>{formatLs(body.distanceLs)}</span>
@@ -212,13 +212,13 @@ function BodyRow({
         <Credits value={body.fssValue} />
       </div>
       <div className={`hidden text-right text-[15px] font-medium lg:block ${toMap ? 'text-emerald-300' : valueTone}`}>
-        {hasDss ? <Credits value={body.dssValue} /> : <span className="text-zinc-600">{ru.common.unknown}</span>}
+        {hasDss ? <Credits value={body.dssValue} /> : <span className="text-zinc-600">{t.common.unknown}</span>}
       </div>
       <div className="hidden text-right text-[15px] font-medium lg:block">
         {hasBio ? (
           <CreditRange min={body.bioValueMin} max={body.bioValueMax} className={bioTone} />
         ) : (
-          <span className="text-zinc-600">{ru.common.unknown}</span>
+          <span className="text-zinc-600">{t.common.unknown}</span>
         )}
       </div>
 
@@ -228,11 +228,11 @@ function BodyRow({
           <Credits value={primary} />
         </span>
         <span className={`text-[11px] font-medium tracking-wide uppercase ${caption}`}>
-          {hasDss ? ru.system.dss : ru.system.fss}
+          {hasDss ? t.system.dss : t.system.fss}
         </span>
         {hasBio && (
           <span className={`text-sm font-semibold ${bioTone}`}>
-            <span className="sr-only">{ru.system.bio} </span>
+            <span className="sr-only">{t.system.bio} </span>
             <CreditRange min={body.bioValueMin} max={body.bioValueMax} />
           </span>
         )}

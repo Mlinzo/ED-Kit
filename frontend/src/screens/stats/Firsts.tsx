@@ -2,7 +2,7 @@
 import { ChevronDown, ChevronUp, Flag, Footprints, Map as MapIcon, type LucideIcon } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import type { FirstEntry, FirstState, StatsView } from '../../api/types'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { groupFirsts, markCounts, type FirstsFilter, type MarkKind, type SystemGroup } from './firstGroups'
 import { bigNumber } from './numbers'
@@ -56,15 +56,15 @@ function Counter({
 function SaleDetail({ pending, lost }: { pending: number; lost: number }) {
   return (
     <>
-      <span className="block text-zinc-500">{ru.stats.confirmedBySale}</span>
+      <span className="block text-zinc-500">{t.stats.confirmedBySale}</span>
       {pending > 0 && (
-        <span className="block text-amber-300/90" title={ru.stats.firstStateHint.pending}>
-          {ru.stats.firstsPending(formatNumber(pending))}
+        <span className="block text-amber-300/90" title={t.stats.firstStateHint.pending}>
+          {t.stats.firstsPending(formatNumber(pending))}
         </span>
       )}
       {lost > 0 && (
-        <span className="block text-rose-300/90" title={ru.stats.firstStateHint.lost}>
-          {ru.stats.firstsLost(formatNumber(lost))}
+        <span className="block text-rose-300/90" title={t.stats.firstStateHint.lost}>
+          {t.stats.firstsLost(formatNumber(lost))}
         </span>
       )}
     </>
@@ -74,14 +74,14 @@ function SaleDetail({ pending, lost }: { pending: number; lost: number }) {
 function Legend() {
   return (
     <div className="mt-7">
-      <SubLabel className="mb-2.5">{ru.stats.firstsLegend}</SubLabel>
+      <SubLabel className="mb-2.5">{t.stats.firstsLegend}</SubLabel>
       <ul className="space-y-2">
         {STATES.map((s) => (
           <li key={s} className="flex items-start gap-2.5 text-xs">
             <span className={`mt-1 size-2 shrink-0 rounded-full ${STATE_DOT[s]}`} aria-hidden />
             <span className="min-w-0">
-              <span className={STATE_TEXT[s]}>{ru.stats.firstState[s]}</span>
-              <span className="block text-zinc-500">{ru.stats.firstStateHint[s]}</span>
+              <span className={STATE_TEXT[s]}>{t.stats.firstState[s]}</span>
+              <span className="block text-zinc-500">{t.stats.firstStateHint[s]}</span>
             </span>
           </li>
         ))}
@@ -95,18 +95,18 @@ function StateMark({ state }: { state: FirstState | null }) {
     return (
       <span className="block leading-5 text-zinc-700">
         <span aria-hidden>—</span>
-        <span className="sr-only">{ru.stats.firstNone}</span>
+        <span className="sr-only">{t.stats.firstNone}</span>
       </span>
     )
   }
   return (
     <span
       className={`flex h-5 items-center gap-1.5 text-xs whitespace-nowrap ${STATE_TEXT[state]}`}
-      title={ru.stats.firstStateHint[state]}
+      title={t.stats.firstStateHint[state]}
     >
       <span className={`size-1.5 shrink-0 rounded-full ${STATE_DOT[state]}`} aria-hidden />
-      {ru.stats.firstState[state]}
-      {state !== 'sold' && <span className="sr-only"> — {ru.stats.firstStateHint[state]}</span>}
+      {t.stats.firstState[state]}
+      {state !== 'sold' && <span className="sr-only"> — {t.stats.firstStateHint[state]}</span>}
     </span>
   )
 }
@@ -116,7 +116,7 @@ function FootfallMark({ at }: { at: string | null }) {
     return (
       <span className="block leading-5 text-zinc-700">
         <span aria-hidden>—</span>
-        <span className="sr-only">{ru.stats.firstNone}</span>
+        <span className="sr-only">{t.stats.firstNone}</span>
       </span>
     )
   }
@@ -124,10 +124,10 @@ function FootfallMark({ at }: { at: string | null }) {
   return (
     <span
       className="flex h-5 items-center gap-1.5 text-xs whitespace-nowrap text-emerald-300"
-      title={`${ru.stats.firstMark.footfall}: ${eventFull(at) ?? at}`}
+      title={`${t.stats.firstMark.footfall}: ${eventFull(at) ?? at}`}
     >
       <Footprints className="size-3.5 shrink-0" aria-hidden />
-      {when ?? ru.common.unknown}
+      {when ?? t.common.unknown}
     </span>
   )
 }
@@ -162,7 +162,7 @@ function GroupCounts({ g }: { g: SystemGroup }) {
       {kinds.map((k) => {
         const Icon = MARK_ICON[k]
         return (
-          <span key={k} className="inline-flex items-center gap-1" title={`${ru.stats.firstMark[k]}: ${g.counts[k]}`}>
+          <span key={k} className="inline-flex items-center gap-1" title={`${t.stats.firstMark[k]}: ${g.counts[k]}`}>
             <Icon className="size-3.5" aria-hidden />
             <span className="tabular-nums">{g.counts[k]}</span>
           </span>
@@ -198,9 +198,9 @@ function SystemRows({
           <div className="flex items-center justify-between gap-4">
             <span className="flex min-w-0 items-baseline gap-2.5">
               <span className="truncate text-sm font-semibold text-zinc-100" title={g.system ?? undefined}>
-                {g.system ?? ru.stats.unknownSystem}
+                {g.system ?? t.stats.unknownSystem}
               </span>
-              <span className="shrink-0 text-xs text-zinc-500">{ru.stats.firstsBodies(g.entries.length)}</span>
+              <span className="shrink-0 text-xs text-zinc-500">{t.stats.firstsBodies(g.entries.length)}</span>
             </span>
             <span className="flex shrink-0 items-center gap-4 text-xs text-zinc-400">
               <GroupCounts g={g} />
@@ -217,7 +217,7 @@ function SystemRows({
           <td colSpan={5} className="border-t border-zinc-800/60 px-1.5 pt-2">
             <MoreButton onClick={onToggle} expanded={expanded} className="ring-0">
               {expanded ? <ChevronUp className="size-3.5" aria-hidden /> : <ChevronDown className="size-3.5" aria-hidden />}
-              {expanded ? ru.stats.collapse : ru.stats.firstsMoreBodies(g.entries.length - BODY_LIMIT)}
+              {expanded ? t.stats.collapse : t.stats.firstsMoreBodies(g.entries.length - BODY_LIMIT)}
             </MoreButton>
           </td>
         </tr>
@@ -244,7 +244,7 @@ function FilterChips({
     { id: 'footfall', count: counts.footfall, icon: Footprints },
   ]
   return (
-    <div role="group" aria-label={ru.stats.firstsFilterLabel} className="flex flex-wrap gap-1.5">
+    <div role="group" aria-label={t.stats.firstsFilterLabel} className="flex flex-wrap gap-1.5">
       {items.map(({ id, count, icon: Icon }) => {
         const active = value === id
         return (
@@ -261,7 +261,7 @@ function FilterChips({
             }`}
           >
             {Icon && <Icon className="size-3.5" aria-hidden />}
-            {ru.stats.firstsFilter[id]}
+            {t.stats.firstsFilter[id]}
             <span className={`tabular-nums ${active ? 'text-zinc-400' : 'text-zinc-500'}`}>{formatNumber(count)}</span>
           </button>
         )
@@ -295,10 +295,10 @@ function FirstsTable({ entries }: { entries: readonly FirstEntry[] }) {
   const markTh = (k: MarkKind) => {
     const Icon = MARK_ICON[k]
     return (
-      <th scope="col" className={th} title={ru.stats.firstMark[k]}>
+      <th scope="col" className={th} title={t.stats.firstMark[k]}>
         <span className="inline-flex items-center gap-1.5">
           <Icon className="size-3.5" aria-hidden />
-          {ru.stats.firstCol[k]}
+          {t.stats.firstCol[k]}
         </span>
       </th>
     )
@@ -308,10 +308,10 @@ function FirstsTable({ entries }: { entries: readonly FirstEntry[] }) {
     <div className="min-w-0">
       <FilterChips value={filter} counts={counts} total={entries.length} onChange={changeFilter} />
       {groups.length === 0 ? (
-        <p className="mt-6 text-sm text-zinc-500">{ru.stats.noFirstsFilter}</p>
+        <p className="mt-6 text-sm text-zinc-500">{t.stats.noFirstsFilter}</p>
       ) : (
         <table className="mt-5 w-full table-fixed border-separate border-spacing-0 text-sm">
-          <caption className="sr-only">{ru.stats.firsts}</caption>
+          <caption className="sr-only">{t.stats.firsts}</caption>
           <colgroup>
             <col className="w-[6.5rem]" />
             <col />
@@ -322,10 +322,10 @@ function FirstsTable({ entries }: { entries: readonly FirstEntry[] }) {
           <thead>
             <tr>
               <th scope="col" className={th}>
-                {ru.stats.firstCol.body}
+                {t.stats.firstCol.body}
               </th>
               <th scope="col" className={th}>
-                {ru.stats.firstCol.type}
+                {t.stats.firstCol.type}
               </th>
               {markTh('discovered')}
               {markTh('mapped')}
@@ -342,21 +342,21 @@ function FirstsTable({ entries }: { entries: readonly FirstEntry[] }) {
           {rest > 0 && (
             <MoreButton onClick={() => setLimit((n) => n + SYSTEM_STEP * 2)}>
               <ChevronDown className="size-3.5" aria-hidden />
-              {ru.stats.firstsMoreSystems(Math.min(rest, SYSTEM_STEP * 2))}
+              {t.stats.firstsMoreSystems(Math.min(rest, SYSTEM_STEP * 2))}
             </MoreButton>
           )}
           {limit > SYSTEM_STEP && (
             <MoreButton onClick={() => setLimit(SYSTEM_STEP)}>
               <ChevronUp className="size-3.5" aria-hidden />
-              {ru.stats.collapse}
+              {t.stats.collapse}
             </MoreButton>
           )}
           <span className="ml-auto text-xs text-zinc-500">
-            {shown.length} / {ru.stats.firstsSystems(groups.length)}
+            {shown.length} / {t.stats.firstsSystems(groups.length)}
           </span>
         </div>
       )}
-      {entries.length >= 500 && <p className="mt-3 text-xs text-zinc-600">{ru.stats.firstsCapped(entries.length)}</p>}
+      {entries.length >= 500 && <p className="mt-3 text-xs text-zinc-600">{t.stats.firstsCapped(entries.length)}</p>}
     </div>
   )
 }
@@ -369,12 +369,12 @@ export function Firsts({ stats, className = '' }: { stats: StatsView; className?
     entries.length === 0 && stats.firstDiscoveriesSold === 0 && stats.firstMappedSold === 0 && stats.firstFootfallsTotal === 0
   if (nothing) {
     return (
-      <Card id="stats-firsts" title={ru.stats.firsts} icon={Flag} className={className}>
+      <Card id="stats-firsts" title={t.stats.firsts} icon={Flag} className={className}>
         <div className="flex items-center gap-4">
           <Flag className="size-9 shrink-0 text-zinc-600" aria-hidden />
           <div>
-            <p className="text-base font-medium text-zinc-200">{ru.stats.noFirsts}</p>
-            <p className="mt-0.5 max-w-xl text-sm text-zinc-500">{ru.stats.noFirstsHint}</p>
+            <p className="text-base font-medium text-zinc-200">{t.stats.noFirsts}</p>
+            <p className="mt-0.5 max-w-xl text-sm text-zinc-500">{t.stats.noFirstsHint}</p>
           </div>
         </div>
       </Card>
@@ -384,13 +384,13 @@ export function Firsts({ stats, className = '' }: { stats: StatsView; className?
   return (
     <Card
       id="stats-firsts"
-      title={ru.stats.firsts}
+      title={t.stats.firsts}
       icon={Flag}
       className={className}
       aside={
         entries.length > 0 && (
           <span className="text-xs text-zinc-500">
-            {ru.stats.firstsSystems(systems)} · {ru.stats.firstsBodies(entries.length)}
+            {t.stats.firstsSystems(systems)} · {t.stats.firstsBodies(entries.length)}
           </span>
         )
       }
@@ -399,19 +399,19 @@ export function Firsts({ stats, className = '' }: { stats: StatsView; className?
         {/* Stays in view next to a long list. */}
         <div className="min-w-0 self-start lg:sticky lg:top-24">
           <dl className="grid content-start gap-6">
-            <Counter icon={Flag} value={stats.firstDiscoveriesSold} label={ru.stats.firstsDiscovered(stats.firstDiscoveriesSold)}>
+            <Counter icon={Flag} value={stats.firstDiscoveriesSold} label={t.stats.firstsDiscovered(stats.firstDiscoveriesSold)}>
               <SaleDetail pending={stats.firstDiscoveriesPending} lost={stats.firstDiscoveriesLost} />
             </Counter>
-            <Counter icon={MapIcon} value={stats.firstMappedSold} label={ru.stats.firstsMapped(stats.firstMappedSold)}>
+            <Counter icon={MapIcon} value={stats.firstMappedSold} label={t.stats.firstsMapped(stats.firstMappedSold)}>
               <SaleDetail pending={stats.firstMappedPending} lost={stats.firstMappedLost} />
             </Counter>
-            <Counter icon={Footprints} value={stats.firstFootfallsTotal} label={ru.stats.firstsFootfalls(stats.firstFootfallsTotal)}>
-              <span className="block text-zinc-500">{ru.stats.footfallInstant}</span>
+            <Counter icon={Footprints} value={stats.firstFootfallsTotal} label={t.stats.firstsFootfalls(stats.firstFootfallsTotal)}>
+              <span className="block text-zinc-500">{t.stats.footfallInstant}</span>
             </Counter>
           </dl>
           <Legend />
         </div>
-        {entries.length > 0 ? <FirstsTable entries={entries} /> : <p className="text-sm text-zinc-500">{ru.stats.noFirstsHint}</p>}
+        {entries.length > 0 ? <FirstsTable entries={entries} /> : <p className="text-sm text-zinc-500">{t.stats.noFirstsHint}</p>}
       </div>
     </Card>
   )

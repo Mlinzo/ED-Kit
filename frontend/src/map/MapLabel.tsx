@@ -7,7 +7,7 @@ import { CreditRange, Credits } from '../components/Credits'
 import { sourceMarker } from '../components/source'
 import type { RouteTarget } from '../components/BodyBadges'
 import { CommunityGlyph, SourceIcon } from '../components/SourceBadge'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { bodyLabel } from '../lib/body'
 import { formatLs } from '../lib/format'
 import type { MapRegistry } from './context'
@@ -90,7 +90,7 @@ export function MapLabel({
           className={`focus-ring pointer-events-auto flex h-6 items-center gap-1.5 rounded-full py-0.5 pr-0.5 pl-2 text-[12px] leading-none font-medium whitespace-nowrap shadow-lg ring-1 shadow-black/40 backdrop-blur-sm transition-colors ring-inset ${tone} ${body ? 'cursor-pointer hover:bg-zinc-900/90' : 'cursor-default'}`}
         >
           {current ? (
-            <MapPin className="size-3.5 shrink-0 text-accent" strokeWidth={2.5} aria-label={ru.system.youAreHere} />
+            <MapPin className="size-3.5 shrink-0 text-accent" strokeWidth={2.5} aria-label={t.system.youAreHere} />
           ) : (
             <span className="size-1.5 shrink-0 rounded-full" style={{ background: dot }} aria-hidden />
           )}
@@ -99,9 +99,9 @@ export function MapLabel({
             <Route
               className={`size-3.5 shrink-0 ${routeTarget === 'done' ? 'text-zinc-500' : 'text-accent'}`}
               strokeWidth={2.5}
-              aria-label={routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}
+              aria-label={routeTarget === 'done' ? t.badges.routeTargetDone : t.badges.routeTarget}
             >
-              <title>{routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}</title>
+              <title>{routeTarget === 'done' ? t.badges.routeTargetDone : t.badges.routeTarget}</title>
             </Route>
           )}
           {marker?.scope === 'body' && <SourceIcon marker={marker} />}
@@ -132,13 +132,13 @@ function Card({ node, current, routeTarget }: { node: MapNode; current: boolean;
   if (!body) {
     return (
       <div className="w-max max-w-56 rounded-xl bg-zinc-950/85 px-3 py-2 text-sm text-zinc-400 shadow-xl ring-1 shadow-black/50 ring-zinc-500/30 backdrop-blur-md ring-inset">
-        <span className="font-semibold text-zinc-200">?</span> · {ru.map.unknownBody}
+        <span className="font-semibold text-zinc-200">?</span> · {t.map.unknownBody}
       </div>
     )
   }
   const marker = sourceMarker(body)
   const carto = body.kind === 'planet' && body.dssValue > 0 ? body.dssValue : body.fssValue
-  const cartoLabel = body.kind === 'planet' && body.dssValue > 0 ? ru.system.dss : ru.system.fss
+  const cartoLabel = body.kind === 'planet' && body.dssValue > 0 ? t.system.dss : t.system.fss
   const mapTone = body.worthMapping && !body.mappedByMe ? 'text-emerald-300' : 'text-zinc-200'
   return (
     <div className="pointer-events-none w-60 rounded-xl bg-zinc-950/88 p-3 shadow-2xl ring-1 shadow-black/60 ring-white/12 backdrop-blur-md ring-inset">
@@ -164,13 +164,13 @@ function Card({ node, current, routeTarget }: { node: MapNode; current: boolean;
           {current && (
             <span className="inline-flex items-center gap-1">
               <MapPin className="size-3.5" aria-hidden />
-              {ru.system.youAreHere}
+              {t.system.youAreHere}
             </span>
           )}
           {routeTarget && (
             <span className={`inline-flex items-center gap-1 ${routeTarget === 'done' ? 'text-zinc-500' : ''}`}>
               <Route className="size-3.5" aria-hidden />
-              {routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}
+              {routeTarget === 'done' ? t.badges.routeTargetDone : t.badges.routeTarget}
             </span>
           )}
         </div>
@@ -190,7 +190,7 @@ function Card({ node, current, routeTarget }: { node: MapNode; current: boolean;
         </div>
         {body.bioValueMax > 0 && (
           <div>
-            <dt className="text-[10px] font-medium tracking-wide text-zinc-500 uppercase">{ru.system.bio}</dt>
+            <dt className="text-[10px] font-medium tracking-wide text-zinc-500 uppercase">{t.system.bio}</dt>
             <dd className="text-sm font-semibold text-emerald-300">
               <CreditRange min={body.bioValueMin} max={body.bioValueMax} />
             </dd>

@@ -4,7 +4,7 @@
 
 import { Database, ExternalLink, ScanLine } from 'lucide-react'
 import type { BodyView, DataSource } from '../api/types'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { communityText, isCommunity, sourceDate, sourceName, type SourceMarker } from './source'
 
 const VIOLET = 'text-violet-300'
@@ -43,7 +43,7 @@ export function CommunityNotice({ body }: { body: BodyView }) {
       <Database className={`mt-0.5 size-4 shrink-0 ${VIOLET}`} strokeWidth={2.25} aria-hidden />
       <div className="min-w-0 text-sm">
         <p className="text-violet-100">{communityText(body.source, body.sourceAt)}</p>
-        <p className="mt-0.5 text-xs text-zinc-400">{ru.source.scanHint}</p>
+        <p className="mt-0.5 text-xs text-zinc-400">{t.source.scanHint}</p>
       </div>
     </div>
   )
@@ -67,7 +67,7 @@ function SourceValue({
   if (!isCommunity(source)) {
     return (
       <>
-        <span className="text-zinc-200">{ru.source.journal}</span>
+        <span className="text-zinc-200">{t.source.journal}</span>
         {tail}
       </>
     )
@@ -80,17 +80,17 @@ function SourceValue({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          title={ru.source.open(name)}
+          title={t.source.open(name)}
           className="focus-ring inline-flex items-center gap-0.5 rounded font-medium text-violet-200 underline decoration-violet-400/40 underline-offset-2 hover:text-violet-100 hover:decoration-violet-300"
         >
           {name}
           <ExternalLink className="size-3" strokeWidth={2.25} aria-hidden />
-          <span className="sr-only"> ({ru.source.open(name)})</span>
+          <span className="sr-only"> ({t.source.open(name)})</span>
         </a>
       ) : (
         <span className="font-medium text-violet-200">{name}</span>
       )}
-      {explain && <span className="text-zinc-400"> ({ru.source.others})</span>}
+      {explain && <span className="text-zinc-400"> ({t.source.others})</span>}
       {tail}
     </>
   )
@@ -99,14 +99,14 @@ function SourceValue({
 /** "Источники": one row per piece of data (body, signals, genera) with where it comes from. */
 export function SourceList({ body }: { body: BodyView }) {
   const rows: { key: string; label: string; source: DataSource; at?: string | null; url?: string | null }[] = [
-    { key: 'body', label: ru.source.body, source: body.source, at: body.sourceAt, url: body.sourceUrl },
+    { key: 'body', label: t.source.body, source: body.source, at: body.sourceAt, url: body.sourceUrl },
   ]
   // Signals and genera have no date of their own (sourceAt is the body record's).
   if (body.signalsSource) {
-    const label = body.signals.bio > 0 ? ru.source.bioSignals : ru.source.signals
+    const label = body.signals.bio > 0 ? t.source.bioSignals : t.source.signals
     rows.push({ key: 'signals', label, source: body.signalsSource })
   }
-  if (body.genusesSource) rows.push({ key: 'genuses', label: ru.source.genuses, source: body.genusesSource })
+  if (body.genusesSource) rows.push({ key: 'genuses', label: t.source.genuses, source: body.genusesSource })
   const firstCommunity = rows.findIndex((r) => isCommunity(r.source))
 
   return (

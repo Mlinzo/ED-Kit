@@ -6,6 +6,10 @@ import App from './App.tsx'
 import { DataProvider } from './api/DataProvider.tsx'
 import { Store } from './api/store.ts'
 import { createLiveTransport, type Transport } from './api/transport.ts'
+import { lang, t } from './i18n'
+
+document.documentElement.lang = lang
+document.title = t.appName
 
 function isMockMode(): boolean {
   const value = new URLSearchParams(window.location.search).get('mock')

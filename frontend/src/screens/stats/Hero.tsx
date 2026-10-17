@@ -6,7 +6,7 @@ import { StackedBar } from '../../components/charts/Bars'
 import { TooltipRow } from '../../components/charts/ChartTooltip'
 import { useElementWidth } from '../../components/charts/useElementWidth'
 import { Credits } from '../../components/Credits'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { exactCredits, formatCredits } from '../../lib/format'
 import { percent } from './numbers'
 import { cumulativeEarnings, longDate, shortDay } from './timeline'
@@ -17,8 +17,8 @@ export function Hero({ stats }: { stats: StatsView }) {
   const growth = useMemo(() => cumulativeEarnings(stats.timeline), [stats.timeline])
   const [chartRef, chartWidth] = useElementWidth<HTMLDivElement>()
   const segments = [
-    { key: 'carto', value: stats.earningsCarto, color: VIZ.carto, label: ru.stats.carto },
-    { key: 'bio', value: stats.earningsBio, color: VIZ.bio, label: ru.stats.bio },
+    { key: 'carto', value: stats.earningsCarto, color: VIZ.carto, label: t.stats.carto },
+    { key: 'bio', value: stats.earningsBio, color: VIZ.bio, label: t.stats.bio },
   ]
   const sale = stats.biggestSale
 
@@ -33,17 +33,17 @@ export function Hero({ stats }: { stats: StatsView }) {
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h1 id="stats-earned" className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
-          {ru.stats.earnedAllTime}
+          {t.stats.earnedAllTime}
         </h1>
         {(stats.commander || stats.since) && (
           <p className="text-xs text-zinc-500">
             {stats.commander && (
               <>
-                {ru.common.commander} <span className="font-medium text-zinc-300">{stats.commander}</span>
+                {t.common.commander} <span className="font-medium text-zinc-300">{stats.commander}</span>
               </>
             )}
             {stats.commander && stats.since && <span aria-hidden> · </span>}
-            {stats.since && ru.stats.since(longDate(stats.since))}
+            {stats.since && t.stats.since(longDate(stats.since))}
           </p>
         )}
       </div>
@@ -52,7 +52,7 @@ export function Hero({ stats }: { stats: StatsView }) {
         <span className="text-6xl leading-none font-semibold tracking-tighter text-zinc-50 proportional-nums sm:text-7xl">
           {formatCredits(total)}
         </span>
-        <span className="text-xl font-medium text-zinc-500">{ru.units.credits}</span>
+        <span className="text-xl font-medium text-zinc-500">{t.units.credits}</span>
       </p>
 
       <div className="mt-6">
@@ -75,7 +75,7 @@ export function Hero({ stats }: { stats: StatsView }) {
       {growth.length > 1 && (
         <div className="mt-6">
           <div className="mb-1 flex items-baseline justify-between text-xs text-zinc-500">
-            <span>{ru.stats.growth}</span>
+            <span>{t.stats.growth}</span>
             <span>
               {shortDay(growth[0].start)} — {shortDay(growth[growth.length - 1].start)}
             </span>
@@ -87,11 +87,11 @@ export function Hero({ stats }: { stats: StatsView }) {
               height={64}
               color={VIZ.total}
               surface={VIZ.surface}
-              ariaLabel={`${ru.stats.growth}: ${formatCredits(total)}`}
+              ariaLabel={`${t.stats.growth}: ${formatCredits(total)}`}
               tooltip={(i) => (
                 <>
                   <div className="mb-1 text-zinc-400">{shortDay(growth[i].start)}</div>
-                  <TooltipRow value={formatCredits(growth[i].total)} label={ru.stats.total} />
+                  <TooltipRow value={formatCredits(growth[i].total)} label={t.stats.total} />
                 </>
               )}
             />
@@ -105,11 +105,11 @@ export function Hero({ stats }: { stats: StatsView }) {
             <Trophy className="size-4.5" aria-hidden />
           </span>
           <p className="min-w-0 text-sm">
-            <span className="block text-xs text-zinc-500">{ru.stats.biggestSale}</span>
+            <span className="block text-xs text-zinc-500">{t.stats.biggestSale}</span>
             <Credits value={sale.value} className="font-semibold text-zinc-100" />
             <span className="text-zinc-500">
               {' '}
-              · {ru.stats.saleKind(sale.name)}
+              · {t.stats.saleKind(sale.name)}
               {sale.at && ` · ${shortDay(sale.at)}`}
             </span>
           </p>

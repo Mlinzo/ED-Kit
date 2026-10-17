@@ -1,10 +1,11 @@
-// All Russian UI strings live here. Game names (systems, bodies, species, planet classes)
-// come from the backend and are shown as-is in English.
+// Russian UI strings: the original dictionary, whose shape the other languages follow (see
+// index.ts). Game names (systems, bodies, species, planet classes) come from the backend and are
+// shown as-is in English.
 
 const pluralRules = new Intl.PluralRules('ru')
 
 /** Russian plural form: plural(3, ['образец', 'образца', 'образцов']) -> 'образца'. */
-export function plural(n: number, forms: [one: string, few: string, many: string]): string {
+function plural(n: number, forms: [one: string, few: string, many: string]): string {
   const rule = pluralRules.select(n)
   if (rule === 'one') return forms[0]
   if (rule === 'few') return forms[1]
@@ -444,6 +445,7 @@ export const ru = {
     analysing: 'Все образцы собраны — идёт анализ',
     progress: 'Образцы',
     otherSpecies: 'Другие виды на теле',
+    bodySpecies: 'Виды на этом теле',
     noOtherSpecies: 'Других видов не найдено',
     radarLabel: (nearest: string) => `Радар образцов. До ближайшего образца ${nearest}`,
     sample: (n: number) => `Образец ${n}`,
@@ -458,7 +460,7 @@ export const ru = {
     atRiskHint: 'Непроданные данные будут потеряны при гибели корабля',
     allSold: 'Всё продано',
     bio: 'Экзобиология',
-    bioCount: (n: number) => `${n} ${plural(n, ['образец', 'образца', 'образцов'])}`,
+    bioCount: (n: number) => `${n} ${plural(n, ['вид', 'вида', 'видов'])}`,
     carto: 'Картография',
     cartoBodies: (n: number) => `${n} ${plural(n, ['тело', 'тела', 'тел'])}`,
     cartoSystems: (n: number) => `${n} ${plural(n, ['система', 'системы', 'систем'])}`,
@@ -679,5 +681,30 @@ export const ru = {
     minutesAgo: (n: number) => `${n} мин назад`,
     hoursAgo: (n: number) => `${n} ч назад`,
     daysAgo: (n: number) => `${n} ${plural(n, ['день', 'дня', 'дней'])} назад`,
+  },
+
+  settings: {
+    open: 'Настройки',
+    title: 'Настройки',
+    language: 'Язык',
+    languageHint: 'Страница перезагрузится на выбранном языке.',
+    highlight: 'Подсветка тел',
+    intro:
+      'Тела ниже порогов остаются на карте, но не подсвечиваются. Ценность — оценка выплаты в кредитах.',
+    dss: 'Картография (DSS)',
+    dssHint: 'Подсвечивать планету, если выплата после картографирования не ниже порога.',
+    bio: 'Экзобиология',
+    bioHint:
+      'Подсвечивать тело с биосигналами, если возможная стоимость видов (с бонусом первой высадки) не ниже порога. Начатый сбор подсвечивается всегда.',
+    custom: 'Своё значение',
+    unit: 'Единицы',
+    thousands: 'тыс.',
+    millions: 'млн',
+    off: 'всё',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+    saving: 'Сохраняю…',
+    error: 'Не удалось сохранить',
+    close: 'Закрыть',
   },
 } as const

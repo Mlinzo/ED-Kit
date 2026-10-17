@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import type { StatCount } from '../../api/types'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { NotableGlyph } from './NotableGlyph'
 import { bigNumber } from './numbers'
@@ -11,18 +11,18 @@ const STAR_KEYS = ['black_hole', 'neutron', 'white_dwarf', 'wolf_rayet', 'carbon
 
 function Tile({ kind, count }: { kind: string; count: number }) {
   const found = count > 0
-  const label = ru.stats.notableLabel[kind] ?? kind
+  const label = t.stats.notableLabel[kind] ?? kind
   return (
     <li
       className={`flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-2 sm:gap-3 sm:px-2.5 ${found ? 'bg-zinc-800/40' : ''}`}
-      title={found ? `${label}: ${formatNumber(count)}` : `${label}: ${ru.stats.notFound}`}
+      title={found ? `${label}: ${formatNumber(count)}` : `${label}: ${t.stats.notFound}`}
     >
       <span className="shrink-0 [&>svg]:size-8 sm:[&>svg]:size-10">
         <NotableGlyph kind={kind} dim={!found} size={40} />
       </span>
       <div className="min-w-0">
         <div className={`text-lg leading-tight font-semibold proportional-nums ${found ? 'text-zinc-50' : 'text-zinc-600'}`}>
-          {found ? bigNumber(count) : ru.common.unknown}
+          {found ? bigNumber(count) : t.common.unknown}
         </div>
         <div className={`text-xs leading-snug hyphens-auto break-words ${found ? 'text-zinc-400' : 'text-zinc-600'}`}>{label}</div>
       </div>
@@ -36,15 +36,15 @@ export function Notable({ notable, className = '' }: { notable: readonly StatCou
   // Codes the UI does not know yet still show up, at the end of the planets.
   const extra = notable.filter((n) => !known.has(n.key)).map((n) => n.key)
   const groups = [
-    { title: ru.stats.notablePlanets, keys: [...PLANET_KEYS, ...extra] },
-    { title: ru.stats.notableStars, keys: STAR_KEYS },
+    { title: t.stats.notablePlanets, keys: [...PLANET_KEYS, ...extra] },
+    { title: t.stats.notableStars, keys: STAR_KEYS },
   ]
   const foundTotal = [...known, ...extra].filter((k) => (counts.get(k) ?? 0) > 0).length
 
   return (
     <Card
       id="stats-notable"
-      title={ru.stats.notable}
+      title={t.stats.notable}
       icon={Sparkles}
       className={className}
       aside={

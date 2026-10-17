@@ -388,7 +388,7 @@ export interface HistoryStar {
   starType: string | null
   starSubclass: number | null
   luminosity: string | null
-  /** e.g. "K5 Va · orange star" */
+  /** e.g. "K5 Va · yellow-orange star" */
   subtype: string
 }
 

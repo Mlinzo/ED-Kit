@@ -1,4 +1,4 @@
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 
 /** Three dots for the three samples a species needs. */
 export function SampleDots({ samples, size = 'sm' }: { samples: number; size?: 'sm' | 'lg' }) {
@@ -8,7 +8,7 @@ export function SampleDots({ samples, size = 'sm' }: { samples: number; size?: '
     <span
       className={`inline-flex items-center ${gap}`}
       role="img"
-      aria-label={`${ru.surface.progress}: ${ru.species.samples(samples)}`}
+      aria-label={`${t.surface.progress}: ${t.species.samples(samples)}`}
     >
       {[0, 1, 2].map((i) => (
         <span

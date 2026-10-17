@@ -1,6 +1,6 @@
 import { Check, Leaf, Map as MapIcon } from 'lucide-react'
 import type { BodyView } from '../api/types'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { sourceMarker, type SourceMarker } from './source'
 import { CommunityGlyph } from './SourceBadge'
 
@@ -34,7 +34,7 @@ function progressItems(body: BodyView): Item[] {
       icon: Leaf,
       text: `${done}/${body.signals.bio}`,
       state: done >= body.signals.bio ? 'complete' : done > 0 ? 'partial' : 'todo',
-      title: [ru.progress.bioTitle(done, body.signals.bio), community?.title].filter(Boolean).join('\n'),
+      title: [t.progress.bioTitle(done, body.signals.bio), community?.title].filter(Boolean).join('\n'),
       community,
     })
   }
@@ -44,7 +44,7 @@ function progressItems(body: BodyView): Item[] {
       icon: MapIcon,
       text: 'DSS',
       state: body.mappedByMe ? 'complete' : 'todo',
-      title: body.mappedByMe ? ru.progress.mapped : ru.progress.worthMapping,
+      title: body.mappedByMe ? t.progress.mapped : t.progress.worthMapping,
     })
   }
   return items

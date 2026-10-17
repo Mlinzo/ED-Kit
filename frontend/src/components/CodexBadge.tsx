@@ -5,7 +5,7 @@
 
 import { BookCheck, BookPlus, type LucideIcon } from 'lucide-react'
 import type { BodyView, CodexStatus } from '../api/types'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { bodyCodex, codexLabel, codexNewStatus, codexTitle } from './codex'
 
 const STRONG =
@@ -84,7 +84,7 @@ export function CodexMark({
   if (!codex) return null
   const strong = codex.level === 'new'
   const { box, icon } = CHIP[size]
-  const text = strong ? ru.codex.bodyNew(codex.count) : ru.codex.bodyMaybe(codex.count)
+  const text = strong ? t.codex.bodyNew(codex.count) : t.codex.bodyMaybe(codex.count)
   return (
     <span
       title={codex.title}
@@ -120,9 +120,9 @@ export function CodexSummary({ body }: { body: BodyView }) {
   const codex = bodyCodex(body)
   if (!codex) {
     return (
-      <p className="inline-flex items-center gap-1.5 text-sm text-zinc-500" title={ru.codex.note}>
+      <p className="inline-flex items-center gap-1.5 text-sm text-zinc-500" title={t.codex.note}>
         <BookCheck className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
-        {ru.codex.allLogged}
+        {t.codex.allLogged}
       </p>
     )
   }
@@ -139,9 +139,9 @@ export function CodexSummary({ body }: { body: BodyView }) {
       </span>
       <div className="min-w-0 text-sm">
         <p className={strong ? 'font-semibold text-fuchsia-50' : 'font-medium text-fuchsia-200/90'}>{codex.text}</p>
-        <p className="mt-0.5 text-xs text-zinc-400">{strong ? ru.codex.bodyNewHint : ru.codex.bodyMaybeHint}</p>
+        <p className="mt-0.5 text-xs text-zinc-400">{strong ? t.codex.bodyNewHint : t.codex.bodyMaybeHint}</p>
       </div>
-      <span className="sr-only">{ru.codex.note}</span>
+      <span className="sr-only">{t.codex.note}</span>
     </div>
   )
 }

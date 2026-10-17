@@ -8,7 +8,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { Vector3 } from 'three'
 import type { RouteStopView, RouteView } from '../../../api/types'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
-import { ru } from '../../../i18n/ru'
+import { t } from '../../../i18n'
 import { formatLy, formatNumber } from '../../../lib/format'
 import { Starfield } from '../../../map/Starfield'
 import { Ticker } from '../../../map/Ticker'
@@ -222,12 +222,12 @@ function Legend() {
             style={i.hollow ? { boxShadow: `inset 0 0 0 1.5px ${i.color}` } : { background: i.color }}
             aria-hidden
           />
-          {ru.route.map.legend[i.key]}
+          {t.route.map.legend[i.key]}
         </li>
       ))}
       <li className="flex items-center gap-1.5">
         <MapPin className="size-3" style={{ color: YOU_COLOR }} strokeWidth={2.5} aria-hidden />
-        {ru.route.map.legend.you}
+        {t.route.map.legend.you}
       </li>
     </ul>
   )
@@ -271,7 +271,7 @@ export default function RouteMapCanvas({ route, selected, onSelect, className = 
           'radial-gradient(140% 120% at 50% 50%, #070b14 0%, #03050a 70%)',
       }}
       role="group"
-      aria-label={ru.route.map.label(route.stops.length)}
+      aria-label={t.route.map.label(route.stops.length)}
     >
       {/* Canvas and labels share one event source: a drag that starts on a label still turns the view. */}
       <div ref={eventSource} className="absolute inset-0">
@@ -304,21 +304,21 @@ export default function RouteMapCanvas({ route, selected, onSelect, className = 
       <Legend />
       <div className="pointer-events-none absolute top-0 right-0 z-30 flex gap-1.5 p-3">
         {next && (
-          <MapButton label={ru.route.map.focusNext} onClick={() => camera.current?.focus(next.pos)}>
+          <MapButton label={t.route.map.focusNext} onClick={() => camera.current?.focus(next.pos)}>
             <Crosshair className="size-4" aria-hidden />
           </MapButton>
         )}
-        <MapButton label={ru.route.map.top} onClick={() => camera.current?.top()}>
+        <MapButton label={t.route.map.top} onClick={() => camera.current?.top()}>
           <MapIcon className="size-4" aria-hidden />
         </MapButton>
-        <MapButton label={ru.route.map.fit} onClick={() => camera.current?.fit(true)}>
+        <MapButton label={t.route.map.fit} onClick={() => camera.current?.fit(true)}>
           <Maximize2 className="size-4" aria-hidden />
         </MapButton>
       </div>
       <div className="pointer-events-none absolute bottom-2.5 left-3 z-20 flex flex-col gap-0.5 text-[11px] text-zinc-500 select-none">
-        {scene.youFarLy !== null && <span className="text-zinc-300">{ru.route.map.farFromRoute(formatLy(scene.youFarLy))}</span>}
-        <span>{ru.route.map.grid(`${formatNumber(scene.gridLy)} ${ru.units.ly}`)}</span>
-        <span className="text-zinc-600">{coarse ? ru.route.map.hintTouch : ru.route.map.hintMouse}</span>
+        {scene.youFarLy !== null && <span className="text-zinc-300">{t.route.map.farFromRoute(formatLy(scene.youFarLy))}</span>}
+        <span>{t.route.map.grid(`${formatNumber(scene.gridLy)} ${t.units.ly}`)}</span>
+        <span className="text-zinc-600">{coarse ? t.route.map.hintTouch : t.route.map.hintMouse}</span>
       </div>
       {overlay}
     </div>

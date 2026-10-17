@@ -4,7 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import type { RouteStopView, RouteView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
 import { CreditRange } from '../../components/Credits'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatLy } from '../../lib/format'
 import { spanshUrl, type StopActions } from './helpers'
 import { BodyRow, IconButton, PopulatedBadge, StopStatus } from './parts'
@@ -60,26 +60,26 @@ export function StopCard({
       <div className="flex items-start gap-2 px-4 pt-3">
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 text-xs text-zinc-500">
-            <span className="tabular-nums">{ru.route.stopOf(stop.seq, route.stops.length)}</span>
+            <span className="tabular-nums">{t.route.stopOf(stop.seq, route.stops.length)}</span>
             <StopStatus stop={stop} next={next} />
           </p>
           <div className="mt-0.5 flex items-center gap-1.5">
-            <h3 className={`truncate text-lg font-semibold text-zinc-50 ${stop.skipped ? 'line-through' : ''}`} title={stop.name}>
+            <h3 className={`truncate text-lg font-semibold text-zinc-50 proportional-nums ${stop.skipped ? 'line-through' : ''}`} title={stop.name}>
               {stop.name}
             </h3>
             <CopyButton text={stop.name} />
           </div>
         </div>
-        <IconButton label={ru.route.map.close} onClick={onClose}>
+        <IconButton label={t.route.map.close} onClick={onClose}>
           <X className="size-4" aria-hidden />
         </IconButton>
       </div>
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-1 text-sm text-zinc-400">
         <span>
-          {ru.route.map.hop(formatLy(stop.hopLy))}
-          {stop.jumps ? <span className="text-zinc-500"> · {ru.route.jumps(stop.jumps)}</span> : null}
+          {t.route.map.hop(formatLy(stop.hopLy))}
+          {stop.jumps ? <span className="text-zinc-500"> · {t.route.jumps(stop.jumps)}</span> : null}
         </span>
-        {fromYou !== null && <span>{ru.route.fromYou(formatLy(fromYou))}</span>}
+        {fromYou !== null && <span>{t.route.fromYou(formatLy(fromYou))}</span>}
         <PopulatedBadge population={stop.population} />
       </p>
 
@@ -95,25 +95,25 @@ export function StopCard({
           {canMakeNext && route.nextSeq !== null && (
             <Action onClick={() => actions.makeNext(stop.seq, route.nextSeq ?? stop.seq)}>
               <ChevronsUp className="size-3.5" aria-hidden />
-              {ru.route.makeNext}
+              {t.route.makeNext}
             </Action>
           )}
           {!stop.done && (
             <Action onClick={() => actions.skip(stop.seq, !stop.skipped)}>
               {stop.skipped ? <Undo2 className="size-3.5" aria-hidden /> : <SkipForward className="size-3.5" aria-hidden />}
-              {stop.skipped ? ru.route.unskip : ru.route.skip}
+              {stop.skipped ? t.route.unskip : t.route.skip}
             </Action>
           )}
           <Action onClick={() => actions.remove(stop.seq)} danger>
             <X className="size-3.5" aria-hidden />
-            {ru.route.remove}
+            {t.route.remove}
           </Action>
           <a
             href={spanshUrl(stop.address)}
             target="_blank"
             rel="noreferrer"
-            title={ru.route.spansh}
-            aria-label={ru.route.spansh}
+            title={t.route.spansh}
+            aria-label={t.route.spansh}
             className="focus-ring flex size-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
           >
             <ExternalLink className="size-3.5" aria-hidden />

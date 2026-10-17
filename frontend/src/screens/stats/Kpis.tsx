@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from 'react'
 import type { StatsView } from '../../api/types'
 import { Sparkline } from '../../components/charts/Sparkline'
 import { useElementWidth } from '../../components/charts/useElementWidth'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { exactCredits, formatCredits, formatNumber } from '../../lib/format'
 import { bigNumber } from './numbers'
 import { bucketCount, bucketize, longDate, shortDay, type Bucket, type Granularity } from './timeline'
@@ -66,13 +66,13 @@ function DayStrip({ days }: { days: Bucket[] }) {
     <div
       className="flex h-[30px] items-end gap-[3px]"
       role="img"
-      aria-label={ru.stats.dayStrip(active, days.length)}
-      title={ru.stats.dayStrip(active, days.length)}
+      aria-label={t.stats.dayStrip(active, days.length)}
+      title={t.stats.dayStrip(active, days.length)}
     >
       {days.map((d) => (
         <span
           key={d.start}
-          title={`${shortDay(d.start)}: ${d.activeDays > 0 ? ru.stats.playedDay : ru.stats.noActivity}`}
+          title={`${shortDay(d.start)}: ${d.activeDays > 0 ? t.stats.playedDay : t.stats.noActivity}`}
           className="h-3 max-w-4 min-w-0 flex-1 rounded-[3px]"
           style={{ background: d.activeDays > 0 ? VIZ.activity : VIZ.empty }}
         />
@@ -95,55 +95,55 @@ export function Kpis({ stats }: { stats: StatsView }) {
   const g = useMemo(() => trendGranularity(stats.timeline), [stats.timeline])
   const buckets = useMemo(() => bucketize(stats.timeline, g), [stats.timeline, g])
   const series = (f: (b: Bucket) => number) => buckets.map(f)
-  const trendLabel = ru.stats.granularity[g]
+  const trendLabel = t.stats.granularity[g]
 
   return (
     <dl className="grid h-full min-w-0 auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4 xl:grid-cols-2">
       <Tile
         icon={Route}
-        label={ru.stats.distance}
+        label={t.stats.distance}
         value={bigNumber(stats.distanceLy, stats.distanceLy < 100 ? 1 : 0)}
-        unit={ru.units.ly}
+        unit={t.units.ly}
         trend={series((b) => b.distanceLy)}
-        trendLabel={`${ru.stats.seriesDistance}, ${trendLabel}`}
+        trendLabel={`${t.stats.seriesDistance}, ${trendLabel}`}
         footer={
           <>
-            {formatNumber(stats.jumps)} {ru.stats.jumps(stats.jumps)}
+            {formatNumber(stats.jumps)} {t.stats.jumps(stats.jumps)}
             {avgJump > 0 && (
-              <span className="block text-zinc-500">{ru.stats.avgJump(`${formatNumber(avgJump, 1)} ${ru.units.ly}`)}</span>
+              <span className="block text-zinc-500">{t.stats.avgJump(`${formatNumber(avgJump, 1)} ${t.units.ly}`)}</span>
             )}
           </>
         }
       />
       <Tile
         icon={Orbit}
-        label={ru.stats.systems}
+        label={t.stats.systems}
         value={bigNumber(stats.systemsVisited)}
         trend={series((b) => b.jumps)}
-        trendLabel={`${ru.stats.seriesJumps}, ${trendLabel}`}
-        footer={ru.stats.systemsHonked(formatNumber(stats.systemsHonked))}
+        trendLabel={`${t.stats.seriesJumps}, ${trendLabel}`}
+        footer={t.stats.systemsHonked(formatNumber(stats.systemsHonked))}
       />
       <Tile
         icon={Telescope}
-        label={ru.stats.bodies}
+        label={t.stats.bodies}
         value={bigNumber(stats.bodiesScanned)}
         trend={series((b) => b.bodiesScanned)}
-        trendLabel={`${ru.stats.seriesBodies}, ${trendLabel}`}
-        footer={ru.stats.starsPlanets(stats.starsScanned, formatNumber(stats.starsScanned), stats.planetsScanned, formatNumber(stats.planetsScanned))}
+        trendLabel={`${t.stats.seriesBodies}, ${trendLabel}`}
+        footer={t.stats.starsPlanets(stats.starsScanned, formatNumber(stats.starsScanned), stats.planetsScanned, formatNumber(stats.planetsScanned))}
       />
       <Tile
         icon={CalendarDays}
-        label={ru.stats.days}
+        label={t.stats.days}
         value={bigNumber(stats.daysActive)}
         strip={g === 'day' ? buckets : undefined}
         trend={g === 'day' ? undefined : series((b) => b.activeDays)}
-        trendLabel={`${ru.stats.days}, ${trendLabel}`}
+        trendLabel={`${t.stats.days}, ${trendLabel}`}
         footer={
           <>
-            {stats.since && ru.stats.since(longDate(stats.since))}
+            {stats.since && t.stats.since(longDate(stats.since))}
             {perDay > 0 && (
               <span className="block text-zinc-500" title={exactCredits(perDay)}>
-                {ru.stats.perDay(`${formatCredits(perDay)} ${ru.units.credits}`)}
+                {t.stats.perDay(`${formatCredits(perDay)} ${t.units.credits}`)}
               </span>
             )}
           </>

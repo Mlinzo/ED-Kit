@@ -1,14 +1,16 @@
-import { ru } from '../i18n/ru'
+import { lang, locale, t } from '../i18n'
+import { tidyDate } from './when'
 
 const NARROW_NBSP = ' '
 
-/** Group thousands with a narrow no-break space, "." as decimal separator: 12 345.6 */
+/** Thousands grouped with commas in English (as the game does: 12,345.6), with a narrow no-break
+ *  space in the other languages (12 345.6); "." as the decimal separator everywhere. */
 export function formatNumber(value: number, fractionDigits = 0): string {
   const s = value.toLocaleString('en-US', {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
   })
-  return s.replace(/,/g, NARROW_NBSP)
+  return lang === 'en' ? s : s.replace(/,/g, NARROW_NBSP)
 }
 
 function trimZero(s: string): string {
@@ -29,58 +31,58 @@ export function formatCredits(value: number): string {
 
 /** Exact credits for tooltips: "12 400 000 кр." */
 export function exactCredits(value: number): string {
-  return `${formatNumber(Math.round(value))} ${ru.units.credits}`
+  return `${formatNumber(Math.round(value))} ${t.units.credits}`
 }
 
 export function formatLs(value: number | null): string {
-  if (value === null) return ru.common.unknown
+  if (value === null) return t.common.unknown
   const digits = value > 0 && value < 10 ? 1 : 0
-  return `${formatNumber(value, digits)} ${ru.units.ls}`
+  return `${formatNumber(value, digits)} ${t.units.ls}`
 }
 
 export function formatLy(value: number): string {
-  return `${formatNumber(value, value < 100 ? 1 : 0)} ${ru.units.ly}`
+  return `${formatNumber(value, value < 100 ? 1 : 0)} ${t.units.ly}`
 }
 
 /** Metres for the surface radar: "312 м", "1.4 км". */
 export function formatMeters(value: number): string {
-  if (value < 1_000) return `${Math.round(value)}${NARROW_NBSP}${ru.units.m}`
+  if (value < 1_000) return `${Math.round(value)}${NARROW_NBSP}${t.units.m}`
   const km = value / 1_000
   const text = formatNumber(km, km < 100 ? 1 : 0).replace(/\.0$/, '')
-  return `${text}${NARROW_NBSP}${ru.units.km}`
+  return `${text}${NARROW_NBSP}${t.units.km}`
 }
 
 export function formatGravity(g: number | null): string {
-  return g === null ? ru.common.unknown : `${formatNumber(g, 2)} ${ru.units.g}`
+  return g === null ? t.common.unknown : `${formatNumber(g, 2)} ${t.units.g}`
 }
 
 export function formatKelvin(k: number | null): string {
-  return k === null ? ru.common.unknown : `${formatNumber(k)} ${ru.units.k}`
+  return k === null ? t.common.unknown : `${formatNumber(k)} ${t.units.k}`
 }
 
 /** Body mass: Earth masses for planets, solar masses for stars (decimals scale with size). */
 export function formatMass(value: number | null, kind: 'star' | 'planet'): string {
-  if (value === null) return ru.common.unknown
+  if (value === null) return t.common.unknown
   const digits = value >= 100 ? 0 : value >= 1 ? 2 : value >= 0.01 ? 3 : 4
-  return `${formatNumber(value, digits)} ${kind === 'star' ? ru.units.solarMass : ru.units.earthMass}`
+  return `${formatNumber(value, digits)} ${kind === 'star' ? t.units.solarMass : t.units.earthMass}`
 }
 
 export function formatKm(km: number | null): string {
-  return km === null ? ru.common.unknown : `${formatNumber(km)} ${ru.units.km}`
+  return km === null ? t.common.unknown : `${formatNumber(km)} ${t.units.km}`
 }
 
 export function formatRelative(iso: string, now = Date.now()): string {
-  const t = Date.parse(iso)
-  if (Number.isNaN(t)) return ru.common.unknown
-  const minutes = Math.max(0, Math.floor((now - t) / 60_000))
-  if (minutes < 1) return ru.time.justNow
-  if (minutes < 60) return ru.time.minutesAgo(minutes)
+  const ms = Date.parse(iso)
+  if (Number.isNaN(ms)) return t.common.unknown
+  const minutes = Math.max(0, Math.floor((now - ms) / 60_000))
+  if (minutes < 1) return t.time.justNow
+  if (minutes < 60) return t.time.minutesAgo(minutes)
   const hours = Math.floor(minutes / 60)
-  if (hours < 48) return ru.time.hoursAgo(hours)
-  return ru.time.daysAgo(Math.floor(hours / 24))
+  if (hours < 48) return t.time.hoursAgo(hours)
+  return t.time.daysAgo(Math.floor(hours / 24))
 }
 
-const dateTimeFormat = new Intl.DateTimeFormat('ru-RU', {
+const dateTimeFormat = new Intl.DateTimeFormat(locale, {
   day: 'numeric',
   month: 'short',
   hour: '2-digit',
@@ -88,6 +90,6 @@ const dateTimeFormat = new Intl.DateTimeFormat('ru-RU', {
 })
 
 export function formatDateTime(iso: string): string {
-  const t = Date.parse(iso)
-  return Number.isNaN(t) ? ru.common.unknown : dateTimeFormat.format(t)
+  const ms = Date.parse(iso)
+  return Number.isNaN(ms) ? t.common.unknown : tidyDate(dateTimeFormat.format(ms))
 }

@@ -6,7 +6,7 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type Ref
 import { PointLight, type PerspectiveCamera } from 'three'
 import type { BodyView, SystemView } from '../api/types'
 import { useMediaQuery } from '../hooks/useMediaQuery'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { CameraRig } from './CameraRig'
 import { MapContext, useMap, type CameraApi, type MapContextValue, type MapRegistry } from './context'
 import { InteractionStore } from './interaction'
@@ -221,7 +221,7 @@ export default function SystemMapCanvas({ system, selectedId, onSelect, routeTar
       }}
       // Not role="img": it contains the label buttons and the fit button.
       role="group"
-      aria-label={`${ru.map.label}: ${system.name ?? ''}, ${ru.map.bodiesCount(system.bodies.length)}`}
+      aria-label={`${t.map.label}: ${system.name ?? ''}, ${t.map.bodiesCount(system.bodies.length)}`}
     >
       {/*
         Canvas and labels share one event source: a drag that starts on a label still turns the
@@ -247,8 +247,8 @@ export default function SystemMapCanvas({ system, selectedId, onSelect, routeTar
       </div>
       {layout.nodes.size === 0 && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-          <p className="text-lg font-medium text-zinc-300">{ru.system.emptyList}</p>
-          <p className="max-w-sm text-sm text-zinc-500">{ru.system.honkUnknown}</p>
+          <p className="text-lg font-medium text-zinc-300">{t.system.emptyList}</p>
+          <p className="max-w-sm text-sm text-zinc-500">{t.system.honkUnknown}</p>
         </div>
       )}
 
@@ -256,15 +256,15 @@ export default function SystemMapCanvas({ system, selectedId, onSelect, routeTar
         <button
           type="button"
           onClick={() => camera.current?.fit(true, true)}
-          title={ru.map.fit}
-          aria-label={ru.map.fit}
+          title={t.map.fit}
+          aria-label={t.map.fit}
           className="focus-ring pointer-events-auto flex size-10 items-center justify-center rounded-xl bg-zinc-950/60 text-zinc-300 ring-1 ring-white/10 backdrop-blur-sm transition-colors ring-inset hover:bg-zinc-900/80 hover:text-zinc-50 lg:size-9"
         >
           <Maximize2 className="size-4" aria-hidden />
         </button>
       </div>
       <p className="pointer-events-none absolute bottom-2.5 left-3 text-[11px] text-zinc-600 select-none">
-        {coarse ? ru.map.hintTouch : ru.map.hintMouse}
+        {coarse ? t.map.hintTouch : t.map.hintMouse}
       </p>
     </div>
   )

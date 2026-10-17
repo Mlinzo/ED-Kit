@@ -6,15 +6,15 @@ import type { HistoryEntry, HistoryStar, HistoryView, SystemRef, SystemView } fr
 const SECTORS = ['Oochoss Brou', 'Oochost Flyoo', 'Phroi Bluae', 'Eord Blao']
 const STARS: ReadonlyArray<[string, number, string, string]> = [
   ['M', 4, 'Va', 'red dwarf'],
-  ['K', 2, 'Vab', 'orange star'],
+  ['K', 2, 'Vab', 'yellow-orange star'],
   ['M', 1, 'Va', 'red dwarf'],
-  ['F', 6, 'Vab', 'yellow-white star'],
+  ['F', 6, 'Vab', 'white star'],
   ['L', 3, 'V', 'brown dwarf'],
-  ['G', 8, 'Vab', 'yellow star'],
+  ['G', 8, 'Vab', 'white-yellow star'],
   ['DA', 5, 'VII', 'white dwarf'],
   ['N', 0, 'VII', 'neutron star'],
   ['T', 7, 'V', 'brown dwarf'],
-  ['A', 1, 'Va', 'white star'],
+  ['A', 1, 'Va', 'blue-white star'],
 ]
 
 /** Deterministic pseudo-random numbers, so the demo looks the same on every load. */
@@ -64,7 +64,7 @@ export function buildHistory(current: SystemView): HistoryView {
         firstVisitAt: current.firstVisitAt ?? iso,
         lastVisitAt: iso,
         visits: 1,
-        mainStar: { starType: 'F', starSubclass: 6, luminosity: 'Vab', subtype: 'F6 Vab · yellow-white star' },
+        mainStar: { starType: 'F', starSubclass: 6, luminosity: 'Vab', subtype: 'F6 Vab · white star' },
         bodyCount: current.bodyCount,
         allBodiesFound: current.allBodiesFound,
         bodiesScanned: current.scannedCount,

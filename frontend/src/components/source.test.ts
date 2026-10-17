@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BodyView } from '../api/types'
+import { t } from '../i18n'
 import { buildSystem } from '../mock/fixtures'
 import { communityText, isCommunity, sourceDate, sourceMarker } from './source'
 
@@ -11,13 +12,14 @@ const byName = (name: string): BodyView => {
 }
 const NOW = Date.parse('2026-10-17T12:00:00Z')
 
+// Tests run in the default language, English (en-GB dates).
 describe('sourceDate', () => {
-  it('drops the abbreviation dot and keeps day and month together', () => {
-    expect(sourceDate('2026-10-11T12:00:00Z', false, NOW)).toBe('11\u00a0окт')
+  it('keeps day and month together', () => {
+    expect(sourceDate('2026-10-11T12:00:00Z', false, NOW)).toBe('11\u00a0Oct')
   })
   it('adds the year for another year, the time on request', () => {
-    expect(sourceDate('2025-03-03T12:00:00Z', false, NOW)).toBe('3\u00a0мар\u00a02025')
-    expect(sourceDate('2026-10-16T12:00:00Z', true, NOW)).toMatch(/^16\u00a0окт, \d\d:\d\d$/)
+    expect(sourceDate('2025-03-03T12:00:00Z', false, NOW)).toBe('3\u00a0Mar\u00a02025')
+    expect(sourceDate('2026-10-16T12:00:00Z', true, NOW)).toMatch(/^16\u00a0Oct, \d\d:\d\d$/)
   })
   it('is null without a valid date', () => {
     expect(sourceDate(null)).toBeNull()
@@ -34,12 +36,12 @@ describe('sourceMarker', () => {
     const m = sourceMarker(byName('B 3'))
     expect(m?.scope).toBe('body')
     expect(m?.source).toBe('spansh')
-    expect(m?.title).toContain('Spansh — данные других игроков')
-    expect(m?.title).toContain('обновлено 11\u00a0окт')
+    expect(m?.title).toContain(t.source.community('Spansh'))
+    expect(m?.title).toContain(t.source.updated('11\u00a0Oct'))
   })
   it('marks only the bio data of your body when its signals come from a database', () => {
     const m = sourceMarker(byName('A 5 a'))
-    expect(m).toEqual({ scope: 'bio', source: 'spansh', title: 'Биосигналы: Spansh — данные других игроков' })
+    expect(m).toEqual({ scope: 'bio', source: 'spansh', title: `${t.source.bioSignals}: ${t.source.community('Spansh')}` })
   })
 })
 
@@ -53,7 +55,7 @@ describe('mock community data', () => {
       expect(b.wasDiscovered).toBe(true)
     }
     expect(system.scannedCount).toBe(system.bodies.length - community.length)
-    expect(communityText('edsm')).toBe('EDSM — данные других игроков')
+    expect(communityText('edsm')).toBe(t.source.community('EDSM'))
   })
   it('has finished bodies and reasons that agree with interest', () => {
     const done = bodies.filter((b) => b.done)

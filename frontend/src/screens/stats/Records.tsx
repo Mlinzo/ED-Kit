@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { DayStats, NamedValue, StatsView } from '../../api/types'
 import { ValueBar } from '../../components/charts/Bars'
 import { Credits } from '../../components/Credits'
-import { ru } from '../../i18n/ru'
+import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { bigNumber } from './numbers'
 import { shortDay } from './timeline'
@@ -34,7 +34,7 @@ function RecordTile({
             {sub && <div className="truncate text-xs text-zinc-400">{sub}</div>}
           </>
         ) : (
-          <div className="mt-0.5 text-sm text-zinc-600">{ru.stats.noRecords}</div>
+          <div className="mt-0.5 text-sm text-zinc-600">{t.stats.noRecords}</div>
         )}
       </div>
     </div>
@@ -44,7 +44,7 @@ function RecordTile({
 function lyValue(v: number) {
   return (
     <>
-      {bigNumber(v, v < 100 ? 1 : 0)} <span className="text-sm font-normal text-zinc-500">{ru.units.ly}</span>
+      {bigNumber(v, v < 100 ? 1 : 0)} <span className="text-sm font-normal text-zinc-500">{t.units.ly}</span>
     </>
   )
 }
@@ -70,14 +70,14 @@ function TopList({ title, items, color }: { title: string; items: readonly Named
     <div className="min-w-0">
       <SubLabel className="mb-3">{title}</SubLabel>
       {items.length === 0 ? (
-        <p className="text-sm text-zinc-600">{ru.stats.noRecords}</p>
+        <p className="text-sm text-zinc-600">{t.stats.noRecords}</p>
       ) : (
         <ol className="space-y-3">
           {items.map((item, i) => (
             <li key={`${item.name}-${i}`} className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-baseline gap-x-2 gap-y-1.5">
               <span className={`text-xs tabular-nums ${i === 0 ? 'text-amber-300/90' : 'text-zinc-600'}`}>{i + 1}</span>
               <div className="min-w-0">
-                <div className="truncate text-sm font-medium text-zinc-100" title={item.name}>
+                <div className="truncate text-sm font-medium text-zinc-100 proportional-nums" title={item.name}>
                   {item.name}
                 </div>
                 {item.detail && (
@@ -102,36 +102,36 @@ export function Records({ stats, className = '' }: { stats: StatsView; className
   const richest = bestDay(stats.timeline, 'earnings')
   const farthest = bestDay(stats.timeline, 'distanceLy')
   return (
-    <Card id="stats-records" title={ru.stats.records} icon={Trophy} className={className}>
+    <Card id="stats-records" title={t.stats.records} icon={Trophy} className={className}>
       <div className="grid gap-x-8 gap-y-8 lg:grid-cols-3">
         <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <RecordTile
             icon={Rocket}
-            label={ru.stats.longestJump}
+            label={t.stats.longestJump}
             value={stats.longestJump ? lyValue(stats.longestJump.value) : null}
             sub={stats.longestJump && placeSub(stats.longestJump)}
           />
           <RecordTile
             icon={Compass}
-            label={ru.stats.farthest}
+            label={t.stats.farthest}
             value={stats.farthestFromSol ? lyValue(stats.farthestFromSol.value) : null}
             sub={stats.farthestFromSol && placeSub(stats.farthestFromSol)}
           />
           <RecordTile
             icon={CalendarCheck}
-            label={ru.stats.bestDay}
+            label={t.stats.bestDay}
             value={richest ? <Credits value={richest.earnings} /> : null}
             sub={richest && shortDay(richest.date)}
           />
           <RecordTile
             icon={Route}
-            label={ru.stats.longestDay}
+            label={t.stats.longestDay}
             value={farthest ? lyValue(farthest.distanceLy) : null}
-            sub={farthest && `${shortDay(farthest.date)} · ${formatNumber(farthest.jumps)} ${ru.stats.jumps(farthest.jumps)}`}
+            sub={farthest && `${shortDay(farthest.date)} · ${formatNumber(farthest.jumps)} ${t.stats.jumps(farthest.jumps)}`}
           />
         </div>
-        <TopList title={ru.stats.topBodies} items={stats.mostValuableBodies} color={VIZ.carto} />
-        <TopList title={ru.stats.topSpecies} items={stats.mostValuableSpecies} color={VIZ.bio} />
+        <TopList title={t.stats.topBodies} items={stats.mostValuableBodies} color={VIZ.carto} />
+        <TopList title={t.stats.topSpecies} items={stats.mostValuableSpecies} color={VIZ.bio} />
       </div>
     </Card>
   )

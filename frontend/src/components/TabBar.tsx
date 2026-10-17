@@ -1,5 +1,5 @@
 import { useRef, type KeyboardEvent } from 'react'
-import { ru } from '../i18n/ru'
+import { t } from '../i18n'
 import { panelId, tabId, TABS, type Tab } from './tabs'
 
 interface TabProps {
@@ -23,7 +23,7 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
   const refs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    const i = TABS.findIndex((t) => t.id === tab)
+    const i = TABS.findIndex((x) => x.id === tab)
     let next = -1
     if (e.key === 'ArrowRight') next = (i + 1) % TABS.length
     else if (e.key === 'ArrowLeft') next = (i - 1 + TABS.length) % TABS.length
@@ -37,7 +37,7 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
   }
 
   return (
-    <div role="tablist" aria-label={ru.tabs.label} onKeyDown={onKeyDown} className="flex items-center gap-1">
+    <div role="tablist" aria-label={t.tabs.label} onKeyDown={onKeyDown} className="flex items-center gap-1">
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = id === tab
         return (
@@ -62,7 +62,7 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
             {id === 'surface' && surfaceLive && (
               <>
                 <LiveDot />
-                <span className="sr-only">{ru.tabs.surfaceActive}</span>
+                <span className="sr-only">{t.tabs.surfaceActive}</span>
               </>
             )}
           </button>
@@ -76,7 +76,7 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
 export function BottomTabs({ tab, onTab, surfaceLive }: TabProps) {
   return (
     <nav
-      aria-label={ru.tabs.label}
+      aria-label={t.tabs.label}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/80 bg-zinc-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
       <ul className="mx-auto flex max-w-xl">
@@ -103,7 +103,7 @@ export function BottomTabs({ tab, onTab, surfaceLive }: TabProps) {
                   )}
                 </span>
                 {label}
-                {id === 'surface' && surfaceLive && <span className="sr-only">{ru.tabs.surfaceActive}</span>}
+                {id === 'surface' && surfaceLive && <span className="sr-only">{t.tabs.surfaceActive}</span>}
               </button>
             </li>
           )

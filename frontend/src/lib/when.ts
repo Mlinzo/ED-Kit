@@ -1,12 +1,24 @@
 // Local date / time labels for events (visits, deaths, footfalls): the commander's own clock.
 
-const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
-const dayYearFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
-const timeFmt = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' })
-const fullFmt = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'medium' })
+import { locale } from '../i18n'
 
-/** "окт." -> "окт", "2025 г." -> "2025". */
-const tidy = (s: string) => s.replace(/\s?г\.?$/, '').replace(/\.(?=\s|$)/g, '')
+const dayFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
+const dayYearFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+const timeFmt = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
+const fullFmt = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'medium' })
+
+/**
+ * Short Intl dates without abbreviation dots and year markers: "16 окт. 2025 г." -> "16 окт 2025",
+ * "28 вер. 2025 р." -> "28 вер 2025", "4 Sept" -> "4 Sep". The year marker is a separate word, so
+ * the "р." ending "вер." stays.
+ */
+export function tidyDate(s: string): string {
+  return s
+    .replace(/\s[гр]\.?(?=,|$)/, '')
+    .replace(/\.(?=\s|,|$)/g, '')
+    .replace(/\bSept\b/, 'Sep')
+}
+const tidy = tidyDate
 
 function parse(iso: string | null | undefined): number | null {
   if (!iso) return null
