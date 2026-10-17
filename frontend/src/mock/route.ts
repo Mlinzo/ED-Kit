@@ -1,7 +1,7 @@
 // Demo route for ?mock=1: a run from the demo system for mapping and biology, a few stops
 // done. Planning a new one "takes" a moment and invents stops for the chosen kinds.
 
-import type { BodyKind, RouteBodyView, RouteRequest, RouteStopView, RouteView } from '../api/types'
+import type { BodyKind, BodyView, RouteBodyView, RouteRequest, RouteStopView, RouteView, SystemView } from '../api/types'
 
 const SECTORS = ['Oochoss Brou', 'Oochost Flyoo', 'Phroi Bluae']
 const VALUES: Record<Exclude<BodyKind, 'bio'>, [number, number]> = {
@@ -13,6 +13,29 @@ const VALUES: Record<Exclude<BodyKind, 'bio'>, [number, number]> = {
   trocky: [460_000, 520_000],
 }
 const BUILD_MS = 1_200
+/** The demo start is at the origin; a line route heads here (312.4 ly away). */
+const DESTINATION = { x: 120, y: 15, z: 288 }
+
+type Xyz = [number, number, number]
+const dist = (a: Xyz, b: Xyz) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+/** Where the i-th of `count` candidates lies: a loop within the radius, or along the corridor. */
+function placeStop(req: RouteRequest, random: () => number, from: Xyz, i: number, count: number): Xyz {
+  if (req.mode === 'line') {
+    const t = (i + 0.5) / count
+    const off = () => (random() - 0.5) * 2 * req.deviationLy * 0.6
+    return [DESTINATION.x * t + off(), DESTINATION.y * t + off() * 0.4, DESTINATION.z * t + off()]
+  }
+  // A wandering walk that turns back towards the start near the edge of the radius.
+  const hop = 8 + random() * 30
+  const angle = random() * Math.PI * 2
+  let to: Xyz = [from[0] + Math.cos(angle) * hop, from[1] + (random() - 0.5) * hop * 0.4, from[2] + Math.sin(angle) * hop]
+  if (dist(to, [0, 0, 0]) > req.radiusLy * 0.8) {
+    const k = hop / Math.max(1, dist(from, [0, 0, 0]))
+    to = [from[0] * (1 - k), from[1] * (1 - k), from[2] * (1 - k)]
+  }
+  return to
+}
 const GENERA = ['Bacterium', 'Frutexa', 'Stratum', 'Tussock', 'Fungoida', 'Osseus', 'Concha', 'Cactoida']
 
 function rng(seed: number): () => number {
@@ -32,6 +55,7 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
   const kinds = req.bodyTypes.filter((k) => k !== 'bio') as Exclude<BodyKind, 'bio'>[]
   const withBio = req.bodyTypes.includes('bio')
   const stops: RouteStopView[] = []
+  let at: Xyz = [0, 0, 0]
   for (let i = 0; i < count; i++) {
     const sector = SECTORS[Math.floor(random() * SECTORS.length)]
     const letters = () => String.fromCharCode(65 + Math.floor(random() * 26))
@@ -74,11 +98,16 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
     const own = (b: RouteBodyView) => (b.kind !== 'bio' ? b.mappingValue : 0)
     const value = bodies.reduce((n, b) => n + own(b) + b.bioMax, 0)
     if (bodies.length === 0 || value < req.minSystemValue) continue
-    const hop = 8 + random() * (req.mode === 'line' ? 60 : 30)
+    const to = placeStop(req, random, at, i, count)
+    const hop = dist(at, to)
+    at = to
     stops.push({
       seq: stops.length + 1,
       address: String(4_000_000_000 + i * 977),
       name,
+      x: Math.round(to[0] * 100) / 100,
+      y: Math.round(to[1] * 100) / 100,
+      z: Math.round(to[2] * 100) / 100,
       hopLy: Math.round(hop * 100) / 100,
       jumps: Math.max(1, Math.ceil(hop / 34.9)),
       population: random() < 0.55 ? Math.round(random() * 90_000) : 0,
@@ -111,21 +140,91 @@ const DEFAULT_REQUEST: RouteRequest = {
   refresh: false,
 }
 
-export function createMockRoute(currentSystem: string, emit: () => void) {
+/** The route's kind of a demo-system body worth a stop: its mapping kind, else its biology. */
+function kindOf(b: BodyView): BodyKind | null {
+  const sub = b.subtype.toLowerCase()
+  if (b.worthMapping) {
+    if (sub.includes('earth')) return 'elw'
+    if (sub.includes('ammonia')) return 'aw'
+    if (sub.includes('water')) return b.terraformable ? 'tww' : 'ww'
+    if (sub.includes('metal')) return 'thmc'
+    return 'trocky'
+  }
+  return b.signals.bio > 0 ? 'bio' : null
+}
+
+/** The demo system as a stop: its valuable and living bodies, with your progress on them. */
+function demoStop(system: SystemView, seq: number, at: RouteStopView): RouteStopView {
+  const bodies: RouteBodyView[] = []
+  for (const b of system.bodies) {
+    const kind = b.kind === 'planet' ? kindOf(b) : null
+    if (!kind) continue
+    bodies.push({
+      bodyId: b.bodyId,
+      name: b.name,
+      shortName: b.shortName,
+      kind,
+      distanceLs: b.distanceLs,
+      mappingValue: kind === 'bio' ? 0 : b.dssValue,
+      scanned: true,
+      mapped: b.mappedByMe,
+      bioSignals: b.signals.bio,
+      bioMin: b.signals.bio > 0 ? b.bioValueMin : 0,
+      bioMax: b.signals.bio > 0 ? b.bioValueMax : 0,
+      bioDone: Math.min(b.bioDone, b.signals.bio),
+      genuses: [],
+      done: (kind === 'bio' || b.mappedByMe) && b.bioDone >= b.signals.bio,
+    })
+  }
+  const own = (b: RouteBodyView) => (b.kind !== 'bio' ? b.mappingValue : 0)
+  return {
+    ...at,
+    seq,
+    address: system.address ?? at.address,
+    name: system.name ?? at.name,
+    bodies,
+    value: bodies.reduce((n, b) => n + own(b) + b.bioMax, 0),
+    valueMin: bodies.reduce((n, b) => n + own(b) + b.bioMin, 0),
+    visited: true,
+    done: bodies.length > 0 && bodies.every((b) => b.done),
+    here: true,
+  }
+}
+
+export function createMockRoute(system: SystemView, emit: () => void) {
+  const currentSystem = system.name ?? '?'
   let params: RouteRequest | null = DEFAULT_REQUEST
   let stops = makeStops(DEFAULT_REQUEST, 17)
   let building = false
   let createdAt = new Date(Date.now() - 3 * 3_600_000).toISOString()
-  // The first three stops are done already.
+  // The first three stops are done already; you are in the fourth, the demo system.
   for (const s of stops.slice(0, 3)) {
     s.visited = true
     s.done = true
     s.bodies = s.bodies.map((b) => ({ ...b, scanned: true, mapped: true, done: true }))
   }
-  if (stops[3]) stops[3].visited = true
+  if (stops[3]) stops[3] = demoStop(system, 4, stops[3])
+
+  /** Where you are: the stop flagged here, else the start (a new route starts where you are). */
+  const where = () => {
+    const here = stops.find((s) => s.here)
+    return here ? { name: here.name, x: here.x, y: here.y, z: here.z } : { name: currentSystem, x: 0, y: 0, z: 0 }
+  }
+  /** Hops from the start in the current order, as the backend recomputes them after an edit. */
+  const rehop = () => {
+    let prev: Xyz = [0, 0, 0]
+    for (const s of stops) {
+      const at: Xyz = [s.x, s.y, s.z]
+      s.hopLy = Math.round(dist(prev, at) * 100) / 100
+      s.jumps = Math.max(1, Math.ceil(s.hopLy / 34.9))
+      prev = at
+    }
+  }
 
   const view = (): RouteView => {
     const next = stops.find((s) => !s.done && !s.skipped) ?? null
+    const position = params ? where() : null
+    const toNext = next && position ? Math.round(dist([position.x, position.y, position.z], [next.x, next.y, next.z]) * 100) / 100 : null
     return {
       online: true,
       building,
@@ -136,12 +235,13 @@ export function createMockRoute(currentSystem: string, emit: () => void) {
       dataAt: params ? createdAt : null,
       truncated: params?.mode === 'riches',
       source: params ? { name: params.source || currentSystem, x: 0, y: 0, z: 0 } : null,
-      destination: params?.mode === 'line' ? { name: params.destination ?? '?', x: 0, y: 0, z: 0 } : null,
+      destination: params?.mode === 'line' ? { name: params.destination ?? '?', ...DESTINATION } : null,
       stops,
       nextSeq: next?.seq ?? null,
-      currentSystem,
-      distanceToNextLy: next ? next.hopLy + 4.2 : null,
-      jumpsToNext: next ? Math.max(1, Math.ceil((next.hopLy + 4.2) / 34.9)) : null,
+      currentSystem: position?.name ?? currentSystem,
+      currentPosition: position,
+      distanceToNextLy: toNext,
+      jumpsToNext: toNext ? Math.max(1, Math.ceil(toNext / 34.9)) : null,
       jumpRangeLy: 34.9,
       totalValue: stops.reduce((s, x) => s + x.value, 0),
       collectedValue: stops.reduce(
@@ -186,6 +286,7 @@ export function createMockRoute(currentSystem: string, emit: () => void) {
         stops.splice(at, 0, stop)
       }
       stops.forEach((s, i) => (s.seq = i + 1))
+      rehop()
       return null
     }
     throw new Error(`HTTP 404: ${method} ${path}`)

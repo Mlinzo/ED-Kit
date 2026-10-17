@@ -84,7 +84,12 @@ export default function App() {
       >
         <OfflineBanner />
         {tab === 'system' && (
-          <SystemScreen address={pastAddress} onOpenSystem={openSystem} onShowHistory={() => goTo('history')} />
+          <SystemScreen
+            address={pastAddress}
+            onOpenSystem={openSystem}
+            onShowHistory={() => goTo('history')}
+            onShowRoute={() => goTo('route')}
+          />
         )}
         {tab === 'surface' && <SurfaceScreen />}
         {tab === 'route' && <RouteScreen />}

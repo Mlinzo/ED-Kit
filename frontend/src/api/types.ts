@@ -495,6 +495,10 @@ export interface RouteStopView {
   seq: number
   address: string
   name: string
+  /** Galactic coordinates, ly. */
+  x: number
+  y: number
+  z: number
   /** From the previous stop (the start for the first). */
   hopLy: number
   /** Estimated from your ship's jump range. */
@@ -535,6 +539,8 @@ export interface RouteView {
   /** The first stop neither done nor skipped. */
   nextSeq: number | null
   currentSystem: string | null
+  /** The current system, when its coordinates are known. */
+  currentPosition: RoutePoint | null
   distanceToNextLy: number | null
   jumpsToNext: number | null
   jumpRangeLy: number | null

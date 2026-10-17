@@ -372,6 +372,11 @@ def route_view(conn: sqlite3.Connection, fid: str | None, planner: RoutePlanner)
         "error": error[0] if error else None,
         "error_detail": error[1] if error else None,
         "current_system": here[2] if here else None,
+        "current_position": (
+            RoutePoint(name=here[2], x=here[1][0], y=here[1][1], z=here[1][2])
+            if here is not None and here[1] is not None
+            else None
+        ),
         "jump_range_ly": jump_range,
     }
     if route is None:
@@ -460,6 +465,9 @@ def route_view(conn: sqlite3.Connection, fid: str | None, planner: RoutePlanner)
                 seq=s["seq"],
                 address=str(s["system_address"]),
                 name=s["name"],
+                x=s["x"],
+                y=s["y"],
+                z=s["z"],
                 hop_ly=s["hop_ly"],
                 jumps=_jumps(s["hop_ly"], jump_range),
                 population=s["population"],

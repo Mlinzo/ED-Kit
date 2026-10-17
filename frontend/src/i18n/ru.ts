@@ -77,6 +77,18 @@ export const ru = {
   },
 
   system: {
+    route: {
+      stop: (seq: number, total: number) => `Остановка ${seq} из ${total} маршрута`,
+      left: 'осталось в системе',
+      targets: (n: number) => `${n} ${plural(n, ['цель отмечена', 'цели отмечены', 'целей отмечено'])} ниже`,
+      missing: (n: number) => `${n} ещё не ${plural(n, ['найдена', 'найдены', 'найдено'])} — нужен FSS`,
+      done: 'всё собрано',
+      skipped: 'пропущена',
+      finished: 'Маршрут пройден',
+      next: 'Следующая цель',
+      open: 'Маршрут',
+      targetHint: 'Из-за этой планеты система попала в маршрут',
+    },
     noData: 'Нет данных о системе',
     noDataHint: 'Данные появятся после прыжка или когда журнал будет прочитан.',
     bodies: 'Тела',
@@ -224,8 +236,29 @@ export const ru = {
       line: (source: string, destination: string, deviation: number) =>
         `${source} → ${destination} · коридор ${deviation} св. лет`,
     },
-    toEarn: 'Ещё заработать',
+    stopLeft: 'Осталось в системе',
+    routeLeft: 'Осталось заработать',
+    routeLeftHint:
+      'Сумма по системам маршрута, кроме пропущенных: непокартографированные планеты и неизученные виды. Биология — оценка от и до.',
+    withoutSkipped: 'без пропущенных',
     spansh: 'Открыть на Spansh',
+    stops: 'Остановки',
+    map: {
+      label: (n: number) => `Карта маршрута: ${n} ${plural(n, ['остановка', 'остановки', 'остановок'])}`,
+      unavailableHint: 'Браузер не поддерживает WebGL. Остановки доступны списком.',
+      fit: 'Показать весь маршрут',
+      top: 'Вид сверху: ядро галактики вверху',
+      focusNext: 'К следующей цели',
+      hintMouse: 'Клик — выбрать систему · перетаскивание — вращать · колесо — масштаб · правая кнопка — сдвиг',
+      hintTouch: 'Касание — выбрать систему · один палец — вращать · два — масштаб',
+      grid: (ly: string) => `Клетка — ${ly}`,
+      farFromRoute: (ly: string) => `Вы в ${ly} от маршрута`,
+      start: 'Старт',
+      destination: 'Цель',
+      legend: { done: 'Готово', next: 'Следующая', ahead: 'Впереди', skipped: 'Пропущена', you: 'Вы здесь' },
+      hop: (ly: string) => `перелёт ${ly}`,
+      close: 'Закрыть',
+    },
   },
 
   history: {
@@ -307,6 +340,8 @@ export const ru = {
     firstDiscovery: 'Первооткрытие',
     worthMapping: 'Стоит картографировать',
     mapped: 'Картографировано',
+    routeTarget: 'Цель маршрута',
+    routeTargetDone: 'Цель маршрута — собрано',
   },
 
   body: {

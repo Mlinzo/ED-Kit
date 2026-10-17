@@ -1,7 +1,8 @@
 import { CircleCheck, MapPin } from 'lucide-react'
 import { useRef, type KeyboardEvent } from 'react'
 import type { BodyView } from '../../api/types'
-import { BodyBadges } from '../../components/BodyBadges'
+import { BodyBadges, type RouteTarget } from '../../components/BodyBadges'
+import { targetOf } from '../../lib/routeTarget'
 import { BodyProgress } from '../../components/BodyProgress'
 import { CodexMark } from '../../components/CodexBadge'
 import { CreditRange, Credits } from '../../components/Credits'
@@ -25,9 +26,11 @@ interface ListProps {
   onFocusBody: (id: string) => void
   /** Click / Enter / Space on a body. */
   onSelect: (id: string) => void
+  /** Body id -> done, for the bodies the stored route counts on. */
+  routeTargets: ReadonlyMap<number, boolean>
 }
 
-export function BodyList({ bodies, selectedId, focusId, currentBodyId, onFocusBody, onSelect }: ListProps) {
+export function BodyList({ bodies, selectedId, focusId, currentBodyId, onFocusBody, onSelect, routeTargets }: ListProps) {
   const refs = useRef(new Map<string, HTMLLIElement>())
   // Roving tabindex: exactly one row is reachable with Tab.
   const tabStop = focusId ?? selectedId ?? bodies[0]?.id64 ?? null
@@ -76,6 +79,7 @@ export function BodyList({ bodies, selectedId, focusId, currentBodyId, onFocusBo
             selected={body.id64 === selectedId}
             tabbable={body.id64 === tabStop}
             current={body.bodyId === currentBodyId}
+            routeTarget={targetOf(routeTargets, body.bodyId)}
             onSelect={onSelect}
             refCallback={(el) => {
               if (el) refs.current.set(body.id64, el)
@@ -130,6 +134,7 @@ function BodyRow({
   selected,
   tabbable,
   current,
+  routeTarget,
   onSelect,
   refCallback,
 }: {
@@ -137,6 +142,7 @@ function BodyRow({
   selected: boolean
   tabbable: boolean
   current: boolean
+  routeTarget: RouteTarget | null
   onSelect: (id: string) => void
   refCallback: (el: HTMLLIElement | null) => void
 }) {
@@ -197,7 +203,7 @@ function BodyRow({
         <div className="flex flex-wrap items-center gap-1.5 pl-6 empty:hidden">
           <BodyProgress body={body} />
           <CodexMark body={body} size="sm" label />
-          <BodyBadges body={body} omitProgress />
+          <BodyBadges body={body} omitProgress routeTarget={routeTarget} />
         </div>
       </div>
 

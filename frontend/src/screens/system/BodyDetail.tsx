@@ -1,7 +1,7 @@
-import { Check, Leaf, Map as MapIcon, MapPin, Sun } from 'lucide-react'
+import { Check, Leaf, Map as MapIcon, MapPin, Route, Sun } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { BodyView } from '../../api/types'
-import { ReasonChips } from '../../components/BodyBadges'
+import { ReasonChips, type RouteTarget } from '../../components/BodyBadges'
 import { CodexSummary } from '../../components/CodexBadge'
 import { CreditRange, Credits } from '../../components/Credits'
 import { communityText, isCommunity } from '../../components/source'
@@ -210,10 +210,13 @@ export function BodyDetail({
   body,
   headingId,
   isCurrent,
+  routeTarget = null,
 }: {
   body: BodyView
   headingId: string
   isCurrent: boolean
+  /** The stored route counts on this body. */
+  routeTarget?: RouteTarget | null
 }) {
   const hasBio = body.signals.bio > 0 || body.species.length > 0
   const isPlanet = body.kind === 'planet'
@@ -240,11 +243,24 @@ export function BodyDetail({
         <p className="text-sm text-zinc-500">
           {body.name} · {formatLs(body.distanceLs)}
         </p>
-        {isCurrent && (
-          <p className="inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-            <MapPin className="size-4" aria-hidden />
-            {ru.system.youAreHere}
-          </p>
+        {(isCurrent || routeTarget) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {isCurrent && (
+              <p className="inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                <MapPin className="size-4" aria-hidden />
+                {ru.system.youAreHere}
+              </p>
+            )}
+            {routeTarget && (
+              <p
+                className={`inline-flex items-center gap-1.5 text-sm font-medium ${routeTarget === 'done' ? 'text-zinc-500' : 'text-accent'}`}
+                title={ru.system.route.targetHint}
+              >
+                <Route className="size-4" aria-hidden />
+                {routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}
+              </p>
+            )}
+          </div>
         )}
         {body.reasons.length > 0 && (
           <div className="pt-1">

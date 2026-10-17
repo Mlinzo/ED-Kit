@@ -9,6 +9,7 @@ import {
   Mountain,
   Orbit,
   PlaneLanding,
+  Route,
   Sparkles,
   Sprout,
   Star,
@@ -34,8 +35,13 @@ const TONES: Record<Tone, string> = {
   muted: 'bg-zinc-900 text-zinc-500 ring-zinc-800',
 }
 
-function badgesFor(body: BodyView, omitProgress: boolean): BadgeSpec[] {
+/** A body the stored route counts on: still to do there, or done (by the route's own measure). */
+export type RouteTarget = 'open' | 'done'
+
+function badgesFor(body: BodyView, omitProgress: boolean, routeTarget: RouteTarget | null): BadgeSpec[] {
   const out: BadgeSpec[] = []
+  if (routeTarget === 'open') out.push({ key: 'route', icon: Route, label: ru.badges.routeTarget, tone: 'accent' })
+  if (routeTarget === 'done') out.push({ key: 'route', icon: Route, label: ru.badges.routeTargetDone, tone: 'muted' })
   if (body.signals.bio > 0 && !omitProgress)
     out.push({ key: 'bio', icon: Leaf, label: ru.badges.bio, count: body.signals.bio, tone: 'value' })
   if (body.signals.geo > 0)
@@ -61,12 +67,15 @@ export function BodyBadges({
   body,
   full = false,
   omitProgress = false,
+  routeTarget = null,
 }: {
   body: BodyView
   full?: boolean
   omitProgress?: boolean
+  /** The stored route counts on this body (its system is a stop). */
+  routeTarget?: RouteTarget | null
 }) {
-  const badges = badgesFor(body, omitProgress)
+  const badges = badgesFor(body, omitProgress, routeTarget)
   if (badges.length === 0) return null
   return (
     <ul className="flex flex-wrap items-center gap-1.5">

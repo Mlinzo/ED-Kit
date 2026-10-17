@@ -51,9 +51,10 @@ Rules:
 - Contract: `frontend/src/api/types.ts` mirrors `backend/app/schemas.py`.
 - `GET /api/view/system|surface|session|stats|history`, `GET /api/status`, `GET /api/ingest`, `GET/PUT /api/settings`.
 - `GET /api/view/system?address=<SystemAddress>`: a system from the history (also requests its community data).
-- Route: `GET /api/view/route`, `POST /api/route` (plan, 202; 409 with `--offline`), `DELETE /api/route`, `PUT /api/route/stops/{seq}` (skip).
+- Route: `GET /api/view/route`, `POST /api/route` (plan, 202; 409 with `--offline`), `DELETE /api/route`, `PUT /api/route/stops/{seq}` (`skipped` and/or `position`: skip, move), `DELETE /api/route/stops/{seq}` (remove).
 - `GET /api/stream` (SSE): `hello`, `invalidate`, `status`, `ingest`, `ping`.
 - `src/map/`: 3D orbit map (react-three-fiber); `src/map/visuals/`: procedural planet/star rendering.
+- `src/screens/route/map/`: 3D route map (lazy chunk). Galactic coordinates scaled to a fixed scene radius, z flipped (top view: core up, +x right); stops are screen-space dots picked on screen, labels placed without overlap.
 - The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.
 - Dark, modern, glanceable UI; Russian labels, game names in English.
 

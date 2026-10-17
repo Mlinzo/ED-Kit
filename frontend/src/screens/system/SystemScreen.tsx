@@ -14,38 +14,26 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useView } from '../../api/hooks'
 import type { SystemRef, SystemView } from '../../api/types'
 import { Credits } from '../../components/Credits'
+import { Segmented } from '../../components/Segmented'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { useIsDesktop } from '../../hooks/useMediaQuery'
 import { ru } from '../../i18n/ru'
 import { bodyLabel, sortBodies, type BodySort } from '../../lib/body'
 import { exactCredits, formatCredits } from '../../lib/format'
+import { readStored, writeStored } from '../../lib/storage'
+import { targetOf } from '../../lib/routeTarget'
 import { eventDayTime, eventFull } from '../../lib/when'
 import { SystemMap } from '../../map'
+import { routeStop, routeStripShown } from '../route/helpers'
 import { BodyDetail } from './BodyDetail'
 import { BodyList } from './BodyList'
+import { RouteStrip } from './RouteStrip'
 
 const SORT_KEY = 'edk.bodySort'
 const VIEW_KEY = 'edk.systemView'
 
 type ViewMode = 'map' | 'list'
-
-function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
-  try {
-    const v = localStorage.getItem(key)
-    return allowed.includes(v as T) ? (v as T) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function writeStored(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    // Storage may be unavailable (private mode); the choice just won't persist.
-  }
-}
 
 function isSheetState(state: unknown): boolean {
   return typeof state === 'object' && state !== null && 'edkSheet' in state
@@ -258,37 +246,6 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
   )
 }
 
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string
-  value: T
-  options: { id: T; label: string; icon: typeof Ruler }[]
-  onChange: (v: T) => void
-}) {
-  return (
-    <div role="group" aria-label={label} className="flex rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
-      {options.map(({ id, label: text, icon: Icon }) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={value === id}
-          onClick={() => onChange(id)}
-          className={`focus-ring flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors lg:h-8 ${
-            value === id ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <Icon className="size-4" aria-hidden />
-          {text}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 const SORT_OPTIONS = [
   { id: 'value' as const, label: ru.system.sortValue, icon: ArrowDownWideNarrow },
   { id: 'distance' as const, label: ru.system.sortDistance, icon: Ruler },
@@ -303,13 +260,16 @@ export function SystemScreen({
   address: wantedAddress,
   onOpenSystem,
   onShowHistory,
+  onShowRoute,
 }: {
   /** A system from the history; null: the current system. */
   address: string | null
   onOpenSystem: OpenSystem
   onShowHistory: () => void
+  onShowRoute: () => void
 }) {
   const { data: fresh, error, refetch } = useView('system', wantedAddress ? { address: wantedAddress } : undefined)
+  const { data: route } = useView('route')
   // Stepping through the history: keep the previous system on screen until the next one arrives.
   const [kept, setKept] = useState(fresh)
   if (fresh && fresh !== kept) setKept(fresh)
@@ -340,6 +300,25 @@ export function SystemScreen({
   const bodies = useMemo(() => (data ? sortBodies(data.bodies, sort) : []), [data, sort])
   const selected = bodies.find((b) => b.id64 === selectedId) ?? null
   const currentBodyId = data?.currentBodyId ?? null
+  // The stored route: this system's stop has its bodies marked (in the list and on the map).
+  const stop = routeStop(route, data?.address ?? null)
+  // Stable while nothing changes (the route refetches on every journal event).
+  const targetKey = stop ? stop.bodies.map((b) => `${b.bodyId}:${b.done ? 1 : 0}`).join(',') : ''
+  const routeTargets = useMemo<ReadonlyMap<number, boolean>>(
+    () =>
+      new Map(
+        targetKey
+          ? targetKey.split(',').map((t) => {
+              const [id, done] = t.split(':')
+              return [Number(id), done === '1'] as const
+            })
+          : [],
+      ),
+    [targetKey],
+  )
+  // Route bodies not in the list yet (before FSS, or community data not in) are not "marked below".
+  const marked = data ? data.bodies.filter((b) => routeTargets.has(b.bodyId)).length : 0
+  const strip = Boolean(data?.isCurrent) && routeStripShown(route, data?.address ?? null)
   // Desktop always shows something in the detail column: the selection, else where you are, else the top body.
   const detail = isDesktop
     ? (selected ?? bodies.find((b) => b.bodyId === currentBodyId) ?? bodies[0] ?? null)
@@ -412,6 +391,15 @@ export function SystemScreen({
   return (
     <div className={`transition-opacity duration-150 ${switching ? 'opacity-60' : ''}`} aria-busy={switching}>
       {!data.isCurrent && <PastBanner system={data} onOpenSystem={onOpenSystem} onShowHistory={onShowHistory} />}
+      {strip && route && (
+        <RouteStrip
+          route={route}
+          address={data.address}
+          marked={marked}
+          missing={routeTargets.size - marked}
+          onShowRoute={onShowRoute}
+        />
+      )}
       <SystemHeader system={data} onOpenSystem={onOpenSystem} />
 
       <div className="mt-5 grid items-start gap-6 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,400px)] xl:grid-cols-[minmax(0,1fr)_440px]">
@@ -432,11 +420,12 @@ export function SystemScreen({
               system={data}
               selectedId={isDesktop ? (detail?.id64 ?? null) : selectedId}
               onSelect={select}
+              routeTargets={routeTargets}
               onShowList={() => changeView('list')}
               className={
-                data.isCurrent
+                data.isCurrent && !strip
                   ? 'h-[max(20rem,calc(100dvh-23.5rem))] lg:h-[max(28rem,calc(100dvh-22rem))] xl:h-[max(30rem,calc(100dvh-16.5rem))]'
-                  : // The history banner takes 4.5rem.
+                  : // The history banner (or the route strip) takes 4.5rem.
                     'h-[max(20rem,calc(100dvh-28rem))] lg:h-[max(28rem,calc(100dvh-26.5rem))] xl:h-[max(30rem,calc(100dvh-21rem))]'
               }
             />
@@ -448,6 +437,7 @@ export function SystemScreen({
               currentBodyId={currentBodyId}
               onFocusBody={focusBody}
               onSelect={select}
+              routeTargets={routeTargets}
             />
           ) : (
             <EmptyState title={ru.system.emptyList} />
@@ -465,6 +455,7 @@ export function SystemScreen({
                 body={detail}
                 headingId="detail-title"
                 isCurrent={detail.bodyId === currentBodyId}
+                routeTarget={targetOf(routeTargets, detail.bodyId)}
               />
             ) : (
               <p className="py-12 text-center text-sm text-zinc-500">{ru.system.selectHint}</p>
@@ -475,7 +466,12 @@ export function SystemScreen({
 
       {!isDesktop && selected && (
         <Sheet title={data.name ?? ''} labelledBy="sheet-title" onClose={closeSheet}>
-          <BodyDetail body={selected} headingId="sheet-title" isCurrent={selected.bodyId === currentBodyId} />
+          <BodyDetail
+            body={selected}
+            headingId="sheet-title"
+            isCurrent={selected.bodyId === currentBodyId}
+            routeTarget={targetOf(routeTargets, selected.bodyId)}
+          />
         </Sheet>
       )}
     </div>

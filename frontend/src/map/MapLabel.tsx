@@ -1,10 +1,11 @@
-import { CircleCheck, MapPin } from 'lucide-react'
+import { CircleCheck, MapPin, Route } from 'lucide-react'
 import { useCallback } from 'react'
 import { BodyProgress } from '../components/BodyProgress'
 import { CodexLine, CodexMark } from '../components/CodexBadge'
 import { bodyCodex } from '../components/codex'
 import { CreditRange, Credits } from '../components/Credits'
 import { sourceMarker } from '../components/source'
+import type { RouteTarget } from '../components/BodyBadges'
 import { CommunityGlyph, SourceIcon } from '../components/SourceBadge'
 import { ru } from '../i18n/ru'
 import { bodyLabel } from '../lib/body'
@@ -25,6 +26,7 @@ export function MapLabel({
   card,
   selected,
   current,
+  routeTarget = null,
   priority,
   registry,
   onSelect,
@@ -33,6 +35,8 @@ export function MapLabel({
   card: boolean
   selected: boolean
   current: boolean
+  /** The stored route counts on this body. */
+  routeTarget?: RouteTarget | null
   priority: number
   /** Passed explicitly: drei <Html> renders into its own React root (no map context there). */
   registry: MapRegistry
@@ -72,7 +76,7 @@ export function MapLabel({
       className="absolute top-0 left-0 [transform:translate(var(--tx,-50%),var(--ty,-100%))] opacity-100 transition-[opacity,visibility] duration-200 motion-reduce:transition-none data-[hidden=true]:invisible data-[hidden=true]:opacity-0"
     >
       {card ? (
-        <Card node={node} current={current} />
+        <Card node={node} current={current} routeTarget={routeTarget} />
       ) : (
         <button
           type="button"
@@ -91,6 +95,15 @@ export function MapLabel({
             <span className="size-1.5 shrink-0 rounded-full" style={{ background: dot }} aria-hidden />
           )}
           <span className="proportional-nums">{name}</span>
+          {routeTarget && (
+            <Route
+              className={`size-3.5 shrink-0 ${routeTarget === 'done' ? 'text-zinc-500' : 'text-accent'}`}
+              strokeWidth={2.5}
+              aria-label={routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}
+            >
+              <title>{routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}</title>
+            </Route>
+          )}
           {marker?.scope === 'body' && <SourceIcon marker={marker} />}
           {body?.done && <CircleCheck className="-ml-0.5 size-3.5 shrink-0 text-emerald-400" strokeWidth={2.5} aria-hidden />}
           {/* Chips end flush with the pill; text and icons get a little room on the right. */}
@@ -114,7 +127,7 @@ function hasChips(node: MapNode): boolean {
   return b.signals.bio > 0 || (b.kind === 'planet' && (b.mappedByMe || b.worthMapping))
 }
 
-function Card({ node, current }: { node: MapNode; current: boolean }) {
+function Card({ node, current, routeTarget }: { node: MapNode; current: boolean; routeTarget: RouteTarget | null }) {
   const body = node.body
   if (!body) {
     return (
@@ -146,10 +159,20 @@ function Card({ node, current }: { node: MapNode; current: boolean }) {
           <span className="min-w-0">{marker.title}</span>
         </p>
       )}
-      {current && (
-        <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent">
-          <MapPin className="size-3.5" aria-hidden />
-          {ru.system.youAreHere}
+      {(current || routeTarget) && (
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs font-medium text-accent">
+          {current && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="size-3.5" aria-hidden />
+              {ru.system.youAreHere}
+            </span>
+          )}
+          {routeTarget && (
+            <span className={`inline-flex items-center gap-1 ${routeTarget === 'done' ? 'text-zinc-500' : ''}`}>
+              <Route className="size-3.5" aria-hidden />
+              {routeTarget === 'done' ? ru.badges.routeTargetDone : ru.badges.routeTarget}
+            </span>
+          )}
         </div>
       )}
       {hasChips(node) && (

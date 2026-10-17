@@ -33,6 +33,9 @@ export function useRouteActions() {
       /** Put a stop at `position` (1-based); the route is renumbered. */
       move: (seq: number, position: number) =>
         run(() => store.transport.send('PUT', `/api/route/stops/${seq}`, { position })),
+      /** Make a stop the next target: back in the route (unskipped) at the next one's place. */
+      makeNext: (seq: number, position: number) =>
+        run(() => store.transport.send('PUT', `/api/route/stops/${seq}`, { skipped: false, position })),
       remove: (seq: number) => run(() => store.transport.send('DELETE', `/api/route/stops/${seq}`)),
     }),
     [error, run, store],

@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber'
 import { Maximize2 } from 'lucide-react'
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { PointLight, type PerspectiveCamera } from 'three'
 import type { BodyView, SystemView } from '../api/types'
 import { useMediaQuery } from '../hooks/useMediaQuery'
@@ -16,14 +16,19 @@ import { LIGHT_POOL, STAR_LIGHT_INTENSITY, litStars } from './lights'
 import { NodeTree } from './NodeTree'
 import { SizerSlot } from './sizing'
 import { Starfield } from './Starfield'
+import { Ticker } from './Ticker'
 
 export interface SystemMapProps {
   system: SystemView
   /** id64 of the selected body. */
   selectedId: string | null
   onSelect: (id64: string) => void
+  /** Body id -> done, for the bodies the stored route counts on. */
+  routeTargets?: ReadonlyMap<number, boolean>
   className?: string
 }
+
+const NO_TARGETS: ReadonlyMap<number, boolean> = new Map()
 
 interface Built {
   key: string
@@ -57,20 +62,6 @@ function useLayout(system: SystemView): Built {
 }
 
 const LABEL_INTERVAL = 1 / 12
-
-/**
- * Idle frame rate. The map runs next to the game, often on the same GPU: slow ambient motion
- * (orbits, twinkle, pulses) does not need 60 fps. Interaction and camera flights request their
- * own frames and run at the full rate; with reduced motion only labels need the odd refresh.
- */
-function Ticker({ fps }: { fps: number }) {
-  const invalidate = useThree((s) => s.invalidate)
-  useEffect(() => {
-    const id = window.setInterval(() => invalidate(), 1_000 / fps)
-    return () => window.clearInterval(id)
-  }, [fps, invalidate])
-  return null
-}
 
 /** Pointer position relative to the canvas, whichever element (canvas or label) got the event. */
 function onCreated(state: RootState) {
@@ -144,6 +135,7 @@ const Scene = memo(function Scene({ systemKey }: { systemKey: string }) {
 
   return (
     <>
+      {/* With reduced motion only labels need the odd refresh. */}
       <Ticker fps={reducedMotion ? 10 : 30} />
       <ambientLight intensity={0.14} />
       {lights.map((l, k) => (
@@ -158,7 +150,7 @@ const Scene = memo(function Scene({ systemKey }: { systemKey: string }) {
   )
 })
 
-export default function SystemMapCanvas({ system, selectedId, onSelect, className = '' }: SystemMapProps) {
+export default function SystemMapCanvas({ system, selectedId, onSelect, routeTargets = NO_TARGETS, className = '' }: SystemMapProps) {
   const { layout, startedAt } = useLayout(system)
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const coarse = useMediaQuery('(pointer: coarse)')
@@ -209,10 +201,11 @@ export default function SystemMapCanvas({ system, selectedId, onSelect, classNam
       reducedMotion,
       interaction,
       select,
+      routeTargets,
       registerCamera,
       labelLayer: labelLayer as RefObject<HTMLElement>,
     }),
-    [layout, registry, startedAt, reducedMotion, interaction, select, registerCamera],
+    [layout, registry, startedAt, reducedMotion, interaction, select, routeTargets, registerCamera],
   )
 
   const systemKey = system.address ?? system.name ?? '?'

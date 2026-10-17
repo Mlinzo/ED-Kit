@@ -45,6 +45,8 @@ export interface MapContextValue {
   reducedMotion: boolean
   interaction: InteractionStore
   select: (node: MapNode) => void
+  /** Body id -> done, for the bodies the stored route counts on (marked on their labels). */
+  routeTargets: ReadonlyMap<number, boolean>
   /**
    * Stable DOM container for every label <Html portal>. drei re-creates an Html's React root when
    * its default target changes after mount (R3F events connecting), and the old root's deferred

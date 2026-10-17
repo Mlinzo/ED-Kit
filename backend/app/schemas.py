@@ -466,6 +466,9 @@ class RouteStopView(CamelModel):
     seq: int  # 1-based position in the route
     address: str
     name: str
+    x: float  # galactic coordinates, ly
+    y: float
+    z: float
     hop_ly: float  # from the previous stop (the start for the first)
     jumps: int | None  # estimated from your ship's jump range
     population: int | None  # None: not known (yet)
@@ -492,6 +495,7 @@ class RouteView(CamelModel):
     stops: list[RouteStopView]
     next_seq: int | None  # the first stop neither done nor skipped
     current_system: str | None
+    current_position: RoutePoint | None  # the current system, when its coordinates are known
     distance_to_next_ly: float | None  # from where you are
     jumps_to_next: int | None
     jump_range_ly: float | None

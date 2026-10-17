@@ -13,7 +13,7 @@ import pytest
 from app import db, routebio, routeplan, routes, spansh
 from app.projector import Projector
 from app.routeplan import PlanError, PlanRequest, Point
-from app.schemas import RouteRequest
+from app.schemas import RoutePoint, RouteRequest
 
 START = Point("Start", 0.0, 0.0, 0.0)
 
@@ -312,6 +312,8 @@ def test_route_view_tracks_progress_from_the_journal(conn: sqlite3.Connection) -
     view = routes.route_view(conn, "F1", Planner())
     assert [s.name for s in view.stops] == ["Alpha", "Beta"] and view.next_seq == 1
     assert view.current_system == "Start" and view.jump_range_ly == 30.0
+    assert view.current_position == RoutePoint(name="Start", x=0.0, y=0.0, z=0.0)
+    assert (view.stops[1].x, view.stops[1].y, view.stops[1].z) == (50.0, 0.0, 0.0)
     assert view.distance_to_next_ly == 10.0 and view.jumps_to_next == 1
     assert view.stops[1].jumps == 2  # 40 ly with a 30 ly jump range
     assert [b.short_name for b in view.stops[0].bodies] == ["1", "2"]
@@ -341,6 +343,7 @@ def test_route_view_tracks_progress_from_the_journal(conn: sqlite3.Connection) -
         ),
     )
     view = routes.route_view(conn, "F1", Planner())
+    assert view.current_position is not None and view.current_position.x == 10.0
     alpha = view.stops[0]
     assert alpha.visited and alpha.done and alpha.here and all(b.mapped for b in alpha.bodies)
     assert view.next_seq == 2 and view.done_count == 1 and view.collected_value == 2_000_000

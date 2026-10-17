@@ -3,6 +3,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { memo, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { AdditiveBlending, Vector3, type Camera, type Group, type Mesh, type Sprite } from 'three'
 import type { Line2 } from 'three-stdlib'
+import { targetOf } from '../lib/routeTarget'
 import { useMap } from './context'
 import { CURRENT, HOVERED, SELECTED, useNodeFlags } from './interaction'
 import { labelPriority, wantsLabel } from './labels'
@@ -134,7 +135,7 @@ function HitArea({ node, selectable }: { node: MapNode; selectable: boolean }) {
 }
 
 function BodyNode({ node }: { node: MapNode }) {
-  const { interaction, registry, select, labelLayer } = useMap()
+  const { interaction, registry, select, labelLayer, routeTargets } = useMap()
   const flags = useNodeFlags(interaction, node.id)
   const body = node.body!
   const selected = (flags & SELECTED) !== 0
@@ -142,7 +143,8 @@ function BodyNode({ node }: { node: MapNode }) {
   const current = (flags & CURRENT) !== 0
   // Stars are never dimmed: they are the landmarks (and the light).
   const dim = body.kind === 'planet' && node.interest === 'low' && !selected && !hovered && !current
-  const showLabel = wantsLabel(node) || selected || hovered || current
+  const routeTarget = targetOf(routeTargets, body.bodyId)
+  const showLabel = wantsLabel(node) || selected || hovered || current || routeTarget !== null
   const priority = labelPriority(node, { hovered, selected, current })
 
   return (
@@ -175,6 +177,7 @@ function BodyNode({ node }: { node: MapNode }) {
             card={hovered}
             selected={selected}
             current={current}
+            routeTarget={routeTarget}
             priority={priority}
             registry={registry}
             onSelect={select}

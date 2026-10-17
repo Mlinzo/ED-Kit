@@ -89,7 +89,7 @@ export function createMockTransport(): Transport {
   const session = buildSession()
   const stats = buildStats()
   let notify: ((topics: Topic[]) => void) | null = null
-  const route = createMockRoute(system.name ?? '?', () => notify?.(['route']))
+  const route = createMockRoute(system, () => notify?.(['route']))
   const startedAt = performance.now()
   const elapsed = () => (performance.now() - startedAt) / 1_000
 
