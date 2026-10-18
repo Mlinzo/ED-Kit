@@ -364,6 +364,13 @@ export interface LabelBox {
   always: boolean
   /** The anchor is in view. */
   visible: boolean
+  /** Over its anchor instead of beside it (a name of an area, not of a point). */
+  centered?: boolean
+  /**
+   * Right of its point first, then left, slid up or down as far as it takes to stay inside: a
+   * hover card that does not jump between above and below as the pointer runs over a crowd.
+   */
+  beside?: boolean
 }
 
 interface Rect {
@@ -380,20 +387,19 @@ const MAX_NUDGE = 40
 
 /**
  * Offsets (top-left corner relative to the anchor) for labels in priority order: above, below,
- * right or left of the anchor, slid back inside the map near its edges, never over the labels
- * placed before. null hides a label; the `always` ones take the first spot inside the map even
- * when it overlaps.
+ * right or left of the anchor (`beside`: right, left, above, below), slid back inside the map near
+ * its edges, never over the labels placed before. null hides a label; the `always` ones take the
+ * first spot inside the map even when it overlaps.
  */
 export function placeLabels(boxes: readonly LabelBox[], width: number, height: number): ([number, number] | null)[] {
   const placed: Rect[] = []
   return boxes.map((b) => {
     if (!b.visible) return null
-    const candidates: [number, number][] = [
-      [-b.w / 2, -b.lift - b.h],
-      [-b.w / 2, b.lift],
-      [b.lift, -b.h / 2],
-      [-b.lift - b.w, -b.h / 2],
-    ]
+    const above: [number, number] = [-b.w / 2, -b.lift - b.h]
+    const below: [number, number] = [-b.w / 2, b.lift]
+    const right: [number, number] = [b.lift, -b.h / 2]
+    const left: [number, number] = [-b.lift - b.w, -b.h / 2]
+    const candidates: [number, number][] = b.centered ? [[-b.w / 2, -b.h / 2]] : b.beside ? [right, left, above, below] : [above, below, right, left]
     const clamp = (anchor: number, offset: number, size: number, limit: number) => {
       const lo = LABEL_PAD - anchor
       const hi = limit - LABEL_PAD - size - anchor
@@ -409,8 +415,10 @@ export function placeLabels(boxes: readonly LabelBox[], width: number, height: n
       const dy = clamp(b.y, cy, b.h, height)
       const rect = { x0: b.x + dx - LABEL_PAD, y0: b.y + dy - LABEL_PAD, x1: b.x + dx + b.w + LABEL_PAD, y1: b.y + dy + b.h + LABEL_PAD }
       // Never slid over its own point.
-      if (overlaps(rect, own)) continue
-      const nudge = Math.max(Math.abs(dx - cx), Math.abs(dy - cy))
+      if (!b.centered && overlaps(rect, own)) continue
+      // Beside its point, a card slid up or down still leaves the point clear.
+      const sideways = b.beside && (cx === right[0] || cx === left[0]) && cy === right[1]
+      const nudge = sideways ? Math.abs(dx - cx) : Math.max(Math.abs(dx - cx), Math.abs(dy - cy))
       if (nudge > MAX_NUDGE) {
         if (!farFallback || nudge < farFallback.nudge) farFallback = { at: [dx, dy], rect, nudge }
         continue

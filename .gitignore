@@ -17,6 +17,8 @@ build/
 *.db-wal
 *.db-shm
 data/
+# ...but not the app's own data (the codex region map)
+!backend/app/data/
 
 # OS / editors
 .DS_Store

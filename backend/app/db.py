@@ -184,6 +184,7 @@ PROJECTION_TABLES = (
     "deaths",
     "codex_entries",
     "fuel_jumps",
+    "engineers",
 )
 
 PROJECTION_SCHEMA = """
@@ -352,6 +353,18 @@ CREATE TABLE IF NOT EXISTS codex_entries(
   body_id INTEGER
 ) STRICT;
 CREATE INDEX IF NOT EXISTS codex_by_species ON codex_entries(fid, species);
+
+-- Your standing with each engineer (EngineerProgress): progress is the journal's Known /
+-- Invited / Acquainted / Unlocked / Barred; rank 1..5 once unlocked.
+CREATE TABLE IF NOT EXISTS engineers(
+  fid TEXT NOT NULL,
+  engineer TEXT NOT NULL,
+  engineer_id INTEGER,
+  progress TEXT,
+  rank INTEGER,
+  at TEXT,
+  PRIMARY KEY(fid, engineer)
+) STRICT;
 
 -- Fuel burnt by FSD jumps (fuel curve of the current drive, app.fuel). mass: the ship at the
 -- start of the jump (unladen + fuel + cargo), t; boosted: neutron / white dwarf / injection.

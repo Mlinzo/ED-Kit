@@ -319,6 +319,19 @@ describe('placeLabels', () => {
     expect(crowded.slice(4)).toEqual([null, null])
   })
 
+  it('keeps a hover card beside its point, wherever the point is up or down', () => {
+    const card = (x: number, y: number) => box(x, y, { w: 256, h: 150, lift: 10, always: true, beside: true })
+    // A crowd of points from the top edge to the bottom one: always on the right, slid inside.
+    for (const y of [5, 40, 90, 160, 300, 520, 595]) {
+      const [at] = placeLabels([card(300, y)], 800, 600)
+      expect(at![0]).toBe(10)
+      expect(y + at![1]).toBeGreaterThanOrEqual(3)
+      expect(y + at![1] + 150).toBeLessThanOrEqual(597)
+    }
+    // No room on the right: on the left.
+    expect(placeLabels([card(700, 300)], 800, 600)[0]![0]).toBe(-266)
+  })
+
   it('always shows the hovered or selected label, even overlapping', () => {
     const at = placeLabels([box(300, 300), box(300, 300), box(300, 300), box(300, 300), box(300, 300, { always: true })], 800, 600)
     expect(at[4]).not.toBeNull()

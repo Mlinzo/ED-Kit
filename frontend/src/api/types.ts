@@ -715,6 +715,43 @@ export interface GalaxySystemView {
   /** Journal StarType of its arrival star (colour). */
   starType: string | null
   notable: string[]
+  /** Codex region number (1..42); null off the map. */
+  region: number | null
+}
+
+/** A codex region you have been to (or logged codex entries in). */
+export interface GalaxyRegionView {
+  /** 1..42, "$Codex_RegionName_<id>;". */
+  id: number
+  /** English game name. */
+  name: string
+  /** Visited systems there. */
+  systems: number
+  firstVisitAt: string | null
+  /** Earned there (estimate), as GalaxySystemView.value. */
+  value: number
+  /** Distinct codex entries you logged there. */
+  codex: number
+  /** Of them, distinct exobiology species. */
+  species: number
+}
+
+/** An engineer's workshop and how far you are with them (the journal). */
+export interface GalaxyEngineerView {
+  name: string
+  system: string
+  /** SystemAddress. */
+  address: string
+  base: string
+  /** Ship modules, or suits and weapons on foot. */
+  kind: 'ship' | 'suit'
+  x: number
+  y: number
+  z: number
+  /** null: not met yet. */
+  progress: 'known' | 'invited' | 'acquainted' | 'unlocked' | null
+  /** 1..5 once unlocked (ship engineers). */
+  rank: number | null
 }
 
 export interface GalaxyDeathView {
@@ -747,9 +784,52 @@ export interface GalaxyView {
   distanceLy: number
   /** Value in ly. */
   farthestFromSol: NamedValue | null
+  /** The region you are in. */
+  region: number | null
+  /** In the order you first came. */
+  regions: GalaxyRegionView[]
+  engineers: GalaxyEngineerView[]
 }
 
-export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history' | 'route' | 'navroute' | 'galaxy'
+/** A system with someone in it lately (EDDN): how we know, never who. */
+export interface LiveSystemView {
+  address: string
+  name: string
+  x: number
+  y: number
+  z: number
+  /** Seconds since the latest sign. */
+  ageS: number
+  /** Distinct uploaders in the window. */
+  players: number
+  /** FSDJump / Location / CarrierJump. */
+  arrived: number
+  /** FSS, bodies, signals, nav beacons. */
+  scans: number
+  /** Codex entries logged (English names, newest first, up to 3). */
+  codex: string[]
+  /** Docked, or approached a settlement. */
+  docked: number
+  /** Fleet carriers among the signals scanned there. */
+  carriers: number
+}
+
+export interface LiveView {
+  /** False with --offline. */
+  available: boolean
+  state: 'off' | 'connecting' | 'live'
+  /** Listening since (ISO). */
+  since: string | null
+  windowMin: number
+  /** How far back the signs shown go: less than the window just after connecting. */
+  spanS: number
+  /** Distinct uploaders in the window, all systems. */
+  players: number
+  /** The latest first. */
+  systems: LiveSystemView[]
+}
+
+export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history' | 'route' | 'navroute' | 'galaxy' | 'live'
 
 // Server-Sent Events on GET /api/stream:
 //   event: hello      data: { seq: number }

@@ -28,11 +28,13 @@ from app import (
     __version__,
     db,
     discovery,
+    eddn,
     fuel,
     galaxy,
     history,
     navroute,
     neutron,
+    regionmap,
     routes,
     stats,
     usersettings,
@@ -45,6 +47,7 @@ from app.schemas import (
     HistoryView,
     IngestState,
     LiveStatus,
+    LiveView,
     NavRouteView,
     NeutronRequest,
     RoutePoint,
@@ -103,6 +106,7 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         if settings.online
         else None
     )
+    live = eddn.LiveListener(lambda: service.invalidate({"live"})) if settings.online else None
     if rebuild:
         service.request_rebuild()
     local = threading.local()
@@ -192,6 +196,20 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
             if h.status != "passed"
         ]
         return galaxy.galaxy_view(conn, fid, remaining, ahead)
+
+    @app.get("/api/view/live", response_model=LiveView, response_model_by_alias=True)
+    def view_live() -> LiveView:
+        """Other players right now (EDDN); asking keeps the listener connected."""
+        return live.view() if live is not None else eddn.offline_view()
+
+    @app.get("/api/regions")
+    def region_map() -> Response:
+        """The codex region grid for the galaxy map's region layer (fixed: cached a day)."""
+        return Response(
+            regionmap.map_json(),
+            media_type="application/json",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
     @app.post("/api/route/neutron", status_code=202)
     def plan_neutron(body: NeutronRequest) -> None:
@@ -394,7 +412,7 @@ def run() -> None:
     parser.add_argument(
         "--offline",
         action="store_true",
-        help="do not fetch community body data (Spansh/EDSM) for the current system",
+        help="no Spansh/EDSM requests and no EDDN (route planning and live players off)",
     )
     args = parser.parse_args()
 

@@ -633,6 +633,34 @@ class GalaxySystemView(CamelModel):
     species: int  # analysed
     star_type: str | None  # journal StarType of its arrival star (colour)
     notable: list[str]  # as in the history: elw, neutron, ...
+    region: int | None  # codex region number (1..42, app.regionmap); None off the map
+
+
+class GalaxyRegionView(CamelModel):
+    """A codex region you have been to (or logged codex entries in)."""
+
+    id: int  # 1..42, "$Codex_RegionName_<id>;"
+    name: str  # English game name
+    systems: int  # visited systems there
+    first_visit_at: str | None
+    value: int  # earned there (estimate), as GalaxySystemView.value
+    codex: int  # distinct codex entries you logged there
+    species: int  # of them, distinct exobiology species
+
+
+class GalaxyEngineerView(CamelModel):
+    """An engineer's workshop (app.engineers) and how far you are with them (the journal)."""
+
+    name: str
+    system: str
+    address: str  # SystemAddress
+    base: str
+    kind: Literal["ship", "suit"]  # ship modules, or suits and weapons on foot
+    x: float
+    y: float
+    z: float
+    progress: Literal["known", "invited", "acquainted", "unlocked"] | None  # None: not met
+    rank: int | None  # 1..5 once unlocked (ship engineers)
 
 
 class GalaxyDeathView(CamelModel):
@@ -655,6 +683,38 @@ class GalaxyView(CamelModel):
     plotted: list[RoutePoint]  # the route plotted in the game, from where you are
     distance_ly: float  # jumped, all time
     farthest_from_sol: NamedValue | None  # value in ly
+    region: int | None  # the region you are in
+    regions: list[GalaxyRegionView]  # in the order you first came
+    engineers: list[GalaxyEngineerView]
 
 
-Topic = Literal["system", "surface", "session", "stats", "history", "route", "navroute", "galaxy"]
+class LiveSystemView(CamelModel):
+    """A system with someone in it lately (EDDN, app.eddn): how we know, never who."""
+
+    address: str
+    name: str
+    x: float
+    y: float
+    z: float
+    age_s: int  # since the latest sign
+    players: int  # distinct uploaders in the window
+    arrived: int  # FSDJump / Location / CarrierJump
+    scans: int  # FSS, bodies, signals, nav beacons
+    codex: list[str]  # codex entries logged (English names, newest first, up to 3)
+    docked: int  # docked, or approached a settlement
+    carriers: int  # fleet carriers among the signals scanned there
+
+
+class LiveView(CamelModel):
+    available: bool  # false with --offline
+    state: Literal["off", "connecting", "live"]
+    since: str | None  # listening since (ISO)
+    window_min: int
+    span_s: int  # how far back the signs shown go (less than the window just after connecting)
+    players: int  # distinct uploaders in the window, all systems
+    systems: list[LiveSystemView]  # the latest first
+
+
+Topic = Literal[
+    "system", "surface", "session", "stats", "history", "route", "navroute", "galaxy", "live"
+]

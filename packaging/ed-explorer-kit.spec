@@ -15,7 +15,8 @@ if not (web / "index.html").is_file():
 a = Analysis(
     [str(backend / "app" / "main.py")],
     pathex=[str(backend)],
-    datas=[(str(web), "web")],
+    # app/data: the codex region map (app.regionmap reads it next to the module).
+    datas=[(str(web), "web"), (str(backend / "app" / "data"), "app/data")],
     # uvicorn picks its loop / protocol implementations by name at runtime.
     hiddenimports=collect_submodules("uvicorn"),
 )

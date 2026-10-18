@@ -19,6 +19,7 @@ function system(i: number, extra: Partial<GalaxySystemView> = {}): GalaxySystemV
     species: 0,
     starType: 'K',
     notable: [],
+    region: 18,
     ...extra,
   }
 }
@@ -34,6 +35,9 @@ function view(extra: Partial<GalaxyView> = {}): GalaxyView {
     plotted: [],
     distanceLy: 300,
     farthestFromSol: null,
+    region: 18,
+    regions: [],
+    engineers: [],
     ...extra,
   }
 }

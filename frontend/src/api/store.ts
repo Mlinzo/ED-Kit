@@ -4,6 +4,7 @@ import type {
   HistoryView,
   IngestState,
   LiveStatus,
+  LiveView,
   NavRouteView,
   RouteView,
   SessionView,
@@ -23,6 +24,7 @@ export interface ViewMap {
   route: RouteView
   navroute: NavRouteView
   galaxy: GalaxyView
+  live: LiveView
 }
 
 /** Query parameters of a view request, e.g. `{ address }` for a system from the history. */
@@ -35,7 +37,7 @@ export interface ViewEntry<T> {
   loading: boolean
 }
 
-export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history', 'route', 'navroute', 'galaxy']
+export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history', 'route', 'navroute', 'galaxy', 'live']
 
 /** Minimum gap between two requests for the same view (coalesces invalidate bursts). */
 const MIN_GAP_MS = 250

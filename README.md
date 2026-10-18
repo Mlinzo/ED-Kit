@@ -13,7 +13,7 @@ shows everything in your browser.
 - **Route**: systems worth visiting for high-value mapping (Road to Riches) and biology, around a point or along a line (Spansh data). Shown as a list or a 3D map, and stops tick off by themselves as you fly. Also covers the route you plotted in the galaxy map: fuel and where to scoop, neutron stars and white dwarfs ahead, and the chance a system is still undiscovered. Neutron routes come from Spansh.
 - **Session**: how much unsold data you are carrying right now.
 - **History**: every system you visited: what you scanned, found and sold.
-- **Galaxy**: all your journeys on a 3D galaxy map: path, earnings, first discoveries, deaths.
+- **Galaxy**: all your journeys on a 3D galaxy map: path, earnings, first discoveries, deaths, and the codex regions you have been to, the engineers with your progress. On request, other players right now (from EDDN, no names).
 - **Stats**: all-time numbers and records.
 
 The interface is in English, Ukrainian or Russian; switch it in Settings.
@@ -87,7 +87,7 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 | Option | What it does |
 |---|---|
 | `--lan` | Allow access from other devices on your network |
-| `--offline` | No requests to Spansh/EDSM (route planning is then off) |
+| `--offline` | No requests to Spansh/EDSM and no EDDN (route planning and live players are then off) |
 | `--port 8765` | Use another port |
 | `--journal-dir PATH` | Journal folder, if not in the standard place |
 | `--data-dir PATH` | Where `data.db` is stored |
@@ -98,7 +98,7 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 
 - The app reads the game journal (`Saved Games\Frontier Developments\Elite Dangerous`) and never writes to it.
 - The database lives in `%LOCALAPPDATA%\EDExplorerKit\data.db`. Deleting it is safe while the journals are there: it is rebuilt from them on the next start. It also stores the journal events themselves, so after losing the journals (reinstall, new PC) your history survives only in this file. Keep a copy.
-- Only these requests go online: community data for the current system, route search, neutron routes and checks of the plotted route's systems (Spansh and EDSM). `--offline` turns them all off.
+- Only these requests go online: community data for the current system, route search, neutron routes and checks of the plotted route's systems (Spansh and EDSM). While the "players now" layer of the galaxy map is on, the app also listens to the [EDDN](https://github.com/EDCD/EDDN) relay: it only receives (about 20 KiB/s at busy times, the whole feed) and sends nothing; it hangs up a couple of minutes after the layer is closed. `--offline` turns them all off.
 
 ## Development
 
@@ -126,6 +126,9 @@ To build the exe locally: `.\packaging\build-exe.ps1` produces `dist\EDExplorerK
 Community data: [Spansh](https://spansh.co.uk/) and [EDSM](https://www.edsm.net/).
 Exobiology rules are derived from [Canonn](https://canonn.science/) research data
 (details in [backend/app/exobio/SOURCES.md](backend/app/exobio/SOURCES.md)).
+Other players: [EDDN](https://github.com/EDCD/EDDN), the Elite Dangerous Data Network.
+Codex region map: [EliteDangerousRegionMap](https://github.com/klightspeed/EliteDangerousRegionMap)
+by Ben Peddell (MIT, [backend/app/data/regionmap-LICENSE](backend/app/data/regionmap-LICENSE)).
 
 ED Explorer Kit is a fan-made tool, not affiliated with or endorsed by Frontier Developments.
 Elite Dangerous is a trademark of Frontier Developments plc.

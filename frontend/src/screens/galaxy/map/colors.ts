@@ -17,3 +17,11 @@ export const PATH_NEW = '#38bdf8'
 export const START_COLOR = '#f4f4f5'
 /** The light running along the path, from the earliest jumps to the latest. */
 export const FLOW_COLOR = '#e0f2fe'
+/** Codex regions: pale borders, a sky tint where you have been, brighter where you are. */
+export const REGION_LINE = '#94a3b8'
+export const REGION_VISITED = '#38bdf8'
+export const REGION_SELECTED = '#7dd3fc'
+/** Other players (EDDN): violet, apart from everything of yours. */
+export const LIVE_COLOR = '#c4b5fd'
+/** Engineers: orange rings, filled once unlocked. */
+export const ENGINEER_COLOR = '#fb923c'

@@ -28,6 +28,8 @@ GAME_CHECK_S = 5.0  # how often the process list is read
 FUEL_STEP_T = 0.5  # a fuel level change this big (scooping, jumping) refreshes the forecast
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
 DERIVED_TOPICS = frozenset({"stats", "history", "route", "navroute", "galaxy"})
+# Not from the journal: they never make the journal-derived views stale.
+OWN_TOPICS = frozenset({"surface", "live"})
 
 
 def _parse_ts(ts: str | None) -> datetime | None:
@@ -354,6 +356,6 @@ class IngestService(threading.Thread):
 
     def _invalidate(self, topics: set[str] | frozenset[str]) -> None:
         self.seq += 1
-        journal = set(topics) - {"surface"} - DERIVED_TOPICS
+        journal = set(topics) - OWN_TOPICS - DERIVED_TOPICS
         topics = set(topics) | (DERIVED_TOPICS if journal else set())
         self.bus.publish("invalidate", {"seq": self.seq, "topics": sorted(topics)})

@@ -72,7 +72,7 @@ class Settings:
     port: int = 8765
     lan: bool = False
     bind: str | None = None  # explicit listen address (Docker: 0.0.0.0); overrides `lan`
-    online: bool = True  # fetch community body data (Spansh / EDSM) for the current system
+    online: bool = True  # Spansh / EDSM requests and the EDDN listener (off with --offline)
     poll_interval: float = 0.25  # seconds between journal/status reads
     rescan_interval: float = 2.0  # seconds between journal directory listings
 

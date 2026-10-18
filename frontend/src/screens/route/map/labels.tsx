@@ -42,6 +42,8 @@ export interface LabelEntry {
   priority: number
   lift: number
   always: boolean
+  centered: boolean
+  beside: boolean
 }
 
 export const PILL =
@@ -55,8 +57,8 @@ const STATUS: Record<StopState, string> = {
 }
 
 /**
- * A label at a point, `lift` px away from it on the side the placer picks (--tx / --ty), hidden
- * until placed. Marked so a click on it is not a click on the map behind.
+ * A label at a point, `lift` px away from it on the side the placer picks (--tx / --ty), or over
+ * it when `centered`; hidden until placed. Marked so a click on it is not a click on the map behind.
  */
 export function Anchor({
   id,
@@ -64,6 +66,8 @@ export function Anchor({
   priority,
   lift,
   always = false,
+  centered = false,
+  beside = false,
   entries,
   layer,
   children,
@@ -73,6 +77,9 @@ export function Anchor({
   priority: number
   lift: number
   always?: boolean
+  centered?: boolean
+  /** Right or left of the point first (hover cards: see LabelBox.beside). */
+  beside?: boolean
   entries: Map<string, LabelEntry>
   layer: RefObject<HTMLElement>
   children: ReactNode
@@ -87,7 +94,7 @@ export function Anchor({
       observer.current?.disconnect()
       observer.current = null
       if (el) {
-        entries.set(id, { el, pos, priority, lift, always })
+        entries.set(id, { el, pos, priority, lift, always, centered, beside })
         observer.current = new ResizeObserver(() => invalidate())
         observer.current.observe(el)
         invalidate()
@@ -95,7 +102,7 @@ export function Anchor({
         entries.delete(id)
       }
     },
-    [entries, id, pos, priority, lift, always, invalidate],
+    [entries, id, pos, priority, lift, always, centered, beside, invalidate],
   )
   return (
     <Html position={pos} portal={layer} zIndexRange={[priority, priority]} style={{ pointerEvents: 'none' }}>
@@ -129,6 +136,8 @@ export function LabelPlacer({ entries }: { entries: Map<string, LabelEntry> }) {
         h: it.el.offsetHeight,
         lift: it.lift,
         always: it.always,
+        centered: it.centered,
+        beside: it.beside,
         visible: anchor.z > -1 && anchor.z < 1 && x >= 0 && x <= size.width && y >= 0 && y <= size.height,
       }
     })

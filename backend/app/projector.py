@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 11
+VERSION = 12
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -98,6 +98,7 @@ class Projector:
             "MultiSellExplorationData": self._sell_carto,
             "SellExplorationData": self._sell_carto,
             "Died": self._died,
+            "EngineerProgress": self._engineers,
             "Resurrect": self._resurrect,
         }
 
@@ -493,6 +494,30 @@ class Projector:
             ),
         )
         return frozenset({"system", "surface"})
+
+    def _engineers(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        # At login, every engineer you know; later, one at a time as you progress.
+        entries = ev.get("Engineers") if isinstance(ev.get("Engineers"), list) else [ev]
+        if not self.fid:
+            return frozenset()
+        for e in entries:
+            if not isinstance(e, dict) or not e.get("Engineer"):
+                continue
+            self.conn.execute(
+                "INSERT INTO engineers(fid, engineer, engineer_id, progress, rank, at) "
+                "VALUES(?, ?, ?, ?, ?, ?) ON CONFLICT(fid, engineer) DO UPDATE SET "
+                "engineer_id = excluded.engineer_id, progress = excluded.progress, "
+                "rank = COALESCE(excluded.rank, engineers.rank), at = excluded.at",
+                (
+                    self.fid,
+                    str(e["Engineer"]),
+                    e.get("EngineerID"),
+                    e.get("Progress"),
+                    e.get("Rank"),
+                    ev.get("timestamp"),
+                ),
+            )
+        return frozenset({"galaxy"})
 
     # ------------------------------------------------------------------ exobiology
 

@@ -2,7 +2,7 @@
 // a commander driving an SRV around the sample sites so the radar animates,
 // plus a short journal backfill so the progress bar shows.
 
-import type { StreamHandlers, Transport } from '../api/transport'
+import { createLiveTransport, type StreamHandlers, type Transport } from '../api/transport'
 import type { IngestState, LiveStatus, SystemView, Topic } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
@@ -15,7 +15,7 @@ import {
 } from './fixtures'
 import { buildHistory, buildPastSystem, withHistory } from './history'
 import { createMockRoute } from './route'
-import { buildGalaxy, buildNavRoute } from './travel'
+import { buildGalaxy, buildLive, buildNavRoute } from './travel'
 import { buildStats } from './stats'
 
 /** What the backend answers for an address it does not know. */
@@ -95,6 +95,8 @@ export function createMockTransport(): Transport {
   const navroute = buildNavRoute(system)
   const startedAt = performance.now()
   const elapsed = () => (performance.now() - startedAt) / 1_000
+  const live = createLiveTransport()
+  const players = buildLive()
 
   let ingest: IngestState = {
     backfillDone: false,
@@ -119,6 +121,7 @@ export function createMockTransport(): Transport {
     '/api/view/route': () => route.view(),
     '/api/view/navroute': () => navroute,
     '/api/view/galaxy': () => buildGalaxy(history, route.view(), navroute),
+    '/api/view/live': () => players,
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,
   }
@@ -127,8 +130,10 @@ export function createMockTransport(): Transport {
     mock: true,
 
     async fetchJson<T>(path: string): Promise<T> {
-      await delay(60 + Math.random() * 80)
       const url = new URL(path, window.location.origin)
+      // Game data, not yours: from the real server when one is running (no region layer otherwise).
+      if (url.pathname === '/api/regions') return live.fetchJson<T>(path)
+      await delay(60 + Math.random() * 80)
       const handler = routes[url.pathname]
       if (!handler) throw new Error(`HTTP 404: ${path}`)
       return structuredClone(handler(url.searchParams)) as T

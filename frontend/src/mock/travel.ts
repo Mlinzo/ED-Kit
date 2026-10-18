@@ -3,9 +3,12 @@
 
 import type {
   DiscoveryChanceView,
+  GalaxyEngineerView,
   GalaxySystemView,
   GalaxyView,
   HistoryView,
+  LiveSystemView,
+  LiveView,
   NavHopView,
   NavRouteView,
   RoutePoint,
@@ -151,6 +154,17 @@ const SECTORS = ['Swoilz', 'Pru Euq', 'Eol Prou', 'Blae Eork', 'Eord Blao']
 const TRAIL = 170
 
 /** A long trip from the bubble to the demo system, the demo history at its end. */
+/** A few real engineers (app.engineers), at various stages. */
+const DEMO_ENGINEERS: GalaxyEngineerView[] = [
+  { name: 'Felicity Farseer', system: 'Deciat', address: '6681123623626', base: 'Farseer Inc', kind: 'ship', x: 122.625, y: -0.8125, z: -47.28125, progress: 'unlocked', rank: 5 },
+  { name: 'Elvira Martuuk', system: 'Khun', address: '3107241104074', base: 'Long Sight Base', kind: 'ship', x: -171.59375, y: 19.96875, z: -56.96875, progress: 'unlocked', rank: 3 },
+  { name: 'Professor Palin', system: 'Arque', address: '113573366131', base: 'Abel Laboratory', kind: 'ship', x: 66.5, y: 38.0625, z: 61.125, progress: 'invited', rank: null },
+  { name: 'Colonel Bris Dekker', system: 'Sol', address: '10477373803', base: "Dekker's Yard", kind: 'ship', x: 0, y: 0, z: 0, progress: 'known', rank: null },
+  { name: 'Domino Green', system: 'Orishis', address: '5068464399785', base: 'The Jackrabbit', kind: 'suit', x: -31, y: 93.96875, z: -3.5625, progress: 'known', rank: null },
+  { name: 'Mel Brandon', system: 'Luchtaine', address: '66038577537618', base: 'The Brig', kind: 'ship', x: -9523.3125, y: -914.46875, z: 19825.90625, progress: null, rank: null },
+  { name: 'Baltanos', system: 'Deriso', address: '71536135676490', base: 'The Divine Apparatus', kind: 'suit', x: -9520.3125, y: -909.5, z: 19808.75, progress: null, rank: null },
+]
+
 export function buildGalaxy(history: HistoryView, route: RouteView, plotted: NavRouteView): GalaxyView {
   const random = rng(29)
   const recent = [...history.systems].reverse() // oldest first
@@ -188,6 +202,8 @@ export function buildGalaxy(history: HistoryView, route: RouteView, plotted: Nav
       species: entry?.speciesAnalysed ?? (rich ? Math.round(random() * 4) : 0),
       starType: entry?.mainStar?.starType ?? ['M', 'K', 'G', 'F', 'L', 'T', 'DA', 'N', 'A'][Math.floor(random() * 9)],
       notable: entry?.notable ?? [],
+      // The whole demo trip stays in the bubble's region.
+      region: 18,
     })
   }
   const ids = systems.map((_, i) => i)
@@ -205,5 +221,56 @@ export function buildGalaxy(history: HistoryView, route: RouteView, plotted: Nav
     plotted: plotted.hops.filter((h) => h.status !== 'passed').map((h) => ({ name: h.name, x: h.x, y: h.y, z: h.z })),
     distanceLy: 9_412.6,
     farthestFromSol: { name: systems[systems.length - 1].name, detail: null, value: Math.hypot(...ORIGIN), at: null },
+    region: 18,
+    engineers: DEMO_ENGINEERS,
+    regions: [
+      {
+        id: 18,
+        name: 'Inner Orion Spur',
+        systems: systems.length,
+        firstVisitAt: systems[0].firstVisitAt,
+        value: systems.reduce((n, s) => n + s.value, 0),
+        codex: 23,
+        species: 17,
+      },
+    ],
   }
+}
+
+// --------------------------------------------------------------------------- other players
+
+const LIVE_CODEX = ['Bacterium Tela', 'Stratum Tectonicas', 'Fonticulua Campestris', 'K Type', 'Gas Giant With Water Based Life']
+
+/** Demo players (EDDN): a crowd in the bubble, some at Colonia, a few on the road between. */
+export function buildLive(): LiveView {
+  const random = rng(7)
+  const gauss = () => (random() + random() + random() - 1.5) / 1.5
+  const systems: LiveSystemView[] = []
+  const add = (name: string, x: number, y: number, z: number) => {
+    const busy = random() < 0.12
+    const players = busy ? 2 + Math.floor(random() * 5) : 1
+    const codex = random() < 0.08 ? [LIVE_CODEX[Math.floor(random() * LIVE_CODEX.length)]] : []
+    systems.push({
+      address: String(9_000_000 + systems.length),
+      name,
+      x,
+      y,
+      z,
+      ageS: Math.floor(random() * 300),
+      players,
+      arrived: 1 + Math.floor(random() * players),
+      scans: random() < 0.5 ? Math.floor(random() * 12) : 0,
+      codex,
+      docked: random() < 0.3 ? 1 : 0,
+      carriers: random() < 0.15 ? 1 + Math.floor(random() * 4) : 0,
+    })
+  }
+  for (let i = 0; i < 260; i++) add(`${SECTORS[i % SECTORS.length]} ${String.fromCharCode(65 + (i % 26))}A-${i % 9} b${i % 30}`, gauss() * 260, gauss() * 120, gauss() * 260)
+  for (let i = 0; i < 40; i++) add(`Colonia Sector ${i}`, -9530 + gauss() * 160, -910 + gauss() * 60, 19808 + gauss() * 160)
+  for (let i = 0; i < 24; i++) {
+    const t = random()
+    add(`Eol Prou ${i}`, -9530 * t + gauss() * 300, -910 * t, 19808 * t + gauss() * 300)
+  }
+  systems.sort((a, b) => a.ageS - b.ageS)
+  return { available: true, state: 'live', since: new Date(Date.now() - 20 * 60_000).toISOString(), windowMin: 5, spanS: 300, players: 268, systems }
 }

@@ -8,6 +8,7 @@ import sqlite3
 from typing import Any
 
 from app.models import BodyFacts, SystemFacts
+from app.regionmap import region_at, region_symbol
 
 _FIELDS = {f.name for f in dataclasses.fields(BodyFacts)}
 
@@ -148,11 +149,15 @@ def load_system(
     if row is None:
         return None
     star_pos = (row["x"], row["y"], row["z"]) if row["x"] is not None else None
+    # The journal names the region only with a codex entry; until then, the region map.
+    region = row["region"]
+    if region is None and star_pos is not None:
+        region = region_symbol(region_at(star_pos[0], star_pos[2]))
     system = SystemFacts(
         address=row["address"],
         name=row["name"],
         star_pos=star_pos,
-        region=row["region"],
+        region=region,
         populated=None if row["population"] is None else row["population"] > 0,
     )
     for body in conn.execute("SELECT facts FROM bodies WHERE system_address = ?", (address,)):
