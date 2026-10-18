@@ -68,13 +68,20 @@ class PageFiles(StaticFiles):
     routes in the browser, so a reload or a bookmark lands on the right page."""
 
     async def get_response(self, path: str, scope: Scope) -> Response:
+        parts = path.replace("\\", "/").split("/")  # an OS path (backslashes on Windows)
         try:
-            return await super().get_response(path, scope)
+            response = await super().get_response(path, scope)
         except StarletteHTTPException as exc:
-            parts = path.replace("\\", "/").split("/")  # an OS path (backslashes on Windows)
             if exc.status_code != 404 or parts[0] == "api" or "." in parts[-1]:
                 raise
-            return await super().get_response("index.html", scope)
+            response = await super().get_response("index.html", scope)
+        # Bundles carry a content hash and never change; everything else (the page) is
+        # revalidated, so a new build or a new release shows up on the next load.
+        immutable = parts[0] == "assets"
+        response.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable" if immutable else "no-cache"
+        )
+        return response
 
 
 def _sse(kind: str, data: Any) -> str:

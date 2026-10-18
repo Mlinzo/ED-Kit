@@ -25,6 +25,7 @@ export const uk: Strings = {
     route: 'Маршрут',
     galaxy: 'Галактика',
     surfaceActive: 'Триває збір зразків',
+    short: { system: 'Система', surface: 'Поверхня', session: 'Сесія', stats: 'Стат.', history: 'Історія', route: 'Маршрут', galaxy: 'Галактика' },
   },
 
   connection: {
@@ -592,6 +593,8 @@ export const uk: Strings = {
         ? `Місце одного зразка не записано — відійдіть від нього на ${range} самі.`
         : `Місця ${n} зразків не записано — відійдіть від них на ${range} самі.`,
     nearest: 'до найближчого зразка',
+    heading: 'Курс:',
+    toSample: (n: number) => `На зразок ${n}:`,
     canSample: 'можна брати зразок',
     tooClose: 'надто близько до взятого зразка',
     moveAway: (m: string) => `відійдіть ще на ${m}`,
@@ -865,5 +868,7 @@ export const uk: Strings = {
     saving: 'Зберігаю…',
     error: 'Не вдалося зберегти',
     close: 'Закрити',
+    support: 'Подобається ED Explorer Kit? Він безкоштовний — можна підтримати розробку.',
+    supportButton: 'Підтримати на Patreon',
   },
 }

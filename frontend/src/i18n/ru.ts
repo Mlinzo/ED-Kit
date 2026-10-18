@@ -25,6 +25,8 @@ export const ru = {
     route: 'Маршрут',
     galaxy: 'Галактика',
     surfaceActive: 'Идёт сбор образцов',
+    // The phone tab bar: seven tabs share a narrow screen, so the long names are shortened.
+    short: { system: 'Система', surface: 'Поверхн.', session: 'Сессия', stats: 'Стат.', history: 'История', route: 'Маршрут', galaxy: 'Галактика' },
   },
 
   connection: {
@@ -591,6 +593,8 @@ export const ru = {
         ? `Место одного образца не записано — отойдите от него на ${range} сами.`
         : `Места ${n} образцов не записаны — отойдите от них на ${range} сами.`,
     nearest: 'до ближайшего образца',
+    heading: 'Курс:',
+    toSample: (n: number) => `На образец ${n}:`,
     canSample: 'можно брать образец',
     tooClose: 'слишком близко к взятому образцу',
     moveAway: (m: string) => `отойдите ещё ${m}`,
@@ -861,5 +865,7 @@ export const ru = {
     saving: 'Сохраняю…',
     error: 'Не удалось сохранить',
     close: 'Закрыть',
+    support: 'Нравится ED Explorer Kit? Он бесплатный — можно поддержать разработку.',
+    supportButton: 'Поддержать на Patreon',
   },
 } as const

@@ -53,12 +53,14 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
             aria-controls={active ? panelId(id) : undefined}
             tabIndex={active ? 0 : -1}
             onClick={() => onTab(id)}
-            className={`focus-ring flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors ${
+            title={label}
+            className={`focus-ring flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors xl:px-2.5 2xl:px-3 ${
               active ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'
             }`}
           >
             <Icon className={`size-4 ${active ? 'text-accent' : ''}`} aria-hidden />
-            {label}
+            {/* Icons only below xl: seven labels do not fit next to the rest of the bar there. */}
+            <span className="sr-only xl:not-sr-only">{label}</span>
             {id === 'surface' && surfaceLive && (
               <>
                 <LiveDot />
@@ -80,20 +82,20 @@ export function BottomTabs({ tab, onTab, surfaceLive }: TabProps) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/80 bg-zinc-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
       <ul className="mx-auto flex max-w-xl">
-        {TABS.map(({ id, label, icon: Icon }) => {
+        {TABS.map(({ id, label, short, icon: Icon }) => {
           const active = id === tab
           return (
-            <li key={id} className="flex-1">
+            <li key={id} className="min-w-0 flex-1">
               <button
                 type="button"
                 aria-current={active ? 'page' : undefined}
                 aria-controls={active ? panelId(id) : undefined}
                 onClick={() => onTab(id)}
-                className={`focus-ring relative flex h-16 w-full flex-col items-center justify-center gap-1 text-xs font-medium ${
+                className={`focus-ring relative flex h-16 w-full flex-col items-center justify-center gap-1 text-[10px] font-medium ${
                   active ? 'text-accent' : 'text-zinc-400 active:text-zinc-200'
                 }`}
               >
-                {active && <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" aria-hidden />}
+                {active && <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-accent" aria-hidden />}
                 <span className="relative">
                   <Icon className="size-6" aria-hidden />
                   {id === 'surface' && surfaceLive && (
@@ -102,7 +104,10 @@ export function BottomTabs({ tab, onTab, surfaceLive }: TabProps) {
                     </span>
                   )}
                 </span>
-                {label}
+                <span className="max-w-full truncate" aria-hidden={short !== label}>
+                  {short}
+                </span>
+                {short !== label && <span className="sr-only">{label}</span>}
                 {id === 'surface' && surfaceLive && <span className="sr-only">{t.tabs.surfaceActive}</span>}
               </button>
             </li>

@@ -6,6 +6,7 @@ import { formatCredits, formatNumber } from '../lib/format'
 import { SettingsButton } from '../settings/SettingsDialog'
 import { ConnectionIndicator } from './ConnectionIndicator'
 import { Credits } from './Credits'
+import { SupportLink } from './SupportLink'
 import { TopTabs } from './TabBar'
 import type { Tab } from './tabs'
 
@@ -56,7 +57,7 @@ function AtRisk({ session, onOpen }: { session: SessionView; onOpen: () => void 
       className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm transition-colors hover:bg-zinc-800/70"
     >
       <Wallet className="size-4 shrink-0 text-amber-400" aria-hidden />
-      <span className="hidden text-zinc-500 xl:inline">{t.session.headerLabel}</span>
+      <span className="hidden text-zinc-500 2xl:inline">{t.session.headerLabel}</span>
       <Credits value={session.atRiskValue} className="font-semibold text-amber-300 tabular-nums" />
     </button>
   )
@@ -110,23 +111,24 @@ export function TopBar({ tab, onTab, surfaceLive }: { tab: Tab; onTab: (t: Tab) 
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/85 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 lg:gap-6 lg:px-6">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 lg:gap-6 lg:px-6 xl:gap-4 2xl:gap-6">
         <div className="flex min-w-0 items-center gap-2.5">
           <Logo />
-          <span className="truncate text-[15px] font-semibold tracking-tight whitespace-nowrap text-zinc-100">{t.appName}</span>
+          <span className="truncate text-[15px] font-semibold tracking-tight whitespace-nowrap text-zinc-100 max-[379px]:sr-only">{t.appName}</span>
         </div>
         <div className="hidden lg:block">
           <TopTabs tab={tab} onTab={onTab} surfaceLive={surfaceLive} />
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 xl:gap-3 2xl:gap-4">
           {mock && <MockBadge />}
           {session.data && <AtRisk session={session.data} onOpen={() => onTab('session')} />}
-          {/* Below xl the tabs and the unsold value need the room (the name is on the Session tab too). */}
+          {/* Below 2xl the tabs, the unsold value and the app name need the room (the name is on the Session tab too). */}
           {commander && (
-            <span className="hidden text-sm text-zinc-500 xl:inline">
+            <span className="hidden text-sm text-zinc-500 2xl:inline">
               {t.common.commander} <span className="font-medium text-zinc-200">{commander}</span>
             </span>
           )}
+          <SupportLink />
           <SettingsButton />
           <ConnectionIndicator />
         </div>

@@ -59,7 +59,10 @@ def test_pages_get_the_app_and_unknown_files_404(tmp_path: Path) -> None:
         for path in ("/", "/galaxy", "/system/2931055102291", "/route/"):
             response = client.get(path)
             assert response.status_code == 200 and "<title>app</title>" in response.text, path
-        assert client.get("/assets/app.js").text == "console.log(1)"
+            assert response.headers["cache-control"] == "no-cache", path
+        bundle = client.get("/assets/app.js")
+        assert bundle.text == "console.log(1)"
+        assert "immutable" in bundle.headers["cache-control"]
         assert client.get("/assets/missing.js").status_code == 404
         assert client.get("/api/nothing").status_code == 404
 

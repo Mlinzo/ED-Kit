@@ -477,7 +477,7 @@ export function RouteScreen() {
         <>
           {/* Around a point the route always takes the nearest N; cut short is news only for a corridor. */}
           {data.truncated && data.params?.mode === 'line' && <Notice tone="warn">{t.route.truncated}</Notice>}
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
             <NextTarget
               route={data}
               onSkip={(seq) => void actions.skip(seq, true)}

@@ -56,9 +56,9 @@ export function RouteStrip({
     const left = stopLeft(stop)
     return (
       <Strip tone="accent" icon={Route} onShowRoute={onShowRoute}>
-        <span className="shrink-0 font-medium text-zinc-50">{t.system.route.stop(stop.seq, total)}</span>
+        <span className="font-medium text-zinc-50 sm:shrink-0">{t.system.route.stop(stop.seq, total)}</span>
         {left.max > 0 && (
-          <span className="shrink-0">
+          <span className="sm:shrink-0">
             {t.system.route.left}: <CreditRange min={left.min} max={left.max} className="font-semibold text-emerald-300" />
           </span>
         )}
@@ -70,7 +70,7 @@ export function RouteStrip({
 
   // Done here, skipped, or elsewhere: the way on.
   const lead = stop ? (
-    <span className="shrink-0 font-medium text-zinc-50">
+    <span className="font-medium text-zinc-50 sm:shrink-0">
       {t.system.route.stop(stop.seq, total)} — {stop.done ? t.system.route.done : t.system.route.skipped}
     </span>
   ) : null
@@ -79,7 +79,7 @@ export function RouteStrip({
     return (
       <Strip tone="done" icon={CircleCheck} onShowRoute={onShowRoute}>
         {lead}
-        <span className="shrink-0">{t.system.route.finished}</span>
+        <span className="sm:shrink-0">{t.system.route.finished}</span>
       </Strip>
     )
   }
@@ -89,13 +89,13 @@ export function RouteStrip({
     <Strip tone={stop?.done ? 'done' : 'accent'} icon={stop?.done ? CircleCheck : Navigation} onShowRoute={onShowRoute}>
       {lead}
       <span className="inline-flex min-w-0 items-center gap-1">
-        <span className="shrink-0">{t.system.route.next}:</span>
+        <span className="sm:shrink-0">{t.system.route.next}:</span>
         <span className="truncate font-semibold text-zinc-50 proportional-nums" title={next.name}>
           {next.name}
         </span>
         <CopyButton text={next.name} />
       </span>
-      {where && <span className="shrink-0 text-zinc-400">{where}</span>}
+      {where && <span className="text-zinc-400 sm:shrink-0">{where}</span>}
       <span className="hidden shrink-0 text-zinc-500 xl:inline">{more.join(' · ')}</span>
     </Strip>
   )

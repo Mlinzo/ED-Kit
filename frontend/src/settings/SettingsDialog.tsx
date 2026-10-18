@@ -1,6 +1,7 @@
-import { Settings2, X } from 'lucide-react'
+import { Heart, Settings2, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { SUPPORT_URL } from '../components/SupportLink'
 import { lang, LANGS, setLang, t } from '../i18n'
 import { BIO_PRESETS, DSS_PRESETS } from './strings'
 import { ThresholdField } from './ThresholdField'
@@ -148,6 +149,21 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             {saving ? t.settings.saving : t.settings.save}
           </button>
         </div>
+
+        {SUPPORT_URL && (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-5">
+            <p className="min-w-0 flex-1 basis-48 text-sm text-zinc-400">{t.settings.support}</p>
+            <a
+              href={SUPPORT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-rose-400 px-4 text-sm font-semibold text-zinc-950 hover:bg-rose-300"
+            >
+              <Heart className="size-4" aria-hidden />
+              {t.settings.supportButton}
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )

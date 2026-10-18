@@ -28,6 +28,9 @@ function pickRadius(required: number, current: number | null): number {
   return NICE_RADII.find((r) => r >= required) ?? NICE_RADII[NICE_RADII.length - 1]
 }
 
+const DEGREE_TICKS = Array.from({ length: 36 }, (_, i) => i * 10)
+const DEGREE_LABELS = DEGREE_TICKS.filter((d) => d % 30 === 0 && d % 90 !== 0)
+
 function polar(r: number, deg: number): [number, number] {
   const a = (deg * Math.PI) / 180
   return [r * Math.sin(a), -r * Math.cos(a)]
@@ -35,7 +38,7 @@ function polar(r: number, deg: number): [number, number] {
 
 /**
  * North-up radar centred on the commander: taken samples with their colony-range circles,
- * heading wedge, scale rings. Everything is in metres scaled to the SVG radius.
+ * heading wedge, scale rings, a 0–360° compass scale. Everything is in metres scaled to the SVG radius.
  */
 export function Radar({ points, rangeM, heading, canSample, label }: RadarProps) {
   // Fit every sample while they are close; when far away, fit at least the nearest one
@@ -83,6 +86,25 @@ export function Radar({ points, rangeM, heading, canSample, label }: RadarProps)
         <text x={rimLabelAt[0] - 4} y={rimLabelAt[1] - 4}>
           {formatMeters(nextRadius)}
         </text>
+      </g>
+
+      {/* Degree scale: a tick every 10°, longer and numbered every 30° (letters at 0/90/180/270) */}
+      <g strokeWidth={0.6} style={{ stroke: 'var(--color-zinc-700)' }}>
+        {DEGREE_TICKS.map((deg) => {
+          const [x1, y1] = polar(R, deg)
+          const [x2, y2] = polar(deg % 30 === 0 ? R - 5 : R - 2.5, deg)
+          return <line key={deg} x1={x1} y1={y1} x2={x2} y2={y2} />
+        })}
+      </g>
+      <g fontSize={5.5} textAnchor="middle" dominantBaseline="central" style={{ fill: 'var(--color-zinc-600)' }}>
+        {DEGREE_LABELS.map((deg) => {
+          const [x, y] = polar(109, deg)
+          return (
+            <text key={deg} x={x} y={y}>
+              {deg}
+            </text>
+          )
+        })}
       </g>
 
       {/* Compass */}

@@ -22,6 +22,7 @@ export const en: Strings = {
     route: 'Route',
     galaxy: 'Galaxy',
     surfaceActive: 'Sampling in progress',
+    short: { system: 'System', surface: 'Surface', session: 'Session', stats: 'Stats', history: 'History', route: 'Route', galaxy: 'Galaxy' },
   },
 
   connection: {
@@ -588,6 +589,8 @@ export const en: Strings = {
         ? `One sample spot wasn’t recorded — move ${range} away from it on your own.`
         : `${n} sample spots weren’t recorded — move ${range} away from them on your own.`,
     nearest: 'distance to nearest sample',
+    heading: 'Heading:',
+    toSample: (n: number) => `To sample ${n}:`,
     canSample: 'ready to sample',
     tooClose: 'too close to a previous sample',
     moveAway: (m: string) => `move ${m} further`,
@@ -861,5 +864,7 @@ export const en: Strings = {
     saving: 'Saving…',
     error: 'Could not save',
     close: 'Close',
+    support: 'Enjoying ED Explorer Kit? It’s free — you can support its development.',
+    supportButton: 'Support on Patreon',
   },
 }

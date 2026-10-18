@@ -157,44 +157,46 @@ function DeathTable({ deaths }: { deaths: readonly DeathView[] }) {
   const th = 'pb-2 pr-4 text-left text-[11px] font-medium tracking-wider text-zinc-500 uppercase'
   return (
     <div className="min-w-0">
-      <table className="w-full table-fixed text-sm">
-        <caption className="sr-only">{t.stats.deathHistory}</caption>
-        <colgroup>
-          <col className="w-[6.5rem]" />
-          <col />
-          <col className="w-[7.5rem]" />
-          <col />
-          <col className="w-[13.5rem]" />
-          <col className="w-[9.5rem]" />
-        </colgroup>
-        <thead className="border-b border-zinc-800">
-          <tr>
-            <th scope="col" className={th}>
-              {t.stats.deathCol.when}
-            </th>
-            <th scope="col" className={th}>
-              {t.stats.deathCol.where}
-            </th>
-            <th scope="col" className={th}>
-              {t.stats.deathCol.context}
-            </th>
-            <th scope="col" className={th}>
-              {t.stats.deathCol.killers}
-            </th>
-            <th scope="col" className={th}>
-              {t.stats.deathCol.lost}
-            </th>
-            <th scope="col" className={`${th} pr-0`}>
-              {t.stats.deathCol.rebuy}
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-800/70">
-          {shown.map((d, i) => (
-            <DeathRow key={`${d.at}-${i}`} d={d} />
-          ))}
-        </tbody>
-      </table>
+      <div className="relative overflow-x-auto">
+        <table className="w-full table-fixed text-sm">
+          <caption className="sr-only">{t.stats.deathHistory}</caption>
+          <colgroup>
+            <col className="w-[6.5rem]" />
+            <col />
+            <col className="w-[7.5rem]" />
+            <col />
+            <col className="w-[13.5rem]" />
+            <col className="w-[9.5rem]" />
+          </colgroup>
+          <thead className="border-b border-zinc-800">
+            <tr>
+              <th scope="col" className={th}>
+                {t.stats.deathCol.when}
+              </th>
+              <th scope="col" className={th}>
+                {t.stats.deathCol.where}
+              </th>
+              <th scope="col" className={th}>
+                {t.stats.deathCol.context}
+              </th>
+              <th scope="col" className={th}>
+                {t.stats.deathCol.killers}
+              </th>
+              <th scope="col" className={th}>
+                {t.stats.deathCol.lost}
+              </th>
+              <th scope="col" className={`${th} pr-0`}>
+                {t.stats.deathCol.rebuy}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/70">
+            {shown.map((d, i) => (
+              <DeathRow key={`${d.at}-${i}`} d={d} />
+            ))}
+          </tbody>
+        </table>
+      </div>
       {collapsible && (
         <div className="mt-3 border-t border-zinc-800/70 pt-3">
           <MoreButton onClick={() => setExpanded((v) => !v)} expanded={expanded}>

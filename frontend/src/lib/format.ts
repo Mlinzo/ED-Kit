@@ -57,6 +57,11 @@ export function formatMeters(value: number): string {
   return `${text}${NARROW_NBSP}${t.units.km}`
 }
 
+/** A compass direction, 0–359° (like the in-game heading). */
+export function formatDegrees(deg: number): string {
+  return `${((Math.round(deg) % 360) + 360) % 360}°`
+}
+
 export function formatGravity(g: number | null): string {
   return g === null ? t.common.unknown : `${formatNumber(g, 2)} ${t.units.g}`
 }

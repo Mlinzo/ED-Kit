@@ -65,6 +65,7 @@ Rules:
 - `src/screens/route/map/`: 3D route map (lazy chunk). Galactic coordinates scaled to a fixed scene radius, z flipped (top view: core up, +x right); stops are screen-space dots picked on screen, labels placed without overlap.
 - `src/screens/galaxy/map/`: 3D galaxy map (lazy chunk), 100 ly per scene unit, Sol at the origin; reuses the route map's camera, markers and labels. The galaxy behind is a procedural sketch (`backdrop.ts`), not game imagery.
 - The orbit tree comes from each body's `parents` chain (`Star` / `Planet` / `Null` = barycentre / `Ring`) plus `barycentres`; radii are not to scale.
+- Layouts must hold on phones (360 px and up) in every language, not only on the desktop: let text wrap below `sm:` instead of `shrink-0`/`nowrap`, give grids an explicit `grid-cols-1`, put wide tables in a `relative overflow-x-auto` box. The 7-tab bottom bar uses `t.tabs.short` labels.
 - Dark, modern, glanceable UI. Languages: English (default), Ukrainian, Russian — chosen in Settings, stored per browser;
   switching reloads the page. `src/i18n/ru.ts` is the original dictionary and defines the shape (`Strings`); `en.ts`
   and `uk.ts` follow it, checked by `dictionaries.test.ts`. Game names (systems, bodies, species, planet and star

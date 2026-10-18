@@ -6,6 +6,8 @@ A companion app for Elite Dangerous explorers: exobiology and mapping with a cle
 glanceable interface for a second monitor. It reads the game journal on your PC and
 shows everything in your browser.
 
+![ED Explorer Kit: the System tab with the orbit map, bodies with bio signals and the selected planet](docs/screenshot-system.png)
+
 - **System**: bodies ranked by value, bio signals, predicted species, whether a body is worth mapping.
 - **Surface**: a sampling radar showing where to take the next sample and how far you still have to go.
 - **Route**: systems worth visiting for high-value mapping (Road to Riches) and biology, around a point or along a line (Spansh data). Shown as a list or a 3D map, and stops tick off by themselves as you fly. Also covers the route you plotted in the galaxy map: fuel and where to scoop, neutron stars and white dwarfs ahead, and the chance a system is still undiscovered. Neutron routes come from Spansh.
@@ -127,6 +129,11 @@ Exobiology rules are derived from [Canonn](https://canonn.science/) research dat
 
 ED Explorer Kit is a fan-made tool, not affiliated with or endorsed by Frontier Developments.
 Elite Dangerous is a trademark of Frontier Developments plc.
+
+## Support
+
+ED Explorer Kit is free. If it helps you on your journeys, you can support its development on
+[Patreon](https://www.patreon.com/mlinzo).
 
 ## License
 

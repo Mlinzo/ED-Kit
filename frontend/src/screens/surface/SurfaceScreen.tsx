@@ -7,13 +7,17 @@ import { SpeciesList, SpeciesValue } from '../../components/SpeciesList'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { t } from '../../i18n'
 import { bodyLabel } from '../../lib/body'
-import { formatMeters, formatNumber } from '../../lib/format'
+import { formatDegrees, formatMeters, formatNumber } from '../../lib/format'
 import { localOffset } from '../../lib/geo'
 import { Radar, type RadarPoint } from './Radar'
 
 interface Geometry {
   points: RadarPoint[]
   nearest: number | null
+  /** The nearest sample's number and its bearing from you (clockwise from north). */
+  toNearest: { index: number; bearing: number } | null
+  /** Your heading from Status.json. */
+  heading: number | null
   /** Taken samples whose position was not recorded (taken while the app was not watching). */
   unknown: number
   canSample: boolean
@@ -41,7 +45,11 @@ function computePosition(scan: ActiveScanView, status: LiveStatus | null, body: 
     const o = localOffset(here, p, radiusM)
     return { index: p.n, ...o, inside: o.distance < range }
   })
-  const nearest = points.length ? Math.min(...points.map((p) => p.distance)) : null
+  const nearestPoint = points.reduce<RadarPoint | null>((n, p) => (!n || p.distance < n.distance ? p : n), null)
+  const nearest = nearestPoint?.distance ?? null
+  const toNearest = nearestPoint
+    ? { index: nearestPoint.index, bearing: ((Math.atan2(nearestPoint.east, nearestPoint.north) * 180) / Math.PI + 360) % 360 }
+    : null
   const inside = points.filter((p) => p.inside)
   const unknown = Math.max(0, taken - points.length)
   return {
@@ -49,6 +57,8 @@ function computePosition(scan: ActiveScanView, status: LiveStatus | null, body: 
     geometry: {
       points,
       nearest,
+      toNearest,
+      heading: status.heading,
       unknown,
       // With an unrecorded sample we cannot promise the spot is far enough away.
       canSample: inside.length === 0 && unknown === 0,
@@ -97,7 +107,7 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
   }
 
   const geometry = position.geometry
-  const { canSample, nearest, moveAway, unknown } = geometry
+  const { canSample, nearest, toNearest, heading, moveAway, unknown } = geometry
   const blockedByUnknown = !canSample && moveAway === 0 && unknown > 0
   return (
     <div
@@ -112,6 +122,20 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
             <BigDistance metres={nearest} />
           </div>
         </>
+      )}
+      {(heading !== null || toNearest) && (
+        <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-400">
+          {heading !== null && (
+            <span>
+              {t.surface.heading} <span className="font-semibold text-zinc-100 tabular-nums">{formatDegrees(heading)}</span>
+            </span>
+          )}
+          {toNearest && (
+            <span>
+              {t.surface.toSample(toNearest.index)} <span className="font-semibold text-zinc-100 tabular-nums">{formatDegrees(toNearest.bearing)}</span>
+            </span>
+          )}
+        </p>
       )}
       <p
         className={`mt-4 flex items-center gap-3 text-[28px] leading-tight font-semibold tracking-tight sm:text-4xl ${

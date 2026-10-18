@@ -310,32 +310,34 @@ function FirstsTable({ entries }: { entries: readonly FirstEntry[] }) {
       {groups.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-500">{t.stats.noFirstsFilter}</p>
       ) : (
-        <table className="mt-5 w-full table-fixed border-separate border-spacing-0 text-sm">
-          <caption className="sr-only">{t.stats.firsts}</caption>
-          <colgroup>
-            <col className="w-[6.5rem]" />
-            <col />
-            <col className="w-[10rem]" />
-            <col className="w-[10rem]" />
-            <col className="w-[10rem]" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="col" className={th}>
-                {t.stats.firstCol.body}
-              </th>
-              <th scope="col" className={th}>
-                {t.stats.firstCol.type}
-              </th>
-              {markTh('discovered')}
-              {markTh('mapped')}
-              {markTh('footfall')}
-            </tr>
-          </thead>
-          {shown.map((g, i) => (
-            <SystemRows key={g.key} g={g} first={i === 0} expanded={open.has(g.key)} onToggle={() => toggle(g.key)} />
-          ))}
-        </table>
+        <div className="relative overflow-x-auto">
+          <table className="mt-5 w-full table-fixed border-separate border-spacing-0 text-sm">
+            <caption className="sr-only">{t.stats.firsts}</caption>
+            <colgroup>
+              <col className="w-[6.5rem]" />
+              <col />
+              <col className="w-[10rem]" />
+              <col className="w-[10rem]" />
+              <col className="w-[10rem]" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col" className={th}>
+                  {t.stats.firstCol.body}
+                </th>
+                <th scope="col" className={th}>
+                  {t.stats.firstCol.type}
+                </th>
+                {markTh('discovered')}
+                {markTh('mapped')}
+                {markTh('footfall')}
+              </tr>
+            </thead>
+            {shown.map((g, i) => (
+              <SystemRows key={g.key} g={g} first={i === 0} expanded={open.has(g.key)} onToggle={() => toggle(g.key)} />
+            ))}
+          </table>
+        </div>
       )}
       {(rest > 0 || groups.length > SYSTEM_STEP) && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-zinc-800/70 pt-4">

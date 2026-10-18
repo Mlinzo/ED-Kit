@@ -25,7 +25,7 @@ export function PlottedStrip({ view, onShowRoute }: { view: NavRouteView; onShow
     <div className={`mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl px-4 py-2.5 ring-1 ring-inset sm:flex-nowrap ${style}`}>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-zinc-300 sm:flex-nowrap sm:overflow-hidden sm:whitespace-nowrap">
         <Icon className={`size-4 shrink-0 ${iconTone}`} aria-hidden />
-        <span className="shrink-0 font-medium text-zinc-50">{t.plotted.title}</span>
+        <span className="font-medium text-zinc-50 sm:shrink-0">{t.plotted.title}</span>
         <span className="min-w-0 truncate text-zinc-400" title={end.name}>
           {t.plotted.jumps(view.jumpsLeft)} {t.plotted.to(end.name)}
           <span className="hidden text-zinc-500 xl:inline"> · {formatLy(view.lyLeft)}</span>
@@ -35,7 +35,7 @@ export function PlottedStrip({ view, onShowRoute }: { view: NavRouteView; onShow
             {t.plotted.warnings[warning] ?? warning}
           </span>
         ) : (
-          scoop !== null && <span className="shrink-0 text-zinc-400">{t.plotted.scoopIn(scoop)}</span>
+          scoop !== null && <span className="text-zinc-400 sm:shrink-0">{t.plotted.scoopIn(scoop)}</span>
         )}
         {view.online && view.undiscoveredExpected >= 0.1 && (
           <span className="hidden shrink-0 items-center gap-1 text-emerald-300 lg:inline-flex" title={t.plotted.expectedHint}>
