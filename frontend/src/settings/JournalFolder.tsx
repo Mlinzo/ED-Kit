@@ -1,0 +1,133 @@
+import { CircleAlert, CircleCheck, FolderOpen, LoaderCircle } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { useIngest, useStream } from '../api/hooks'
+import type { IngestState } from '../api/types'
+import { t } from '../i18n'
+
+type Problem = 'not_found' | 'failed'
+
+/** PUT /api/journal-dir (null: the default folder). The new ingest state also comes through the stream. */
+async function changeJournalDir(path: string | null): Promise<Problem | null> {
+  try {
+    const response = await fetch('/api/journal-dir', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path }),
+    })
+    if (response.status === 422) return 'not_found'
+    return response.ok ? null : 'failed'
+  } catch {
+    return 'failed'
+  }
+}
+
+function FolderState({ ingest }: { ingest: IngestState }) {
+  const s = t.settings.journal
+  const ok = ingest.journalDirFound && ingest.journalFiles > 0
+  const Icon = ok ? CircleCheck : CircleAlert
+  const text = !ingest.journalDirFound ? s.missing : ingest.journalFiles === 0 ? s.empty : s.files(ingest.journalFiles)
+  return (
+    <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${ok ? 'text-emerald-300' : 'text-amber-300'}`}>
+      <Icon className="size-3.5 shrink-0" aria-hidden />
+      {text}
+    </p>
+  )
+}
+
+/**
+ * The journal folder in the settings: where it is read from, whether it has journals, and a field to
+ * read another one. A folder set at launch (--journal-dir) is only shown.
+ */
+export function JournalFolder({ autoFocus }: { autoFocus: boolean }) {
+  const ingest = useIngest()
+  const { mock } = useStream()
+  const [path, setPath] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [problem, setProblem] = useState<Problem | null>(null)
+  const inputId = useId()
+  const titleId = useId()
+  const section = useRef<HTMLElement>(null)
+  const input = useRef<HTMLInputElement>(null)
+  const s = t.settings.journal
+
+  useEffect(() => {
+    if (!autoFocus) return
+    section.current?.scrollIntoView({ block: 'nearest' })
+    input.current?.focus()
+  }, [autoFocus])
+
+  if (!ingest) return null
+
+  const apply = async (value: string | null) => {
+    setBusy(true)
+    setProblem(null)
+    const result = await changeJournalDir(value)
+    setBusy(false)
+    setProblem(result)
+    if (!result) setPath('')
+  }
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (path.trim()) void apply(path)
+  }
+
+  return (
+    <section ref={section} aria-labelledby={titleId} className="mt-7 border-t border-zinc-800 pt-5">
+      <h3 id={titleId} className="text-sm font-semibold text-zinc-100">
+        {s.title}
+      </h3>
+      <p className="mt-1 text-xs text-zinc-500">{s.hint}</p>
+      <div className="mt-3 rounded-lg bg-zinc-900/70 px-3 py-2.5 ring-1 ring-zinc-800 ring-inset">
+        <p className="font-mono text-xs break-all text-zinc-200">{ingest.journalDir}</p>
+        <FolderState ingest={ingest} />
+      </div>
+      {ingest.journalDirFixed ? (
+        <p className="mt-2 text-xs text-zinc-500">{s.fixed}</p>
+      ) : mock ? (
+        <p className="mt-2 text-xs text-zinc-500">{s.demo}</p>
+      ) : (
+        <form onSubmit={submit} className="mt-3">
+          <label htmlFor={inputId} className="block text-xs text-zinc-500">
+            {s.other}
+          </label>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <input
+              ref={input}
+              id={inputId}
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              placeholder={ingest.journalDirDefault}
+              spellCheck={false}
+              autoComplete="off"
+              className="focus-ring h-10 min-w-0 flex-1 basis-56 rounded-lg bg-zinc-900 px-3 font-mono text-xs text-zinc-100 ring-1 ring-zinc-800 ring-inset placeholder:text-zinc-600 focus:ring-sky-500/50"
+            />
+            <button
+              type="submit"
+              disabled={busy || !path.trim()}
+              className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-sky-500 px-4 text-sm font-semibold text-zinc-950 hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {busy ? <LoaderCircle className="size-4 motion-safe:animate-spin" aria-hidden /> : <FolderOpen className="size-4" aria-hidden />}
+              {busy ? s.applying : s.apply}
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-zinc-500">{s.copyHint}</p>
+          {problem && (
+            <p role="alert" className="mt-2 text-sm text-rose-300">
+              {problem === 'not_found' ? s.notFound : s.failed}
+            </p>
+          )}
+          {ingest.journalDir !== ingest.journalDirDefault && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void apply(null)}
+              className="focus-ring -mx-2 mt-2 inline-flex h-9 items-center rounded-lg px-2 text-sm text-accent hover:bg-zinc-800/60 disabled:opacity-40"
+            >
+              {s.useDefault}
+            </button>
+          )}
+        </form>
+      )}
+    </section>
+  )
+}

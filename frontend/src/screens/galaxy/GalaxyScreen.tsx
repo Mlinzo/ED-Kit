@@ -88,6 +88,7 @@ function Regions({ view, selected, onShow }: { view: GalaxyView; selected: numbe
       id="galaxy-regions"
       title={t.galaxy.regions.title}
       icon={Layers}
+      help="codex"
       aside={<span className="text-sm text-zinc-500">{t.galaxy.regions.summary(visitedRegions(view).length, REGION_COUNT)}</span>}
     >
       <p className="-mt-2 mb-4 text-sm text-zinc-500">{t.galaxy.regions.hint}</p>

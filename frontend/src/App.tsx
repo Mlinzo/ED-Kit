@@ -4,6 +4,8 @@ import { OfflineBanner } from './components/OfflineBanner'
 import { BottomTabs } from './components/TabBar'
 import { panelId, tabId, TABS, type Tab } from './components/tabs'
 import { TopBar } from './components/TopBar'
+import { Welcome } from './components/Welcome'
+import { GuideProvider } from './guide/GuideProvider'
 import { GalaxyScreen } from './screens/galaxy/GalaxyScreen'
 import { HistoryScreen } from './screens/history/HistoryScreen'
 import { RouteScreen } from './screens/route/RouteScreen'
@@ -13,6 +15,7 @@ import { SurfaceScreen } from './screens/surface/SurfaceScreen'
 import { SystemScreen } from './screens/system/SystemScreen'
 import { parsePath, pathOf, type Page } from './lib/router'
 import { readSession, writeSession } from './lib/storage'
+import { SettingsProvider } from './settings/SettingsDialog'
 
 /** The tab open last in this browser tab: where "/" leads. */
 const TAB_KEY = 'edk.tab'
@@ -125,31 +128,36 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <TopBar tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />
-      <main
-        id={panelId(tab)}
-        role="tabpanel"
-        aria-labelledby={tabId(tab)}
-        className="mx-auto w-full max-w-[1600px] flex-1 px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:px-6 lg:pt-8 lg:pb-12"
-      >
-        <OfflineBanner />
-        {tab === 'system' && (
-          <SystemScreen
-            address={page.address}
-            onOpenSystem={openSystem}
-            onShowHistory={() => goTo('history')}
-            onShowRoute={() => goTo('route')}
-          />
-        )}
-        {tab === 'surface' && <SurfaceScreen />}
-        {tab === 'route' && <RouteScreen prefill={routeTo} onPrefillUsed={routeToUsed} />}
-        {tab === 'session' && <SessionScreen onRouteTo={planRouteTo} />}
-        {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
-        {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
-        {tab === 'stats' && <StatsScreen />}
-      </main>
-      <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />
-    </div>
+    <GuideProvider>
+      <SettingsProvider>
+        <div className="flex min-h-dvh flex-col">
+          <TopBar tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />
+          <main
+            id={panelId(tab)}
+            role="tabpanel"
+            aria-labelledby={tabId(tab)}
+            className="mx-auto w-full max-w-[1600px] flex-1 px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:px-6 lg:pt-8 lg:pb-12"
+          >
+            <OfflineBanner />
+            {tab === 'system' && <Welcome />}
+            {tab === 'system' && (
+              <SystemScreen
+                address={page.address}
+                onOpenSystem={openSystem}
+                onShowHistory={() => goTo('history')}
+                onShowRoute={() => goTo('route')}
+              />
+            )}
+            {tab === 'surface' && <SurfaceScreen />}
+            {tab === 'route' && <RouteScreen prefill={routeTo} onPrefillUsed={routeToUsed} />}
+            {tab === 'session' && <SessionScreen onRouteTo={planRouteTo} />}
+            {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
+            {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
+            {tab === 'stats' && <StatsScreen />}
+          </main>
+          <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />
+        </div>
+      </SettingsProvider>
+    </GuideProvider>
   )
 }

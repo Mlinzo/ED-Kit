@@ -371,7 +371,7 @@ export function Firsts({ stats, className = '' }: { stats: StatsView; className?
     entries.length === 0 && stats.firstDiscoveriesSold === 0 && stats.firstMappedSold === 0 && stats.firstFootfallsTotal === 0
   if (nothing) {
     return (
-      <Card id="stats-firsts" title={t.stats.firsts} icon={Flag} className={className}>
+      <Card id="stats-firsts" title={t.stats.firsts} icon={Flag} help="firsts" className={className}>
         <div className="flex items-center gap-4">
           <Flag className="size-9 shrink-0 text-zinc-600" aria-hidden />
           <div>
@@ -388,6 +388,7 @@ export function Firsts({ stats, className = '' }: { stats: StatsView; className?
       id="stats-firsts"
       title={t.stats.firsts}
       icon={Flag}
+      help="firsts"
       className={className}
       aside={
         entries.length > 0 && (

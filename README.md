@@ -36,6 +36,9 @@ running just opens the page.
 > Click **More info → Run anyway**. If you would rather not trust a downloaded exe, use
 > Docker or run from source (below): both build from this repository's code.
 
+If your journal is not in the standard place (`Saved Games\Frontier Developments\Elite Dangerous`),
+the page says so: choose the folder in **Settings → Journal folder**.
+
 On first start the app reads your whole journal history, which takes from a few seconds
 to a minute.
 
@@ -94,7 +97,7 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 | `--lan` | Allow access from other devices on your network |
 | `--offline` | No requests to Spansh/EDSM and no EDDN (route planning and live players are then off) |
 | `--port 8765` | Use another port |
-| `--journal-dir PATH` | Journal folder, if not in the standard place |
+| `--journal-dir PATH` | Journal folder, if not in the standard place (or choose it in Settings; set here, Settings cannot change it) |
 | `--data-dir PATH` | Where `data.db` is stored |
 | `--rebuild` | Rebuild the database from the stored journal events |
 | `--no-browser` | Don't open the browser on start (the exe opens it by default) |

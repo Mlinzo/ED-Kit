@@ -10,15 +10,30 @@ import { communityText, isCommunity } from '../../components/source'
 import { CommunityGlyph, CommunityNotice, SourceList, SourceTag } from '../../components/SourceBadge'
 import { SpeciesList } from '../../components/SpeciesList'
 import { Label } from '../../components/States'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
+import type { TopicId } from '../../guide/topics'
 import { bodyLabel } from '../../lib/body'
 import { formatMass, formatGravity, formatKelvin, formatKm, formatLs } from '../../lib/format'
 
-function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+function Section({
+  title,
+  help,
+  aside,
+  children,
+}: {
+  title: string
+  help?: TopicId
+  aside?: ReactNode
+  children: ReactNode
+}) {
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <Label>{title}</Label>
+        <div className="flex items-center gap-1.5">
+          <Label>{title}</Label>
+          {help && <HelpTip topic={help} />}
+        </div>
         {aside}
       </div>
       {children}
@@ -35,10 +50,13 @@ function Fact({ label, children, className = '' }: { label: string; children: Re
   )
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({ label, help, children }: { label: string; help?: TopicId; children: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-1.5">
-      <dt className="text-sm text-zinc-500">{label}</dt>
+      <dt className="flex items-center gap-1.5 text-sm text-zinc-500">
+        {label}
+        {help && <HelpTip topic={help} />}
+      </dt>
       <dd className="text-right text-[15px] text-zinc-100">{children}</dd>
     </div>
   )
@@ -294,6 +312,7 @@ export function BodyDetail({
 
       <Section
         title={t.body.values}
+        help="dss"
         aside={
           <span className="text-sm text-zinc-500">
             {t.body.total} <Credits value={body.totalValue} className="font-semibold text-zinc-200" />
@@ -320,6 +339,7 @@ export function BodyDetail({
       {hasBio && (
         <Section
           title={t.body.biology}
+          help="bio"
           aside={
             <span className="inline-flex items-center gap-1.5 text-sm text-emerald-300/90">
               {t.body.bioSignals(body.signals.bio)}
@@ -385,7 +405,7 @@ export function BodyDetail({
         </dl>
       </Section>
 
-      <Section title={t.body.discovery}>
+      <Section title={t.body.discovery} help="firsts">
         <dl className="divide-y divide-zinc-800/70">
           <Row label={t.body.discoveredLabel}>
             <span className={body.wasDiscovered === false ? 'text-accent' : undefined}>
@@ -400,7 +420,7 @@ export function BodyDetail({
                 </span>
               </Row>
               {body.landable && (
-                <Row label={t.body.footfallLabel}>
+                <Row label={t.body.footfallLabel} help="footfall">
                   {!body.footfallByMe && body.wasFootfalled === false && !body.footfallClaimable ? (
                     <span className="text-zinc-500" title={t.body.footfallPopulatedHint}>
                       {t.body.footfallPopulated}

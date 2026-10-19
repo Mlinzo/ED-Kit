@@ -4,7 +4,9 @@ import { BookOpen, Coins, LoaderCircle, MoveRight, Navigation, Orbit, Route, Sto
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import type { BodyKind, RouteGoal, RouteMode, RoutePoint, RouteRequest } from '../../api/types'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
+import type { TopicId } from '../../guide/topics'
 import { formatLy } from '../../lib/format'
 import { LANDMARKS } from '../../lib/landmarks'
 import { ThresholdField } from '../../settings/ThresholdField'
@@ -21,10 +23,16 @@ const SYSTEM_VALUE_PRESETS = [0, 2_000_000, 5_000_000, 10_000_000, 20_000_000] a
 const KINDS: readonly BodyKind[] = ['elw', 'tww', 'thmc', 'ww', 'aw', 'trocky', 'bio']
 
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+/** The guide topic behind each route goal. */
+const GOAL_TOPIC = { credits: 'riches', codex: 'codex', transit: 'neutron' } as const satisfies Record<string, TopicId>
+
+function Field({ label, hint, help, children }: { label: string; hint?: string; help?: TopicId; children: ReactNode }) {
   return (
     <fieldset className="min-w-0">
-      <legend className="text-sm font-medium text-zinc-200">{label}</legend>
+      <legend className="flex items-center gap-1.5 text-sm font-medium text-zinc-200">
+        {label}
+        {help && <HelpTip topic={help} />}
+      </legend>
       {hint && <p className="mt-0.5 text-xs text-zinc-500">{hint}</p>}
       <div className="mt-2">{children}</div>
     </fieldset>
@@ -225,7 +233,7 @@ export function RouteForm({
   return (
     <form onSubmit={submit} className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-zinc-800 sm:p-6">
       <div className="grid gap-x-8 gap-y-6 lg:grid-cols-2">
-        <Field label={t.route.goal} hint={t.route.goalHint[req.goal]}>
+        <Field label={t.route.goal} hint={t.route.goalHint[req.goal]} help={GOAL_TOPIC[req.goal]}>
           <Toggle value={req.goal} options={goals} label={t.route.goal} names={t.route.goals} onChange={(v) => set('goal', v)} />
         </Field>
         {!transit && (

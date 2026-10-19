@@ -2,17 +2,20 @@
 
 Settings are written from the API thread; SQLite serialises that short write with the
 ingest thread's transactions (WAL + busy_timeout). They never affect stored journal data,
-only how views are computed.
+only how views are computed, and which folder the journal is read from.
 """
 
 from __future__ import annotations
 
 import contextlib
 import sqlite3
+from pathlib import Path
 
 from app.schemas import HighlightSettings
 
 DEFAULTS = HighlightSettings(dss_min=500_000, bio_min=2_000_000)
+
+JOURNAL_DIR_KEY = "journal_dir"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings(
@@ -43,3 +46,27 @@ def save(conn: sqlite3.Connection, settings: HighlightSettings) -> HighlightSett
         [(k, str(max(0, int(v)))) for k, v in settings.model_dump().items()],
     )
     return load(conn)
+
+
+def load_journal_dir(conn: sqlite3.Connection) -> Path | None:
+    """The journal folder chosen in the app; None: the default one."""
+    try:
+        row = conn.execute(
+            "SELECT value FROM settings WHERE key = ?", (JOURNAL_DIR_KEY,)
+        ).fetchone()
+    except sqlite3.OperationalError:  # table not created yet
+        return None
+    return Path(row[0]) if row and row[0] else None
+
+
+def save_journal_dir(conn: sqlite3.Connection, path: Path | None) -> None:
+    """Stores the journal folder chosen in the app; None goes back to the default one."""
+    conn.executescript(SCHEMA)
+    if path is None:
+        conn.execute("DELETE FROM settings WHERE key = ?", (JOURNAL_DIR_KEY,))
+    else:
+        conn.execute(
+            "INSERT INTO settings(key, value) VALUES(?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (JOURNAL_DIR_KEY, str(path)),
+        )

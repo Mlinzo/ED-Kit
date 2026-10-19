@@ -5,6 +5,7 @@ import { CodexBadge } from '../../components/CodexBadge'
 import { SampleDots } from '../../components/SampleDots'
 import { SpeciesList, SpeciesValue } from '../../components/SpeciesList'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { bodyLabel } from '../../lib/body'
 import { formatDegrees, formatMeters, formatNumber } from '../../lib/format'
@@ -213,6 +214,7 @@ export function SurfaceScreen() {
             <p className="mt-2 text-sm text-zinc-500">
               {body ? `${bodyLabel(body)} · ` : ''}
               {t.species.colonyRange} {formatMeters(activeScan.colonyRangeM)}
+              <HelpTip topic="colony" className="ml-1.5" />
             </p>
           </div>
           <SpeciesValue s={activeScan} className="shrink-0 text-2xl font-semibold text-emerald-300 sm:text-3xl" />
@@ -220,6 +222,7 @@ export function SurfaceScreen() {
         <div className="flex items-center gap-3">
           <SampleDots samples={activeScan.samples} size="lg" />
           <span className="text-lg font-semibold text-zinc-200">{t.species.samples(activeScan.samples)}</span>
+          <HelpTip topic="sampling" />
         </div>
         <SampleState scan={activeScan} position={position} />
       </section>

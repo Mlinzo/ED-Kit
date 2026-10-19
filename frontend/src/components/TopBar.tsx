@@ -1,8 +1,10 @@
-import { FlaskConical, FolderX, Wallet, X } from 'lucide-react'
+import { FlaskConical, FolderOpen, FolderX, Wallet, X } from 'lucide-react'
 import { useIngest, useStream, useView } from '../api/hooks'
-import type { SessionView } from '../api/types'
+import type { IngestState, SessionView } from '../api/types'
 import { t } from '../i18n'
+import { GuideButton } from '../guide/HelpTip'
 import { formatCredits, formatNumber } from '../lib/format'
+import { useSettings } from '../settings/context'
 import { SettingsButton } from '../settings/SettingsDialog'
 import { ConnectionIndicator } from './ConnectionIndicator'
 import { Credits } from './Credits'
@@ -63,22 +65,44 @@ function AtRisk({ session, onOpen }: { session: SessionView; onOpen: () => void 
   )
 }
 
+/**
+ * No journal to read: the folder is missing, or has no journal files yet (the game was never run
+ * there). Starting the game fixes both for a newcomer; anyone else picks the folder in the settings.
+ */
+function JournalProblem({ ingest }: { ingest: IngestState }) {
+  const { open } = useSettings()
+  return (
+    <div className="border-t border-amber-500/20 bg-amber-500/10 text-sm text-amber-200">
+      <div className="mx-auto flex max-w-[1600px] min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 lg:px-6">
+        <FolderX className="size-4 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1 basis-60">
+          <p>
+            <span className="font-medium">{ingest.journalDirFound ? t.ingest.noJournals : t.ingest.dirMissing}</span>
+            <span className="text-amber-200/80"> · {t.ingest.startGame}</span>
+          </p>
+          <code className="block truncate font-mono text-xs text-amber-100/70" title={ingest.journalDir}>
+            {ingest.journalDir}
+          </code>
+        </div>
+        <button
+          type="button"
+          onClick={() => open('journal')}
+          className="focus-ring inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-amber-400/15 px-3 text-sm font-medium text-amber-100 ring-1 ring-amber-400/30 ring-inset hover:bg-amber-400/25"
+        >
+          <FolderOpen className="size-4" aria-hidden />
+          {t.ingest.choose}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function IngestStrip() {
   const ingest = useIngest()
   if (!ingest) return null
 
-  if (!ingest.journalDirFound) {
-    return (
-      <div className="border-t border-amber-500/20 bg-amber-500/10 text-sm text-amber-200">
-        <div className="mx-auto flex max-w-[1600px] min-w-0 items-center gap-2 px-4 py-2 lg:px-6">
-          <FolderX className="size-4 shrink-0" aria-hidden />
-          <span className="shrink-0">{t.ingest.dirMissing}</span>
-          <code className="min-w-0 truncate font-mono text-xs text-amber-100/80" title={ingest.journalDir}>
-            {ingest.journalDir}
-          </code>
-        </div>
-      </div>
-    )
+  if (!ingest.journalDirFound || (ingest.backfillDone && ingest.journalFiles === 0)) {
+    return <JournalProblem ingest={ingest} />
   }
   if (ingest.backfillDone) return null
 
@@ -128,6 +152,7 @@ export function TopBar({ tab, onTab, surfaceLive }: { tab: Tab; onTab: (t: Tab) 
               {t.common.commander} <span className="font-medium text-zinc-200">{commander}</span>
             </span>
           )}
+          <GuideButton />
           <SupportLink />
           <SettingsButton />
           <ConnectionIndicator />

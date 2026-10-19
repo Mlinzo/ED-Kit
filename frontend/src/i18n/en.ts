@@ -1,6 +1,7 @@
 // English UI strings, the default language. The shape follows ru.ts (see index.ts); game names
 // (systems, bodies, species, planet classes) stay in English as the backend sends them.
 import type { Strings } from '.'
+import { guideEn } from './guide.en'
 
 const pluralRules = new Intl.PluralRules('en')
 
@@ -52,7 +53,10 @@ export const en: Strings = {
   ingest: {
     reading: 'Reading journal',
     files: (done: number, total: number) => `${done} / ${total} ${plural(total, ['file', 'files'])}`,
-    dirMissing: 'Journal folder not found:',
+    dirMissing: 'Journal folder not found',
+    noJournals: 'No journal files in the folder yet',
+    startGame: 'Start Elite Dangerous and the journal is picked up by itself, or choose another folder.',
+    choose: 'Choose folder',
   },
 
   common: {
@@ -94,6 +98,7 @@ export const en: Strings = {
     },
     noData: 'No system data',
     noDataHint: 'Data appears after a jump or once the journal is read.',
+    noDataStart: 'Start Elite Dangerous: the system you are in shows up here as soon as you are in the game.',
     bodies: 'Bodies',
     honk: 'Bodies found',
     honkUnknown: 'Do an FSS scan (honk) to get the body count',
@@ -983,6 +988,23 @@ export const en: Strings = {
     title: 'Settings',
     language: 'Language',
     languageHint: 'The page will reload in the chosen language.',
+    journal: {
+      title: 'Journal folder',
+      hint: 'Elite Dangerous writes its flight journal here, and the app reads it from here.',
+      files: (n: number) => `${n} ${plural(n, ['journal file', 'journal files'])}`,
+      missing: 'Folder not found',
+      empty: 'No journal files yet: start the game',
+      other: 'Another folder',
+      apply: 'Read from here',
+      applying: 'Checking…',
+      notFound: 'There is no such folder: check the path.',
+      failed: 'Could not change the folder',
+      copyHint: 'In File Explorer, open the folder, click the address bar and copy the path.',
+      useDefault: 'Back to the standard folder',
+      fixed: 'Set at launch (--journal-dir or EDEK_JOURNAL_DIR): change it there.',
+      demo: 'The folder cannot be changed in demo mode.',
+    },
+    highlightOpen: 'Highlight thresholds',
     highlight: 'Body highlighting',
     intro:
       'Bodies below the thresholds stay on the map but are not highlighted. Value is the estimated payout in credits.',
@@ -996,12 +1018,18 @@ export const en: Strings = {
     thousands: 'k',
     millions: 'M',
     off: 'Any',
-    save: 'Save',
-    cancel: 'Cancel',
-    saving: 'Saving…',
     error: 'Could not save',
     close: 'Close',
     support: 'Enjoying ED Explorer Kit? It’s free — you can support its development.',
     supportButton: 'Support on Patreon',
   },
+
+  welcome: {
+    title: 'Welcome to ED Explorer Kit',
+    text: 'The app reads the Elite Dangerous journal on this computer and sends it nowhere. Play as usual: the tabs fill in by themselves as you jump, scan and take samples.',
+    guide: 'Five steps for newcomers',
+    close: 'Got it',
+  },
+
+  guide: guideEn,
 }

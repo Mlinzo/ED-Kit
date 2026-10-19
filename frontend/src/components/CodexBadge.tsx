@@ -5,6 +5,7 @@
 
 import { BookCheck, BookPlus, type LucideIcon } from 'lucide-react'
 import type { BodyView, CodexStatus } from '../api/types'
+import { HelpTip } from '../guide/HelpTip'
 import { t } from '../i18n'
 import { bodyCodex, codexLabel, codexNewStatus, codexTitle } from './codex'
 
@@ -123,6 +124,7 @@ export function CodexSummary({ body }: { body: BodyView }) {
       <p className="inline-flex items-center gap-1.5 text-sm text-zinc-500" title={t.codex.note}>
         <BookCheck className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
         {t.codex.allLogged}
+        <HelpTip topic="codex" />
       </p>
     )
   }
@@ -141,6 +143,7 @@ export function CodexSummary({ body }: { body: BodyView }) {
         <p className={strong ? 'font-semibold text-fuchsia-50' : 'font-medium text-fuchsia-200/90'}>{codex.text}</p>
         <p className="mt-0.5 text-xs text-zinc-400">{strong ? t.codex.bodyNewHint : t.codex.bodyMaybeHint}</p>
       </div>
+      <HelpTip topic="codex" className="ml-auto" />
       <span className="sr-only">{t.codex.note}</span>
     </div>
   )

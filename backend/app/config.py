@@ -42,9 +42,20 @@ def _saved_games_dir() -> Path:
     return Path.home() / "Saved Games"
 
 
+def standard_journal_dir() -> Path:
+    """Where the game writes its journal on this computer."""
+    return _saved_games_dir() / JOURNAL_SUBDIR
+
+
 def default_journal_dir() -> Path:
     env = os.environ.get("EDEK_JOURNAL_DIR")
-    return Path(env) if env else _saved_games_dir() / JOURNAL_SUBDIR
+    return Path(env) if env else standard_journal_dir()
+
+
+def parse_dir(text: str) -> Path:
+    """A folder typed or pasted by the user: Explorer's "Copy as path" quotes, %VARS%, ~."""
+    cleaned = text.strip().strip('"').strip("'").strip()
+    return Path(os.path.expanduser(os.path.expandvars(cleaned)))
 
 
 def default_data_dir() -> Path:
@@ -67,6 +78,10 @@ def default_static_dir() -> Path | None:
 @dataclass(slots=True)
 class Settings:
     journal_dir: Path = field(default_factory=default_journal_dir)
+    # Set at launch (--journal-dir or EDEK_JOURNAL_DIR): the folder chosen in the app is ignored.
+    journal_dir_fixed: bool = field(
+        default_factory=lambda: bool(os.environ.get("EDEK_JOURNAL_DIR"))
+    )
     data_dir: Path = field(default_factory=default_data_dir)
     static_dir: Path | None = field(default_factory=default_static_dir)
     port: int = 8765

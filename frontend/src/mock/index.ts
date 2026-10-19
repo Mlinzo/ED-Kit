@@ -108,6 +108,9 @@ export function createMockTransport(): Transport {
     events: 0,
     journalDir: 'C:\\Users\\Commander\\Saved Games\\Frontier Developments\\Elite Dangerous',
     journalDirFound: true,
+    journalFiles: 21,
+    journalDirFixed: false,
+    journalDirDefault: 'C:\\Users\\Commander\\Saved Games\\Frontier Developments\\Elite Dangerous',
     gameRunning: true,
   }
 

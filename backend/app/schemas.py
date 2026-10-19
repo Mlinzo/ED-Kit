@@ -321,7 +321,14 @@ class IngestState(CamelModel):
     events: int
     journal_dir: str
     journal_dir_found: bool
+    journal_files: int = 0  # journal files in the folder (0 before the game was ever run)
+    journal_dir_fixed: bool = False  # set at launch (--journal-dir / EDEK_JOURNAL_DIR)
+    journal_dir_default: str = ""  # the folder read unless another is chosen in the app
     game_running: bool | None = None  # process list, else the journal (None: unknown)
+
+
+class JournalDirRequest(CamelModel):
+    path: str | None = None  # None or empty: the standard folder
 
 
 class StatCount(CamelModel):

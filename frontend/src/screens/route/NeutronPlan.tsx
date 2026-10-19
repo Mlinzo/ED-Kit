@@ -4,6 +4,7 @@ import { Check, ChevronDown, ChevronUp, LoaderCircle, RefreshCw, TriangleAlert, 
 import { useState } from 'react'
 import type { NeutronPlanView, NeutronWaypointView, RouteView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { formatLy } from '../../lib/format'
 import { IconButton } from './parts'
@@ -46,6 +47,7 @@ function Plan({ plan, onRebuild, onClear }: { plan: NeutronPlanView; onRebuild: 
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-zinc-300">
           <Zap className="size-4 text-sky-300" aria-hidden />
           <span className="font-medium text-zinc-100">{t.route.neutron.title}</span>
+          <HelpTip topic="neutron" />
           {plan.totalJumps !== null && (
             <span className="text-zinc-400">
               {plan.directJumps !== null && plan.directJumps > plan.totalJumps

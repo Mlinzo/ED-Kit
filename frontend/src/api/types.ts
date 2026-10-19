@@ -343,6 +343,12 @@ export interface IngestState {
   events: number
   journalDir: string
   journalDirFound: boolean
+  /** Journal files in the folder (0 before the game was ever run there). */
+  journalFiles: number
+  /** Set at launch (--journal-dir / EDEK_JOURNAL_DIR): the app cannot change it. */
+  journalDirFixed: boolean
+  /** The folder read unless another one is chosen in the settings. */
+  journalDirDefault: string
   /** The game is running (process list, else the journal); null: unknown. */
   gameRunning: boolean | null
 }

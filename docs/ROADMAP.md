@@ -1,128 +1,147 @@
-# План
+# Roadmap
 
-Решения от 2026-10-17. Порядок внутри «Делаем» — не приоритет, а список.
+Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 
-## Делаем
+## Doing
 
-### Остатки «Безопасности перелёта»
-- Остановки для дозаправки внутри своего планировщика — пока не нужны: прыжки между остановками
-  прокладывает игра, и прогноз топлива по маршруту в игре это покрывает. Вернуться, если окажется
-  мало.
+### Flight safety: what is left
+- Refuelling stops in our own route planner: not needed for now. The game plots the jumps between
+  stops, and the fuel forecast for the route plotted in the game covers it. Come back to it if that
+  turns out not to be enough.
 
-### Понятно новичку
-- Объяснять не только приложение, но и игру: FSS и DSS, honk, экзобиология и дальность колонии,
-  бонус первой высадки, Road to Riches, потеря непроданных данных при смерти.
-- Значки «?», глоссарий терминов, подсказки при первом запуске.
-- Ссылки на внешние источники (вики, Canonn, гайды форума Frontier, Spansh).
-- Тексты о механиках сверять с источниками: механики меняются, ошибка в гайде для новичка хуже,
-  чем его отсутствие.
+### Guide for new explorers: what is left
+- Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
+  newcomer is worse than none. Re-check the guide after big game updates.
 
-### Остатки «Галактики»
-- Пробелы до установки приложения дополнить бортовым журналом EDSM (нужен API-ключ
-  пользователя) — решить отдельно.
+### Release
+- Delete the `v0.1.0` release (2026-10-17; the repository is private for now) with its tag, and
+  release again once the app is in decent shape (decided 2026-10-19). The GitHub release is deleted
+  in the web UI (Releases), the tag with `git push origin :refs/tags/v0.1.0` and `git tag -d v0.1.0`.
 
-### Остатки живого трафика (EDDN)
-- Тепловая карта за сутки: нужен постоянный приём (~75 МБ/ч в часы пик) — решить, стоит ли.
-- Свежие позиции кэрриеров из EDDN для пункта «где продать за пузырём».
+## Deferred
+- Rank progress (Explorer, Exobiologist).
+- Ship condition: module wear, AFMU ammo, FSD damage from neutron boosts.
+- Materials for FSD injection synthesis (jumponium).
+- Named players on the galaxy map and a "come get me" beacon (a Discord player's idea): only those
+  who opted in are visible, either through public EDSM profiles from a list of names or through our
+  own server with authorization. Off by default: a live position is what gankers look for.
+- Discovery chance from the share of known systems nearby (Spansh counts them cheaply): in the
+  2026-10-19 measurement almost all the "grey" systems were in empty areas, so there was nothing to
+  check it on.
 
-## Отложено
-- Прогресс ранга (Исследователь, Экзобиолог).
-- Состояние корабля: износ модулей, запас AFMU, урон FSD от нейтронного буста.
-- Материалы для синтеза впрыска FSD (jumponium).
-- Игроки с именами на карте галактики и маяк «прилетайте за мной» (идея игрока из Discord): видно
-  только тех, кто сам разрешил, — публичный профиль EDSM по списку имён или свой сервер с
-  авторизацией. По умолчанию выключено: живая позиция — то, что ищут ганкеры.
+## Not doing
+- Sound and browser notifications.
+- A warning on entering a new codex region (decided 2026-10-19).
+- The mass code (a–h) from the system name in the discovery chance: the EDDN measurement on
+  2026-10-19 found no signal beyond what the databases know and the star class.
+- Distances to Sol, Colonia, Sag A*, Beagle Point as a separate line, and a custom goal with a
+  progress percentage (decided 2026-10-19): they change no decision in flight. Landmarks with their
+  distance are quick buttons in the "Get there" route goal.
+- Fresh fleet carrier positions from EDDN for "Where to sell", and a 24-hour heat map of players
+  (decided 2026-10-19): both need EDDN received all the time (~75 MB/h at peak hours), and the server
+  listens to it only while the "Players now" layer is open.
+- Filling the gaps before the app was installed from the EDSM flight log (decided 2026-10-19): it
+  needs the player's API key.
+- A guided tour on first launch (decided 2026-10-19): players skip such tours, they annoy in every
+  new browser and go stale with each change of the interface. A welcome card and clear empty states
+  instead.
 
-- Шанс первооткрытия по доле известных систем по соседству (Spansh считает их дёшево): в замере
-  2026-10-19 почти все «серые» системы были в пустых районах — проверить не на чем.
+## Done
+- First run (2026-10-19): a welcome card on the System tab until closed — the app reads the journal
+  on this computer and sends it nowhere, the tabs fill in by themselves — with a button to the
+  guide's five steps. The journal folder is chosen in Settings (paste a path; quotes from "Copy as
+  path" and %VARS% are fine), read at once without a restart and kept; "back to the standard
+  folder"; a folder set at launch (`--journal-dir`, Docker) is only shown. The top bar says when the
+  folder is missing or has no journal files yet (start the game, or choose the folder). On a fresh
+  install the System tab says to start the game instead of "you have not been here". The highlight
+  thresholds moved from Settings to the System tab, next to the bodies: a button with the current
+  values ("DSS ≥500k · Bio ≥2M") opens a panel without a backdrop, and the map changes behind it.
+- Guide for new explorers (2026-10-19): the game explained, not only the app. A book in the top bar
+  opens the guide (a panel on the right, full screen on a phone): exploring in five steps, then 16
+  topics in five sections (scanning a system, credits, exobiology, travel, where the data comes
+  from), each with a one-line summary, the details, what the app does about it and links to the
+  sources (Elite Dangerous Wiki, Canonn, Spansh, Frontier forums, EDSM, EDDN). Search by words. A
+  "?" next to terms on the tabs opens the guide at its topic: system scan tiles, body details
+  (values, biology, discovery, footfall, codex, community data), sampling, at risk, where to sell,
+  the route goal, the plotted route, the neutron route, codex regions, firsts. Facts were checked on
+  2026-10-19 against the wiki, Canonn data and what the app's payout model was validated on.
+- "Get there" (2026-10-19): the third route goal (the "Goal" switch, formerly "What we look for").
+  Spansh's neutron route to a system: its waypoints are the route stops (jumps to each, where to
+  supercharge the FSD), ticked off by the journal, the next one shown on the System tab. Quick
+  "Where to" buttons with distances: the nearest place to sell, Sol, Colonia, Sag A*, Beagle Point;
+  in "Where to sell" every place has a "Route here" button.
+- "Plotted in game" revised (2026-10-19): at the top only what needs attention: fuel, a dangerous
+  star on the next jump, systems ahead that are likely undiscovered (by name), and systems with your
+  notes; otherwise a single "Nothing special ahead" line. The jump table is collapsed. The line on
+  the System tab shows only with a warning or a likely first discovery.
+- At risk and where to sell (2026-10-19): on the Session tab, how the sum at risk built up system by
+  system since the last sale (a chart), the last sale and the last docking at a station, and "Where
+  to sell": the nearest systems with Universal Cartographics and Vista Genomics stations (Spansh)
+  and the stations you docked at (works offline too). Per system the station buying both kinds of
+  data, otherwise the best one for each; the pad your ship needs is taken into account. Carriers
+  behind a switch (off by default: they move away and the owner may close docking): those closed to
+  the public or not seen for 30 days are never shown, the rest are marked "open to all" / "access
+  unknown" with when they were seen; a hint when a carrier is nearer than every station. A note
+  that the current system's cartographic data cannot be sold in it.
+- Codex route and the codex by colour (2026-10-19): the route form's "What we look for: Credits /
+  Codex". Codex means bodies with biology where species missing from your codex for that region
+  are expected, colours included: in the game each colour of a species is its own entry (the colour
+  comes from the parent star for 64 species, from the body's materials for 26). Genera not confirmed
+  by DSS count at half weight, an entry counts once per route; what you log in the game drops out
+  of the route. The System tab also counts the codex by colour and shows the species' colour.
+- Discovery chance measured (2026-10-19): the model's numbers come from EDDN: the routes players
+  plotted, what Spansh and EDSM knew about those systems at upload time, and the scans on arrival.
+  "Only in routes" far from the bubble is 90 % (was 60 %: such rows appear from the very route
+  uploaded, even your own), the correction near the bubble is stronger and wider (×0.1 within
+  1000 ly, ×0.3 within 3000, ×0.75 within 10,000). Checked on 2.5 h left out of the fit (1907
+  systems): 460 first discoveries expected, 434 seen. The numbers were then refined on all 4 h: a
+  known star is 2 % (was 3 %), the correction for neutron stars and white dwarfs is gone (far from
+  the bubble they are first as often as their neighbours: 97 % of 29). Forecast error (Brier):
+  guesses 0.050 → 0.043 on all 4 h.
+- Notes (2026-10-19): your own text for a system and for a body. Shown and edited on the System tab
+  (a body's in its card, an icon in the list), in the route plotted in the game (a line under the
+  system), on the galaxy map (a ring on your systems, a separate mark on those you have not been
+  to; edited in the pinned card), in History (the text in the row, a "With notes" filter). Stored
+  apart from the journal, never rebuilt.
+- A system you have not been to (2026-10-19): the System tab opens any system by address (from a
+  card on the galaxy map: engineers, players) with Spansh and EDSM data: bodies, value, orbit map;
+  marked "You have not been here". With `--offline`, only those already fetched.
+- Engineers on the galaxy map (2026-10-18): all 38 (25 ship, 13 on-foot), bases checked against
+  EDSM; your progress from the journal (`EngineerProgress`): unlocked with rank, invited, known.
+  Card: base, system, distance from you. The layer is toggled with a button.
+- Players now (2026-10-18): the "Players now (EDDN)" layer on the galaxy map, off by default.
+  Systems where someone was in the last 5 minutes (arrived, scanned, logged to the codex, docked),
+  size by number of players, brightness by freshness; the card says how we know. No names. EDDN
+  gives every player a new ID every 3 minutes (against tracking), so players are counted over the
+  last full 3 minutes (~450–750 of ~6000 on Steam: only those running EDMC and the like are seen),
+  and a player who moved may show as two dots; the game mode (Open/Solo) is not sent through EDDN.
+  Two IDs sending the same events (two programs of one player) count as one. The server listens to
+  EDDN only while the layer is open (the whole stream is ~20 KiB/s); `--offline` turns it off.
+- Codex regions (2026-10-18): the EliteDangerousRegionMap region map (MIT) gives the region of any
+  system by its coordinates, not only after a codex entry (regional species predictions and the
+  "new to the region" mark work right on arrival). On the Galaxy tab: region borders and names on
+  the map, visited ones highlighted, a "Regions" figure, a list of regions with their systems and
+  codex entries; a click shows the region on the map.
+- Long-flight safety (2026-10-17): the route plotted in the game (`NavRoute.json`) on the Route tab
+  and as a strip on the System tab: fuel jump by jump (your own FSD's fuel curve learnt from the
+  journal, ~0.01 % accuracy), where to refuel, stretches with no scoopable star, neutron stars and
+  white dwarfs ahead. Spansh's neutron route to the next stop of our own route (the first one too),
+  with progress from the journal.
+- Discovery chance (2026-10-17): for the systems of the route plotted in the game, Spansh, then
+  EDSM: whether the main star is known, whether there are bodies, or whether the system is seen
+  only in other players' routes; corrections for the bubble and Colonia. After arrival, from your
+  own scan: whether you were first. Our own route's systems come from Spansh and are always known,
+  so they are not checked.
+- Galaxy (2026-10-17): a tab with a 3D map: every visited system (colour by earnings and firsts),
+  the path in arrival order, broken where you did not fly (respawn), deaths and losses, unsold data,
+  our route and the route plotted in the game, landmarks, our own sketch of the galaxy behind. A
+  click pins the system card (2026-10-19): copy the name or open the system in a new tab.
+- Localization (2026-10-17): English by default, Ukrainian, Russian; a switch in the settings.
+  Names from the game stay in English. Russian stays as the third language (decided 2026-10-19).
 
-## Не делаем
-- Звуковые и браузерные оповещения.
-- Предупреждение о входе в новый регион кодекса (решение 2026-10-19).
-- Класс массы (a–h) из названия системы в шансе первооткрытия: по замеру EDDN 2026-10-19 сигнала
-  сверх знаний баз и класса звезды нет.
-- Расстояния до Sol, Колонии, Sag A*, Beagle Point отдельной строкой и своя цель с процентом
-  прогресса (решение 2026-10-19): ни на какое решение в полёте не влияют. Ориентиры с расстоянием
-  есть быстрыми кнопками в цели маршрута «Долететь».
-
-## Сделано
-- «Долететь» (2026-10-19): третья цель маршрута (переключатель «Цель», бывшее «Что ищем»). Маршрут
-  через нейтронные звёзды от Spansh до системы: путевые точки — остановки маршрута (сколько прыжков
-  до каждой, где заряжать FSD), отмечаются сами по журналу, следующая — на вкладке «Система».
-  Быстрые кнопки «Куда» с расстоянием: ближайшее место продажи, Sol, Колония, Sag A*, Beagle Point;
-  в «Где продать» у каждого места кнопка «Маршрут сюда».
-- Ревизия «Маршрута в игре» (2026-10-19): наверху только то, что требует внимания — топливо,
-  опасная звезда следующим прыжком, системы впереди, скорее всего не открытые (с названиями), и
-  системы с вашими заметками; иначе одна строка «впереди ничего особенного». Таблица прыжков
-  свёрнута. Строка на вкладке «Система» — только при предупреждении или вероятном первооткрытии.
-- Под риском и где продать (2026-10-19): на вкладке «Сессия» — как копилась сумма под риском
-  система за системой с последней продажи (график), последняя продажа и последняя стыковка со
-  станцией, и «Где продать»: ближайшие системы со станциями Universal Cartographics и Vista
-  Genomics (Spansh) и станции, где вы стыковались (работает и офлайн). В каждой системе — станция,
-  что покупает оба вида данных, иначе лучшая для каждого; учтена площадка вашего корабля.
-  Кэрриеры — переключателем (по умолчанию выключены: улетают, владелец может закрыть посадку):
-  закрытые для посторонних и не виденные 30 дней не показываем, у остальных — «открыт для
-  всех» / «доступ неизвестен» и когда видели; если кэрриер ближе всех станций, об этом подсказка.
-  Картографию текущей системы в ней не продать — об этом пометка.
-- Маршрут для кодекса и кодекс по цветам (2026-10-19): в форме маршрута «Что ищем: Кредиты /
-  Кодекс». Кодекс — тела с биологией, где ожидаются виды, которых нет в вашем кодексе для этого
-  региона, с учётом цвета: в игре каждый цвет вида — своя запись (цвет от родительской звезды у
-  64 видов, от материала тела у 26). Неподтверждённые DSS роды считаются с половинным весом, одна
-  запись — один раз на маршрут; записанное в игре пропадает из маршрута. Вкладка «Система» тоже
-  считает кодекс по цветам и показывает цвет вида.
-- Шанс первооткрытия по замеру (2026-10-19): числа модели взяты из EDDN — маршруты игроков, что
-  знали о системах Spansh и EDSM в момент загрузки, и сканы при прибытии. «Только в маршрутах»
-  вдали от пузыря — 90 % (было 60 %: такие строки появляются от самого загруженного маршрута, хоть
-  и вашего), поправка на близость к пузырю сильнее и шире (×0,1 до 1000 св. лет, ×0,3 до 3000,
-  ×0,75 до 10 000). Проверено на 2,5 ч, не участвовавших в подборе (1907 систем): ожидалось 460
-  первооткрытий, было 434. После этого числа уточнены по всем 4 ч: известная звезда — 2 % (было
-  3 %), поправка на нейтронные звёзды и белые карлики убрана (вдали от пузыря они первые так же
-  часто, как соседи: 97 % из 29). Ошибка прогноза (Brier): догадки 0,050 → 0,043 на всех 4 ч.
-- Заметки (2026-10-19): свой текст к системе и к телу. Видны и правятся на вкладке «Система» (тело —
-  в его карточке, в списке значок), в маршруте из игры (строка под системой), на карте галактики
-  (кольцо у ваших систем, отдельная метка у тех, где вы не были; правка в закреплённой карточке),
-  в «Истории» (текст в строке, фильтр «С заметками»). Хранятся отдельно от журнала, не пересчитываются.
-- Система, где вы не были (2026-10-19): вкладка «Система» открывает любую систему по адресу (из
-  карточки на карте галактики: инженеры, игроки) по данным Spansh и EDSM — тела, ценность, карта
-  орбит; пометка «Вы здесь не были». С `--offline` — только уже загруженные.
-- Инженеры на карте галактики (2026-10-18): все 38 (25 корабельных, 13 пеших), базы сверены с
-  EDSM; ваш прогресс из журнала (`EngineerProgress`): открыт с рангом, приглашает, известен.
-  Карточка: база, система, расстояние от вас. Слой включается кнопкой.
-- Игроки сейчас (2026-10-18): слой «Игроки сейчас (EDDN)» на карте галактики, выключен по
-  умолчанию. Системы, где за 5 минут кто-то был (прибыл, сканировал, записал в кодекс,
-  пристыковался), размер — число игроков, яркость — свежесть; карточка «как узнали». Без имён.
-  EDDN меняет ID игрока каждые 3 минуты (против слежки), поэтому игроки считаются за последние
-  полные 3 минуты (~450–750 из ~6000 в Steam: видны только те, у кого EDMC и т. п.), а у
-  переместившегося может быть две точки; режим игры (Open/Solo) в EDDN не передаётся. Два ID,
-  шлющие одни и те же события (две программы одного игрока), считаются одним.
-  Сервер слушает EDDN, только пока слой открыт (весь поток ~20 КиБ/с), `--offline` отключает.
-- Регионы кодекса (2026-10-18): карта регионов EliteDangerousRegionMap (MIT) — регион любой
-  системы по координатам, а не только после записи в кодекс (предсказания региональных видов и
-  метка «новый для региона» работают сразу по прибытии). На «Галактике»: границы и названия
-  регионов на карте, посещённые подсвечены, показатель «Регионы», список регионов с системами и
-  записями кодекса, клик показывает регион на карте.
-- Безопасность длинного перелёта (2026-10-17): маршрут из игры (`NavRoute.json`) на вкладке
-  «Маршрут» и полоской на «Системе» — топливо прыжок за прыжком (кривая расхода своего FSD по
-  журналу, точность ~0,01%), где заправиться, перегоны без заправки, нейтронные звёзды и белые
-  карлики впереди. Нейтронный маршрут Spansh до следующей остановки своего маршрута (в том числе
-  до первой) с прогрессом по журналу.
-- Шанс первооткрытия (2026-10-17): для систем маршрута из игры — Spansh, затем EDSM: известна ли
-  главная звезда, есть ли тела, или система видна только по чужим маршрутам; поправки на пузырь и
-  Колонию. После прибытия — по своему скану, были ли вы
-  первым. Системы маршрута приложения берутся из Spansh и всегда известны, их не проверяем.
-- Галактика (2026-10-17): вкладка с 3D-картой — все посещённые системы (цвет — заработок и
-  первенства), путь по порядку прибытия с разрывами там, где не летели (респаун), гибели и
-  потери, непроданное, маршрут приложения и маршрут из игры, ориентиры, своя схема галактики на
-  фоне. Клик закрепляет карточку системы (2026-10-19): скопировать название или открыть систему в
-  новой вкладке.
-- Локализация (2026-10-17): английский по умолчанию, украинский, русский; переключатель в
-  настройках. Названия из игры остаются на английском.
-
-## Открытые вопросы
-- Русский оставлен третьим языком (он был исходным) — убрать, если не нужен.
-- Биосигналы: если после FSS число возможных родов совпало с числом сигналов, помечать роды
-  точными ещё до DSS? Риск: неверный вывод, если в правилах предсказаний не хватает какого-то рода.
-- Отдельный интерфейс для майнеров (просьба игрока из Discord, 2026-10-17): места в галактике,
-  места на планетах, выработка очистителя (refinery) в тоннах в час. Журнал это даёт
-  (`ProspectedAsteroid`, `AsteroidCracked`, `MiningRefined`). Сначала узнать, какими инструментами
-  он пользуется.
+## Open questions
+- Bio signals: when the number of possible genera after FSS equals the number of signals, mark the
+  genera as certain before DSS? Risk: a wrong conclusion if the prediction rules miss some genus.
+- A separate interface for miners (a Discord player's request, 2026-10-17): places in the galaxy,
+  places on planets, refinery output in tonnes per hour. The journal has it (`ProspectedAsteroid`,
+  `AsteroidCracked`, `MiningRefined`). First find out which tools he uses.

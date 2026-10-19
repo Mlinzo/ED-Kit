@@ -10,6 +10,7 @@ import { CopyButton } from '../../components/CopyButton'
 import { Note } from '../../components/Note'
 import type { NoteTarget } from '../../components/notes'
 import { Label } from '../../components/States'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { formatLy, formatTons } from '../../lib/format'
 import { aheadHops, chanceTone, destination, fuelTone, KIND_COLOR, likelyFirsts, notedAhead, percent, sortedWarnings } from './plotted'
@@ -256,9 +257,12 @@ export function PlottedRoute({ view }: { view: NavRouteView }) {
   const ring = tone === 'danger' ? 'ring-rose-500/30' : tone === 'warn' ? 'ring-amber-500/30' : 'ring-zinc-800'
   return (
     <section aria-labelledby="plotted-title" className={`rounded-2xl bg-zinc-900/40 p-5 ring-1 sm:p-6 ${ring}`}>
-      <Label as="h2" id="plotted-title">
-        {t.plotted.title}
-      </Label>
+      <div className="flex items-center gap-1.5">
+        <Label as="h2" id="plotted-title">
+          {t.plotted.title}
+        </Label>
+        <HelpTip topic="scoop" />
+      </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="min-w-0 text-xl font-semibold tracking-tight break-words text-zinc-50 proportional-nums sm:text-2xl">{end.name}</span>
         <CopyButton text={end.name} />

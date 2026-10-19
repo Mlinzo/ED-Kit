@@ -13,7 +13,7 @@ import {
   SearchX,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useView } from '../../api/hooks'
+import { useIngest, useView } from '../../api/hooks'
 import type { SystemRef, SystemView } from '../../api/types'
 import { Credits } from '../../components/Credits'
 import { Note } from '../../components/Note'
@@ -22,7 +22,10 @@ import { Segmented } from '../../components/Segmented'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { useIsDesktop } from '../../hooks/useMediaQuery'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
+import { HighlightControl } from '../../settings/HighlightControl'
+import type { TopicId } from '../../guide/topics'
 import { bodyLabel, sortBodies, type BodySort } from '../../lib/body'
 import { exactCredits, formatCredits } from '../../lib/format'
 import { readStored, writeStored } from '../../lib/storage'
@@ -49,17 +52,20 @@ function Stat({
   short,
   children,
   footer,
+  help,
 }: {
   label: string
   short: string
   children: ReactNode
   footer?: ReactNode
+  help?: TopicId
 }) {
   return (
     <div className="flex min-w-0 flex-col rounded-xl bg-zinc-900/50 px-2 py-2 ring-1 ring-zinc-800 min-[380px]:px-2.5 sm:px-4 sm:py-2.5">
-      <dt className="truncate text-[10px] font-medium tracking-wide text-zinc-500 uppercase sm:text-[11px]">
-        <span className="sm:hidden">{short}</span>
-        <span className="hidden sm:inline">{label}</span>
+      <dt className="flex min-w-0 items-center gap-1 text-[10px] font-medium tracking-wide text-zinc-500 uppercase sm:text-[11px]">
+        <span className="min-w-0 truncate sm:hidden">{short}</span>
+        <span className="hidden min-w-0 truncate sm:inline">{label}</span>
+        {help && <HelpTip topic={help} />}
       </dt>
       <dd className="mt-0.5 flex flex-1 flex-col">
         <span className="text-[15px] font-semibold tracking-tight whitespace-nowrap text-zinc-50 sm:text-xl">
@@ -226,6 +232,7 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
         <Stat
           label={t.system.honk}
           short={t.system.bodies}
+          help="honk"
           footer={
             bodyCount === null ? (
               <p className="hidden truncate text-[11px] leading-tight text-zinc-500 sm:block" title={t.system.honkUnknown}>
@@ -258,13 +265,13 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
             </>
           )}
         </Stat>
-        <Stat label={t.system.fssLong} short={t.system.fss}>
+        <Stat label={t.system.fssLong} short={t.system.fss} help="fss">
           <Credits value={totals.fss} />
         </Stat>
-        <Stat label={t.system.dssLong} short={t.system.dss}>
+        <Stat label={t.system.dssLong} short={t.system.dss} help="dss">
           <Credits value={totals.dss} />
         </Stat>
-        <Stat label={t.system.bioLong} short={t.system.bio}>
+        <Stat label={t.system.bioLong} short={t.system.bio} help="bio">
           {totals.bioMax > 0 ? (
             <BioRange min={totals.bioMin} max={totals.bioMax} />
           ) : (
@@ -328,6 +335,7 @@ export function SystemScreen({
 }) {
   const { data: fresh, error, refetch } = useView('system', wantedAddress ? { address: wantedAddress } : undefined)
   const { data: route } = useView('route')
+  const ingest = useIngest()
   const { data: plotted } = useView('navroute')
   // Stepping through the history: keep the previous system on screen until the next one arrives.
   const [kept, setKept] = useState(fresh)
@@ -436,11 +444,19 @@ export function SystemScreen({
       </div>
     )
   }
-  if (unvisited(data) && data.bodies.length === 0) {
+  if (wantedAddress !== null && unvisited(data) && data.bodies.length === 0) {
     return <NoCommunityData system={data} onOpenSystem={onOpenSystem} />
   }
   if (!data.name && data.bodies.length === 0) {
-    return <EmptyState icon={<Orbit className="size-10" />} title={t.system.noData} hint={t.system.noDataHint} />
+    // Nothing yet: the journal is still being read, or the game was never run here.
+    const reading = ingest !== null && !ingest.backfillDone
+    return (
+      <EmptyState
+        icon={<Orbit className="size-10" />}
+        title={t.system.noData}
+        hint={reading ? t.system.noDataHint : t.system.noDataStart}
+      />
+    )
   }
 
   return (
@@ -469,6 +485,7 @@ export function SystemScreen({
                 <Segmented label={t.system.sortLabel} value={sort} options={SORT_OPTIONS} onChange={changeSort} />
               )}
               <Segmented label={t.map.viewLabel} value={view} options={VIEW_OPTIONS} onChange={changeView} />
+              <HighlightControl />
             </div>
           </div>
           {view === 'map' ? (

@@ -4,6 +4,7 @@ import { useView } from '../../api/hooks'
 import { Credits } from '../../components/Credits'
 import { Label, ViewFallback } from '../../components/States'
 import { useNow } from '../../hooks/useNow'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format'
 import { Growth } from './Growth'
@@ -90,6 +91,7 @@ export function SessionScreen({ onRouteTo }: { onRouteTo?: (system: string) => v
         >
           {risky ? <ShieldAlert className="size-4" aria-hidden /> : <ShieldCheck className="size-4" aria-hidden />}
           {t.session.atRisk}
+          <HelpTip topic="death" />
         </h1>
         <div
           className={`mt-3 text-7xl leading-none font-semibold tracking-tighter sm:text-8xl ${

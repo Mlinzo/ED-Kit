@@ -1,10 +1,13 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { HelpTip } from '../../guide/HelpTip'
+import type { TopicId } from '../../guide/topics'
 
 export function Card({
   id,
   title,
   icon: Icon,
+  help,
   aside,
   className = '',
   children,
@@ -12,6 +15,7 @@ export function Card({
   id: string
   title: string
   icon: LucideIcon
+  help?: TopicId
   aside?: ReactNode
   className?: string
   children: ReactNode
@@ -22,6 +26,7 @@ export function Card({
         <h2 id={id} className="flex items-center gap-2 text-xs font-medium tracking-wide text-zinc-400 uppercase">
           <Icon className="size-4 text-zinc-500" aria-hidden />
           {title}
+          {help && <HelpTip topic={help} />}
         </h2>
         {aside}
       </div>

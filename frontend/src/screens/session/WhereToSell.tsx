@@ -5,6 +5,7 @@ import type { SellCarrierHint, SellPlaceView, SellStationView, SellView } from '
 import { CopyButton } from '../../components/CopyButton'
 import { CommunityGlyph } from '../../components/SourceBadge'
 import { Label } from '../../components/States'
+import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { formatLs, formatLy, formatRelative } from '../../lib/format'
 import { readStored, writeStored } from '../../lib/storage'
@@ -208,10 +209,13 @@ export function WhereToSell({
   return (
     <section aria-labelledby="sell-title" className="rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <Label as="h2" id="sell-title" className="flex items-center gap-2">
-          <Store className="size-4" aria-hidden />
-          {s.title}
-        </Label>
+        <div className="flex items-center gap-1.5">
+          <Label as="h2" id="sell-title" className="flex items-center gap-2">
+            <Store className="size-4" aria-hidden />
+            {s.title}
+          </Label>
+          <HelpTip topic="sell" />
+        </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {sell.ship && (
             <span className="text-xs text-zinc-500">

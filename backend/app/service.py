@@ -9,12 +9,19 @@ import logging
 import threading
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 from queue import Empty, SimpleQueue
 from typing import Any
 
-from app import db, enrich, game, projector
+from app import db, enrich, game, projector, usersettings
 from app.config import Settings
-from app.journal import JournalDirectory, JournalFile, JournalLine, read_new_lines
+from app.journal import (
+    JournalDirectory,
+    JournalFile,
+    JournalLine,
+    count_journals,
+    read_new_lines,
+)
 from app.navroute import NavRouteReader
 from app.projector import Projector
 from app.schemas import IngestState, LiveStatus
@@ -81,6 +88,8 @@ class IngestService(threading.Thread):
         self.bus = bus
         self.seq = 0
         self.live = LiveStatus()
+        self.journal_dir = settings.journal_dir  # the folder read now; the app can change it
+        self._dir_requests: SimpleQueue[Path] = SimpleQueue()  # from the API, for the thread
         self.ingest = IngestState(
             backfill_done=False,
             files_total=0,
@@ -88,6 +97,9 @@ class IngestService(threading.Thread):
             events=0,
             journal_dir=str(settings.journal_dir),
             journal_dir_found=settings.journal_dir.is_dir(),
+            journal_files=count_journals(settings.journal_dir),
+            journal_dir_fixed=settings.journal_dir_fixed,
+            journal_dir_default=str(settings.journal_dir),
         )
         self.enricher = enrich.Enricher() if settings.online else None
         self._enrich_checked: int | None = None  # last system looked up
@@ -106,6 +118,18 @@ class IngestService(threading.Thread):
     def stop(self) -> None:
         self._halt.set()
 
+    def set_journal_dir(self, path: Path) -> None:
+        """Reads the journal from another folder (from the API; the ingest thread switches)."""
+        self._show_dir(path)
+        self._dir_requests.put(path)
+        self.bus.publish("ingest", self.ingest)
+
+    def _show_dir(self, path: Path) -> None:
+        self.journal_dir = path
+        self.ingest.journal_dir = str(path)
+        self.ingest.journal_dir_found = path.is_dir()
+        self.ingest.journal_files = count_journals(path)
+
     # ------------------------------------------------------------------ thread
 
     def run(self) -> None:
@@ -118,6 +142,11 @@ class IngestService(threading.Thread):
     def _run(self) -> None:
         conn = db.connect(self.settings.db_path)
         db.init_schema(conn)
+        chosen = None if self.settings.journal_dir_fixed else usersettings.load_journal_dir(conn)
+        if chosen is not None:
+            self._show_dir(chosen)
+            self.navroute = NavRouteReader(chosen / "NavRoute.json")
+        log.info("journal dir: %s", self.journal_dir)
         if self._rebuild or db.get_meta(conn, "projector_version") != str(projector.VERSION):
             self._replay(conn)
         self.projector = Projector(conn, position=self._position_for)
@@ -127,8 +156,8 @@ class IngestService(threading.Thread):
         threading.Thread(target=self._watch_game, name="game", daemon=True).start()
         self.ready.set()
 
-        directory = JournalDirectory(self.settings.journal_dir, conn)
-        status_reader = StatusReader(self.settings.journal_dir / "Status.json")
+        directory = JournalDirectory(self.journal_dir, conn)
+        status_reader = StatusReader(self.journal_dir / "Status.json")
 
         files = directory.discover()
         self._backfill(conn, files)
@@ -137,13 +166,22 @@ class IngestService(threading.Thread):
         if self.navroute.poll():
             self._invalidate({"navroute", "galaxy"})
         while not self._halt.is_set():
+            switched = self._switch_dir(conn)
+            if switched:
+                directory, status_reader = switched
+                files = directory.discover()
+                self._backfill(conn, files)
+                last_rescan = time.monotonic()
             self._poll_status(status_reader)
             if self.navroute.poll():
                 self._invalidate({"navroute", "galaxy"})
             if time.monotonic() - last_rescan >= self.settings.rescan_interval:
                 files = directory.discover()
                 last_rescan = time.monotonic()
-                self.ingest.journal_dir_found = self.settings.journal_dir.is_dir()
+                found = (self.journal_dir.is_dir(), len(files))
+                if found != (self.ingest.journal_dir_found, self.ingest.journal_files):
+                    self.ingest.journal_dir_found, self.ingest.journal_files = found
+                    self.bus.publish("ingest", self.ingest)
                 # Drain older files first (a new session file may have just appeared).
                 for file in files[:-1]:
                     self._ingest_file(conn, file)
@@ -152,6 +190,22 @@ class IngestService(threading.Thread):
             self._enrich(conn)
             self._halt.wait(self.settings.poll_interval)
         conn.close()
+
+    def _switch_dir(self, conn: Any) -> tuple[JournalDirectory, StatusReader] | None:
+        """Readers for the folder last asked for, if the API asked for one."""
+        path = None
+        with contextlib.suppress(Empty):
+            while True:
+                path = self._dir_requests.get_nowait()
+        if path is None:
+            return None
+        log.info("journal dir: %s", path)
+        self._show_dir(path)
+        self.navroute = NavRouteReader(path / "NavRoute.json")
+        self.live = LiveStatus()
+        self.bus.publish("status", self.live)
+        self._invalidate({"navroute", "galaxy", "surface"})
+        return JournalDirectory(path, conn), StatusReader(path / "Status.json")
 
     # ------------------------------------------------------------------ ingest
 

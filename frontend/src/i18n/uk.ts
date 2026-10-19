@@ -1,6 +1,7 @@
 // Ukrainian UI strings. The shape follows ru.ts (see index.ts); game names (systems, bodies,
 // species, planet classes) stay in English as the backend sends them.
 import type { Strings } from '.'
+import { guideUk } from './guide.uk'
 
 const pluralRules = new Intl.PluralRules('uk')
 
@@ -55,7 +56,10 @@ export const uk: Strings = {
   ingest: {
     reading: 'Читання журналу',
     files: (done: number, total: number) => `${done} / ${total} ${plural(total, ['файл', 'файли', 'файлів'])}`,
-    dirMissing: 'Папку журналу не знайдено:',
+    dirMissing: 'Папку журналу не знайдено',
+    noJournals: 'У папці журналу ще немає файлів',
+    startGame: 'Запустіть Elite Dangerous — журнал підхопиться сам — або вкажіть іншу папку.',
+    choose: 'Вказати папку',
   },
 
   common: {
@@ -97,6 +101,7 @@ export const uk: Strings = {
     },
     noData: 'Немає даних про систему',
     noDataHint: 'Дані з’являться після стрибка або коли журнал буде прочитано.',
+    noDataStart: 'Запустіть Elite Dangerous: система, де ви перебуваєте, з’явиться тут, щойно ви ввійдете в гру.',
     bodies: 'Тіла',
     honk: 'Знайдено тіл',
     honkUnknown: 'Зробіть FSS-сканування (honk), щоб дізнатися кількість тіл',
@@ -987,6 +992,23 @@ export const uk: Strings = {
     title: 'Налаштування',
     language: 'Мова',
     languageHint: 'Сторінка перезавантажиться вибраною мовою.',
+    journal: {
+      title: 'Папка журналу',
+      hint: 'Сюди Elite Dangerous пише журнал польотів, звідси його читає застосунок.',
+      files: (n: number) => `${n} ${plural(n, ['файл журналу', 'файли журналу', 'файлів журналу'])}`,
+      missing: 'Папку не знайдено',
+      empty: 'Файлів журналу ще немає: запустіть гру',
+      other: 'Інша папка',
+      apply: 'Читати звідси',
+      applying: 'Перевіряю…',
+      notFound: 'Такої папки немає: перевірте шлях.',
+      failed: 'Не вдалося змінити папку',
+      copyHint: 'У Провіднику відкрийте папку, клацніть адресний рядок і скопіюйте шлях.',
+      useDefault: 'Повернути стандартну папку',
+      fixed: 'Папку задано під час запуску (--journal-dir або EDEK_JOURNAL_DIR) — змінюйте її там.',
+      demo: 'У демо-режимі папку не змінити.',
+    },
+    highlightOpen: 'Пороги підсвічування',
     highlight: 'Підсвічування тіл',
     intro:
       'Тіла нижче порогів лишаються на карті, але не підсвічуються. Цінність — оцінка виплати в кредитах.',
@@ -1000,12 +1022,18 @@ export const uk: Strings = {
     thousands: 'тис.',
     millions: 'млн',
     off: 'усі',
-    save: 'Зберегти',
-    cancel: 'Скасувати',
-    saving: 'Зберігаю…',
     error: 'Не вдалося зберегти',
     close: 'Закрити',
     support: 'Подобається ED Explorer Kit? Він безкоштовний — можна підтримати розробку.',
     supportButton: 'Підтримати на Patreon',
   },
+
+  welcome: {
+    title: 'Ласкаво просимо до ED Explorer Kit',
+    text: 'Застосунок читає журнал Elite Dangerous на цьому комп’ютері й нікуди його не надсилає. Грайте як зазвичай: вкладки заповнюються самі, поки ви стрибаєте, скануєте й збираєте зразки.',
+    guide: 'П’ять кроків для новачка',
+    close: 'Зрозуміло',
+  },
+
+  guide: guideUk,
 }

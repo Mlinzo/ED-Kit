@@ -35,6 +35,17 @@ body {
   }
 }
 
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Visible keyboard focus everywhere, invisible for mouse/touch. */
 @utility focus-ring {
   outline: 2px solid transparent;

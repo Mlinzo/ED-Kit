@@ -114,6 +114,15 @@ def read_new_lines(file: JournalFile) -> ReadResult:
     return ReadResult(lines, file.byte_offset + end + 1, line_no)
 
 
+def count_journals(journal_dir: Path) -> int:
+    """Journal files in a folder (0 when it is missing)."""
+    try:
+        with os.scandir(journal_dir) as entries:
+            return sum(1 for entry in entries if is_journal_name(entry.name))
+    except OSError:
+        return 0
+
+
 class JournalDirectory:
     """Registers journal files in SQLite and returns them in chronological order."""
 
@@ -122,11 +131,17 @@ class JournalDirectory:
         self.conn = conn
 
     def discover(self) -> list[JournalFile]:
+        """The journal files in the folder. Files read before from another folder (the folder
+        was changed) or since deleted are left out: their events stay in the database."""
+        present: set[str] = set()
         if self.dir.is_dir():
             known = {row[0] for row in self.conn.execute("SELECT name FROM journal_files")}
             with os.scandir(self.dir) as entries:
                 for entry in entries:
-                    if entry.name in known or not is_journal_name(entry.name):
+                    if not is_journal_name(entry.name):
+                        continue
+                    if entry.name in known:
+                        present.add(entry.name)
                         continue
                     header = read_header(Path(entry.path))
                     if header is None:
@@ -141,6 +156,7 @@ class JournalDirectory:
                             header.get("gameversion"),
                         ),
                     )
+                    present.add(entry.name)
         rows = self.conn.execute(
             "SELECT id, name, header_ts, gameversion, byte_offset, line_no FROM journal_files"
         ).fetchall()
@@ -155,6 +171,7 @@ class JournalDirectory:
                 line_no=r["line_no"],
             )
             for r in rows
+            if r["name"] in present
         ]
         # Filenames use local time and changed format in 2022: order by header time.
         files.sort(key=lambda f: (f.header_ts or "", f.name))

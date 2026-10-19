@@ -42,12 +42,13 @@ from app import (
     usersettings,
     views,
 )
-from app.config import Settings
+from app.config import Settings, parse_dir
 from app.schemas import (
     GalaxyView,
     HighlightSettings,
     HistoryView,
     IngestState,
+    JournalDirRequest,
     LiveStatus,
     LiveView,
     NavRouteView,
@@ -354,6 +355,23 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def ingest() -> IngestState:
         return service.ingest
 
+    @app.put("/api/journal-dir", response_model=IngestState, response_model_by_alias=True)
+    def put_journal_dir(body: JournalDirRequest) -> IngestState:
+        """Reads the journal from another folder; no path: the default one. 409 when the
+        folder was set at launch, 422 when it does not exist."""
+        if settings.journal_dir_fixed:
+            raise HTTPException(409, "fixed")
+        chosen = parse_dir(body.path) if body.path and body.path.strip() else None
+        if chosen is not None and not chosen.is_dir():
+            raise HTTPException(422, "not_found")
+        conn = db.connect(settings.db_path)
+        try:
+            usersettings.save_journal_dir(conn, chosen)
+        finally:
+            conn.close()
+        service.set_journal_dir(chosen or settings.journal_dir)
+        return service.ingest
+
     @app.get("/api/stream")
     async def stream() -> StreamingResponse:
         queue = bus.subscribe()
@@ -463,6 +481,7 @@ def run() -> None:
     settings = Settings(port=args.port, lan=args.lan, bind=args.host, online=not args.offline)
     if args.journal_dir:
         settings.journal_dir = Path(args.journal_dir)
+        settings.journal_dir_fixed = True
     if args.data_dir:
         settings.data_dir = Path(args.data_dir)
 
@@ -473,7 +492,6 @@ def run() -> None:
         webbrowser.open(url)
         return
 
-    log.info("journal dir: %s", settings.journal_dir)
     log.info("database:    %s", settings.db_path)
     log.info("open:        %s", url)
     log.info("community:   %s", "Spansh/EDSM lookups on" if settings.online else "offline")

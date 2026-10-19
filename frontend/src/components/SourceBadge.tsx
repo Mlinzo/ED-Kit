@@ -4,6 +4,7 @@
 
 import { Database, ExternalLink, ScanLine } from 'lucide-react'
 import type { BodyView, DataSource } from '../api/types'
+import { HelpTip } from '../guide/HelpTip'
 import { t } from '../i18n'
 import { communityText, isCommunity, sourceDate, sourceName, type SourceMarker } from './source'
 
@@ -45,6 +46,7 @@ export function CommunityNotice({ body }: { body: BodyView }) {
         <p className="text-violet-100">{communityText(body.source, body.sourceAt)}</p>
         <p className="mt-0.5 text-xs text-zinc-400">{t.source.scanHint}</p>
       </div>
+      <HelpTip topic="community" className="mt-0.5 ml-auto" />
     </div>
   )
 }
