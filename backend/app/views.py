@@ -7,7 +7,7 @@ import sqlite3
 from collections import defaultdict
 from collections.abc import Iterable
 
-from app import exobio, usersettings
+from app import exobio, notes, usersettings
 from app.facts import body_id64, facts_from_json, load_community_system, load_system
 from app.models import BodyFacts, SystemFacts
 from app.schemas import (
@@ -575,8 +575,9 @@ def system_view(
         lookup = _lookup(conn, address, online)
         system = load_community_system(conn, address)
         if system is None:
+            note = notes.of_system(conn, address).get(notes.SYSTEM)
             return _empty_system(current).model_copy(
-                update={"address": str(address), "lookup": lookup}
+                update={"address": str(address), "lookup": lookup, "note": note}
             )
         if system.bodies:
             lookup = None  # bodies from an earlier lookup stand, whatever the last one said
@@ -599,8 +600,12 @@ def system_view(
     odyssey = bool(state["odyssey"]) if state else True
     codex = codex_index(conn, fid)
     highlight = usersettings.load(conn)
+    noted = notes.of_system(conn, system.address)
     bodies = [
-        _body_view(conn, system, f, fid, odyssey, codex, highlight) for f in system.bodies.values()
+        _body_view(conn, system, f, fid, odyssey, codex, highlight).model_copy(
+            update={"note": noted.get(f.body_id)}
+        )
+        for f in system.bodies.values()
     ]
     bodies.sort(key=lambda b: (-b.total_value, b.distance_ls or 0.0))
     return SystemView(
@@ -611,6 +616,7 @@ def system_view(
         scanned_count=sum(1 for b in bodies if b.source == "journal"),
         all_bodies_found=bool(mine and mine["all_found"]),
         lookup=lookup,
+        note=noted.get(notes.SYSTEM),
         is_current=is_current,
         current_system=current,
         current_body_id=state["body_id"] if is_current else None,

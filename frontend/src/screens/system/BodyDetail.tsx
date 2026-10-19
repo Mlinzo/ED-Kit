@@ -4,6 +4,8 @@ import type { BodyView } from '../../api/types'
 import { ReasonChips, type RouteTarget } from '../../components/BodyBadges'
 import { CodexSummary } from '../../components/CodexBadge'
 import { CreditRange, Credits } from '../../components/Credits'
+import { Note } from '../../components/Note'
+import type { NoteTarget } from '../../components/notes'
 import { communityText, isCommunity } from '../../components/source'
 import { CommunityGlyph, CommunityNotice, SourceList, SourceTag } from '../../components/SourceBadge'
 import { SpeciesList } from '../../components/SpeciesList'
@@ -211,12 +213,15 @@ export function BodyDetail({
   headingId,
   isCurrent,
   routeTarget = null,
+  noteTarget = null,
 }: {
   body: BodyView
   headingId: string
   isCurrent: boolean
   /** The stored route counts on this body. */
   routeTarget?: RouteTarget | null
+  /** Where your note on this body goes (null: no notes, e.g. no system address). */
+  noteTarget?: NoteTarget | null
 }) {
   const hasBio = body.signals.bio > 0 || body.species.length > 0
   const isPlanet = body.kind === 'planet'
@@ -276,6 +281,11 @@ export function BodyDetail({
         {isCommunity(body.source) && (
           <div className="pt-1">
             <CommunityNotice body={body} />
+          </div>
+        )}
+        {noteTarget && (
+          <div className="pt-1">
+            <Note key={body.id64} note={body.note} target={noteTarget} />
           </div>
         )}
       </header>

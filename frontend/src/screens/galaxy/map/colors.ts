@@ -25,3 +25,5 @@ export const REGION_SELECTED = '#7dd3fc'
 export const LIVE_COLOR = '#c4b5fd'
 /** Engineers: orange rings, filled once unlocked. */
 export const ENGINEER_COLOR = '#fb923c'
+/** Your notes: a pale yellow ring (a sticky note), apart from the amber of your firsts. */
+export const NOTE_COLOR = '#fde68a'

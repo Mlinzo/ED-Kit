@@ -3,7 +3,7 @@
 // plus a short journal backfill so the progress bar shows.
 
 import { createLiveTransport, type StreamHandlers, type Transport } from '../api/transport'
-import type { IngestState, LiveStatus, SystemView, Topic } from '../api/types'
+import type { IngestState, LiveStatus, NoteRequest, SystemView, Topic } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
   buildSession,
@@ -14,6 +14,7 @@ import {
   SURFACE_BODY_NAME,
 } from './fixtures'
 import { buildHistory, buildPastSystem, withHistory } from './history'
+import { createMockNotes } from './notes'
 import { createMockRoute } from './route'
 import { buildGalaxy, buildLive, buildNavRoute } from './travel'
 import { buildStats } from './stats'
@@ -97,6 +98,7 @@ export function createMockTransport(): Transport {
   const elapsed = () => (performance.now() - startedAt) / 1_000
   const live = createLiveTransport()
   const players = buildLive()
+  const notes = createMockNotes()
 
   let ingest: IngestState = {
     backfillDone: false,
@@ -136,11 +138,16 @@ export function createMockTransport(): Transport {
       await delay(60 + Math.random() * 80)
       const handler = routes[url.pathname]
       if (!handler) throw new Error(`HTTP 404: ${path}`)
-      return structuredClone(handler(url.searchParams)) as T
+      return notes.apply(url.pathname, structuredClone(handler(url.searchParams))) as T
     },
 
     async send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T | null> {
       await delay(80)
+      if (method === 'PUT' && path === '/api/notes') {
+        notes.put(body as NoteRequest)
+        notify?.(['system', 'navroute', 'history', 'galaxy'])
+        return null
+      }
       return structuredClone(route.send(method, path, body) ?? null) as T | null
     },
 

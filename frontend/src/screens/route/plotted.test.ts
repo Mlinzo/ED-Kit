@@ -20,6 +20,7 @@ function hop(index: number, status: NavHopView['status']): NavHopView {
     short: false,
     discovery: null,
     discoveredByYou: null,
+    note: null,
   }
 }
 

@@ -78,6 +78,8 @@ export function buildHistory(current: SystemView): HistoryView {
         unsoldValue: 64_812_300,
         lostValue: 0,
         notable: ['ww', 'terraformable'],
+        note: null,
+        bodyNotes: 0,
       })
       continue
     }
@@ -105,6 +107,8 @@ export function buildHistory(current: SystemView): HistoryView {
       unsoldValue: i < 26 ? 1_200 : 0,
       lostValue: 0,
       notable: STARS[starIndex][0] === 'N' ? ['neutron'] : STARS[starIndex][0] === 'DA' ? ['white_dwarf'] : [],
+      note: null,
+      bodyNotes: 0,
       ...STOPS[i],
     })
   }

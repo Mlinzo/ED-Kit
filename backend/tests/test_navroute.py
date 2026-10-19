@@ -352,23 +352,41 @@ def test_discovery_chances_ahead(conn: sqlite3.Connection, proj: Projector) -> N
     chances = [h.discovery.probability if h.discovery else None for h in view.hops]
     states = [h.discovery.state if h.discovery else None for h in view.hops]
     assert states == [None, "scanned", "seen", "pending", "unknown"]
-    assert chances == [None, 0.02, 0.45, None, 0.9]  # 0.6 x 0.75 for a white dwarf
-    assert view.undiscovered_expected == pytest.approx(1.37)
+    seen_dwarf = round(discovery.P_SEEN * discovery.POPULAR_STAR, 2)  # a white dwarf
+    assert chances == [None, discovery.P_SCANNED, seen_dwarf, None, discovery.P_UNKNOWN]
+    expected = discovery.P_SCANNED + seen_dwarf + discovery.P_UNKNOWN
+    assert view.undiscovered_expected == pytest.approx(expected)
     # Asked about everything ahead (the cache decides what is fetched), not Hop 0 (scanned).
     assert [a for a, _ in checker.asked] == [101, 102, 103, 104]
 
 
 def test_chance_rules() -> None:
-    near_sol = (10.0, 0.0, 10.0)
-    assert discovery.chance(None, None, FAR, "scoopable").state == "pending"
-    assert discovery.chance(0, 2, FAR, "scoopable").probability == 0.02
-    assert discovery.chance(2, None, FAR, "scoopable").probability == 0.05
-    assert discovery.chance(1, None, FAR, "scoopable").probability == 0.6
-    assert discovery.chance(0, 1, FAR, "scoopable").probability == 0.6
-    assert discovery.chance(0, 0, FAR, "scoopable").probability == 0.9
-    busy = discovery.chance(0, 0, near_sol, "scoopable")
-    assert busy.probability == 0.45 and "busy_area" in busy.reasons
-    assert discovery.chance(None, 0, FAR, "neutron").probability == pytest.approx(0.68)
+    d = discovery
+    assert d.chance(None, None, FAR, "scoopable").state == "pending"
+    assert d.chance(0, 2, FAR, "scoopable").probability == d.P_SCANNED
+    assert d.chance(2, None, FAR, "scoopable").probability == d.P_BODIES
+    assert d.chance(1, None, FAR, "scoopable").probability == d.P_SEEN
+    assert d.chance(0, 1, FAR, "scoopable").probability == d.P_SEEN
+    far = d.chance(0, 0, FAR, "scoopable")
+    assert far.probability == d.P_UNKNOWN and far.reasons == ("not_in_databases",)
+    assert d.chance(None, 0, FAR, "neutron").probability == round(d.P_UNKNOWN * d.POPULAR_STAR, 2)
+
+
+@pytest.mark.parametrize(
+    ("position", "factor", "reason"),
+    [
+        ((10.0, 0.0, 10.0), 0.1, "busy_area"),  # the bubble
+        ((0.0, 0.0, 2000.0), 0.3, "busy_area"),  # just outside it
+        ((0.0, 0.0, 5000.0), 0.8, "inner_area"),
+        ((-9530.5, -910.0, 19900.0), 0.5, "busy_area"),  # Colonia
+        (FAR, 1.0, None),
+        (None, 1.0, None),  # position unknown
+    ],
+)
+def test_chance_by_area(position: tuple | None, factor: float, reason: str | None) -> None:
+    c = discovery.chance(0, 0, position, "scoopable")
+    assert c.probability == round(discovery.P_UNKNOWN * factor, 2)
+    assert c.reasons == ("not_in_databases", reason) if reason else ("not_in_databases",)
 
 
 def test_checker_asks_spansh_then_edsm(tmp_path: Path) -> None:

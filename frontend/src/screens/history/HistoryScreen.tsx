@@ -1,10 +1,11 @@
 // Visited systems, newest first: where you have been and what you did there.
 // A row opens the system on the System tab (history mode).
-import { CircleCheck, Flag, Footprints, History, Leaf, Map as MapIcon, Search, X } from 'lucide-react'
+import { CircleCheck, Flag, Footprints, History, Leaf, Map as MapIcon, Search, StickyNote, X } from 'lucide-react'
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import type { BodyVisual, HistoryEntry, HistoryStar } from '../../api/types'
 import { Credits } from '../../components/Credits'
+import { NoteText } from '../../components/Note'
 import { EmptyState, ViewFallback } from '../../components/States'
 import { t } from '../../i18n'
 import { exactCredits } from '../../lib/format'
@@ -180,7 +181,8 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
           {current && (
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-300">
               <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
-              {t.history.youAreHere}
+              {/* Phone: the dot alone, so the system's name keeps its room. */}
+              <span className="sr-only sm:not-sr-only">{t.history.youAreHere}</span>
             </span>
           )}
           {e.notable.length > 0 && (
@@ -206,6 +208,17 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
           <Firsts e={e} />
         </span>
         <Value e={e} dim={transit} />
+        {(e.note || e.bodyNotes > 0) && (
+          <span className="col-span-full col-start-2 mt-1 flex min-w-0 flex-col gap-0.5">
+            {e.note && <NoteText text={e.note} clamp className="text-xs" />}
+            {e.bodyNotes > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-amber-200/70">
+                <StickyNote className="size-3 shrink-0" aria-hidden />
+                {t.notes.bodies(e.bodyNotes)}
+              </span>
+            )}
+          </span>
+        )}
       </button>
     </li>
   )

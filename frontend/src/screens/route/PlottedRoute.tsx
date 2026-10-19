@@ -1,10 +1,12 @@
 // The route plotted in the game (NavRoute.json), on the Route tab: whether the fuel lasts and
 // where to scoop, the neutron stars and white dwarfs ahead, and how likely each system ahead is
 // still undiscovered (Spansh / EDSM). Updates by itself as you jump.
-import { Check, ChevronDown, ChevronUp, CircleAlert, Fuel, LoaderCircle, MapPin, Navigation, Sparkles, TriangleAlert } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, CircleAlert, Fuel, LoaderCircle, MapPin, Navigation, Sparkles, StickyNote, TriangleAlert } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { NavHopView, NavRouteView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
+import { Note } from '../../components/Note'
+import type { NoteTarget } from '../../components/notes'
 import { Label } from '../../components/States'
 import { t } from '../../i18n'
 import { formatLy, formatNumber, formatTons } from '../../lib/format'
@@ -210,20 +212,38 @@ function ChanceCell({ hop }: { hop: NavHopView }) {
   )
 }
 
+function noteTarget(hop: NavHopView): NoteTarget {
+  return { systemAddress: hop.address, bodyId: null, systemName: hop.name, x: hop.x, y: hop.y, z: hop.z }
+}
+
 function HopRow({ hop, capacity, tightBelow }: { hop: NavHopView; capacity: number | null; tightBelow: number }) {
   const here = hop.status === 'here'
   const passed = hop.status === 'passed'
   const tight = hop.fuelAfter !== null && hop.fuelAfter < tightBelow
+  // Adding a note: the editor opens under the row.
+  const [adding, setAdding] = useState(false)
   return (
     <li className={`grid ${GRID} items-center gap-x-3 px-4 py-2 text-sm ${here ? 'bg-emerald-500/[0.06]' : ''} ${passed ? 'text-zinc-500' : 'text-zinc-300'}`}>
       <span className="text-zinc-500 tabular-nums">
         {here ? <MapPin className="size-4 text-emerald-300" aria-label={t.plotted.here} /> : hop.index}
       </span>
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className={`truncate proportional-nums ${passed ? '' : 'font-medium text-zinc-100'}`} title={hop.name}>
+      {/* Phone: the name gets the whole line and its buttons go under it, rather than squeezing it to a few letters. */}
+      <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 sm:flex-nowrap">
+        <span className={`min-w-0 basis-full break-words proportional-nums sm:basis-auto sm:truncate ${passed ? '' : 'font-medium text-zinc-100'}`} title={hop.name}>
           {hop.name}
         </span>
         {!passed && <CopyButton text={hop.name} />}
+        {!hop.note && !adding && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            title={t.notes.addLong}
+            aria-label={`${t.notes.addLong}: ${hop.name}`}
+            className="focus-ring inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-800 hover:text-zinc-200"
+          >
+            <StickyNote className="size-3.5" aria-hidden />
+          </button>
+        )}
         {here && <span className="shrink-0 text-xs text-emerald-300">{t.plotted.here}</span>}
         {passed && <span className="shrink-0 text-xs text-zinc-600">{t.plotted.passed}</span>}
       </span>
@@ -231,6 +251,11 @@ function HopRow({ hop, capacity, tightBelow }: { hop: NavHopView; capacity: numb
       <span className="hidden text-right text-zinc-400 tabular-nums md:block">{hop.index > 0 ? formatLy(hop.distanceLy) : ''}</span>
       <FuelCell hop={hop} capacity={capacity} tight={tight} />
       <ChanceCell hop={hop} />
+      {(hop.note || adding) && (
+        <div className="col-span-full mt-1.5 pl-[calc(1.75rem+0.75rem)]">
+          <Note key={hop.address} note={hop.note} target={noteTarget(hop)} compact onClose={adding ? () => setAdding(false) : undefined} />
+        </div>
+      )}
     </li>
   )
 }

@@ -112,6 +112,7 @@ function body(bodyId: number, o: BodyOpts = {}): BodyView {
       composition: {},
       rings: o.rings ? [{ name: 'A Ring', ringClass: 'eRingClass_Icy', innerM: radiusKm * 1_400, outerM: radiusKm * 2_600 }] : [],
     },
+    note: null,
   }
 }
 

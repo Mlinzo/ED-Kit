@@ -34,6 +34,7 @@ from app import (
     history,
     navroute,
     neutron,
+    notes,
     regionmap,
     routes,
     stats,
@@ -50,6 +51,7 @@ from app.schemas import (
     LiveView,
     NavRouteView,
     NeutronRequest,
+    NoteRequest,
     RoutePoint,
     RouteRequest,
     RouteStopUpdate,
@@ -291,6 +293,30 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         if not found:
             raise HTTPException(404, "no such stop")
         service.invalidate({"route"})
+
+    @app.put("/api/notes", status_code=204)
+    def put_note(body: NoteRequest) -> None:
+        """Your note on a system or one of its bodies; empty text deletes it."""
+        try:
+            address = int(body.system_address)
+        except ValueError as exc:
+            raise HTTPException(422, "systemAddress is not a number") from exc
+        xyz = (body.x, body.y, body.z)
+        pos = None if None in xyz else (float(body.x or 0), float(body.y or 0), float(body.z or 0))
+        conn = db.connect(settings.db_path)
+        try:
+            notes.save(
+                conn,
+                address,
+                notes.SYSTEM if body.body_id is None else body.body_id,
+                body.text,
+                system_name=body.system_name,
+                body_name=body.body_name,
+                pos=pos,
+            )
+        finally:
+            conn.close()
+        service.invalidate({"system", "navroute", "history", "galaxy"})
 
     @app.get("/api/settings", response_model=HighlightSettings, response_model_by_alias=True)
     def get_settings() -> HighlightSettings:

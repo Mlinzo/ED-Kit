@@ -16,6 +16,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useView } from '../../api/hooks'
 import type { SystemRef, SystemView } from '../../api/types'
 import { Credits } from '../../components/Credits'
+import { Note } from '../../components/Note'
+import type { NoteTarget } from '../../components/notes'
 import { Segmented } from '../../components/Segmented'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
@@ -85,6 +87,18 @@ function BioRange({ min, max }: { min: number; max: number }) {
 
 /** Opens a system from the history; null opens the current system. */
 type OpenSystem = (address: string | null) => void
+
+/** Your note on the system (bodyId null) or on one of its bodies. */
+function systemNoteTarget(system: SystemView, body?: { bodyId: number; name: string }): NoteTarget {
+  const [x, y, z] = system.starPos ?? []
+  return {
+    systemAddress: system.address ?? '',
+    bodyId: body?.bodyId ?? null,
+    systemName: system.name,
+    bodyName: body?.name ?? null,
+    ...(x !== undefined ? { x, y, z } : {}),
+  }
+}
 
 /** A system you have never been to (opened from the galaxy map): everything on it is from Spansh / EDSM. */
 const unvisited = (system: SystemView) => !system.isCurrent && system.visits === 0
@@ -203,6 +217,9 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
         >
           {system.name ?? t.common.unknown}
         </h1>
+        {system.address && (
+          <Note key={system.address} note={system.note} target={systemNoteTarget(system)} className="mt-2 max-w-xl" />
+        )}
       </div>
       {/* Phone: one row, the bio range gets the widest tile (and wraps rather than clips at 360px). */}
       <dl className="grid grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.75fr)] gap-1.5 sm:grid-cols-4 sm:gap-3 xl:w-[min(100%,46rem)] xl:shrink-0">
@@ -495,6 +512,7 @@ export function SystemScreen({
                 headingId="detail-title"
                 isCurrent={detail.bodyId === currentBodyId}
                 routeTarget={targetOf(routeTargets, detail.bodyId)}
+                noteTarget={data.address ? systemNoteTarget(data, detail) : null}
               />
             ) : (
               <p className="py-12 text-center text-sm text-zinc-500">{t.system.selectHint}</p>
@@ -510,6 +528,7 @@ export function SystemScreen({
             headingId="sheet-title"
             isCurrent={selected.bodyId === currentBodyId}
             routeTarget={targetOf(routeTargets, selected.bodyId)}
+            noteTarget={data.address ? systemNoteTarget(data, selected) : null}
           />
         </Sheet>
       )}

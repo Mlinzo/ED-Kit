@@ -153,6 +153,8 @@ export interface BodyView {
   parents: ParentRef[]
   orbit: OrbitView | null
   visual: BodyVisual
+  /** Your note (null: none). */
+  note: string | null
 }
 
 export interface BarycentreView {
@@ -201,6 +203,8 @@ export interface SystemView {
   /** A system you have not been to (shown from Spansh / EDSM): its data is being asked for,
    * they know no bodies, or the app runs offline. null: you have been there, or the data is in. */
   lookup: 'pending' | 'missing' | 'offline' | null
+  /** Your note on the system (bodies carry their own). */
+  note: string | null
 }
 
 export interface SamplePoint {
@@ -425,6 +429,9 @@ export interface HistoryEntry {
   lostValue: number
   /** Notable finds, most remarkable first: elw, black_hole, neutron, ww, ... */
   notable: string[]
+  /** Your note on the system; bodies there with a note of yours. */
+  note: string | null
+  bodyNotes: number
 }
 
 /** GET /api/view/history */
@@ -646,6 +653,8 @@ export interface NavHopView {
   discovery: DiscoveryChanceView | null
   /** Your scan of its arrival star: first discovery (or not); null without a scan. */
   discoveredByYou: boolean | null
+  /** Your note on the system. */
+  note: string | null
 }
 
 export interface FuelForecastView {
@@ -794,6 +803,29 @@ export interface GalaxyView {
   engineers: GalaxyEngineerView[]
   /** Spansh / EDSM are asked: any system opens on the System tab (else only yours). */
   online: boolean
+  /** Systems with a note of yours and a known position, visited or not. */
+  notes: GalaxyNoteView[]
+}
+
+export interface GalaxyNoteView {
+  address: string
+  name: string | null
+  x: number
+  y: number
+  z: number
+  text: string
+}
+
+/** PUT /api/notes: your note on a system (bodyId null) or a body; empty text deletes it. */
+export interface NoteRequest {
+  systemAddress: string
+  bodyId: number | null
+  text: string
+  systemName?: string | null
+  bodyName?: string | null
+  x?: number
+  y?: number
+  z?: number
 }
 
 /** A system with someone in it lately (EDDN): how we know, never who. */

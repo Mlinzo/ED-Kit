@@ -12,10 +12,11 @@ import json
 import math
 import sqlite3
 
-from app import engineers, regionmap
+from app import engineers, notes, regionmap
 from app.history import history_view
 from app.schemas import (
     GalaxyDeathView,
+    GalaxyNoteView,
     GalaxyRegionView,
     GalaxySystemView,
     GalaxyView,
@@ -134,6 +135,17 @@ def galaxy_view(
         regions=_regions(conn, fid, systems),
         engineers=engineers.engineers_view(conn, fid),
         online=online,
+        notes=[
+            GalaxyNoteView(
+                address=str(r["system_address"]),
+                name=r["system_name"],
+                x=r["x"],
+                y=r["y"],
+                z=r["z"],
+                text=r["text"],
+            )
+            for r in notes.placed(conn)
+        ],
     )
 
 

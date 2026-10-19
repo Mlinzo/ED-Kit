@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from app import fuel
+from app import fuel, notes
 from app.discovery import DiscoveryChecker, cached, chance
 from app.facts import facts_from_json
 from app.schemas import (
@@ -311,6 +311,7 @@ def navroute_view(
         )
     hops: list[NavHopView] = []
     expected = 0.0
+    noted = notes.system_notes(conn, (s.address for s in systems))
     for i, s in enumerate(systems):
         discovery = None
         if statuses[i] == "ahead":
@@ -351,6 +352,7 @@ def navroute_view(
                 discovered_by_you=(None if mine is None else not mine)
                 if statuses[i] != "ahead"
                 else None,
+                note=noted.get(s.address),
             )
         )
 

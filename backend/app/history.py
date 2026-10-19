@@ -7,7 +7,7 @@ import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from app import exobio
+from app import exobio, notes
 from app.facts import facts_from_json
 from app.schemas import HistoryEntry, HistoryStar, HistoryView
 from app.stats import NOTABLE_PLANETS, notable_star
@@ -120,6 +120,8 @@ def history_view(conn: sqlite3.Connection, fid: str | None) -> HistoryView:
         )
     }
 
+    noted = notes.system_notes(conn)
+    body_notes = notes.body_note_counts(conn)
     systems: list[HistoryEntry] = []
     for row in conn.execute(
         "SELECT v.system_address AS address, s.name, COUNT(*) AS visits, "
@@ -152,6 +154,8 @@ def history_view(conn: sqlite3.Connection, fid: str | None) -> HistoryView:
                 unsold_value=t.unsold,
                 lost_value=t.lost,
                 notable=sorted(t.notable, key=_RANK.__getitem__),
+                note=noted.get(row["address"]),
+                body_notes=body_notes.get(row["address"], 0),
             )
         )
 

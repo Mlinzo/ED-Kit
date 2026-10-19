@@ -7,9 +7,11 @@ import { Crosshair, ExternalLink, Flag, Globe, Layers, Map as MapIcon, MapPin, M
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Vector3 } from 'three'
 import { useView } from '../../../api/hooks'
-import type { GalaxyView, LiveView } from '../../../api/types'
+import type { GalaxyNoteView, GalaxyView, LiveView } from '../../../api/types'
 import { CopyButton } from '../../../components/CopyButton'
 import { Credits } from '../../../components/Credits'
+import { NoteEditor, NoteText } from '../../../components/Note'
+import { useSaveNote, type NoteSaver, type NoteTarget } from '../../../components/notes'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
 import { t } from '../../../i18n'
 import { formatCredits, formatDateTime, formatLy, formatNumber } from '../../../lib/format'
@@ -24,7 +26,7 @@ import { Marker } from '../../route/map/layers'
 import { RouteCamera, type RouteCameraApi } from '../../route/map/RouteCamera'
 import { PickStore, usePick } from '../../route/map/store'
 import { at, buildGalaxyScene, FOCUS_DISTANCE, GALAXY_LIMITS, GALAXY_RANGE, LANDMARKS, RING_STEP_LY, type GalaxyScene } from './geometry'
-import { DEATH_COLOR, DOT_COLOR, ENGINEER_COLOR, LIVE_COLOR, PATH_NEW, PATH_OLD, PLOTTED_COLOR, REGION_LINE, ROUTE_COLOR, START_COLOR } from './colors'
+import { DEATH_COLOR, DOT_COLOR, ENGINEER_COLOR, LIVE_COLOR, NOTE_COLOR, PATH_NEW, PATH_OLD, PLOTTED_COLOR, REGION_LINE, ROUTE_COLOR, START_COLOR } from './colors'
 import { EngineerMarks } from './engineerLayer'
 import { buildEngineerPoints, type EngineerPoint } from './engineers'
 import { Backdrop, Deaths, LandmarkMarks, Paths, Routes, Rings, StartMark, SystemDots } from './layers'
@@ -46,12 +48,18 @@ const LIVE_KEY = 'edk.galaxyLive'
 const ENGINEERS_KEY = 'edk.galaxyEngineers'
 const NO_ENGINEERS: readonly EngineerPoint[] = []
 
-/** A dot that is not one of your systems (another player's, an engineer's). */
+/** A dot that is not one of your systems (another player's, an engineer's, a note on a system you have not been to). */
 interface OtherPoint {
   key: string
   pos: Vec3
   size: number
 }
+
+/** A note of yours on a system you have not been to (`note:` keys). */
+interface NotePoint extends OtherPoint {
+  note: GalaxyNoteView
+}
+const NO_NOTES: readonly NotePoint[] = []
 /** While the layer is on, ask at least this often: the server hangs up on EDDN when nobody asks. */
 const LIVE_KEEPALIVE_MS = 45_000
 const NO_LIVE: readonly LivePoint[] = []
@@ -161,14 +169,30 @@ function Picking({ scene, others, store }: { scene: GalaxyScene; others: readonl
 /** The pinned card on top, then the hovered one; region names last: the ones you have been to first, yours before them. */
 const PRIORITY = { pinned: 70, hover: 60, you: 50, start: 45, landmark: 30, regionHere: 24, regionVisited: 20, region: 10 }
 
-/** A hovered card, or a pinned one (closes, takes clicks). */
+/** A hovered card, or a pinned one (closes, takes clicks, edits your note). */
 interface CardMode {
   pinned: boolean
   onClose: () => void
+  /** Writes notes: the card is in its own React root, without the data store. */
+  saver: NoteSaver
+}
+
+/** Your note on the card's system, and where it goes. */
+interface CardNote {
+  text: string | null
+  target: NoteTarget
 }
 
 /** The card of a dot: a hint at the bottom while hovered, what you can do once pinned. */
-function Card({ title, pinned, onClose, actions, children }: CardMode & { title: string; actions: ReactNode; children: ReactNode }) {
+function Card({
+  title,
+  pinned,
+  onClose,
+  saver,
+  note,
+  actions,
+  children,
+}: CardMode & { title: string; note: CardNote; actions: ReactNode; children: ReactNode }) {
   return (
     <div
       className={`rounded-xl bg-zinc-950/90 p-3 shadow-2xl ring-1 shadow-black/60 backdrop-blur-md ring-inset ${
@@ -192,6 +216,11 @@ function Card({ title, pinned, onClose, actions, children }: CardMode & { title:
         )}
       </div>
       {children}
+      {pinned ? (
+        <NoteEditor key={note.target.systemAddress} note={note.text} target={note.target} compact saver={saver} className="mt-2" />
+      ) : (
+        note.text && <NoteText text={note.text} clamp className="mt-2 text-xs" />
+      )}
       {pinned ? actions : <p className="mt-2 border-t border-white/8 pt-2 text-[11px] text-zinc-500">{t.galaxy.map.pin}</p>}
     </div>
   )
@@ -218,7 +247,7 @@ function Actions({ name, address }: { name: string; address: string | null }) {
 }
 
 /** One of your systems: what you did there. */
-function SystemCard({ view, index, ...mode }: CardMode & { view: GalaxyView; index: number }) {
+function SystemCard({ view, index, note, ...mode }: CardMode & { view: GalaxyView; index: number; note: CardNote }) {
   const s = view.systems[index]
   const deaths = view.deaths.filter((d) => d.system === index)
   const region = s.region !== null ? view.regions.find((r) => r.id === s.region) : undefined
@@ -228,7 +257,7 @@ function SystemCard({ view, index, ...mode }: CardMode & { view: GalaxyView; ind
     s.species > 0 ? t.galaxy.map.species(s.species) : null,
   ].filter(Boolean)
   return (
-    <Card title={s.name} actions={<Actions name={s.name} address={s.address} />} {...mode}>
+    <Card title={s.name} note={note} actions={<Actions name={s.name} address={s.address} />} {...mode}>
       <p className="mt-1 text-xs text-zinc-400">
         {facts.join(' · ')}
         <span className="block text-zinc-500">{t.galaxy.map.fromSol(formatLy(Math.hypot(s.x, s.y, s.z)))}</span>
@@ -269,15 +298,16 @@ function EngineerCard({
   point,
   from,
   address,
+  note,
   ...mode
-}: CardMode & { point: EngineerPoint; from: { x: number; y: number; z: number } | null; address: string | null }) {
+}: CardMode & { point: EngineerPoint; from: { x: number; y: number; z: number } | null; address: string | null; note: CardNote }) {
   const e = point.engineer
   const standing = e.progress
     ? [t.galaxy.engineers.progress[e.progress], e.progress === 'unlocked' && e.rank ? t.galaxy.engineers.rank(e.rank) : null].filter(Boolean).join(', ')
     : t.galaxy.engineers.unknown
   const tone = e.progress === 'unlocked' ? 'text-emerald-300' : e.progress ? 'text-zinc-300' : 'text-zinc-500'
   return (
-    <Card title={e.name} actions={<Actions name={e.system} address={address} />} {...mode}>
+    <Card title={e.name} note={note} actions={<Actions name={e.system} address={address} />} {...mode}>
       <p className="mt-0.5 text-xs" style={{ color: ENGINEER_COLOR }}>
         {e.kind === 'ship' ? t.galaxy.engineers.ship : t.galaxy.engineers.suit}
       </p>
@@ -291,7 +321,13 @@ function EngineerCard({
 }
 
 /** Another player's system: how we know someone was there (never who). `address`: its page, if it has one. */
-function LiveCard({ point, grid, address, ...mode }: CardMode & { point: LivePoint; grid: RegionGrid | null; address: string | null }) {
+function LiveCard({
+  point,
+  grid,
+  address,
+  note,
+  ...mode
+}: CardMode & { point: LivePoint; grid: RegionGrid | null; address: string | null; note: CardNote }) {
   const s = point.system
   const region = grid ? regionAt(grid, s.x, s.z) : null
   const how = [
@@ -301,7 +337,7 @@ function LiveCard({ point, grid, address, ...mode }: CardMode & { point: LivePoi
     s.carriers > 0 ? t.galaxy.live.carriers(s.carriers) : null,
   ].filter(Boolean)
   return (
-    <Card title={s.name} actions={<Actions name={s.name} address={address} />} {...mode}>
+    <Card title={s.name} note={note} actions={<Actions name={s.name} address={address} />} {...mode}>
       <p className="mt-1 text-xs" style={{ color: LIVE_COLOR }}>
         {t.galaxy.live.players(s.players)} · {s.ageS < 60 ? t.time.justNow : t.time.minutesAgo(Math.floor(s.ageS / 60))}
       </p>
@@ -317,6 +353,17 @@ function LiveCard({ point, grid, address, ...mode }: CardMode & { point: LivePoi
   )
 }
 
+/** A system with a note of yours that you have not been to: the note is what the card is about. */
+function NoteCard({ point, address, note, ...mode }: CardMode & { point: NotePoint; address: string | null; note: CardNote }) {
+  const n = point.note
+  const name = n.name ?? n.address
+  return (
+    <Card title={name} note={note} actions={<Actions name={name} address={address} />} {...mode}>
+      <p className="mt-1 text-xs text-zinc-500">{t.galaxy.map.fromSol(formatLy(Math.hypot(n.x, n.y, n.z)))}</p>
+    </Card>
+  )
+}
+
 function Labels({
   view,
   scene,
@@ -326,6 +373,8 @@ function Labels({
   regions,
   live,
   engineers,
+  notePoints,
+  saver,
   grid,
 }: {
   view: GalaxyView
@@ -337,6 +386,8 @@ function Labels({
   regions: RegionsShown | null
   live: readonly LivePoint[]
   engineers: readonly EngineerPoint[]
+  notePoints: readonly NotePoint[]
+  saver: NoteSaver
   grid: RegionGrid | null
 }) {
   const { hovered, selected } = usePick(store)
@@ -354,15 +405,32 @@ function Labels({
   const current = view.current !== null ? view.systems[view.current] : null
   // A system you have not been to opens from Spansh / EDSM; offline, only yours have a page.
   const yours = (address: string) => (view.online || byAddress.has(address) ? address : null)
+  const noteText = useMemo(() => new Map(view.notes.map((n) => [n.address, n.text])), [view.notes])
+  const noteOf = (s: { address: string; name: string | null; x: number; y: number; z: number }): CardNote => ({
+    text: noteText.get(s.address) ?? null,
+    target: { systemAddress: s.address, bodyId: null, systemName: s.name, x: s.x, y: s.y, z: s.z },
+  })
   const card = (key: string, mode: CardMode): { pos: Vec3; lift: number; node: ReactNode } | null => {
     const mine = byAddress.get(key)
-    if (mine) return { pos: mine.pos, lift: mine.size / 2 + 8, node: <SystemCard view={view} index={mine.index} {...mode} /> }
+    if (mine) {
+      const node = <SystemCard view={view} index={mine.index} note={noteOf(view.systems[mine.index])} {...mode} />
+      return { pos: mine.pos, lift: mine.size / 2 + 8, node }
+    }
     const player = live.find((p) => p.key === key)
-    if (player) return { pos: player.pos, lift: player.size + 6, node: <LiveCard point={player} grid={grid} address={yours(player.system.address)} {...mode} /> }
+    if (player) {
+      const node = <LiveCard point={player} grid={grid} address={yours(player.system.address)} note={noteOf(player.system)} {...mode} />
+      return { pos: player.pos, lift: player.size + 6, node }
+    }
     const engineer = engineers.find((p) => p.key === key)
     if (engineer) {
-      const node = <EngineerCard point={engineer} from={current} address={yours(engineer.engineer.address)} {...mode} />
+      const e = engineer.engineer
+      const node = <EngineerCard point={engineer} from={current} address={yours(e.address)} note={noteOf({ ...e, name: e.system })} {...mode} />
       return { pos: engineer.pos, lift: engineer.size / 2 + 8, node }
+    }
+    const noted = notePoints.find((p) => p.key === key)
+    if (noted) {
+      const node = <NoteCard point={noted} address={yours(noted.note.address)} note={noteOf(noted.note)} {...mode} />
+      return { pos: noted.pos, lift: noted.size / 2 + 8, node }
     }
     return null
   }
@@ -372,7 +440,7 @@ function Labels({
     [selected, true],
     [hovered, false],
   ] as const) {
-    const shown = key !== null && !carded.has(key) ? card(key, { pinned, onClose: close }) : null
+    const shown = key !== null && !carded.has(key) ? card(key, { pinned, onClose: close, saver }) : null
     if (!shown || key === null) continue
     carded.add(key)
     const id = `${pinned ? 'pinned' : 'hover'}:${key}`
@@ -431,6 +499,8 @@ const Scene = memo(function Scene({
   regions,
   live,
   engineers,
+  notePoints,
+  saver,
   grid,
 }: {
   view: GalaxyView
@@ -443,12 +513,18 @@ const Scene = memo(function Scene({
   regions: RegionsShown | null
   live: readonly LivePoint[]
   engineers: readonly EngineerPoint[]
+  notePoints: readonly NotePoint[]
+  saver: NoteSaver
   grid: RegionGrid | null
 }) {
   const landmarks = useMemo(() => LANDMARKS.map((l) => at(l)), [])
   const others = useMemo<OtherPoint[]>(
-    () => [...live.map((p) => ({ key: p.key, pos: p.pos, size: p.size })), ...engineers.map((p) => ({ key: p.key, pos: p.pos, size: p.size }))],
-    [live, engineers],
+    () => [
+      ...live.map((p) => ({ key: p.key, pos: p.pos, size: p.size })),
+      ...engineers.map((p) => ({ key: p.key, pos: p.pos, size: p.size })),
+      ...notePoints.map((p) => ({ key: p.key, pos: p.pos, size: p.size })),
+    ],
+    [live, engineers, notePoints],
   )
   return (
     <>
@@ -459,6 +535,7 @@ const Scene = memo(function Scene({
       <LandmarkMarks points={landmarks} />
       {live.length > 0 && <LiveDots points={live} />}
       {engineers.length > 0 && <EngineerMarks points={engineers} />}
+      <NoteMarks scene={scene} notes={view.notes} points={notePoints} />
       <Paths scene={scene} flow={!reducedMotion} />
       <Routes scene={scene} />
       <SystemDots scene={scene} />
@@ -471,7 +548,19 @@ const Scene = memo(function Scene({
         </>
       )}
       <Highlighted scene={scene} others={others} store={store} />
-      <Labels view={view} scene={scene} store={store} layer={layer} hoverLayer={hoverLayer} regions={regions} live={live} engineers={engineers} grid={grid} />
+      <Labels
+        view={view}
+        scene={scene}
+        store={store}
+        layer={layer}
+        hoverLayer={hoverLayer}
+        regions={regions}
+        live={live}
+        engineers={engineers}
+        notePoints={notePoints}
+        saver={saver}
+        grid={grid}
+      />
       <Picking scene={scene} others={others} store={store} />
       <RouteCamera
         frame={scene.travels}
@@ -485,6 +574,26 @@ const Scene = memo(function Scene({
     </>
   )
 })
+
+/** Your notes: a ring around your systems that have one, a dot in a ring where you have not been. */
+function NoteMarks({ scene, notes, points }: { scene: GalaxyScene; notes: readonly GalaxyNoteView[]; points: readonly NotePoint[] }) {
+  const noted = useMemo(() => new Set(notes.map((n) => n.address)), [notes])
+  return (
+    <>
+      {scene.systems
+        .filter((s) => noted.has(s.address))
+        .map((s) => (
+          <Marker key={s.address} pos={s.pos} color={NOTE_COLOR} size={s.size + 7} inner={0.78} opacity={0.9} order={5} />
+        ))}
+      {points.map((p) => (
+        <group key={p.key}>
+          <Marker pos={p.pos} color={NOTE_COLOR} size={p.size} inner={0.6} order={5} />
+          <Marker pos={p.pos} color={NOTE_COLOR} size={4} shape="disc" order={5} />
+        </group>
+      ))}
+    </>
+  )
+}
 
 /** A ring around the pinned dot and the hovered one. */
 function Highlighted({ scene, others, store }: { scene: GalaxyScene; others: readonly OtherPoint[]; store: PickStore }) {
@@ -500,7 +609,7 @@ function Highlighted({ scene, others, store }: { scene: GalaxyScene; others: rea
   )
 }
 
-function Legend({ regions, live, engineers }: { regions: boolean; live: boolean; engineers: boolean }) {
+function Legend({ regions, live, engineers, notes }: { regions: boolean; live: boolean; engineers: boolean; notes: boolean }) {
   const dot = (color: string, hollow = false) => (
     <span className="size-2 rounded-full" style={hollow ? { boxShadow: `inset 0 0 0 1.5px ${color}` } : { background: color }} aria-hidden />
   )
@@ -523,6 +632,7 @@ function Legend({ regions, live, engineers }: { regions: boolean; live: boolean;
   if (regions) items.push([line(REGION_LINE), t.galaxy.map.legend.regions])
   if (live) items.push([dot(LIVE_COLOR), t.galaxy.live.legend])
   if (engineers) items.push([dot(ENGINEER_COLOR, true), t.galaxy.engineers.legend])
+  if (notes) items.push([dot(NOTE_COLOR, true), t.notes.legend])
   return (
     <ul className="pointer-events-none absolute top-3 left-3 z-30 hidden max-w-[60%] flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-zinc-950/60 px-3 py-2 text-[11px] text-zinc-400 ring-1 ring-white/10 backdrop-blur-sm ring-inset sm:flex">
       {items.map(([mark, label]) => (
@@ -630,6 +740,13 @@ export default function GalaxyMapCanvas({ view, focusRegion = null, className = 
   const live = useLive()
   const engineers = useEngineers(view)
   const grid = regions.map?.grid
+  const saver = useSaveNote()
+  // Notes on systems you have not been to get their own marks (yours carry a ring).
+  const notePoints = useMemo<readonly NotePoint[]>(() => {
+    const mine = new Set(view.systems.map((s) => s.address))
+    const points = view.notes.filter((n) => !mine.has(n.address)).map((n) => ({ key: `note:${n.address}`, pos: at(n), size: 11, note: n }))
+    return points.length > 0 ? points : NO_NOTES
+  }, [view.systems, view.notes])
   useEffect(() => {
     const unpin = (e: KeyboardEvent) => {
       if (e.key === 'Escape') store.set({ selected: null })
@@ -679,6 +796,8 @@ export default function GalaxyMapCanvas({ view, focusRegion = null, className = 
             regions={regions.shown}
             live={live.points}
             engineers={engineers.points}
+            notePoints={notePoints}
+            saver={saver}
             grid={grid ?? null}
           />
         </Canvas>
@@ -687,7 +806,7 @@ export default function GalaxyMapCanvas({ view, focusRegion = null, className = 
       </div>
       {live.show && <LiveFeed onView={live.setView} />}
 
-      <Legend regions={regions.shown !== null} live={live.show} engineers={engineers.show} />
+      <Legend regions={regions.shown !== null} live={live.show} engineers={engineers.show} notes={view.notes.length > 0} />
       {/* The views, and below them the layers. */}
       <div className="pointer-events-none absolute top-0 right-0 z-30 flex flex-col items-end gap-1.5 p-3">
         <div className="flex gap-1.5">

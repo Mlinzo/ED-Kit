@@ -359,9 +359,10 @@ export const en: Strings = {
       visited: 'You have been here before',
       scanned: 'Its main star is in the databases: somebody has been here',
       bodies_known: 'Its bodies are in the databases: somebody has been here',
-      seen_in_routes: 'The system is in the databases only from other commanders’ plotted routes: nobody uploaded a scan from here',
+      seen_in_routes: 'The system is in the databases only from plotted routes (perhaps your own): nobody uploaded a scan from here',
       not_in_databases: 'The system is in neither Spansh nor EDSM',
       busy_area: 'Near the bubble or Colonia: many pilots here run no third-party tools',
+      inner_area: 'Within 10,000 ly of Sol: more visitors than the far galaxy gets',
       popular_star: 'Neutron stars and white dwarfs get more visitors than their neighbours',
     } as Record<string, string>,
     chanceNote:
@@ -460,6 +461,24 @@ export const en: Strings = {
     },
   },
 
+  notes: {
+    label: 'Note',
+    add: 'Note',
+    addLong: 'Add a note',
+    edit: 'Edit the note',
+    placeholder: 'What to check, where to come back…',
+    save: 'Save',
+    cancel: 'Cancel',
+    remove: 'Delete',
+    saving: 'Saving…',
+    error: 'Could not save the note',
+    keys: 'Ctrl+Enter to save, Esc to cancel',
+    filter: 'With notes',
+    bodies: (n: number) => `notes on bodies: ${n}`,
+    has: 'Has a note',
+    legend: 'Notes',
+  },
+
   history: {
     title: 'History',
     summary: (systems: number) => `${systems} ${plural(systems, ['system', 'systems'])}`,
@@ -472,6 +491,7 @@ export const en: Strings = {
       bio: 'Exobiology',
       firsts: 'Firsts',
       unsold: 'Unsold',
+      notes: 'With notes',
     },
     filterHint: {
       all: 'All visited systems',
@@ -479,6 +499,7 @@ export const en: Strings = {
       bio: 'Systems with bio signals',
       firsts: 'Systems with your first discoveries, first maps or first footfalls',
       unsold: 'Systems with unsold data',
+      notes: 'Systems with your notes',
     },
     colTime: 'Time',
     colSystem: 'System',

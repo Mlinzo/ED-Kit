@@ -245,6 +245,7 @@ function body(input: BodyInput): BodyView {
     codexMaybe: species.filter((s) => s.codex !== 'logged' && !s.certain).length,
     parents,
     visual,
+    note: input.note ?? null,
   }
   return { ...base, ...deriveInterest(base) }
 }
@@ -667,6 +668,7 @@ export function buildSystem(): SystemView {
       bioMax: sum((b) => b.bioValueMax),
     },
     lookup: null,
+    note: null,
   }
 }
 

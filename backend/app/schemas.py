@@ -146,6 +146,7 @@ class BodyView(CamelModel):
     parents: list[ParentRef]  # immediate parent first; [] for the root body
     orbit: OrbitView | None
     visual: BodyVisual
+    note: str | None = None  # yours (app.notes)
 
 
 class SystemTotals(CamelModel):
@@ -191,6 +192,7 @@ class SystemView(CamelModel):
     barycentres: list[BarycentreView]
     totals: SystemTotals
     lookup: CommunityLookup | None = None  # never visited: where its community data stands
+    note: str | None = None  # yours, on the system (app.notes); bodies carry their own
 
 
 class SamplePoint(CamelModel):
@@ -404,6 +406,8 @@ class HistoryEntry(CamelModel):
     unsold_value: int  # part of `value` not sold yet
     lost_value: int  # data lost on death (not in `value`; mapping bonus already gone)
     notable: list[str]  # notable finds, most remarkable first: elw, ww, neutron, ...
+    note: str | None = None  # yours, on the system
+    body_notes: int = 0  # bodies there with a note of yours
 
 
 class HistoryView(CamelModel):
@@ -585,6 +589,7 @@ class NavHopView(CamelModel):
     short: bool  # the fuel runs out on the jump into it
     discovery: DiscoveryChanceView | None  # ahead
     discovered_by_you: bool | None  # your scan of its arrival star: first discovery (or not)
+    note: str | None = None  # yours, on the system
 
 
 class FuelForecastView(CamelModel):
@@ -642,6 +647,31 @@ class GalaxySystemView(CamelModel):
     region: int | None  # codex region number (1..42, app.regionmap); None off the map
 
 
+class GalaxyNoteView(CamelModel):
+    """A system with a note of yours, visited or not."""
+
+    address: str
+    name: str | None
+    x: float
+    y: float
+    z: float
+    text: str
+
+
+class NoteRequest(CamelModel):
+    """PUT /api/notes: write your note on a system (body_id None) or a body; empty text deletes.
+    The name and position help show a system you have not been to."""
+
+    system_address: str
+    body_id: int | None = None
+    text: str = Field(max_length=4000)
+    system_name: str | None = None
+    body_name: str | None = None
+    x: float | None = None
+    y: float | None = None
+    z: float | None = None
+
+
 class GalaxyRegionView(CamelModel):
     """A codex region you have been to (or logged codex entries in)."""
 
@@ -693,6 +723,7 @@ class GalaxyView(CamelModel):
     regions: list[GalaxyRegionView]  # in the order you first came
     engineers: list[GalaxyEngineerView]
     online: bool  # Spansh/EDSM are asked: any system opens on the System tab (else: only yours)
+    notes: list[GalaxyNoteView] = []  # systems with a note of yours and a known position
 
 
 class LiveSystemView(CamelModel):

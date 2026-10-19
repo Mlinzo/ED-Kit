@@ -2,9 +2,19 @@
 
 Spansh and EDSM learn systems from other commanders' tools (EDDN). A known arrival star
 means somebody has been there (its scan is uploaded on arrival). A system known without any
-body was most likely only seen in somebody's plotted route (EDDN NavRoute), so it may still
-be untouched; one in no database at all, more so. Never a certainty: commanders who run no
-such tool upload nothing, which matters most near the bubble, where everybody flies.
+body was most likely only seen in a plotted route (EDDN NavRoute; Spansh has it minutes after
+the upload, so your own route counts too), so it may still be untouched; one in no database at
+all, more so. Never a certainty: commanders who run no such tool upload nothing, which matters
+most near the bubble, where everybody flies.
+
+The numbers are measured, not guessed (backend/tools/discovery_calibration.py): systems on
+routes uploaded to EDDN, looked up the moment the route came in, against the arrival-star scan
+uploaded later. 2026-10-19, 1.5 h, 538 systems: main star known 2.5 % first (403). Beyond
+10000 ly from Sol, in routes only 91 % (22) and in no database 98 % (66): a route-only entry
+says little, it is mostly the route's own upload. Nearer, the same two: 3000-10000 ly 71 %
+(31), within 3000 ly 1 of 7; neutron stars and white dwarfs 69 % (13). The name's mass code
+(a-h) added nothing. The old guesses (60 % / 90 %, x0.5 within 1000 ly) scored Brier 0.050;
+these 0.042, expecting 127 first discoveries where there were 127.
 
 Lookups run on a worker thread (Spansh first, EDSM for what Spansh does not know scanned),
 cached in the `discovery` table for a day.
@@ -46,8 +56,15 @@ EDSM_NONE, EDSM_SYSTEM, EDSM_STAR = 0, 1, 2
 
 State = Literal["scanned", "bodies", "seen", "unknown", "pending"]
 
-# Busy places: a system missing from the databases there says less.
-BUSY = (((0.0, 0.0, 0.0), 1000.0), ((-9530.5, -910.28125, 19808.125), 500.0))  # bubble, Colonia
+# First discoveries by what the databases know (see the module docstring).
+P_SCANNED, P_BODIES, P_SEEN, P_UNKNOWN = 0.03, 0.05, 0.9, 0.95
+
+# Busy space: a system missing from the databases there says less. Distance from Sol (ly) below
+# which the chance is multiplied, with the reason shown; then Colonia, a second bubble.
+SOL = (0.0, 0.0, 0.0)
+NEAR_SOL = ((1000.0, 0.1, "busy_area"), (3000.0, 0.3, "busy_area"), (10000.0, 0.8, "inner_area"))
+COLONIA, COLONIA_RADIUS, COLONIA_FACTOR = (-9530.5, -910.28125, 19808.125), 500.0, 0.5
+POPULAR_STAR = 0.7  # neutron stars, white dwarfs, black holes: highways and sightseeing
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,22 +86,36 @@ def chance(
     if spansh is None and edsm is None:
         return Chance(None, "pending", ())
     if spansh == SPANSH_STAR or edsm == EDSM_STAR:
-        return Chance(0.02, "scanned", ("scanned",))
+        return Chance(P_SCANNED, "scanned", ("scanned",))
     if spansh == SPANSH_BODIES:
-        return Chance(0.05, "bodies", ("bodies_known",))
+        return Chance(P_BODIES, "bodies", ("bodies_known",))
     reasons: list[str]
     if spansh == SPANSH_SYSTEM or edsm == EDSM_SYSTEM:
-        p, state, reasons = 0.6, "seen", ["seen_in_routes"]
+        p, state, reasons = P_SEEN, "seen", ["seen_in_routes"]
     else:
-        p, state, reasons = 0.9, "unknown", ["not_in_databases"]
-    if position is not None and any(math.dist(position, c) < r for c, r in BUSY):
-        p *= 0.5
-        reasons.append("busy_area")
+        p, state, reasons = P_UNKNOWN, "unknown", ["not_in_databases"]
+    factor, why = _area(position)
+    if why:
+        p *= factor
+        reasons.append(why)
     if star_kind in ("neutron", "white_dwarf", "black_hole"):
         # Targets of neutron highways and sightseeing: more traffic than their neighbours.
-        p *= 0.75
+        p *= POPULAR_STAR
         reasons.append("popular_star")
     return Chance(round(p, 2), state, tuple(reasons))
+
+
+def _area(position: tuple[float, float, float] | None) -> tuple[float, str | None]:
+    """How much busier than the deep galaxy the place is: a factor, and the reason code."""
+    if position is None:
+        return 1.0, None
+    from_sol = math.dist(position, SOL)
+    for limit, factor, why in NEAR_SOL:
+        if from_sol < limit:
+            return factor, why
+    if math.dist(position, COLONIA) < COLONIA_RADIUS:
+        return COLONIA_FACTOR, "busy_area"
+    return 1.0, None
 
 
 # --------------------------------------------------------------------------- network
