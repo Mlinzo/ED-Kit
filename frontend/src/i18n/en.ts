@@ -141,6 +141,22 @@ export const en: Strings = {
     title: 'Route',
     intro:
       'Systems where you can earn: high-value planets to map, and biology. Plot each stop separately in the galaxy map.',
+    goal: 'Looking for',
+    goals: { credits: 'Credits', codex: 'Codex' },
+    goalHint: {
+      credits: 'Mapping and exobiology: the systems that pay the most.',
+      codex:
+        'Bodies with biology where species — in their colours — are expected that your codex lacks for that region. Each entry counts once per route.',
+    },
+    codex: {
+      expected: (n: string) => `≈${n} codex`,
+      here: 'New in the codex here',
+      left: 'New entries ahead',
+      leftHint: 'New codex entries expected at the stops left. Species not confirmed by DSS and colours that cannot be told for sure count in part.',
+      chance: (pct: string) => `chance ${pct}`,
+      none: 'No new entries expected',
+      creditsToo: 'and credits',
+    },
     mode: 'Mode',
     modes: { riches: 'Around a system', line: 'Straight line' },
     modeHint: {

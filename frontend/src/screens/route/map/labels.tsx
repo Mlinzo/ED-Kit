@@ -13,6 +13,7 @@ import { CreditRange } from '../../../components/Credits'
 import { t } from '../../../i18n'
 import { formatLy } from '../../../lib/format'
 import { BodyChips } from '../kinds'
+import { CodexCount } from '../parts'
 import { STATE_COLOR, YOU_COLOR } from './colors'
 import { placeLabels, type LabelBox, type MapStop, type RouteScene, type StopState, type Vec3 } from './geometry'
 import { usePick, type PickStore } from './store'
@@ -202,8 +203,9 @@ function HoverCard({ stop, view }: { stop: MapStop; view: RouteStopView }) {
           <BodyChips key={b.bodyId} body={b} dim={b.done || view.skipped} />
         ))}
       </div>
-      <div className="mt-2 border-t border-white/8 pt-2">
+      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-white/8 pt-2">
         <CreditRange min={view.valueMin} max={view.value} className="text-sm font-semibold text-emerald-300" />
+        {view.codexNew > 0 && <CodexCount value={view.codexNew} className="text-xs font-medium text-violet-200" />}
       </div>
     </div>
   )

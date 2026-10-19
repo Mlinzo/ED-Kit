@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections import defaultdict
 from collections.abc import Iterable
 
 from app import exobio, notes, usersettings
+from app.codex import CodexIndex, codex_index, codex_status, predicted_status
+from app.exobio.variants import colour_of, variants
 from app.facts import body_id64, facts_from_json, load_community_system, load_system
 from app.models import BodyFacts, SystemFacts
 from app.schemas import (
@@ -15,7 +16,6 @@ from app.schemas import (
     BarycentreView,
     BodyView,
     BodyVisual,
-    CodexStatus,
     CommunityLookup,
     HighlightSettings,
     Interest,
@@ -119,33 +119,6 @@ def _genus_name(symbol: str) -> str:
     return symbol.removeprefix("$Codex_Ent_").removesuffix("_Genus_Name;").replace("_", " ")
 
 
-# species symbol -> [(region, timestamp)] of your codex entries for it
-CodexIndex = dict[str, list[tuple[str | None, str]]]
-
-
-def codex_index(conn: sqlite3.Connection, fid: str | None) -> CodexIndex:
-    index: CodexIndex = defaultdict(list)
-    for row in conn.execute(
-        "SELECT species, region, ts FROM codex_entries WHERE fid = ? AND species IS NOT NULL",
-        (fid,),
-    ):
-        index[row["species"]].append((row["region"], row["ts"]))
-    return index
-
-
-def codex_status(
-    index: CodexIndex, species: str, region: str | None, before: str | None = None
-) -> CodexStatus:
-    """Codex state of a species. `before`: ignore entries written from that moment on
-    (the game logs the entry at the first sample, so an ongoing scan still counts as new)."""
-    regions = {r for r, ts in index.get(species, ()) if before is None or ts < before}
-    if not regions:
-        return "new"
-    if region is None or region in regions:
-        return "logged"  # with the region unknown, any record counts
-    return "new_region"
-
-
 def _build_species(
     facts: BodyFacts,
     system: SystemFacts,
@@ -187,12 +160,14 @@ def _build_species(
                 status="analysed" if scan["status"] == "analysed" else "sampling",
                 samples=scan["samples"],
                 certain=True,
+                # The journal names the colour: that codex entry exactly.
                 codex=codex_status(
                     codex,
-                    symbol,
+                    scan["variant"] or symbol,
                     system.region,
                     before=scan["started_at"] if scan["status"] == "sampling" else None,
                 ),
+                colour=colour_of(scan["variant"]),
             )
         )
 
@@ -205,6 +180,9 @@ def _build_species(
             sp = p.species
             if sp.genus in seen_genera:
                 continue
+            found = variants(sp.species, facts, system)
+            status, _ = predicted_status(codex, sp.species, found, system.region)
+            colours = [v.colour for v in found or () if v.colour]
             views.append(
                 SpeciesView(
                     genus=sp.genus_name,
@@ -215,7 +193,8 @@ def _build_species(
                     status="predicted",
                     samples=0,
                     certain=sp.genus in genuses,
-                    codex=codex_status(codex, sp.species, system.region),
+                    codex=status,
+                    colour=" / ".join(colours) or None,
                 )
             )
 
@@ -690,7 +669,9 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
             value=base,
             bonus_value=base * multiplier,
             colony_range_m=colony,
-            codex=codex_status(codex, active["species"], region, before=active["started_at"]),
+            codex=codex_status(
+                codex, active["variant"] or active["species"], region, before=active["started_at"]
+            ),
             samples=active["samples"],
             points=points,
         )

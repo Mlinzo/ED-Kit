@@ -24,8 +24,9 @@ NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "inva
 | `app/views.py` | Builds `SystemView` (current, visited, or never visited: community data alone, with a `lookup` state) / `SurfaceView` / `SessionView` from SQLite; body interest/progress, orbit tree data |
 | `app/stats.py` | All-time `StatsView` (incl. death history, first discoveries/maps/footfalls) |
 | `app/history.py` | `HistoryView`: visited systems (`visits` table) with what you did there |
-| `app/routeplan.py` | Route planning: system value = mapping payouts (Road to Riches kinds) + biology (bodies with bio signals); Spansh body searches, permit / population / value filters, stop order (nearest neighbour + 2-opt, or along a line) |
-| `app/routebio.py` | Exobiology value of Spansh bodies for routes: facts conversion, genus names, species-based (min, max) estimate |
+| `app/routeplan.py` | Route planning: system value = mapping payouts (Road to Riches kinds) + biology (bodies with bio signals); or, goal "codex", new codex entries (biology only; each entry counts once per route: stops taken nearest first, or greedily along a line, each worth what the stops before it do not cover; an entry on several bodies of a stop counts as on at least one); Spansh body searches, permit / population / value filters, stop order (nearest neighbour + 2-opt, or along a line) |
+| `app/routebio.py` | Exobiology value of Spansh bodies for routes: facts conversion (incl. materials), genus names, species-based (min, max) estimate, and the codex entries each body may give with their chances (a DSS-confirmed genus 1, a predicted one 0.5 shared among the open signals; candidate species and colours share equally) |
+| `app/codex.py` | Your codex: entries by colour variant and by species, with regions; `predicted_status`: a predicted species' state and the share of its likely colours you have not logged in the region |
 | `app/spansh.py` | Spansh search client with a SQLite cache (body pages 7 days, systems 7 days, permit list 30 days) |
 | `app/routes.py` | The route: worker-thread builder, storage (`route*` tables), `RouteView` with journal progress |
 | `app/fuel.py` | Fuel per jump of the current drive, learnt from its own `FSDJump`s (`fuel = k · (distance · mass)^power`, power by FSD size) |
@@ -45,7 +46,7 @@ NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "inva
 | `app/main.py` | FastAPI app: REST views, SSE stream, static frontend; CLI (`run`), exe niceties (opens the browser, a second start just opens the page) |
 | `app/models.py` | Domain dataclasses (`BodyFacts`, `SystemFacts`, `Species`, ...) |
 | `app/schemas.py` | Pydantic view models (camelCase JSON) |
-| `app/exobio/` | Species catalog (values, colony ranges) and prediction rules |
+| `app/exobio/` | Species catalog (values, colony ranges) and prediction rules; `variants.py`: the codex colour of a species on a body (the parent star's class for 64 species, a material for 26; group-B materials can tie, then every one present is a candidate), data in `app/data/codex_variants.json` |
 | `app/values.py` | Cartographic value estimates (FSS / DSS) |
 
 Rules:
@@ -79,6 +80,7 @@ Rules:
 
 ## Tools
 
+- `backend/tools/codex_variants.py`: rebuilds `app/data/codex_variants.json` (the colour variants of Odyssey species) from Canonn's codex reference.
 - `backend/tools/discovery_calibration.py`: measures the discovery chance against EDDN. `collect --hours N` stores what Spansh / EDSM knew of each uploaded route's systems and the later arrival-star scans (`WasDiscovered`), in `<data dir>/calibration/*.jsonl`; it resumes after a stop or a power loss (the time collected is counted from the records). `report [--neighbours]` prints first-discovery rates by database state, distance, star class and mass code, and the model's Brier score.
 
 ## Running (dev)

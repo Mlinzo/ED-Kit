@@ -37,7 +37,10 @@ class SpeciesView(CamelModel):
     status: SpeciesStatus
     samples: int  # 0..3
     certain: bool  # True once genus is confirmed by DSS or species was scanned
-    codex: CodexStatus  # species level (colour variants are not predicted yet)
+    # By colour variant (the parent star's class, or a material on the body); by species when
+    # the colour cannot be told.
+    codex: CodexStatus
+    colour: str | None = None  # "Teal"; candidates joined with " / " when not certain
 
 
 class SignalsView(CamelModel):
@@ -416,6 +419,8 @@ class HistoryView(CamelModel):
 
 
 RouteMode = Literal["riches", "line"]  # around a start point | along a straight line
+# credits: mapping and biology payouts | codex: new codex entries (biology only)
+RouteGoal = Literal["credits", "codex"]
 # elw | terraformable water world | terraformable high metal content | water world |
 # ammonia world | terraformable rocky body (app.routeplan.BODY_TYPES, priced by mapping) |
 # bio: landable bodies with biological signals (priced by their predicted species)
@@ -426,6 +431,7 @@ class RouteRequest(CamelModel):
     """POST /api/route: plan a new route (replaces the current one)."""
 
     mode: RouteMode
+    goal: RouteGoal = "credits"
     source: str = ""  # empty: the current system
     destination: str | None = None  # line mode
     radius_ly: float = Field(200, ge=10, le=1000)  # riches mode
@@ -457,6 +463,14 @@ class RoutePoint(CamelModel):
     z: float
 
 
+class RouteCodexView(CamelModel):
+    """A species that may give a new codex entry on a route body."""
+
+    species: str  # English name, e.g. "Aleoida Arcus"
+    colour: str | None  # "Teal"; None when it cannot be told
+    chance: float  # 0..1, after the stops before it in the route
+
+
 class RouteBodyView(CamelModel):
     body_id: int
     name: str
@@ -472,6 +486,7 @@ class RouteBodyView(CamelModel):
     bio_done: int  # species you analysed there (journal)
     genuses: list[str]  # English genus names confirmed by DSS (may be empty)
     done: bool  # mapped (when it counts for mapping) and every species analysed
+    codex: list[RouteCodexView] = []  # codex routes: entries still new here, likeliest first
 
 
 class RouteStopView(CamelModel):
@@ -491,6 +506,7 @@ class RouteStopView(CamelModel):
     done: bool  # every body mapped
     skipped: bool
     here: bool  # you are in this system now
+    codex_new: float = 0.0  # codex routes: new entries expected here (none counted twice)
 
 
 class NeutronWaypointView(CamelModel):
@@ -549,6 +565,7 @@ class RouteView(CamelModel):
     done_count: int
     skipped_count: int
     neutron: NeutronPlanView | None  # Spansh neutron route to the next stop, once asked for
+    codex_left: float = 0.0  # codex routes: new entries expected at the stops left
 
 
 class NeutronRequest(CamelModel):

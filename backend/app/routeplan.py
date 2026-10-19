@@ -11,6 +11,12 @@ Two modes, like EDTools:
   straight line between two systems, in order along the line (2-opt removes the zigzags across
   the corridor; the path still ends at the destination).
 
+A codex route (goal "codex") counts new codex entries instead of credits: bodies with
+biological signals whose predicted species, in their likely colours, are not in your codex
+for the body's region (app.routebio gives each entry a chance). An entry counts once per
+route: stops are taken in order (nearest first, or the best first along a line) and each is
+worth only what the stops before it have not already covered.
+
 Every stop is a separate plot in the galaxy map. Bodies you have already mapped, or whose
 species you have all analysed (journal), count as done; permit-locked systems are left out,
 populated ones on request. Since the 2025 colonisation nearly every system with such bodies
@@ -34,7 +40,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
-from app import routebio
+from app import regionmap, routebio
+from app.codex import CodexIndex, codex_status
 from app.spansh import MAX_WINDOW, PAGE_SIZE, Reference, SpanshError, SpanshRejected
 
 # Body kind -> (Spansh subtype, accepted terraforming states or None for any).
@@ -63,6 +70,11 @@ TWO_OPT_NEIGHBOURS = 10
 TWO_OPT_BUDGET_S = 0.25
 
 Mode = Literal["riches", "line"]
+Goal = Literal["credits", "codex"]
+# Codex routes, in expected new entries: a body below this is left out, and so is a stop
+# whose bodies add less than MIN_CODEX_STOP to what the stops before it cover.
+MIN_CODEX_BODY = 0.25
+MIN_CODEX_STOP = 0.5
 
 
 @dataclass(slots=True)
@@ -90,6 +102,7 @@ class PlanBody:
     bio_min: int = 0
     bio_max: int = 0
     genuses: tuple[str, ...] = ()  # codex genus symbols confirmed by DSS
+    codex: tuple[routebio.CodexChance, ...] = ()  # codex routes: entries not in your codex
 
     @property
     def carto(self) -> bool:
@@ -122,6 +135,7 @@ class PlanStop:
     bodies: dict[int, PlanBody] = field(default_factory=dict)
     hop_ly: float = 0.0
     along: float = 0.0  # line mode: position along the line, 0..1
+    region: str | None = None  # codex region symbol (codex routes)
 
     @property
     def xyz(self) -> tuple[float, float, float]:
@@ -140,6 +154,7 @@ class Plan:
 class PlanRequest:
     mode: Mode
     source: str
+    goal: Goal = "credits"
     destination: str | None = None
     radius_ly: float = 200.0
     deviation_ly: float = 25.0
@@ -228,7 +243,10 @@ def _bio_group(max_distance: float) -> _Group:
 
 
 def _searches(req: PlanRequest, max_distance: float) -> list[_Group]:
-    """One search per mapping kind, plus one for biology when "bio" is among the kinds."""
+    """One search per mapping kind, plus one for biology when "bio" is among the kinds; only
+    biology for a codex route."""
+    if req.goal == "codex":
+        return [_bio_group(max_distance)]
     groups = _groups(req.body_types, max_distance, req.min_value)
     if "bio" in req.body_types:
         groups.append(_bio_group(max_distance))
@@ -268,9 +286,15 @@ class _Collector:
     excluded."""
 
     def __init__(
-        self, req: PlanRequest, search: Search, progress: ProgressLookup, limit: float
+        self,
+        req: PlanRequest,
+        search: Search,
+        progress: ProgressLookup,
+        limit: float,
+        codex: CodexIndex | None = None,
     ) -> None:
         self.req = req
+        self.codex = codex or {}
         self.search = search
         self.progress_lookup = progress
         self.limit = limit  # bodies farther than this (from the reference) are ignored
@@ -302,9 +326,20 @@ class _Collector:
         mapping = int(raw.get("estimated_mapping_value") or 0)
         bio = None
         kind: str | None = None
+        region: str | None = None
+        new: tuple[routebio.CodexChance, ...] = ()
         if bio_page:
             bio = routebio.estimate(raw)
-            if bio is None or bio.high < self.req.bio_min_value:
+            if bio is None:
+                return
+            if self.req.goal == "codex":
+                region = regionmap.region_symbol(regionmap.region_at(x, z))
+                new = tuple(
+                    e for e in bio.entries if codex_status(self.codex, e.key, region) != "logged"
+                )
+                if sum(e.weight for e in new) < MIN_CODEX_BODY:
+                    return
+            elif bio.high < self.req.bio_min_value:
                 return
             if self.req.bio_require_genuses and not bio.genuses:
                 return
@@ -326,6 +361,7 @@ class _Collector:
                 y=y,
                 z=z,
                 distance=distance if distance is not None else math.inf,
+                region=region,
             )
             self.stops[address] = stop
         # The same body may come from a mapping search and the biology search: merge.
@@ -345,6 +381,7 @@ class _Collector:
         if bio is not None:
             body.bio_signals, body.bio_min, body.bio_max = bio.signals, bio.low, bio.high
             body.genuses = bio.genuses
+            body.codex = new
 
     def unchecked(self) -> list[int]:
         if not self.check_population:
@@ -379,7 +416,47 @@ class _Collector:
             return False
         if self.req.skip_mapped and all(self.done(stop, b) for b in stop.bodies.values()):
             return False
+        if self.req.goal == "codex":
+            return self.codex_value(stop, {}) >= MIN_CODEX_STOP
         return self.value(stop) >= self.req.min_system_value
+
+    def codex_value(self, stop: PlanStop, covered: dict[tuple[str, str | None], float]) -> float:
+        """New codex entries expected at the stop, past what `covered` (the chance each entry
+        is logged at an earlier stop) takes already. An entry on several of its bodies counts
+        as being on at least one of them."""
+        local = dict(covered)
+        _add_cover(local, stop, self.done)
+        return sum(local.values()) - sum(covered.get(k, 0.0) for k in local)
+
+    def cover(self, stops: Iterable[PlanStop], wanted: int) -> list[PlanStop]:
+        """Codex routes: the stops, in this order, that each add enough new entries."""
+        covered: dict[tuple[str, str | None], float] = {}
+        out: list[PlanStop] = []
+        for stop in stops:
+            if len(out) >= wanted:
+                break
+            if self.codex_value(stop, covered) < MIN_CODEX_STOP:
+                continue
+            out.append(stop)
+            _add_cover(covered, stop, self.done)
+        return out
+
+    def best(self, stops: list[PlanStop], wanted: int) -> list[PlanStop]:
+        """Codex routes: the stops adding the most new entries, one at a time (greedy)."""
+        covered: dict[tuple[str, str | None], float] = {}
+        left = list(stops)
+        out: list[PlanStop] = []
+        while left and len(out) < wanted:
+            gain, stop = max(
+                ((self.codex_value(s, covered), s) for s in left),
+                key=lambda gs: (gs[0], -gs[1].distance, -gs[1].address),
+            )
+            if gain < MIN_CODEX_STOP:
+                break
+            out.append(stop)
+            left.remove(stop)
+            _add_cover(covered, stop, self.done)
+        return out
 
     def value(self, stop: PlanStop) -> int:
         """What the system pays: what is still to earn there (everything with skip_mapped
@@ -400,6 +477,20 @@ class _Collector:
             ),
             key=lambda s: (s.distance, s.address),
         )
+
+
+def _add_cover(
+    covered: dict[tuple[str, str | None], float],
+    stop: PlanStop,
+    done: Callable[[PlanStop, PlanBody], bool],
+) -> None:
+    """Count a stop's entries as covered (by the chance each is there)."""
+    for b in stop.bodies.values():
+        if done(stop, b):
+            continue
+        for e in b.codex:
+            key = (e.key, stop.region)
+            covered[key] = 1.0 - (1.0 - covered.get(key, 0.0)) * (1.0 - e.weight)
 
 
 def _run(pool: ThreadPoolExecutor, tasks: list[Callable[[], Any]]) -> list[Any]:
@@ -460,16 +551,22 @@ def plan(
     search: Search,
     progress: ProgressLookup,
     source: Point | None = None,
+    codex: CodexIndex | None = None,
 ) -> Plan:
     """Plan a route. `source`: the start's coordinates when known locally (then the search
-    does not depend on Spansh knowing the system, e.g. one you just discovered)."""
+    does not depend on Spansh knowing the system, e.g. one you just discovered). `codex`:
+    your codex entries (codex routes)."""
     if req.mode == "line":
-        return _plan_line(req, search, progress)
-    return _plan_riches(req, search, progress, source)
+        return _plan_line(req, search, progress, codex)
+    return _plan_riches(req, search, progress, source, codex)
 
 
 def _plan_riches(
-    req: PlanRequest, search: Search, progress: ProgressLookup, source: Point | None
+    req: PlanRequest,
+    search: Search,
+    progress: ProgressLookup,
+    source: Point | None,
+    codex: CodexIndex | None = None,
 ) -> Plan:
     wanted = max(1, min(req.max_systems, MAX_STOPS))
     radius = max(1.0, min(req.radius_ly, MAX_RADIUS_LY))
@@ -478,7 +575,7 @@ def _plan_riches(
         if source is not None
         else {"reference_system": req.source}
     )
-    collector = _Collector(req, search, progress, radius)
+    collector = _Collector(req, search, progress, radius, codex)
     # Always the widest radius in the query: the same cached pages serve any radius.
     groups = _searches(req, MAX_RADIUS_LY)
     max_pages = MAX_WINDOW // PAGE_SIZE
@@ -495,6 +592,8 @@ def _plan_riches(
             # Final once the `wanted` nearest usable systems are all inside the frontier.
             # Systems not checked for population yet count as usable until checked.
             maybe = collector.valid_stops(optimistic=True)
+            if req.goal == "codex":
+                maybe = collector.cover(maybe, len(maybe))
             edge = frontier()
             sure = sum(1 for s in maybe if s.distance <= edge)
             pending = [g for g in groups if g.has_more(max_pages, radius)]
@@ -522,19 +621,23 @@ def _plan_riches(
     edge = frontier()
     valid = collector.valid_stops()
     complete = [s for s in valid if s.distance <= edge]
+    if req.goal == "codex":
+        complete = collector.cover(complete, len(complete))
     stops = _order_open_path(source.xyz, complete[:wanted])
     _hops(source.xyz, stops)
     return Plan(source=source, destination=None, stops=stops, truncated=len(valid) > len(stops))
 
 
-def _plan_line(req: PlanRequest, search: Search, progress: ProgressLookup) -> Plan:
+def _plan_line(
+    req: PlanRequest, search: Search, progress: ProgressLookup, codex: CodexIndex | None = None
+) -> Plan:
     if not req.destination:
         raise PlanError("no_destination")
     reference: Reference = {
         "reference_route": {"source": req.source, "destination": req.destination}
     }
     deviation = max(1.0, min(req.deviation_ly, 100.0))
-    collector = _Collector(req, search, progress, deviation)
+    collector = _Collector(req, search, progress, deviation, codex)
     groups = _searches(req, deviation)
     with ThreadPoolExecutor(WORKERS) as pool:
         _fetch_round(pool, collector, reference, groups)
@@ -555,7 +658,11 @@ def _plan_line(req: PlanRequest, search: Search, progress: ProgressLookup) -> Pl
     truncated = any((g.count or 0) > LINE_MAX_PAGES * PAGE_SIZE for g in groups)
     valid = collector.valid_stops()
     wanted = max(1, min(req.max_systems, MAX_STOPS))
-    if len(valid) > wanted:
+    if req.goal == "codex":
+        best = collector.best(valid, wanted)
+        truncated = truncated or len(best) < len(valid)
+        valid = best
+    elif len(valid) > wanted:
         # A corridor holds far more systems than anyone wants to stop at: the best ones.
         valid = sorted(valid, key=lambda s: (-collector.value(s), s.distance, s.address))[:wanted]
         truncated = True

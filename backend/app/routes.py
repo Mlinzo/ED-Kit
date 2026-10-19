@@ -11,11 +11,14 @@ import threading
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
-from app import db, exobio, neutron, routeplan
+from app import db, exobio, neutron, regionmap, routeplan
+from app.codex import CodexIndex, codex_index, codex_status
 from app.routeplan import BodyProgress, Plan, PlanError, PlanRequest, Point
 from app.schemas import (
     RouteBodyView,
+    RouteCodexView,
     RoutePoint,
     RouteRequest,
     RouteStopView,
@@ -80,6 +83,7 @@ def _progress(
 def _plan_request(req: RouteRequest, source: Point | None) -> PlanRequest:
     return PlanRequest(
         mode=req.mode,
+        goal=req.goal,
         source=source.name if source is not None else req.source.strip(),
         destination=(req.destination or "").strip() or None,
         radius_ly=req.radius_ly,
@@ -130,8 +134,8 @@ def store(
         )
         conn.executemany(
             "INSERT OR REPLACE INTO route_bodies(system_address, body_id, name, kind, "
-            "distance_ls, scan_value, mapping_value, bio_signals, bio_min, bio_max, genuses) "
-            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "distance_ls, scan_value, mapping_value, bio_signals, bio_min, bio_max, genuses, "
+            "codex) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     s.address,
@@ -145,6 +149,7 @@ def store(
                     b.bio_min,
                     b.bio_max,
                     json.dumps(list(b.genuses)),
+                    json.dumps([[e.key, e.species, e.colour, round(e.weight, 4)] for e in b.codex]),
                 )
                 for s in plan.stops
                 for b in s.bodies.values()
@@ -214,6 +219,7 @@ class RoutePlanner:
                 search,
                 lambda ids: _progress(conn, fid, ids),
                 source,
+                codex_index(conn, fid) if req.goal == "codex" else None,
             )
             if not self._current(generation):
                 return
@@ -462,10 +468,28 @@ def route_view(
         )
     }
 
+    params = RouteRequest.model_validate_json(route["params"])
+    codex_rows = (
+        {
+            (b["system_address"], b["body_id"]): json.loads(b["codex"] or "[]")
+            for b in conn.execute("SELECT system_address, body_id, codex FROM route_bodies")
+        }
+        if params.goal == "codex"
+        else {}
+    )
+    index = codex_index(conn, fid) if params.goal == "codex" else {}
+    covered: dict[tuple[str, str | None], float] = {}
+
     stops: list[RouteStopView] = []
     coords: dict[int, tuple[float, float, float]] = {}
     for s in conn.execute("SELECT * FROM route_stops ORDER BY seq"):
         own = bodies.get(s["system_address"], [])
+        codex_new = 0.0
+        if params.goal == "codex":
+            region = regionmap.region_symbol(regionmap.region_at(s["x"], s["z"]))
+            own, codex_new = _codex_bodies(
+                own, s["system_address"], region, codex_rows, index, covered, bool(s["skipped"])
+            )
         coords[s["seq"]] = (s["x"], s["y"], s["z"])
         stops.append(
             RouteStopView(
@@ -485,6 +509,7 @@ def route_view(
                 done=bool(own) and all(b.done for b in own),
                 skipped=bool(s["skipped"]),
                 here=here is not None and here[0] == s["system_address"],
+                codex_new=round(codex_new, 2),
             )
         )
 
@@ -494,7 +519,7 @@ def route_view(
         distance = round(math.dist(here[1], coords[nxt.seq]), 2)
     return RouteView(
         **base,
-        params=RouteRequest.model_validate_json(route["params"]),
+        params=params,
         created_at=route["created_at"],
         data_at=route["data_at"],
         truncated=bool(route["truncated"]),
@@ -519,4 +544,42 @@ def route_view(
             here[0] if here else None,
             jump_range,
         ),
+        codex_left=round(sum(s.codex_new for s in stops if not s.done and not s.skipped), 2),
     )
+
+
+def _codex_bodies(
+    own: list[RouteBodyView],
+    address: int,
+    region: str | None,
+    rows: dict[tuple[int, int], list[list[Any]]],
+    index: CodexIndex,
+    covered: dict[tuple[str, str | None], float],
+    skipped: bool,
+) -> tuple[list[RouteBodyView], float]:
+    """A codex route stop's bodies with the entries still new (logged since the plan: gone;
+    covered by the stops before: less likely), and the new entries the stop is worth."""
+    out: list[RouteBodyView] = []
+    total = 0.0
+    # The chance each entry is logged before: at earlier stops, then at this stop's bodies above.
+    cover = dict(covered) if skipped else covered
+    for b in own:
+        species: dict[tuple[str, str | None], float] = {}
+        if not b.done:
+            for key, symbol, colour, weight in rows.get((address, b.body_id), []):
+                if codex_status(index, key, region) == "logged":
+                    continue
+                before = cover.get((key, region), 0.0)
+                chance = weight * (1.0 - before)
+                total += chance
+                cover[(key, region)] = before + chance
+                sp = exobio.get_species(symbol)
+                name = sp.species_name if sp else symbol
+                species[(name, colour)] = species.get((name, colour), 0.0) + chance
+        listed = [
+            RouteCodexView(species=name, colour=colour, chance=round(min(chance, 1.0), 2))
+            for (name, colour), chance in sorted(species.items(), key=lambda kv: -kv[1])
+            if chance >= 0.01
+        ]
+        out.append(b.model_copy(update={"codex": listed}))
+    return out, total

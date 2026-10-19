@@ -46,6 +46,17 @@ function placeStop(req: RouteRequest, random: () => number, from: Xyz, i: number
   return to
 }
 const GENERA = ['Bacterium', 'Frutexa', 'Stratum', 'Tussock', 'Fungoida', 'Osseus', 'Concha', 'Cactoida']
+/** Codex routes: species (with a colour, or none when it cannot be told) a body may add. */
+const CODEX: [string, string | null][] = [
+  ['Bacterium Aurasus', 'Teal'],
+  ['Frutexa Flabellum', 'Emerald'],
+  ['Stratum Tectonicas', 'Green'],
+  ['Tussock Pennatis', null],
+  ['Fungoida Setisis', 'Orange'],
+  ['Osseus Spiralis', null],
+  ['Concha Labiata', 'Lime'],
+  ['Cactoida Lapis', 'Amethyst'],
+]
 
 function rng(seed: number): () => number {
   let s = seed >>> 0
@@ -61,8 +72,9 @@ function rng(seed: number): () => number {
 function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
   const random = rng(seed)
   const count = req.mode === 'line' ? 40 : Math.min(req.maxSystems, 60)
-  const kinds = req.bodyTypes.filter((k) => k !== 'bio') as Exclude<BodyKind, 'bio'>[]
-  const withBio = req.bodyTypes.includes('bio')
+  const codex = req.goal === 'codex'
+  const kinds = codex ? [] : (req.bodyTypes.filter((k) => k !== 'bio') as Exclude<BodyKind, 'bio'>[])
+  const withBio = codex || req.bodyTypes.includes('bio')
   const stops: RouteStopView[] = []
   let at: Xyz = [0, 0, 0]
   for (let i = 0; i < count; i++) {
@@ -82,6 +94,7 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
         mapped: false,
         bioDone: 0,
         done: false,
+        codex: [],
       }
       // A mapping kind, biology, or both on one body.
       const mapped = kinds.length > 0 && (!withBio || random() < 0.6)
@@ -93,7 +106,13 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
       const known = random() < 0.6
       const bioLow = signals * Math.round(1_000_000 + random() * 3_000_000)
       const bioMax = signals ? bioLow + Math.round(random() * signals * 6_000_000) : 0
-      if (signals && bioMax < req.bioMinValue && kind === 'bio') continue
+      if (signals && bioMax < req.bioMinValue && kind === 'bio' && !codex) continue
+      const entries = codex
+        ? Array.from({ length: signals }, () => {
+            const [species, colour] = CODEX[Math.floor(random() * CODEX.length)]
+            return { species, colour, chance: known ? 1 : 0.5 }
+          })
+        : []
       bodies.push({
         ...common,
         kind,
@@ -102,6 +121,7 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
         bioMin: known ? bioMax : bioLow,
         bioMax,
         genuses: signals && known ? GENERA.slice(0, signals) : [],
+        codex: entries,
       })
     }
     const own = (b: RouteBodyView) => (b.kind !== 'bio' ? b.mappingValue : 0)
@@ -127,6 +147,7 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
       done: false,
       skipped: false,
       here: false,
+      codexNew: bodies.reduce((n, b) => n + b.codex.reduce((m, c) => m + c.chance, 0), 0),
     })
   }
   return stops
@@ -150,6 +171,7 @@ const EMPTY_NEUTRON: NeutronPlanView = {
 
 const DEFAULT_REQUEST: RouteRequest = {
   mode: 'riches',
+  goal: 'credits',
   source: '',
   destination: null,
   radiusLy: 200,
@@ -199,6 +221,7 @@ function demoStop(system: SystemView, seq: number, at: RouteStopView): RouteStop
       bioDone: Math.min(b.bioDone, b.signals.bio),
       genuses: [],
       done: (kind === 'bio' || b.mappedByMe) && b.bioDone >= b.signals.bio,
+      codex: [],
     })
   }
   const own = (b: RouteBodyView) => (b.kind !== 'bio' ? b.mappingValue : 0)
@@ -213,6 +236,7 @@ function demoStop(system: SystemView, seq: number, at: RouteStopView): RouteStop
     visited: true,
     done: bodies.length > 0 && bodies.every((b) => b.done),
     here: true,
+    codexNew: 0,
   }
 }
 
@@ -279,6 +303,7 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       doneCount: stops.filter((s) => s.done).length,
       skippedCount: stops.filter((s) => s.skipped && !s.done).length,
       neutron: neutron && { ...neutron, stale: neutron.destination !== next?.name },
+      codexLeft: stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + s.codexNew, 0),
     }
   }
 

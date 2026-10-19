@@ -53,7 +53,10 @@ BODY_FIELDS = (
     "volcanism_type",
     "parents",
     "system_region",
+    "materials",  # the colour of some species (codex variants)
 )
+# Bumped when BODY_FIELDS change: cached pages without the new fields are fetched again.
+PAGE_FORMAT = 2
 
 # Reference of a search: {"reference_system": name} | {"reference_coords": {x, y, z}}
 # | {"reference_route": {"source": name, "destination": name}} (then `distance` is the
@@ -191,7 +194,9 @@ class CachedSearch(SpanshSearch):
         return when if not self.refresh and _now() - when <= CACHE_MAX_AGE else None
 
     def bodies(self, filters: dict[str, Any], reference: Reference, page: int) -> dict[str, Any]:
-        key = json.dumps([filters, reference, page], sort_keys=True, separators=(",", ":"))
+        key = json.dumps(
+            [PAGE_FORMAT, filters, reference, page], sort_keys=True, separators=(",", ":")
+        )
         with self._lock:
             row = self._conn.execute(
                 "SELECT fetched_at, data FROM spansh_pages WHERE key = ?", (key,)

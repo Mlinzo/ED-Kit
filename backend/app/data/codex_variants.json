@@ -1,0 +1,1287 @@
+{
+ "source": "Canonn codex reference (https://us-central1-canonn-api-236217.cloudfunctions.net/query/codex/ref), 2026-10-19",
+ "materials": {
+  "a": [
+   "Antimony",
+   "Polonium",
+   "Ruthenium",
+   "Technetium",
+   "Tellurium",
+   "Yttrium"
+  ],
+  "b": [
+   "Cadmium",
+   "Mercury",
+   "Molybdenum",
+   "Niobium",
+   "Tin",
+   "Tungsten"
+  ]
+ },
+ "species": {
+  "$Codex_Ent_Aleoids_01_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "W": "Grey",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "$Codex_Ent_Aleoids_02_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "$Codex_Ent_Aleoids_03_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "$Codex_Ent_Aleoids_04_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "W": "Grey",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "$Codex_Ent_Aleoids_05_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "$Codex_Ent_Bacterial_01_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Turquoise",
+    "B": "Grey",
+    "A": "Yellow",
+    "F": "Lime",
+    "G": "Emerald",
+    "K": "Green",
+    "M": "Teal",
+    "L": "Sage",
+    "T": "Red",
+    "TTS": "Maroon",
+    "Ae": "Orange",
+    "Y": "Mauve",
+    "W": "Amethyst",
+    "D": "Ocher",
+    "N": "Indigo"
+   }
+  },
+  "$Codex_Ent_Bacterial_02_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Cyan",
+    "Tellurium": "Green",
+    "Polonium": "Gold",
+    "Ruthenium": "Orange",
+    "Antimony": "Magenta",
+    "Yttrium": "Cobalt"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Bacterial_03_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Peach",
+    "Niobium": "Red",
+    "Tin": "Mulberry",
+    "Tungsten": "Aquamarine",
+    "Molybdenum": "Lime",
+    "Cadmium": "White"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Bacterial_04_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Lime",
+    "Tellurium": "White",
+    "Polonium": "Magenta",
+    "Ruthenium": "Cobalt",
+    "Antimony": "Cyan",
+    "Yttrium": "Aquamarine"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Bacterial_05_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Gold",
+    "Tellurium": "Red",
+    "Polonium": "Orange",
+    "Ruthenium": "Mulberry",
+    "Antimony": "Cyan",
+    "Yttrium": "Lime"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Bacterial_06_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Turquoise",
+    "B": "Grey",
+    "A": "Yellow",
+    "F": "Lime",
+    "G": "Emerald",
+    "K": "Green",
+    "M": "Teal",
+    "L": "Sage",
+    "T": "Red",
+    "TTS": "Maroon",
+    "Ae": "Orange",
+    "Y": "Mauve",
+    "W": "Amethyst",
+    "D": "Ocher",
+    "N": "Indigo"
+   }
+  },
+  "$Codex_Ent_Bacterial_07_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Orange",
+    "Niobium": "Magenta",
+    "Tin": "Cobalt",
+    "Tungsten": "Green",
+    "Molybdenum": "Yellow",
+    "Cadmium": "Gold"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Bacterial_08_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Aquamarine",
+    "Tellurium": "Yellow",
+    "Polonium": "Lime",
+    "Ruthenium": "Gold",
+    "Antimony": "Red",
+    "Yttrium": "Cobalt"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Bacterial_09_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Lime",
+    "Tellurium": "Cyan",
+    "Polonium": "Aquamarine",
+    "Ruthenium": "Cobalt",
+    "Antimony": "Red",
+    "Yttrium": "Gold"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Bacterial_10_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Gold",
+    "Tellurium": "Lime",
+    "Polonium": "Yellow",
+    "Ruthenium": "Aquamarine",
+    "Antimony": "Cobalt",
+    "Yttrium": "Red"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Bacterial_11_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "White",
+    "Niobium": "Peach",
+    "Tin": "Red",
+    "Tungsten": "Blue",
+    "Molybdenum": "Aquamarine",
+    "Cadmium": "Lime"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Bacterial_12_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Turquoise",
+    "B": "Grey",
+    "A": "Yellow",
+    "F": "Lime",
+    "G": "Emerald",
+    "K": "Green",
+    "M": "Teal",
+    "L": "Sage",
+    "T": "Red",
+    "TTS": "Maroon",
+    "Ae": "Orange",
+    "Y": "Mauve",
+    "W": "Amethyst",
+    "D": "Ocher",
+    "N": "Indigo"
+   }
+  },
+  "$Codex_Ent_Bacterial_13_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Red",
+    "Niobium": "Mulberry",
+    "Tin": "Blue",
+    "Tungsten": "Lime",
+    "Molybdenum": "White",
+    "Cadmium": "Peach"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Cactoid_01_Name;": {
+   "by": "star",
+   "colours": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Cactoid_02_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Grey",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "W": "Indigo",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Cactoid_03_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Grey",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Cactoid_04_Name;": {
+   "by": "star",
+   "colours": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Cactoid_05_Name;": {
+   "by": "star",
+   "colours": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Clypeus_01_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Maroon",
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "L": "Teal",
+    "Y": "Green",
+    "D": "Lime",
+    "N": "Yellow"
+   }
+  },
+  "$Codex_Ent_Clypeus_02_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Maroon",
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "L": "Teal",
+    "Y": "Green",
+    "D": "Lime",
+    "N": "Yellow"
+   }
+  },
+  "$Codex_Ent_Clypeus_03_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Maroon",
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "N": "Yellow"
+   }
+  },
+  "$Codex_Ent_Conchas_01_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Mulberry",
+    "Niobium": "Blue",
+    "Tin": "Aquamarine",
+    "Tungsten": "White",
+    "Molybdenum": "Peach",
+    "Cadmium": "Red"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Conchas_02_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Indigo",
+    "A": "Teal",
+    "F": "Grey",
+    "G": "Turquoise",
+    "K": "Red",
+    "L": "Orange",
+    "Y": "Yellow",
+    "D": "Green",
+    "N": "Emerald"
+   }
+  },
+  "$Codex_Ent_Conchas_03_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Indigo",
+    "A": "Teal",
+    "F": "Grey",
+    "G": "Turquoise",
+    "K": "Red",
+    "L": "Orange",
+    "Y": "Yellow",
+    "W": "Lime",
+    "D": "Green",
+    "N": "Emerald"
+   }
+  },
+  "$Codex_Ent_Conchas_04_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "White",
+    "Tellurium": "Yellow",
+    "Polonium": "Red",
+    "Ruthenium": "Orange",
+    "Antimony": "Peach",
+    "Yttrium": "Gold"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Electricae_01_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Magenta",
+    "Tellurium": "Red",
+    "Polonium": "Cyan",
+    "Ruthenium": "Blue",
+    "Antimony": "Cobalt",
+    "Yttrium": "Mulberry"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Electricae_02_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Aquamarine",
+    "Tellurium": "Magenta",
+    "Polonium": "Cobalt",
+    "Ruthenium": "Blue",
+    "Antimony": "Cyan",
+    "Yttrium": "Green"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Fonticulus_01_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Ae": "Maroon",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Fonticulus_02_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Grey",
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Ae": "Maroon",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Fonticulus_03_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Ae": "Maroon",
+    "Y": "Ocher",
+    "W": "Indigo",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Fonticulus_04_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Grey",
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Ae": "Maroon",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Fonticulus_05_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Fonticulus_06_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "$Codex_Ent_Fumerolas_01_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Magenta",
+    "Niobium": "Cobalt",
+    "Tin": "Cyan",
+    "Tungsten": "Yellow",
+    "Molybdenum": "Gold",
+    "Cadmium": "Orange"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Fumerolas_02_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Lime",
+    "Niobium": "White",
+    "Tin": "Peach",
+    "Tungsten": "Mulberry",
+    "Molybdenum": "Blue",
+    "Cadmium": "Aquamarine"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Fumerolas_03_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Peach",
+    "Niobium": "Red",
+    "Tin": "Mulberry",
+    "Tungsten": "Aquamarine",
+    "Molybdenum": "Lime",
+    "Cadmium": "White"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Fumerolas_04_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Yellow",
+    "Niobium": "Gold",
+    "Tin": "Orange",
+    "Tungsten": "Cobalt",
+    "Molybdenum": "Cyan",
+    "Cadmium": "Green"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Fungoids_01_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Lime",
+    "Tellurium": "Yellow",
+    "Polonium": "White",
+    "Ruthenium": "Gold",
+    "Antimony": "Peach",
+    "Yttrium": "Orange"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Fungoids_02_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Green",
+    "Niobium": "White",
+    "Tin": "Orange",
+    "Tungsten": "Peach",
+    "Molybdenum": "Magenta",
+    "Cadmium": "Blue"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Fungoids_03_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Peach",
+    "Tellurium": "Gold",
+    "Polonium": "Mulberry",
+    "Ruthenium": "Magenta",
+    "Antimony": "Red",
+    "Yttrium": "Orange"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Fungoids_04_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Lime",
+    "Niobium": "Green",
+    "Tin": "Red",
+    "Tungsten": "Orange",
+    "Molybdenum": "Mulberry",
+    "Cadmium": "Cyan"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Osseus_01_Name;": {
+   "by": "star",
+   "colours": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green",
+    "Y": "Maroon"
+   }
+  },
+  "$Codex_Ent_Osseus_02_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Lime",
+    "Niobium": "Aquamarine",
+    "Tin": "Blue",
+    "Tungsten": "Red",
+    "Molybdenum": "Peach",
+    "Cadmium": "White"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Osseus_03_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Yellow",
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green",
+    "Y": "Maroon"
+   }
+  },
+  "$Codex_Ent_Osseus_04_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Lime",
+    "Tellurium": "Green",
+    "Polonium": "Peach",
+    "Ruthenium": "Gold",
+    "Antimony": "White",
+    "Yttrium": "Yellow"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Osseus_05_Name;": {
+   "by": "star",
+   "colours": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green",
+    "Y": "Maroon"
+   }
+  },
+  "$Codex_Ent_Osseus_06_Name;": {
+   "by": "star",
+   "colours": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green",
+    "Y": "Maroon"
+   }
+  },
+  "$Codex_Ent_Recepta_01_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Indigo",
+    "B": "Turquoise",
+    "A": "Amethyst",
+    "F": "Mauve",
+    "G": "Orange",
+    "K": "Red",
+    "M": "Maroon",
+    "L": "Ocher",
+    "T": "Teal",
+    "TTS": "Sage",
+    "Ae": "Grey",
+    "Y": "Lime",
+    "D": "Yellow",
+    "N": "Emerald"
+   }
+  },
+  "$Codex_Ent_Recepta_02_Name;": {
+   "by": "material",
+   "colours": {
+    "Mercury": "Cyan",
+    "Niobium": "Mulberry",
+    "Tin": "Orange",
+    "Tungsten": "Red",
+    "Molybdenum": "Gold",
+    "Cadmium": "Lime"
+   },
+   "group": "b"
+  },
+  "$Codex_Ent_Recepta_03_Name;": {
+   "by": "material",
+   "colours": {
+    "Technetium": "Aquamarine",
+    "Tellurium": "Cyan",
+    "Polonium": "White",
+    "Ruthenium": "Yellow",
+    "Antimony": "Lime",
+    "Yttrium": "Green"
+   },
+   "group": "a"
+  },
+  "$Codex_Ent_Shrubs_01_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Yellow",
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "W": "Orange",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Shrubs_02_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "W": "Orange",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Shrubs_03_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Shrubs_04_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Shrubs_05_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Shrubs_06_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Shrubs_07_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Yellow",
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "$Codex_Ent_Stratum_01_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Ae": "Teal",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Stratum_02_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Ae": "Teal",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Stratum_03_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Stratum_04_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald"
+   }
+  },
+  "$Codex_Ent_Stratum_05_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Ae": "Teal",
+    "Y": "Indigo",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Stratum_06_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Ae": "Teal",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Stratum_07_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Ae": "Teal",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Stratum_08_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Ae": "Teal",
+    "Y": "Indigo",
+    "D": "Mauve"
+   }
+  },
+  "$Codex_Ent_Tubus_01_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "$Codex_Ent_Tubus_02_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "$Codex_Ent_Tubus_03_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "$Codex_Ent_Tubus_04_Name;": {
+   "by": "star",
+   "colours": {
+    "O": "Green",
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "$Codex_Ent_Tubus_05_Name;": {
+   "by": "star",
+   "colours": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "W": "Lime",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "$Codex_Ent_Tussocks_01_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_02_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_03_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_04_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_05_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_06_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_07_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_08_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_09_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_10_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_11_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_12_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_13_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Ae": "Amethyst",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_14_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "$Codex_Ent_Tussocks_15_Name;": {
+   "by": "star",
+   "colours": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  }
+ }
+}

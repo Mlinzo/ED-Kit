@@ -133,6 +133,8 @@ CREATE TABLE IF NOT EXISTS route_bodies(
   bio_min INTEGER NOT NULL DEFAULT 0,
   bio_max INTEGER NOT NULL DEFAULT 0,
   genuses TEXT NOT NULL DEFAULT '[]',  -- JSON codex genus symbols
+  -- codex routes: JSON [[entry symbol, species symbol, colour, chance]] not in your codex then
+  codex TEXT NOT NULL DEFAULT '[]',
   PRIMARY KEY(system_address, body_id)
 ) STRICT;
 
@@ -433,6 +435,7 @@ ADDED_COLUMNS = (
     ("route_bodies", "bio_min", "INTEGER NOT NULL DEFAULT 0"),
     ("route_bodies", "bio_max", "INTEGER NOT NULL DEFAULT 0"),
     ("route_bodies", "genuses", "TEXT NOT NULL DEFAULT '[]'"),
+    ("route_bodies", "codex", "TEXT NOT NULL DEFAULT '[]'"),
     ("ext_systems", "name", "TEXT"),
     ("ext_systems", "x", "REAL"),
     ("ext_systems", "y", "REAL"),

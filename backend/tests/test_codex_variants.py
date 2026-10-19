@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+
+import pytest
+
+from app import db
+from app.codex import codex_index, codex_status, predicted_status
+from app.exobio.variants import colour_of, variants
+from app.models import BodyFacts, SystemFacts
+
+ALEOIDA = "$Codex_Ent_Aleoids_01_Name;"  # colour by star
+VESICULA = "$Codex_Ent_Bacterial_05_Name;"  # by a group-A material
+SETISIS = "$Codex_Ent_Fungoids_02_Name;"  # by a group-B material
+LEGACY = "$Codex_Ent_Sphere_Name;"  # no colours
+INNER = "$Codex_RegionName_18;"
+OTHER = "$Codex_RegionName_7;"
+
+
+def body(star: str | None = "F", **materials: float) -> tuple[BodyFacts, SystemFacts]:
+    system = SystemFacts(address=1, name="S")
+    if star is not None:
+        system.bodies[0] = BodyFacts(
+            system_address=1, body_id=0, name="S", kind="star", star_type=star
+        )
+    planet = BodyFacts(
+        system_address=1,
+        body_id=3,
+        name="S 1",
+        kind="planet",
+        parents=[("Planet", 2), ("Star", 0)],
+        materials=materials,
+    )
+    system.bodies[3] = planet
+    return planet, system
+
+
+def test_colour_by_parent_star() -> None:
+    found = variants(ALEOIDA, *body("F"))
+    assert found is not None and [(v.symbol, v.colour, v.weight) for v in found] == [
+        ("$Codex_Ent_Aleoids_01_F_Name;", "Teal", 1.0)
+    ]
+    assert variants(ALEOIDA, *body("K_OrangeGiant"))[0].colour == "Turquoise"  # type: ignore[index]
+    assert variants(ALEOIDA, *body("DA"))[0].symbol.endswith("_D_Name;")  # type: ignore[index]
+    assert variants(ALEOIDA, *body(None)) is None  # parent star unknown
+    assert variants(ALEOIDA, *body("O")) is None  # no Aleoida Arcus colour for O stars
+
+
+def test_colour_by_material() -> None:
+    found = variants(VESICULA, *body(iron=20.0, tellurium=0.9, cadmium=1.2))
+    assert found is not None and [(v.colour, v.weight) for v in found] == [("Red", 1.0)]
+    assert variants(VESICULA, *body(iron=20.0)) is None  # materials unknown or none of its group
+    # Group B: several can be on one body, and nothing tells which one colours it.
+    both = variants(SETISIS, *body(tin=1.1, molybdenum=1.2, Iron=20.0))
+    assert both is not None and sorted((v.colour, v.weight) for v in both) == [
+        ("Magenta", 0.5),
+        ("Orange", 0.5),
+    ]
+
+
+def test_organisms_without_colours() -> None:
+    assert [(v.symbol, v.colour, v.weight) for v in variants(LEGACY, *body()) or []] == [
+        (LEGACY, None, 1.0)
+    ]
+    assert colour_of("$Codex_Ent_Bacterial_05_Yttrium_Name;") == "Lime"
+    assert colour_of(LEGACY) is None and colour_of(None) is None
+
+
+@pytest.fixture
+def conn(tmp_path: Path) -> sqlite3.Connection:
+    c = db.connect(tmp_path / "t.db")
+    db.init_schema(c)
+    return c
+
+
+def log(conn: sqlite3.Connection, name: str, species: str, region: str, ts: str) -> None:
+    conn.execute(
+        "INSERT INTO codex_entries(fid, ts, entry_id, name, species, category, region) "
+        "VALUES('F1', ?, 1, ?, ?, 'bio', ?)",
+        (ts, name, species, region),
+    )
+
+
+def test_codex_by_colour(conn: sqlite3.Connection) -> None:
+    log(conn, "$Codex_Ent_Aleoids_01_F_Name;", ALEOIDA, INNER, "2026-10-19T10:00:00Z")
+    log(conn, "$Codex_Ent_Fungoids_02_Tin_Name;", SETISIS, INNER, "2026-10-19T10:05:00Z")
+    index = codex_index(conn, "F1")
+    # Any colour still counts for the species.
+    assert codex_status(index, ALEOIDA, INNER) == "logged"
+    teal = variants(ALEOIDA, *body("F"))
+    assert predicted_status(index, ALEOIDA, teal, INNER) == ("logged", 0.0)
+    assert predicted_status(index, ALEOIDA, teal, OTHER) == ("new_region", 1.0)
+    turquoise = variants(ALEOIDA, *body("K"))
+    assert predicted_status(index, ALEOIDA, turquoise, INNER) == ("new", 1.0)  # a new colour
+    # Colour unknown: by species, as before.
+    assert predicted_status(index, ALEOIDA, None, INNER) == ("logged", 0.0)
+    # Tin logged, molybdenum not: half a new entry.
+    tin_or_mo = variants(SETISIS, *body(tin=1.1, molybdenum=1.2))
+    assert predicted_status(index, SETISIS, tin_or_mo, INNER) == ("new", 0.5)

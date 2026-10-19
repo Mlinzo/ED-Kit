@@ -35,7 +35,7 @@ import { BodyChips } from './kinds'
 import { RouteMap } from './map'
 import { carto, routeLeft, spanshUrl, stopLeft, type StopActions } from './helpers'
 import { NeutronPlan } from './NeutronPlan'
-import { BodyRow, IconButton, PopulatedBadge, StopStatus } from './parts'
+import { BodyRow, CodexCount, IconButton, PopulatedBadge, StopStatus } from './parts'
 import { PlottedRoute } from './PlottedRoute'
 import { RouteForm } from './RouteForm'
 import { StopCard } from './StopCard'
@@ -94,6 +94,7 @@ function NextTarget({
   }
   const left = stopLeft(stop)
   const bio = stop.bodies.some((b) => b.bioSignals > 0)
+  const codex = route.params?.goal === 'codex'
   return (
     <section aria-labelledby="route-next" className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-sky-500/25 sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -132,15 +133,27 @@ function NextTarget({
             <PopulatedBadge population={stop.population} />
           </p>
         </div>
-        {left.max > 0 && (
+        {codex ? (
           <div className="shrink-0 sm:text-right">
-            <p className="text-xs font-medium text-zinc-500">{t.route.stopLeft}</p>
-            <CreditRange
-              min={left.min}
-              max={left.max}
-              className="mt-0.5 block text-2xl font-semibold tracking-tight text-emerald-300 tabular-nums sm:text-3xl"
-            />
+            <p className="text-xs font-medium text-zinc-500">{t.route.codex.here}</p>
+            <CodexCount value={stop.codexNew} className="mt-0.5 text-2xl font-semibold tracking-tight text-violet-200 sm:text-3xl" />
+            {left.max > 0 && (
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {t.route.codex.creditsToo} <CreditRange min={left.min} max={left.max} className="text-zinc-400" />
+              </p>
+            )}
           </div>
+        ) : (
+          left.max > 0 && (
+            <div className="shrink-0 sm:text-right">
+              <p className="text-xs font-medium text-zinc-500">{t.route.stopLeft}</p>
+              <CreditRange
+                min={left.min}
+                max={left.max}
+                className="mt-0.5 block text-2xl font-semibold tracking-tight text-emerald-300 tabular-nums sm:text-3xl"
+              />
+            </div>
+          )
         )}
       </div>
 
@@ -207,6 +220,20 @@ function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onR
           </dd>
           {route.skippedCount > 0 && <dd className="text-xs text-zinc-500">{t.route.withoutSkipped}</dd>}
         </div>
+        {route.params?.goal === 'codex' && (
+          <div className="col-span-2">
+            <dt className="text-zinc-500" title={t.route.codex.leftHint}>
+              {t.route.codex.left}
+            </dt>
+            <dd className="mt-0.5">
+              {route.codexLeft > 0 ? (
+                <CodexCount value={route.codexLeft} className="text-lg font-semibold text-violet-200" />
+              ) : (
+                <span className="text-zinc-500">{t.route.codex.none}</span>
+              )}
+            </dd>
+          </div>
+        )}
         <div>
           <dt className="text-zinc-500">{t.route.remaining}</dt>
           <dd className="mt-0.5 text-lg font-semibold text-zinc-100">{formatLy(route.remainingLy)}</dd>
@@ -246,12 +273,15 @@ function StopRow({
   nextSeq,
   last,
   actions,
+  codex = false,
 }: {
   stop: RouteStopView
   next: boolean
   nextSeq: number | null
   last: boolean
   actions: StopActions
+  /** A codex route: the new entries expected are the stop's value. */
+  codex?: boolean
 }) {
   const dim = stop.done || stop.skipped
   const label = (action: string) => `${action}: ${stop.name}`
@@ -294,7 +324,13 @@ function StopRow({
         ))}
       </span>
       <span className="text-right tabular-nums">
-        <CreditRange min={stop.valueMin} max={stop.value} className={dim ? '' : 'font-medium text-zinc-100'} />
+        {codex ? (
+          <span title={`${exactCredits(stop.valueMin)} – ${exactCredits(stop.value)}`}>
+            <CodexCount value={stop.codexNew} short className={dim ? '' : 'font-medium text-violet-200'} />
+          </span>
+        ) : (
+          <CreditRange min={stop.valueMin} max={stop.value} className={dim ? '' : 'font-medium text-zinc-100'} />
+        )}
       </span>
       <span className="hidden items-center justify-end gap-1 md:flex">
         <StopStatus stop={stop} next={next} />
@@ -350,6 +386,7 @@ function StopList({ route, actions }: { route: RouteView; actions: StopActions }
             nextSeq={route.nextSeq}
             last={i === route.stops.length - 1}
             actions={actions}
+            codex={route.params?.goal === 'codex'}
           />
         ))}
       </ol>

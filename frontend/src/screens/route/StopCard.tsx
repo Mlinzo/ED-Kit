@@ -7,7 +7,7 @@ import { CreditRange } from '../../components/Credits'
 import { t } from '../../i18n'
 import { formatLy } from '../../lib/format'
 import { spanshUrl, type StopActions } from './helpers'
-import { BodyRow, IconButton, PopulatedBadge, StopStatus } from './parts'
+import { BodyRow, CodexCount, IconButton, PopulatedBadge, StopStatus } from './parts'
 
 function Action({ onClick, children, danger = false }: { onClick: () => void; children: ReactNode; danger?: boolean }) {
   return (
@@ -90,7 +90,14 @@ export function StopCard({
       </ul>
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <CreditRange min={stop.valueMin} max={stop.value} className="text-base font-semibold text-zinc-100" />
+        {route.params?.goal === 'codex' ? (
+          <span className="flex flex-col">
+            <CodexCount value={stop.codexNew} className="text-base font-semibold text-violet-200" />
+            <CreditRange min={stop.valueMin} max={stop.value} className="text-xs text-zinc-500" />
+          </span>
+        ) : (
+          <CreditRange min={stop.valueMin} max={stop.value} className="text-base font-semibold text-zinc-100" />
+        )}
         <div className="flex flex-wrap items-center gap-1.5">
           {canMakeNext && route.nextSeq !== null && (
             <Action onClick={() => actions.makeNext(stop.seq, route.nextSeq ?? stop.seq)}>

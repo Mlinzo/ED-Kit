@@ -417,7 +417,7 @@ def test_cached_search_remembers_pages_systems_and_permits(
             return {
                 "count": 1,
                 "reference": None,
-                "results": [{**body(1, 1, (1, 2, 3)), "materials": "x"}],
+                "results": [{**body(1, 1, (1, 2, 3)), "synthesis_recipes": "x"}],
             }
         if "needs_permit" in filters:
             calls.append("permits")
@@ -434,7 +434,7 @@ def test_cached_search_remembers_pages_systems_and_permits(
     ref = {"reference_system": "Start"}
     first = spansh.CachedSearch(path)
     page = first.bodies({"subtype": {"value": ["Earth-like world"]}}, ref, 0)
-    assert "materials" not in page["results"][0]  # trimmed before caching
+    assert "synthesis_recipes" not in page["results"][0]  # trimmed before caching
     assert first.systems([1, 2]) == {
         1: {"population": 10, "needs_permit": False},
         2: {"population": 10, "needs_permit": False},

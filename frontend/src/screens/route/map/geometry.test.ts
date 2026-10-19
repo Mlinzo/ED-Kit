@@ -34,6 +34,7 @@ const PARAMS: RouteRequest = {
   includePopulated: true,
   skipMapped: true,
   refresh: false,
+  goal: 'credits',
 }
 
 function stop(seq: number, x: number, y: number, z: number, extra: Partial<RouteStopView> = {}): RouteStopView {
@@ -54,6 +55,7 @@ function stop(seq: number, x: number, y: number, z: number, extra: Partial<Route
     done: false,
     skipped: false,
     here: false,
+    codexNew: 0,
     ...extra,
   }
 }
@@ -86,6 +88,7 @@ function route(stops: RouteStopView[], extra: Partial<RouteView> = {}): RouteVie
     doneCount: 0,
     skippedCount: 0,
     neutron: null,
+    codexLeft: 0,
     ...extra,
   }
 }

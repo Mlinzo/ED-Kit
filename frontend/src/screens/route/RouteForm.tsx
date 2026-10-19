@@ -1,8 +1,8 @@
 // Route parameters: mode, start / destination, reach, what counts (mapping kinds and biology),
 // minimum values.
-import { LoaderCircle, MoveRight, Orbit, Route } from 'lucide-react'
+import { BookOpen, Coins, LoaderCircle, MoveRight, Orbit, Route } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
-import type { BodyKind, RouteMode, RouteRequest } from '../../api/types'
+import type { BodyKind, RouteGoal, RouteMode, RouteRequest } from '../../api/types'
 import { t } from '../../i18n'
 import { ThresholdField } from '../../settings/ThresholdField'
 import { KindChip } from './kinds'
@@ -18,6 +18,7 @@ const KINDS: readonly BodyKind[] = ['elw', 'tww', 'thmc', 'ww', 'aw', 'trocky', 
 
 const DEFAULT_ROUTE: RouteRequest = {
   mode: 'riches',
+  goal: 'credits',
   source: '',
   destination: null,
   radiusLy: 200,
@@ -95,6 +96,39 @@ function Check({ checked, onChange, label, hint }: { checked: boolean; onChange:
   )
 }
 
+function Toggle<T extends string>({
+  value,
+  options,
+  label,
+  names,
+  onChange,
+}: {
+  value: T
+  options: readonly { id: T; icon: typeof Orbit }[]
+  label: string
+  names: Record<T, string>
+  onChange: (v: T) => void
+}) {
+  return (
+    <div role="group" aria-label={label} className="inline-flex rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+      {options.map(({ id, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={value === id}
+          onClick={() => onChange(id)}
+          className={`focus-ring flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-sm font-medium transition-colors ${
+            value === id ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <Icon className="size-4" aria-hidden />
+          {names[id]}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function TextInput({
   value,
   onChange,
@@ -140,10 +174,11 @@ export function RouteForm({
   const toggleKind = (kind: BodyKind) =>
     set('bodyTypes', req.bodyTypes.includes(kind) ? req.bodyTypes.filter((k) => k !== kind) : [...req.bodyTypes, kind])
 
-  const bio = req.bodyTypes.includes('bio')
-  const carto = req.bodyTypes.some((k) => k !== 'bio')
+  const codex = req.goal === 'codex'
+  const bio = codex || req.bodyTypes.includes('bio')
+  const carto = !codex && req.bodyTypes.some((k) => k !== 'bio')
   const needsDestination = req.mode === 'line' && !(req.destination ?? '').trim()
-  const valid = req.bodyTypes.length > 0 && !needsDestination
+  const valid = (codex || req.bodyTypes.length > 0) && !needsDestination
   const submit = (e: FormEvent) => {
     e.preventDefault()
     if (valid && !building && !disabled) onSubmit({ ...req, source: req.source.trim(), destination: req.destination?.trim() || null })
@@ -153,27 +188,21 @@ export function RouteForm({
     { id: 'riches', icon: Orbit },
     { id: 'line', icon: MoveRight },
   ]
+  const goals: { id: RouteGoal; icon: typeof Orbit }[] = [
+    { id: 'credits', icon: Coins },
+    { id: 'codex', icon: BookOpen },
+  ]
 
   return (
     <form onSubmit={submit} className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-zinc-800 sm:p-6">
-      <Field label={t.route.mode} hint={t.route.modeHint[req.mode]}>
-        <div role="group" aria-label={t.route.mode} className="inline-flex rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
-          {modes.map(({ id, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={req.mode === id}
-              onClick={() => set('mode', id)}
-              className={`focus-ring flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-sm font-medium transition-colors ${
-                req.mode === id ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Icon className="size-4" aria-hidden />
-              {t.route.modes[id]}
-            </button>
-          ))}
-        </div>
-      </Field>
+      <div className="grid gap-x-8 gap-y-6 lg:grid-cols-2">
+        <Field label={t.route.goal} hint={t.route.goalHint[req.goal]}>
+          <Toggle value={req.goal} options={goals} label={t.route.goal} names={t.route.goals} onChange={(v) => set('goal', v)} />
+        </Field>
+        <Field label={t.route.mode} hint={t.route.modeHint[req.mode]}>
+          <Toggle value={req.mode} options={modes} label={t.route.mode} names={t.route.modes} onChange={(v) => set('mode', v)} />
+        </Field>
+      </div>
 
       <div className="mt-6 grid gap-x-8 gap-y-6 lg:grid-cols-2">
         <Field label={t.route.source} hint={t.route.sourceHint}>
@@ -211,6 +240,7 @@ export function RouteForm({
             onChange={(v) => set('maxSystems', v)}
           />
         </Field>
+        {!codex && (
         <Field label={t.route.bodyTypes} hint={t.route.bodyTypesHint}>
           <div className="flex flex-wrap gap-1.5">
             {KINDS.map((kind) => {
@@ -232,8 +262,10 @@ export function RouteForm({
             })}
           </div>
         </Field>
+        )}
       </div>
 
+      {!codex && (
       <div className="mt-2 grid gap-x-8 lg:grid-cols-3">
         {carto && (
           <ThresholdField
@@ -264,6 +296,7 @@ export function RouteForm({
           disabled={false}
         />
       </div>
+      )}
 
       <div className="mt-6 space-y-3">
         {bio && (

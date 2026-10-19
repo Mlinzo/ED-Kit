@@ -92,10 +92,24 @@ Re-checked against three sources that do not depend on each other's numbers:
   player's journals agree: four HMC CO2/SO2 bodies around G stars inside Tectonicas'
   ranges (Col 285 Sector TT-H c10-4 A 6/7/8, HIP 46631 A 6) had only Bacterium.
 
+## Colour variants (`variants.py`, `app/data/codex_variants.json`)
+
+Checked 2026-10-19.
+
+| Fact | Source |
+|---|---|
+| Each colour of an Odyssey species is its own codex entry, per region: `$Codex_Ent_<Species>_<code>_Name;` | Canonn codex reference (above): 789 Odyssey biology entries, 90 species with colours; the player's journal `CodexEntry` names (e.g. Bacterium Vesicula logged as Yttrium, Ruthenium and Tellurium in one region) |
+| 64 species take their colour from a star class (O B A F G K M L T Y TTS Ae W D N), 26 from a material in one of two groups: A = antimony, polonium, ruthenium, technetium, tellurium, yttrium; B = cadmium, mercury, molybdenum, niobium, tin, tungsten | Canonn codex reference: the variant codes per species (`tools/codex_variants.py`) |
+| The star is the body's parent star, not the system's main star: the parent star has the variant's class in 97 % of samples (median over 431 star variants with 50+ samples); the main star far less (Aleoida Arcus - Lime: parent L 202/206, main 3/211) | Canonn biostats `histograms.local_stars` / `primary_stars` |
+| Group A never share a body: every group-A variant's samples have its own material and none of the other five | Canonn biostats `histograms.materials` |
+| Group B often do (14-27 % of a variant's samples hold each other group-B material), and neither a fixed order nor the largest share decides: a player's Fungoida Setisis was Tin on a body with molybdenum 1.24 %, tin 1.13 %. Every group-B material present is a candidate, at equal chance | Canonn biostats; the player's journal |
+
 ## Known limitations
 
-- Region is known only after a `CodexEntry` in the system. Unknown region keeps
-  regional species as "possible". A region lookup from `StarPos` would fix this.
+- The region comes from the region map by coordinates (app.regionmap) when no
+  `CodexEntry` named it yet.
+- Group-B colours (see above) cannot be told apart when a body holds several of those
+  materials.
 - Not checkable from the journal, so capped at "possible": nebula proximity
   (Electricae Radialem, Bark Mounds). Not modelled: Guardian-site proximity (brain
   trees), tuber zones, anemone star colours.

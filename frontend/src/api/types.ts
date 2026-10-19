@@ -25,6 +25,8 @@ export interface SpeciesView {
   samples: number
   certain: boolean
   codex: CodexStatus
+  /** "Teal"; candidates joined with " / " when not certain. */
+  colour: string | null
 }
 
 export interface SignalsView {
@@ -443,6 +445,8 @@ export interface HistoryView {
 
 /** riches: around a start point; line: along a straight line between two systems. */
 export type RouteMode = 'riches' | 'line'
+/** credits: mapping and biology payouts; codex: new codex entries (biology only). */
+export type RouteGoal = 'credits' | 'codex'
 /** Earth-like · terraformable water world · terraformable high metal content · water world ·
  *  ammonia world · terraformable rocky body (priced by mapping) · bio: landable bodies with
  *  biological signals (priced by their predicted species). */
@@ -451,6 +455,7 @@ export type BodyKind = 'elw' | 'tww' | 'thmc' | 'ww' | 'aw' | 'trocky' | 'bio'
 /** POST /api/route — plan a new route (replaces the current one). */
 export interface RouteRequest {
   mode: RouteMode
+  goal: RouteGoal
   /** Empty: the current system. */
   source: string
   destination: string | null
@@ -502,6 +507,16 @@ export interface RouteBodyView {
   genuses: string[]
   /** Mapped (when it counts for mapping) and every species analysed. */
   done: boolean
+  /** Codex routes: entries still new here, likeliest first. */
+  codex: RouteCodexView[]
+}
+
+/** A species that may give a new codex entry on a route body. */
+export interface RouteCodexView {
+  species: string
+  colour: string | null
+  /** 0..1, after the stops before it in the route. */
+  chance: number
 }
 
 export interface RouteStopView {
@@ -530,6 +545,8 @@ export interface RouteStopView {
   skipped: boolean
   /** You are in this system now. */
   here: boolean
+  /** Codex routes: new entries expected here (none counted twice). */
+  codexNew: number
 }
 
 /** unknown_system | no_destination | spansh_unavailable | internal */
@@ -568,6 +585,8 @@ export interface RouteView {
   skippedCount: number
   /** Spansh neutron route to the next stop, once asked for. */
   neutron: NeutronPlanView | null
+  /** Codex routes: new entries expected at the stops left. */
+  codexLeft: number
 }
 
 export interface NeutronWaypointView {

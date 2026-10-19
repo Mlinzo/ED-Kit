@@ -89,6 +89,7 @@ export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className={`font-medium ${s.status === 'predicted' && !s.certain ? 'text-zinc-300' : 'text-zinc-50'}`}>
                   {s.species}
+                  {s.colour && <span className="font-normal text-zinc-400"> · {s.colour}</span>}
                 </span>
                 {codexNewStatus(s.codex) && (
                   <CodexBadge status={s.codex} tentative={s.status === 'predicted' && !s.certain} />

@@ -100,6 +100,7 @@ function sp(
   return {
     genus,
     species,
+    colour: null,
     value,
     bonusValue: bonus ? value * FIRST_FOOTFALL_MULTIPLIER : value,
     colonyRangeM,

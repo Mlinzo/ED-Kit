@@ -4,6 +4,12 @@ Spansh knows a body's biological signal count from other commanders' FSS scans a
 someone mapped it, the genera from DSS. The species are predicted here from the body's
 physical facts, like for your own scans; the estimate is a (min, max) range of base values
 (the first-footfall bonus is not assumed: nobody can tell whether someone landed there).
+
+For codex routes the same predictions become codex entries (a species' colour variant, from
+the parent star or the body's materials) with the chance of each being there: a genus
+confirmed by DSS counts fully, one only predicted at half weight and shared among the
+signals left; the candidate species of a genus share it equally, and so do the candidate
+colours of a species.
 """
 
 from __future__ import annotations
@@ -14,9 +20,11 @@ from typing import Any
 
 from app import enrich, exobio
 from app.exobio import catalog
-from app.models import BodyFacts, G, SystemFacts
+from app.exobio.variants import Variant, variants
+from app.models import BodyFacts, G, Prediction, SystemFacts
 
 ATM_PA = 101_325.0
+UNCONFIRMED_GENUS = 0.5  # weight of a genus predicted but not confirmed by DSS
 
 
 def _genus_keys() -> dict[str, str]:
@@ -110,6 +118,11 @@ def facts_from_search(raw: dict[str, Any]) -> tuple[BodyFacts, SystemFacts] | No
         surface_temperature=_num(raw, "surface_temperature"),
         surface_pressure=_num(raw, "surface_pressure", ATM_PA),
         landable=bool(raw.get("is_landable")),
+        materials={
+            str(m["name"]): float(m.get("share") or 0.0)
+            for m in raw.get("materials") or []
+            if isinstance(m, dict) and m.get("name")
+        },
     )
     system.bodies[body_id] = body
     return body, system
@@ -123,11 +136,22 @@ def bio_signals(raw: dict[str, Any]) -> int:
 
 
 @dataclass(slots=True, frozen=True)
+class CodexChance:
+    """A codex entry the body may give, and the chance it does (0..1)."""
+
+    key: str  # a colour variant symbol, or the species symbol when the colour cannot be told
+    species: str  # species symbol
+    colour: str | None
+    weight: float
+
+
+@dataclass(slots=True, frozen=True)
 class BioEstimate:
     signals: int
     low: int  # pessimistic total base value of the species on the body
     high: int  # optimistic
     genuses: tuple[str, ...]  # codex genus symbols confirmed by DSS (may be empty)
+    entries: tuple[CodexChance, ...] = ()  # every codex entry predicted (logged or not)
 
 
 def estimate(raw: dict[str, Any]) -> BioEstimate | None:
@@ -144,6 +168,40 @@ def estimate(raw: dict[str, Any]) -> BioEstimate | None:
         for g in raw.get("genuses") or []
         if isinstance(g, dict) and (symbol := genus_symbol(str(g.get("name") or "")))
     }
-    ranges = exobio.genus_ranges(exobio.predict(body, system, genuses or None), genuses)
+    predictions = exobio.predict(body, system, genuses or None)
+    ranges = exobio.genus_ranges(predictions, genuses)
     low, high = exobio.range_total(ranges, max(signals, len(genuses)))
-    return BioEstimate(signals=signals, low=low, high=high, genuses=tuple(sorted(genuses)))
+    return BioEstimate(
+        signals=signals,
+        low=low,
+        high=high,
+        genuses=tuple(sorted(genuses)),
+        entries=codex_chances(predictions, body, system, genuses, signals),
+    )
+
+
+def codex_chances(
+    predictions: list[Prediction],
+    body: BodyFacts,
+    system: SystemFacts,
+    genuses: set[str],
+    signals: int,
+) -> tuple[CodexChance, ...]:
+    """The codex entries the predicted species stand for, with their chances."""
+    by_genus: dict[str, list[Prediction]] = {}
+    for p in predictions:
+        by_genus.setdefault(p.species.genus, []).append(p)
+    unconfirmed = [g for g in by_genus if g not in genuses]
+    open_slots = max(max(signals, len(genuses)) - len(genuses), 0)
+    share = min(1.0, open_slots / len(unconfirmed)) if unconfirmed else 0.0
+    out: list[CodexChance] = []
+    for genus, preds in by_genus.items():
+        genus_weight = 1.0 if genus in genuses else UNCONFIRMED_GENUS * share
+        for p in preds:
+            symbol = p.species.species
+            found = variants(symbol, body, system) or [Variant(symbol, None, 1.0)]
+            for v in found:
+                weight = genus_weight / len(preds) * v.weight
+                if weight > 0:
+                    out.append(CodexChance(v.symbol, symbol, v.colour, weight))
+    return tuple(out)

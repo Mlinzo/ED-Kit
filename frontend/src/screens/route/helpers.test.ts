@@ -18,6 +18,7 @@ function body(extra: Partial<RouteBodyView>): RouteBodyView {
     bioDone: 0,
     genuses: [],
     done: false,
+    codex: [],
     ...extra,
   }
 }
@@ -40,6 +41,7 @@ function stop(bodies: RouteBodyView[], extra: Partial<RouteStopView> = {}): Rout
     done: false,
     skipped: false,
     here: false,
+    codexNew: 0,
     ...extra,
   }
 }
