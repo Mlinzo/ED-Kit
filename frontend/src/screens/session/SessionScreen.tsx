@@ -59,7 +59,7 @@ function place(label: string, at: string | null, station: string | null): string
   return [label, at && formatDateTime(at), station].filter(Boolean).join(' · ')
 }
 
-export function SessionScreen() {
+export function SessionScreen({ onRouteTo }: { onRouteTo?: (system: string) => void }) {
   const { data, error, refetch } = useView('session')
   const now = useNow()
 
@@ -161,6 +161,7 @@ export function SessionScreen() {
           bio: data.unsoldBioValue > 0 || !risky,
         }}
         now={now}
+        onRouteTo={onRouteTo}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { NavHopView, NavRouteView } from '../../api/types'
-import { AHEAD_SHOWN, chanceTone, fuelTone, hasHidden, percent, shownHops, sortedWarnings } from './plotted'
+import { aheadHops, chanceTone, fuelTone, likelyFirsts, notedAhead, percent, sortedWarnings } from './plotted'
 
 function hop(index: number, status: NavHopView['status']): NavHopView {
   return {
@@ -58,24 +58,28 @@ function view(count: number, here: number | null, warnings: string[] = []): NavR
 }
 
 describe('plotted route panel', () => {
-  it('lists where you are and the next hops, the passed ones only when expanded', () => {
+  it('lists where you are and everything ahead, not the passed hops', () => {
     const v = view(30, 4)
-    const shown = shownHops(v, false)
+    const shown = aheadHops(v)
     expect(shown[0].index).toBe(4)
-    expect(shown).toHaveLength(1 + AHEAD_SHOWN)
-    expect(hasHidden(v)).toBe(true)
-    expect(shownHops(v, true)).toHaveLength(30)
-  })
-
-  it('shows a short route whole', () => {
-    const v = view(5, 0)
-    expect(shownHops(v, false)).toHaveLength(5)
-    expect(hasHidden(v)).toBe(false)
+    expect(shown).toHaveLength(26)
   })
 
   it('starts at the first hop ahead when you are off the route', () => {
     const v = view(5, null)
-    expect(shownHops(v, false)[0].index).toBe(0)
+    expect(aheadHops(v)[0].index).toBe(0)
+  })
+
+  it('names the systems ahead likely undiscovered, and those with notes', () => {
+    const v = view(5, 1)
+    const chance = (p: number) => ({ probability: p, state: 'unknown' as const, reasons: [] })
+    v.hops[0].discovery = chance(0.95) // passed: not named
+    v.hops[2].discovery = chance(0.6)
+    v.hops[3].discovery = chance(0.92)
+    v.hops[4].discovery = chance(0.03)
+    v.hops[4].note = 'refuel'
+    expect(likelyFirsts(v).map((h) => h.index)).toEqual([3, 2])
+    expect(notedAhead(v).map((h) => h.index)).toEqual([4])
   })
 
   it('puts fuel trouble first', () => {

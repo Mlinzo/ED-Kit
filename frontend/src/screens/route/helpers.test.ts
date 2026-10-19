@@ -42,6 +42,7 @@ function stop(bodies: RouteBodyView[], extra: Partial<RouteStopView> = {}): Rout
     skipped: false,
     here: false,
     codexNew: 0,
+    neutron: false,
     ...extra,
   }
 }

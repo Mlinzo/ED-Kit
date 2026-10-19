@@ -136,6 +136,8 @@ class PlanStop:
     hop_ly: float = 0.0
     along: float = 0.0  # line mode: position along the line, 0..1
     region: str | None = None  # codex region symbol (codex routes)
+    jumps: int | None = None  # transit: jumps from the previous stop (Spansh)
+    neutron: bool = False  # transit: supercharge the FSD at this stop's neutron star
 
     @property
     def xyz(self) -> tuple[float, float, float]:
@@ -170,7 +172,7 @@ class PlanRequest:
 
 class PlanError(Exception):
     """A route cannot be planned. `code` is labelled by the frontend: unknown_system,
-    no_destination, spansh_unavailable."""
+    no_destination, spansh_unavailable, no_route (transit), no_jump_range (transit)."""
 
     def __init__(self, code: str, detail: str | None = None) -> None:
         super().__init__(code if detail is None else f"{code}: {detail}")

@@ -4,6 +4,7 @@
 import type { GalaxySystemView, GalaxyView, RoutePoint } from '../../../api/types'
 import type { FitLimits, Vec3 } from '../../route/map/geometry'
 import { toScene } from '../../route/map/geometry'
+import { LANDMARKS } from '../../../lib/landmarks'
 
 /** Scene units per light year: the whole galaxy (~90 000 ly) is ~900 units across. */
 export const SCALE = 1 / 100
@@ -17,13 +18,7 @@ export const FOCUS_DISTANCE = 3
 const ORIGIN: Vec3 = [0, 0, 0]
 export const at = (p: { x: number; y: number; z: number }): Vec3 => toScene(p, ORIGIN, SCALE)
 
-/** Places everybody knows (game names, the same in every language). */
-export const LANDMARKS: ReadonlyArray<{ id: string; name: string; x: number; y: number; z: number }> = [
-  { id: 'sol', name: 'Sol', x: 0, y: 0, z: 0 },
-  { id: 'sgr', name: 'Sagittarius A*', x: 25.21875, y: -20.90625, z: 25899.96875 },
-  { id: 'colonia', name: 'Colonia', x: -9530.5, y: -910.28125, z: 19808.125 },
-  { id: 'beagle', name: 'Beagle Point', x: -1111.5625, y: -134.21875, z: 65269.75 },
-]
+export { LANDMARKS }
 export const CORE = LANDMARKS[1]
 /** Galaxy disk radius around the core, ly (the backdrop and the whole-galaxy view). */
 export const DISK_RADIUS_LY = 46_000

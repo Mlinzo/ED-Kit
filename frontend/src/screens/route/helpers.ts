@@ -1,4 +1,23 @@
-import type { RouteBodyView, RouteStopView, RouteView } from '../../api/types'
+import type { RouteBodyView, RouteRequest, RouteStopView, RouteView } from '../../api/types'
+
+/** The route form's starting values. */
+export const DEFAULT_ROUTE: RouteRequest = {
+  mode: 'riches',
+  goal: 'credits',
+  source: '',
+  destination: null,
+  radiusLy: 200,
+  deviationLy: 25,
+  maxSystems: 100,
+  bodyTypes: ['elw', 'tww', 'thmc', 'bio'],
+  minValue: 300_000,
+  minSystemValue: 0,
+  bioMinValue: 5_000_000,
+  bioRequireGenuses: false,
+  includePopulated: true,
+  skipMapped: true,
+  refresh: false,
+}
 
 export const spanshUrl = (address: string) => `https://spansh.co.uk/system/${address}`
 

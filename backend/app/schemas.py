@@ -479,7 +479,8 @@ class HistoryView(CamelModel):
 
 RouteMode = Literal["riches", "line"]  # around a start point | along a straight line
 # credits: mapping and biology payouts | codex: new codex entries (biology only)
-RouteGoal = Literal["credits", "codex"]
+# | transit: just get to the destination (Spansh neutron route, its waypoints are the stops)
+RouteGoal = Literal["credits", "codex", "transit"]
 # elw | terraformable water world | terraformable high metal content | water world |
 # ammonia world | terraformable rocky body (app.routeplan.BODY_TYPES, priced by mapping) |
 # bio: landable bodies with biological signals (priced by their predicted species)
@@ -492,7 +493,7 @@ class RouteRequest(CamelModel):
     mode: RouteMode
     goal: RouteGoal = "credits"
     source: str = ""  # empty: the current system
-    destination: str | None = None  # line mode
+    destination: str | None = None  # line mode, transit
     radius_ly: float = Field(200, ge=10, le=1000)  # riches mode
     deviation_ly: float = Field(25, ge=5, le=100)  # line mode: max distance from the line
     max_systems: int = Field(100, ge=1, le=1000)  # stops at most (line: the most valuable)
@@ -556,16 +557,17 @@ class RouteStopView(CamelModel):
     y: float
     z: float
     hop_ly: float  # from the previous stop (the start for the first)
-    jumps: int | None  # estimated from your ship's jump range
+    jumps: int | None  # estimated from your ship's jump range (transit: Spansh's count)
     population: int | None  # None: not known (yet)
     bodies: list[RouteBodyView]
     value: int  # mapping payouts + optimistic biology estimate
     value_min: int  # with the pessimistic biology estimate
     visited: bool  # you have been in the system
-    done: bool  # every body mapped
+    done: bool  # every body mapped (transit: arrived here or further on)
     skipped: bool
     here: bool  # you are in this system now
     codex_new: float = 0.0  # codex routes: new entries expected here (none counted twice)
+    neutron: bool = False  # transit routes: supercharge the FSD at this stop's neutron star
 
 
 class NeutronWaypointView(CamelModel):

@@ -1,5 +1,5 @@
 // The stop picked on the route map: what is there, where, and the same edits as the list.
-import { ChevronsUp, ExternalLink, SkipForward, Undo2, X } from 'lucide-react'
+import { ChevronsUp, ExternalLink, Flag, SkipForward, Undo2, X, Zap } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { RouteStopView, RouteView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
@@ -38,6 +38,8 @@ export function StopCard({
   const you = route.currentPosition
   const fromYou = you && !stop.here ? Math.hypot(stop.x - you.x, stop.y - you.y, stop.z - you.z) : null
   const canMakeNext = !stop.done && !next && route.nextSeq !== null && stop.seq > route.nextSeq
+  const transit = route.params?.goal === 'transit'
+  const last = stop.seq === route.stops.length
 
   // Focus moves into the card when it opens (a stop picked from the keyboard is announced and
   // its actions are a Tab away) and back to where it was when it closes.
@@ -80,17 +82,32 @@ export function StopCard({
           {stop.jumps ? <span className="text-zinc-500"> · {t.route.jumps(stop.jumps)}</span> : null}
         </span>
         {fromYou !== null && <span>{t.route.fromYou(formatLy(fromYou))}</span>}
-        <PopulatedBadge population={stop.population} />
+        {!transit && <PopulatedBadge population={stop.population} />}
       </p>
 
-      <ul className="mx-3 mt-3 min-h-0 divide-y divide-zinc-800/60 overflow-y-auto rounded-xl bg-zinc-900/50 ring-1 ring-zinc-800/80">
-        {stop.bodies.map((b) => (
-          <BodyRow key={b.bodyId} body={b} compact />
-        ))}
-      </ul>
+      {transit ? (
+        (stop.neutron || last) && (
+          <p className="mx-4 mt-3 flex items-start gap-2 text-sm text-zinc-300">
+            {stop.neutron ? (
+              <Zap className="mt-0.5 size-4 shrink-0 text-sky-300" aria-hidden />
+            ) : (
+              <Flag className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden />
+            )}
+            {stop.neutron ? t.route.transit.neutron : t.route.transit.destination}
+          </p>
+        )
+      ) : (
+        <ul className="mx-3 mt-3 min-h-0 divide-y divide-zinc-800/60 overflow-y-auto rounded-xl bg-zinc-900/50 ring-1 ring-zinc-800/80">
+          {stop.bodies.map((b) => (
+            <BodyRow key={b.bodyId} body={b} compact />
+          ))}
+        </ul>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-        {route.params?.goal === 'codex' ? (
+        {transit ? (
+          <span className="text-sm text-zinc-400">{stop.jumps ? t.route.transit.jumpsTotal(stop.jumps) : ''}</span>
+        ) : route.params?.goal === 'codex' ? (
           <span className="flex flex-col">
             <CodexCount value={stop.codexNew} className="text-base font-semibold text-violet-200" />
             <CreditRange min={stop.valueMin} max={stop.value} className="text-xs text-zinc-500" />

@@ -1,7 +1,7 @@
 // The route, seen from the System tab: this system's stop (what is left here, its bodies marked
 // below), or once it is done, skipped or not on the route at all, where to go next. One line, so
 // the map under it keeps its height; the secondary parts give way on narrower screens.
-import { ArrowRight, CircleCheck, Navigation, Route, type LucideIcon } from 'lucide-react'
+import { ArrowRight, CircleCheck, Navigation, Route, Zap, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { RouteView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
@@ -94,6 +94,12 @@ export function RouteStrip({
           {next.name}
         </span>
         <CopyButton text={next.name} />
+        {next.neutron && (
+          <span className="inline-flex shrink-0 items-center gap-1 text-xs text-sky-300" title={t.route.transit.neutron}>
+            <Zap className="size-3.5" aria-hidden />
+            {t.route.transit.neutronShort}
+          </span>
+        )}
       </span>
       {where && <span className="text-zinc-400 sm:shrink-0">{where}</span>}
       <span className="hidden shrink-0 text-zinc-500 xl:inline">{more.join(' · ')}</span>

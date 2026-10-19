@@ -198,15 +198,25 @@ function HoverCard({ stop, view }: { stop: MapStop; view: RouteStopView }) {
         </span>
         <span className="tabular-nums">{t.route.map.hop(formatLy(view.hopLy))}</span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {view.bodies.map((b) => (
-          <BodyChips key={b.bodyId} body={b} dim={b.done || view.skipped} />
-        ))}
-      </div>
-      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-white/8 pt-2">
-        <CreditRange min={view.valueMin} max={view.value} className="text-sm font-semibold text-emerald-300" />
-        {view.codexNew > 0 && <CodexCount value={view.codexNew} className="text-xs font-medium text-violet-200" />}
-      </div>
+      {view.bodies.length > 0 ? (
+        <>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {view.bodies.map((b) => (
+              <BodyChips key={b.bodyId} body={b} dim={b.done || view.skipped} />
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-white/8 pt-2">
+            <CreditRange min={view.valueMin} max={view.value} className="text-sm font-semibold text-emerald-300" />
+            {view.codexNew > 0 && <CodexCount value={view.codexNew} className="text-xs font-medium text-violet-200" />}
+          </div>
+        </>
+      ) : (
+        // A transit waypoint: the jumps there, and whether to supercharge.
+        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-white/8 pt-2 text-xs">
+          <span className="text-zinc-300">{view.jumps ? t.route.transit.jumpsTotal(view.jumps) : ''}</span>
+          {view.neutron && <span className="font-medium text-sky-300">{t.route.transit.neutronShort}</span>}
+        </div>
+      )}
     </div>
   )
 }

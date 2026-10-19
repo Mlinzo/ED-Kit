@@ -56,6 +56,7 @@ function stop(seq: number, x: number, y: number, z: number, extra: Partial<Route
     skipped: false,
     here: false,
     codexNew: 0,
+    neutron: false,
     ...extra,
   }
 }

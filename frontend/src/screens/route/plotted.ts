@@ -1,21 +1,25 @@
 // The route plotted in the game: what the Route tab's panel and the System tab's strip show.
 import type { NavHopView, NavRouteView, StarKind } from '../../api/types'
 
-/** Ahead hops shown before "show all". */
-export const AHEAD_SHOWN = 12
-
-/** The hops the panel lists: where you are and the next ones; everything when expanded. */
-export function shownHops(view: NavRouteView, expanded: boolean): NavHopView[] {
-  if (expanded) return view.hops
+/** The hops the jump list shows: where you are and everything ahead (not the passed ones). */
+export function aheadHops(view: NavRouteView): NavHopView[] {
   const from = view.hereIndex ?? view.hops.findIndex((h) => h.status === 'ahead')
-  if (from < 0) return []
-  const end = from + (view.hereIndex !== null ? 1 : 0) + AHEAD_SHOWN
-  return view.hops.slice(from, end)
+  return from < 0 ? [] : view.hops.slice(from)
 }
 
-/** Some rows are hidden (passed, or far ahead). */
-export function hasHidden(view: NavRouteView): boolean {
-  return shownHops(view, false).length < view.hops.length
+/** A chance from which a system ahead is worth naming: more likely undiscovered than not. */
+export const LIKELY_FIRST = 0.5
+
+/** Systems ahead that nobody has likely discovered yet, the likeliest first. */
+export function likelyFirsts(view: NavRouteView): NavHopView[] {
+  return view.hops
+    .filter((h) => h.status === 'ahead' && (h.discovery?.probability ?? 0) >= LIKELY_FIRST)
+    .sort((a, b) => (b.discovery?.probability ?? 0) - (a.discovery?.probability ?? 0))
+}
+
+/** Systems ahead with your notes. */
+export function notedAhead(view: NavRouteView): NavHopView[] {
+  return view.hops.filter((h) => h.status === 'ahead' && h.note)
 }
 
 export function destination(view: NavRouteView): NavHopView | null {

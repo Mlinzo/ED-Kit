@@ -117,7 +117,9 @@ CREATE TABLE IF NOT EXISTS route_stops(
   z REAL NOT NULL,
   hop_ly REAL NOT NULL,
   population INTEGER,  -- from Spansh, filled in after the route is shown
-  skipped INTEGER NOT NULL DEFAULT 0
+  skipped INTEGER NOT NULL DEFAULT 0,
+  jumps INTEGER,  -- transit routes: jumps from the previous stop (Spansh)
+  neutron INTEGER NOT NULL DEFAULT 0  -- transit routes: supercharge at this stop
 ) STRICT;
 
 -- kind: elw | tww | thmc | ww | aw | trocky (app.routeplan.BODY_TYPES) | bio
@@ -474,6 +476,8 @@ ADDED_COLUMNS = (
     ("ext_systems", "x", "REAL"),
     ("ext_systems", "y", "REAL"),
     ("ext_systems", "z", "REAL"),
+    ("route_stops", "jumps", "INTEGER"),
+    ("route_stops", "neutron", "INTEGER NOT NULL DEFAULT 0"),
 )
 
 

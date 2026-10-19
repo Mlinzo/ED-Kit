@@ -1,6 +1,8 @@
-// The route plotted in the game (NavRoute.json), on the Route tab: whether the fuel lasts and
-// where to scoop, the neutron stars and white dwarfs ahead, and how likely each system ahead is
-// still undiscovered (Spansh / EDSM). Updates by itself as you jump.
+// The route plotted in the game (NavRoute.json), on the Route tab. Only what needs attention is
+// shown up front: fuel trouble and a dangerous star on the next jump (warnings), the systems ahead
+// likely nobody has discovered, the ones with your notes; else one calm line. The jumps
+// themselves (star, fuel on arrival, chance) are folded away: the game lists them too.
+// Updates by itself as you jump.
 import { Check, ChevronDown, ChevronUp, CircleAlert, Fuel, LoaderCircle, MapPin, Navigation, Sparkles, StickyNote, TriangleAlert } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { NavHopView, NavRouteView } from '../../api/types'
@@ -9,8 +11,11 @@ import { Note } from '../../components/Note'
 import type { NoteTarget } from '../../components/notes'
 import { Label } from '../../components/States'
 import { t } from '../../i18n'
-import { formatLy, formatNumber, formatTons } from '../../lib/format'
-import { chanceTone, destination, fuelTone, hasHidden, KIND_COLOR, percent, shownHops, sortedWarnings } from './plotted'
+import { formatLy, formatTons } from '../../lib/format'
+import { aheadHops, chanceTone, destination, fuelTone, KIND_COLOR, likelyFirsts, notedAhead, percent, sortedWarnings } from './plotted'
+
+/** Systems named in one line, the rest counted. */
+const NAMED = 4
 
 function Empty() {
   return (
@@ -58,102 +63,62 @@ function Line({ icon, tone = 'text-zinc-300', children }: { icon: ReactNode; ton
   )
 }
 
-function FuelSummary({ view }: { view: NavRouteView }) {
-  const f = view.fuel
-  const tone = fuelTone(view)
-  const pct = f.level !== null && f.capacity ? Math.min(100, (f.level / f.capacity) * 100) : null
-  const bar = tone === 'danger' ? 'bg-rose-400' : tone === 'warn' ? 'bg-amber-400' : 'bg-sky-400'
-  const icon = 'size-4'
-  return (
-    <div className="rounded-xl bg-zinc-950/40 p-4 ring-1 ring-zinc-800/80">
-      <div className="flex items-baseline justify-between gap-3">
-        <Label as="h3">{t.plotted.fuel}</Label>
-        <span className="text-sm text-zinc-300 tabular-nums">
-          {f.level !== null && f.capacity !== null ? t.plotted.tank(formatTons(f.level), formatTons(f.capacity)) : t.plotted.levelUnknown}
-        </span>
-      </div>
-      {pct !== null && (
-        <div
-          className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-800"
-          role="meter"
-          aria-label={t.plotted.fuel}
-          aria-valuemin={0}
-          aria-valuemax={f.capacity ?? 0}
-          aria-valuenow={f.level ?? 0}
-        >
-          <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
-        </div>
-      )}
-      <ul className="mt-3 space-y-1.5 text-sm">
-        {f.enough === true && (
-          <Line icon={<Check className={`${icon} text-emerald-400`} aria-hidden />}>{t.plotted.enough}</Line>
-        )}
-        {f.enough === false && (
-          <Line icon={<CircleAlert className={`${icon} text-rose-400`} aria-hidden />} tone="text-rose-200">
-            {t.plotted.short}
-          </Line>
-        )}
-        {view.jumpsLeft > 0 &&
-          (f.jumpsToScoop !== null ? (
-            <Line icon={<Fuel className={`${icon} text-amber-300`} aria-hidden />}>
-              {t.plotted.scoopIn(f.jumpsToScoop)}
-              {f.fuelAtScoop !== null && <span className="text-zinc-500"> · {t.plotted.scoopArrive(formatTons(f.fuelAtScoop))}</span>}
-            </Line>
-          ) : (
-            <Line icon={<Fuel className={`${icon} text-zinc-600`} aria-hidden />} tone="text-zinc-400">
-              {t.plotted.noScoopAhead}
-            </Line>
-          ))}
-        {f.longestDry > 1 && f.longestDryFuel !== null && (
-          <Line icon={<span className={`block ${icon}`} aria-hidden />} tone="text-zinc-400">
-            {t.plotted.longestDry(f.longestDry, formatTons(f.longestDryFuel))}
-          </Line>
-        )}
-        {!f.hasScoop && (
-          <Line icon={<CircleAlert className={`${icon} text-amber-400`} aria-hidden />} tone="text-amber-200">
-            {t.plotted.noScoop}
-          </Line>
-        )}
-      </ul>
-      <p className="mt-3 text-xs text-zinc-600">{f.learntFrom > 0 ? t.plotted.learntFrom(f.learntFrom) : t.plotted.noEstimate}</p>
-    </div>
-  )
+function names(hops: NavHopView[], label: (h: NavHopView) => string): string {
+  const shown = hops.slice(0, NAMED).map(label).join(', ')
+  return hops.length > NAMED ? `${shown} ${t.plotted.andMore(hops.length - NAMED)}` : shown
 }
 
-function Ahead({ view }: { view: NavRouteView }) {
-  const dot = (color: string) => <span className="mt-1 block size-2 rounded-full" style={{ background: color }} aria-hidden />
+/** What is worth knowing beyond the warnings; one calm line when there is nothing. */
+function Notable({ view }: { view: NavRouteView }) {
+  const likely = likelyFirsts(view)
+  const noted = notedAhead(view)
+  const noScoop = !view.fuel.hasScoop && view.fuel.enough !== true
+  const icon = 'size-4'
+  const lines: ReactNode[] = []
+  if (noScoop) {
+    lines.push(
+      <Line key="scoop" icon={<CircleAlert className={`${icon} text-amber-400`} aria-hidden />} tone="text-amber-200">
+        {t.plotted.noScoop}
+      </Line>,
+    )
+  }
+  if (likely.length > 0) {
+    lines.push(
+      <Line key="likely" icon={<Sparkles className={`${icon} text-emerald-300`} aria-hidden />}>
+        <span title={t.plotted.chanceNote}>
+          {t.plotted.likely(names(likely, (h) => `${h.name} (${percent(h.discovery?.probability ?? 0)})`))}
+        </span>
+      </Line>,
+    )
+  }
+  if (noted.length > 0) {
+    lines.push(
+      <Line key="notes" icon={<StickyNote className={`${icon} text-amber-200/80`} aria-hidden />}>
+        {t.plotted.withNotes(names(noted, (h) => h.name))}
+      </Line>,
+    )
+  }
+  if (lines.length === 0 && view.warnings.length === 0) {
+    const parts = [
+      view.fuel.enough === true ? t.plotted.calmFuel : t.plotted.calmFuelUnknown,
+      view.online && !view.checking ? t.plotted.calmNoFirsts : null,
+    ].filter(Boolean)
+    lines.push(
+      <Line key="calm" icon={<Check className={`${icon} text-emerald-400`} aria-hidden />} tone="text-zinc-400">
+        {t.plotted.calm}: {parts.join(', ')}
+      </Line>,
+    )
+  }
   return (
-    <div className="rounded-xl bg-zinc-950/40 p-4 ring-1 ring-zinc-800/80">
-      <Label as="h3">{t.route.map.legend.ahead}</Label>
-      <ul className="mt-3 space-y-1.5 text-sm">
-        {view.nextNeutron !== null && (
-          <Line icon={dot(KIND_COLOR.neutron)}>
-            <span title={t.plotted.kindHint.neutron}>{t.plotted.neutronIn(view.nextNeutron)}</span>
-          </Line>
-        )}
-        {view.nextWhiteDwarf !== null && (
-          <Line icon={dot(KIND_COLOR.white_dwarf)}>
-            <span title={t.plotted.kindHint.white_dwarf}>{t.plotted.whiteDwarfIn(view.nextWhiteDwarf)}</span>
-          </Line>
-        )}
-        {view.online ? (
-          <Line icon={<Sparkles className="size-4 text-emerald-300" aria-hidden />}>
-            <span title={t.plotted.expectedHint}>{t.plotted.expected(formatNumber(view.undiscoveredExpected, 1))}</span>
-            {view.checking && (
-              <span className="ml-2 inline-flex items-center gap-1 text-xs text-zinc-500">
-                <LoaderCircle className="size-3 motion-safe:animate-spin" aria-hidden />
-                {t.plotted.checking}
-              </span>
-            )}
-          </Line>
-        ) : (
-          <Line icon={<Sparkles className="size-4 text-zinc-600" aria-hidden />} tone="text-zinc-500">
-            {t.plotted.offline}
-          </Line>
-        )}
-      </ul>
-      {view.online && <p className="mt-3 text-xs text-zinc-600">{t.plotted.chanceNote}</p>}
-    </div>
+    <ul className="mt-4 space-y-1.5 text-sm">
+      {lines}
+      {view.checking && (
+        <li className="flex items-center gap-2 text-xs text-zinc-500">
+          <LoaderCircle className="size-3 motion-safe:animate-spin" aria-hidden />
+          {t.plotted.checking}
+        </li>
+      )}
+    </ul>
   )
 }
 
@@ -260,12 +225,12 @@ function HopRow({ hop, capacity, tightBelow }: { hop: NavHopView; capacity: numb
   )
 }
 
-function HopList({ view, expanded }: { view: NavRouteView; expanded: boolean }) {
+function HopList({ view }: { view: NavRouteView }) {
   const th = 'text-[11px] font-medium tracking-wide text-zinc-500 uppercase'
   // Arriving with less than the biggest jump ahead needs: tight.
   const tightBelow = Math.max(0, ...view.hops.map((h) => h.fuelUsed ?? 0))
   return (
-    <div className="mt-5 overflow-hidden rounded-xl bg-zinc-950/30 ring-1 ring-zinc-800/80">
+    <div className="mt-3 overflow-hidden rounded-xl bg-zinc-950/30 ring-1 ring-zinc-800/80">
       <div aria-hidden className={`grid ${GRID} gap-x-3 border-b border-zinc-800 px-4 py-2`}>
         <span className={th}>{t.plotted.col.n}</span>
         <span className={th}>{t.plotted.col.system}</span>
@@ -275,7 +240,7 @@ function HopList({ view, expanded }: { view: NavRouteView; expanded: boolean }) 
         <span className={`${th} text-right`}>{t.plotted.col.chance}</span>
       </div>
       <ol className="divide-y divide-zinc-800/50">
-        {shownHops(view, expanded).map((h) => (
+        {aheadHops(view).map((h) => (
           <HopRow key={`${h.index}:${h.address}`} hop={h} capacity={view.fuel.capacity} tightBelow={tightBelow} />
         ))}
       </ol>
@@ -284,7 +249,7 @@ function HopList({ view, expanded }: { view: NavRouteView; expanded: boolean }) 
 }
 
 export function PlottedRoute({ view }: { view: NavRouteView }) {
-  const [expanded, setExpanded] = useState(false)
+  const [open, setOpen] = useState(false)
   const end = destination(view)
   if (!end) return <Empty />
   const tone = fuelTone(view)
@@ -302,24 +267,19 @@ export function PlottedRoute({ view }: { view: NavRouteView }) {
         {view.jumpsLeft > 0 ? `${t.plotted.jumps(view.jumpsLeft)} · ${formatLy(view.lyLeft)}` : t.plotted.arrived}
       </p>
       <Warnings codes={sortedWarnings(view)} />
+      {view.jumpsLeft > 0 && <Notable view={view} />}
       {view.jumpsLeft > 0 && (
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <FuelSummary view={view} />
-          <Ahead view={view} />
-        </div>
-      )}
-      <HopList view={view} expanded={expanded} />
-      {hasHidden(view) && (
-        <div className="mt-3 flex justify-center">
+        <div className="mt-4">
           <button
             type="button"
-            onClick={() => setExpanded((e) => !e)}
-            aria-expanded={expanded}
-            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-400 ring-1 ring-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 sm:h-8"
           >
-            {expanded ? <ChevronUp className="size-4" aria-hidden /> : <ChevronDown className="size-4" aria-hidden />}
-            {expanded ? t.plotted.showLess : t.plotted.showAll(view.hops.length)}
+            {open ? <ChevronUp className="size-4" aria-hidden /> : <ChevronDown className="size-4" aria-hidden />}
+            {open ? t.plotted.hideHops : t.plotted.showHops(view.jumpsLeft)}
           </button>
+          {open && <HopList view={view} />}
         </div>
       )}
     </section>

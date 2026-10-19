@@ -69,7 +69,45 @@ function rng(seed: number): () => number {
   }
 }
 
+/** A transit route's far end: ~2 000 ly from the demo start. */
+const FAR = { x: -880, y: -45, z: 1790 }
+
+/** Transit: the waypoints of a demo neutron route, the destination last. */
+function transitStops(req: RouteRequest, seed: number): RouteStopView[] {
+  const random = rng(seed)
+  const legs = 8
+  let prev: Xyz = [0, 0, 0]
+  return Array.from({ length: legs }, (_, i) => {
+    const t = (i + 1) / legs
+    const at: Xyz = [FAR.x * t + (random() - 0.5) * 40, FAR.y * t, FAR.z * t + (random() - 0.5) * 40]
+    const last = i === legs - 1
+    const hop = dist(prev, at)
+    prev = at
+    return {
+      seq: i + 1,
+      address: String(9_100_000 + i),
+      name: last ? req.destination || 'Colonia' : `PSR J${1700 + Math.floor(random() * 99)}-${1000 + Math.floor(random() * 8999)}`,
+      x: Math.round(at[0] * 100) / 100,
+      y: Math.round(at[1] * 100) / 100,
+      z: Math.round(at[2] * 100) / 100,
+      hopLy: Math.round(hop * 100) / 100,
+      jumps: last ? 2 : 3 + Math.floor(random() * 4),
+      population: 0,
+      bodies: [],
+      value: 0,
+      valueMin: 0,
+      visited: false,
+      done: false,
+      skipped: false,
+      here: false,
+      codexNew: 0,
+      neutron: !last,
+    }
+  })
+}
+
 function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
+  if (req.goal === 'transit') return transitStops(req, seed)
   const random = rng(seed)
   const count = req.mode === 'line' ? 40 : Math.min(req.maxSystems, 60)
   const codex = req.goal === 'codex'
@@ -148,6 +186,7 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
       skipped: false,
       here: false,
       codexNew: bodies.reduce((n, b) => n + b.codex.reduce((m, c) => m + c.chance, 0), 0),
+      neutron: false,
     })
   }
   return stops
@@ -273,6 +312,8 @@ export function createMockRoute(system: SystemView, emit: () => void) {
   const view = (): RouteView => {
     const next = stops.find((s) => !s.done && !s.skipped) ?? null
     const position = params ? where() : null
+    const transit = params?.goal === 'transit'
+    const end = stops.at(-1)
     const toNext = next && position ? Math.round(dist([position.x, position.y, position.z], [next.x, next.y, next.z]) * 100) / 100 : null
     return {
       online: true,
@@ -284,13 +325,18 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       dataAt: params ? createdAt : null,
       truncated: params?.mode === 'riches',
       source: params ? { name: params.source || currentSystem, x: 0, y: 0, z: 0 } : null,
-      destination: params?.mode === 'line' ? { name: params.destination ?? '?', ...DESTINATION } : null,
+      destination:
+        transit && end
+          ? { name: end.name, x: end.x, y: end.y, z: end.z }
+          : params?.mode === 'line'
+            ? { name: params.destination ?? '?', ...DESTINATION }
+            : null,
       stops,
       nextSeq: next?.seq ?? null,
       currentSystem: position?.name ?? currentSystem,
       currentPosition: position,
       distanceToNextLy: toNext,
-      jumpsToNext: toNext ? Math.max(1, Math.ceil(toNext / 34.9)) : null,
+      jumpsToNext: transit ? (next?.jumps ?? null) : toNext ? Math.max(1, Math.ceil(toNext / 34.9)) : null,
       jumpRangeLy: 34.9,
       totalValue: stops.reduce((s, x) => s + x.value, 0),
       collectedValue: stops.reduce(
@@ -298,11 +344,11 @@ export function createMockRoute(system: SystemView, emit: () => void) {
         0,
       ),
       totalLy: stops.reduce((s, x) => s + x.hopLy, 0),
-      directLy: params?.mode === 'line' ? 312.4 : null,
+      directLy: transit && end ? Math.round(dist([0, 0, 0], [end.x, end.y, end.z]) * 100) / 100 : params?.mode === 'line' ? 312.4 : null,
       remainingLy: next ? stops.filter((s) => s.seq >= next.seq).reduce((n, s) => n + s.hopLy, 0) : 0,
       doneCount: stops.filter((s) => s.done).length,
       skippedCount: stops.filter((s) => s.skipped && !s.done).length,
-      neutron: neutron && { ...neutron, stale: neutron.destination !== next?.name },
+      neutron: transit ? null : neutron && { ...neutron, stale: neutron.destination !== next?.name },
       codexLeft: stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + s.codexNew, 0),
     }
   }

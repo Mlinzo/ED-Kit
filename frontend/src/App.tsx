@@ -116,6 +116,14 @@ export default function App() {
 
   const openSystem = (address: string | null) => navigate({ tab: 'system', address })
 
+  /** "Route here" from Where to sell: the Route tab opens its form on that system. */
+  const [routeTo, setRouteTo] = useState<string | null>(null)
+  const routeToUsed = useCallback(() => setRouteTo(null), [])
+  const planRouteTo = (name: string) => {
+    setRouteTo(name)
+    goTo('route')
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />
@@ -135,8 +143,8 @@ export default function App() {
           />
         )}
         {tab === 'surface' && <SurfaceScreen />}
-        {tab === 'route' && <RouteScreen />}
-        {tab === 'session' && <SessionScreen />}
+        {tab === 'route' && <RouteScreen prefill={routeTo} onPrefillUsed={routeToUsed} />}
+        {tab === 'session' && <SessionScreen onRouteTo={planRouteTo} />}
         {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
         {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
         {tab === 'stats' && <StatsScreen />}

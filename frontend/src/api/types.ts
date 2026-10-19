@@ -516,7 +516,8 @@ export interface HistoryView {
 /** riches: around a start point; line: along a straight line between two systems. */
 export type RouteMode = 'riches' | 'line'
 /** credits: mapping and biology payouts; codex: new codex entries (biology only). */
-export type RouteGoal = 'credits' | 'codex'
+/** credits · codex · transit: just get there (a Spansh neutron route, its waypoints are the stops). */
+export type RouteGoal = 'credits' | 'codex' | 'transit'
 /** Earth-like · terraformable water world · terraformable high metal content · water world ·
  *  ammonia world · terraformable rocky body (priced by mapping) · bio: landable bodies with
  *  biological signals (priced by their predicted species). */
@@ -617,9 +618,11 @@ export interface RouteStopView {
   here: boolean
   /** Codex routes: new entries expected here (none counted twice). */
   codexNew: number
+  /** Transit routes: supercharge the FSD at this stop's neutron star. */
+  neutron: boolean
 }
 
-/** unknown_system | no_destination | spansh_unavailable | internal */
+/** unknown_system | no_destination | spansh_unavailable | no_route | no_jump_range | internal */
 export type RouteError = string
 
 /** GET /api/view/route */

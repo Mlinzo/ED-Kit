@@ -13,9 +13,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app import db, exobio, neutron, regionmap, routeplan
+from app import db, exobio, fuel, neutron, regionmap, routeplan
 from app.codex import CodexIndex, codex_index, codex_status
-from app.routeplan import BodyProgress, Plan, PlanError, PlanRequest, Point
+from app.routeplan import BodyProgress, Plan, PlanError, PlanRequest, PlanStop, Point
 from app.schemas import (
     RouteBodyView,
     RouteCodexView,
@@ -99,6 +99,65 @@ def _plan_request(req: RouteRequest, source: Point | None) -> PlanRequest:
     )
 
 
+TRANSIT_EFFICIENCY = 60  # Spansh's default: how far from the line a neutron star may be
+
+
+def plan_transit(
+    conn: sqlite3.Connection,
+    fid: str | None,
+    req: RouteRequest,
+    source: Point | None,
+    plotter: Callable[[neutron.NeutronRequest], list[neutron.Waypoint]],
+) -> Plan:
+    """A route that just gets there: Spansh's neutron route, its waypoints as the stops."""
+    destination = (req.destination or "").strip()
+    if not destination:
+        raise PlanError("no_destination")
+    start = source.name if source is not None else req.source.strip()
+    state = cmdr_state(conn, fid)
+    jump_range = state["jump_range"] if state else None
+    if not jump_range:
+        raise PlanError("no_jump_range")
+    try:
+        waypoints = plotter(
+            neutron.NeutronRequest(
+                source=start,
+                destination=destination,
+                destination_address=None,
+                range_ly=jump_range,
+                efficiency=TRANSIT_EFFICIENCY,
+                multiplier=fuel.supercharge_multiplier(state["fsd_item"] if state else None),
+            )
+        )
+    except neutron.NeutronError as exc:
+        code = exc.code if exc.code in ("unknown_system", "no_route") else "spansh_unavailable"
+        raise PlanError(code, str(exc) if code == "unknown_system" else None) from exc
+    first, last = waypoints[0], waypoints[-1]
+    stops = []
+    prev = first
+    for w in waypoints[1:]:
+        stops.append(
+            PlanStop(
+                address=w.id64,
+                name=w.name,
+                x=w.x,
+                y=w.y,
+                z=w.z,
+                distance=w.left_ly,
+                hop_ly=math.dist((prev.x, prev.y, prev.z), (w.x, w.y, w.z)),
+                jumps=w.jumps,
+                neutron=w.neutron,
+            )
+        )
+        prev = w
+    return Plan(
+        source=Point(first.name, first.x, first.y, first.z),
+        destination=Point(last.name, last.x, last.y, last.z),
+        stops=stops,
+        truncated=False,
+    )
+
+
 def store(
     conn: sqlite3.Connection, req: RouteRequest, plan: Plan, data_at: datetime | None
 ) -> None:
@@ -125,10 +184,10 @@ def store(
             ),
         )
         conn.executemany(
-            "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly) "
-            "VALUES(?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly, jumps, neutron) "
+            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                (i, s.address, s.name, s.x, s.y, s.z, round(s.hop_ly, 2))
+                (i, s.address, s.name, s.x, s.y, s.z, round(s.hop_ly, 2), s.jumps, int(s.neutron))
                 for i, s in enumerate(plan.stops, start=1)
             ],
         )
@@ -171,10 +230,12 @@ class RoutePlanner:
         online: bool,
         on_change: Callable[[], None],
         search_factory: Callable[[Path, bool], CachedSearch] | None = None,
+        plotter: Callable[[neutron.NeutronRequest], list[neutron.Waypoint]] = neutron.plot,
     ) -> None:
         self.db_path = db_path
         self.online = online
         self.on_change = on_change
+        self.plotter = plotter
         self.search_factory = search_factory or (
             lambda path, refresh: CachedSearch(path, refresh=refresh)
         )
@@ -214,16 +275,19 @@ class RoutePlanner:
             source = _local_point(conn, fid, req.source)
             if source is None and not req.source.strip():
                 raise PlanError("unknown_system")
-            plan = routeplan.plan(
-                _plan_request(req, source),
-                search,
-                lambda ids: _progress(conn, fid, ids),
-                source,
-                codex_index(conn, fid) if req.goal == "codex" else None,
-            )
+            if req.goal == "transit":
+                plan = plan_transit(conn, fid, req, source, self.plotter)
+            else:
+                plan = routeplan.plan(
+                    _plan_request(req, source),
+                    search,
+                    lambda ids: _progress(conn, fid, ids),
+                    source,
+                    codex_index(conn, fid) if req.goal == "codex" else None,
+                )
             if not self._current(generation):
                 return
-            store(conn, req, plan, search.oldest)
+            store(conn, req, plan, search.oldest if req.goal != "transit" else None)
             log.info(
                 "route: %d stops (%s, %d Spansh requests)",
                 len(plan.stops),
@@ -285,13 +349,23 @@ def _rewrite_stops(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> None:
         here = (r["x"], r["y"], r["z"])
         hop = round(math.dist(prev, here), 2) if prev else 0.0
         stops.append(
-            (seq, r["system_address"], r["name"], *here, hop, r["population"], r["skipped"])
+            (
+                seq,
+                r["system_address"],
+                r["name"],
+                *here,
+                hop,
+                r["population"],
+                r["skipped"],
+                r["jumps"],
+                r["neutron"],
+            )
         )
         prev = here
     conn.execute("DELETE FROM route_stops")
     conn.executemany(
-        "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly, population, skipped) "
-        "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly, population, skipped, "
+        "jumps, neutron) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         stops,
     )
 
@@ -469,6 +543,20 @@ def route_view(
     }
 
     params = RouteRequest.model_validate_json(route["params"])
+    transit = params.goal == "transit"
+    # Transit: a waypoint is passed once you arrive there (or further on) after the route was made.
+    passed_seq = 0
+    if transit:
+        since = {
+            r[0]
+            for r in conn.execute(
+                "SELECT DISTINCT system_address FROM visits WHERE fid = ? AND ts >= ?",
+                (fid, route["created_at"].replace("+00:00", "Z")),
+            )
+        }
+        for s in conn.execute("SELECT seq, system_address FROM route_stops ORDER BY seq"):
+            if s["system_address"] in since:
+                passed_seq = s["seq"]
     codex_rows = (
         {
             (b["system_address"], b["body_id"]): json.loads(b["codex"] or "[]")
@@ -500,16 +588,19 @@ def route_view(
                 y=s["y"],
                 z=s["z"],
                 hop_ly=s["hop_ly"],
-                jumps=_jumps(s["hop_ly"], jump_range),
+                jumps=s["jumps"]
+                if transit and s["jumps"] is not None
+                else _jumps(s["hop_ly"], jump_range),
                 population=s["population"],
                 bodies=own,
                 value=sum(_body_value(b) for b in own),
                 value_min=sum(_body_value(b, low=True) for b in own),
                 visited=s["system_address"] in visited,
-                done=bool(own) and all(b.done for b in own),
+                done=s["seq"] <= passed_seq if transit else bool(own) and all(b.done for b in own),
                 skipped=bool(s["skipped"]),
                 here=here is not None and here[0] == s["system_address"],
                 codex_new=round(codex_new, 2),
+                neutron=bool(s["neutron"]),
             )
         )
 
@@ -528,7 +619,10 @@ def route_view(
         stops=stops,
         next_seq=nxt.seq if nxt else None,
         distance_to_next_ly=distance,
-        jumps_to_next=_jumps(distance, jump_range) if distance is not None else None,
+        # Transit: Spansh's count for the leg (supercharges included), not the straight estimate.
+        jumps_to_next=(nxt.jumps if nxt else None)
+        if transit
+        else (_jumps(distance, jump_range) if distance is not None else None),
         total_value=sum(s.value for s in stops),
         collected_value=earned,
         total_ly=round(sum(s.hop_ly for s in stops), 2),
@@ -536,7 +630,10 @@ def route_view(
         remaining_ly=round(sum(s.hop_ly for s in stops if nxt and s.seq >= nxt.seq), 2),
         done_count=sum(1 for s in stops if s.done),
         skipped_count=sum(1 for s in stops if s.skipped and not s.done),
-        neutron=neutron.plan_view(
+        # Transit: the route itself goes through the neutron stars.
+        neutron=None
+        if transit
+        else neutron.plan_view(
             conn,
             fid,
             neutron_planner,

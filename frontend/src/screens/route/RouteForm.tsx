@@ -1,10 +1,14 @@
-// Route parameters: mode, start / destination, reach, what counts (mapping kinds and biology),
-// minimum values.
-import { BookOpen, Coins, LoaderCircle, MoveRight, Orbit, Route } from 'lucide-react'
+// Route parameters: the goal (credits, codex, or just get there), mode, start / destination,
+// reach, what counts (mapping kinds and biology), minimum values.
+import { BookOpen, Coins, LoaderCircle, MoveRight, Navigation, Orbit, Route, Store } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
-import type { BodyKind, RouteGoal, RouteMode, RouteRequest } from '../../api/types'
+import { useView } from '../../api/hooks'
+import type { BodyKind, RouteGoal, RouteMode, RoutePoint, RouteRequest } from '../../api/types'
 import { t } from '../../i18n'
+import { formatLy } from '../../lib/format'
+import { LANDMARKS } from '../../lib/landmarks'
 import { ThresholdField } from '../../settings/ThresholdField'
+import { DEFAULT_ROUTE } from './helpers'
 import { KindChip } from './kinds'
 
 const RADII = [100, 200, 300, 500, 1000] as const
@@ -16,23 +20,6 @@ const BIO_VALUE_PRESETS = [0, 3_000_000, 5_000_000, 10_000_000, 20_000_000] as c
 const SYSTEM_VALUE_PRESETS = [0, 2_000_000, 5_000_000, 10_000_000, 20_000_000] as const
 const KINDS: readonly BodyKind[] = ['elw', 'tww', 'thmc', 'ww', 'aw', 'trocky', 'bio']
 
-const DEFAULT_ROUTE: RouteRequest = {
-  mode: 'riches',
-  goal: 'credits',
-  source: '',
-  destination: null,
-  radiusLy: 200,
-  deviationLy: 25,
-  maxSystems: 100,
-  bodyTypes: ['elw', 'tww', 'thmc', 'bio'],
-  minValue: 300_000,
-  minSystemValue: 0,
-  bioMinValue: 5_000_000,
-  bioRequireGenuses: false,
-  includePopulated: true,
-  skipMapped: true,
-  refresh: false,
-}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
@@ -117,11 +104,12 @@ function Toggle<T extends string>({
           type="button"
           aria-pressed={value === id}
           onClick={() => onChange(id)}
-          className={`focus-ring flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-sm font-medium transition-colors ${
+          className={`focus-ring flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors sm:px-3.5 ${
             value === id ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          <Icon className="size-4" aria-hidden />
+          {/* Phones: words only, so three choices fit in one row. */}
+          <Icon className="hidden size-4 sm:block" aria-hidden />
           {names[id]}
         </button>
       ))}
@@ -154,9 +142,45 @@ function TextInput({
   )
 }
 
+/** Where "Get there" usually goes: the nearest place to sell your data, and the landmarks. */
+function Destinations({ here, value, onPick }: { here: RoutePoint | null; value: string; onPick: (name: string) => void }) {
+  const sell = useView('sell').data
+  const sale = sell?.places.find((p) => p.distanceLy >= 0.5) ?? null
+  const from = (p: { x: number; y: number; z: number }) => (here ? Math.hypot(p.x - here.x, p.y - here.y, p.z - here.z) : null)
+  const picks = [
+    ...(sale ? [{ name: sale.systemName, distance: sale.distanceLy, sale: true }] : []),
+    ...LANDMARKS.map((l) => ({ name: l.name, distance: from(l), sale: false })).filter((l) => l.distance === null || l.distance >= 0.5),
+  ]
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {picks.map((p) => {
+        const active = value.trim().toLowerCase() === p.name.toLowerCase()
+        return (
+          <button
+            key={p.name}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onPick(p.name)}
+            title={p.sale ? t.route.nearestSale : undefined}
+            className={`focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm ring-1 ring-inset ${
+              active ? 'bg-sky-500/15 text-sky-200 ring-sky-400/50' : 'bg-zinc-900 text-zinc-300 ring-zinc-800 hover:ring-zinc-600'
+            }`}
+          >
+            {p.sale && <Store className="size-3.5 shrink-0 text-zinc-400" aria-label={t.route.nearestSale} />}
+            <span className="proportional-nums">{p.name}</span>
+            {p.distance !== null && <span className="text-xs text-zinc-500 tabular-nums">{formatLy(p.distance)}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function RouteForm({
   initial,
   currentSystem,
+  currentPosition,
+  replaces,
   building,
   disabled,
   onSubmit,
@@ -164,6 +188,9 @@ export function RouteForm({
 }: {
   initial: RouteRequest | null
   currentSystem: string | null
+  currentPosition: RoutePoint | null
+  /** A route exists: building another replaces it. */
+  replaces: boolean
   building: boolean
   disabled: boolean
   onSubmit: (req: RouteRequest) => void
@@ -175,10 +202,11 @@ export function RouteForm({
     set('bodyTypes', req.bodyTypes.includes(kind) ? req.bodyTypes.filter((k) => k !== kind) : [...req.bodyTypes, kind])
 
   const codex = req.goal === 'codex'
+  const transit = req.goal === 'transit'
   const bio = codex || req.bodyTypes.includes('bio')
   const carto = !codex && req.bodyTypes.some((k) => k !== 'bio')
-  const needsDestination = req.mode === 'line' && !(req.destination ?? '').trim()
-  const valid = (codex || req.bodyTypes.length > 0) && !needsDestination
+  const needsDestination = (transit || req.mode === 'line') && !(req.destination ?? '').trim()
+  const valid = (transit || codex || req.bodyTypes.length > 0) && !needsDestination
   const submit = (e: FormEvent) => {
     e.preventDefault()
     if (valid && !building && !disabled) onSubmit({ ...req, source: req.source.trim(), destination: req.destination?.trim() || null })
@@ -191,6 +219,7 @@ export function RouteForm({
   const goals: { id: RouteGoal; icon: typeof Orbit }[] = [
     { id: 'credits', icon: Coins },
     { id: 'codex', icon: BookOpen },
+    { id: 'transit', icon: Navigation },
   ]
 
   return (
@@ -199,11 +228,36 @@ export function RouteForm({
         <Field label={t.route.goal} hint={t.route.goalHint[req.goal]}>
           <Toggle value={req.goal} options={goals} label={t.route.goal} names={t.route.goals} onChange={(v) => set('goal', v)} />
         </Field>
-        <Field label={t.route.mode} hint={t.route.modeHint[req.mode]}>
-          <Toggle value={req.mode} options={modes} label={t.route.mode} names={t.route.modes} onChange={(v) => set('mode', v)} />
-        </Field>
+        {!transit && (
+          <Field label={t.route.mode} hint={t.route.modeHint[req.mode]}>
+            <Toggle value={req.mode} options={modes} label={t.route.mode} names={t.route.modes} onChange={(v) => set('mode', v)} />
+          </Field>
+        )}
       </div>
 
+      {transit && (
+        <div className="mt-6 grid gap-x-8 gap-y-6 lg:grid-cols-2">
+          <Field label={t.route.source} hint={t.route.sourceHint}>
+            <TextInput
+              value={req.source}
+              onChange={(v) => set('source', v)}
+              placeholder={t.route.sourcePlaceholder(currentSystem)}
+              label={t.route.source}
+            />
+          </Field>
+          <Field label={t.route.whereTo}>
+            <TextInput
+              value={req.destination ?? ''}
+              onChange={(v) => set('destination', v)}
+              placeholder={t.route.whereToPlaceholder}
+              label={t.route.whereTo}
+            />
+            <Destinations here={currentPosition} value={req.destination ?? ''} onPick={(name) => set('destination', name)} />
+          </Field>
+        </div>
+      )}
+
+      {!transit && (
       <div className="mt-6 grid gap-x-8 gap-y-6 lg:grid-cols-2">
         <Field label={t.route.source} hint={t.route.sourceHint}>
           <TextInput
@@ -264,8 +318,9 @@ export function RouteForm({
         </Field>
         )}
       </div>
+      )}
 
-      {!codex && (
+      {!codex && !transit && (
       <div className="mt-2 grid gap-x-8 lg:grid-cols-3">
         {carto && (
           <ThresholdField
@@ -298,6 +353,7 @@ export function RouteForm({
       </div>
       )}
 
+      {!transit && (
       <div className="mt-6 space-y-3">
         {bio && (
           <Check
@@ -315,8 +371,10 @@ export function RouteForm({
         />
         <Check checked={req.skipMapped} onChange={(v) => set('skipMapped', v)} label={t.route.skipMapped} />
       </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+        {replaces && transit && <p className="mr-auto text-sm text-zinc-500">{t.route.replaces}</p>}
         {onCancel && (
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { LoaderCircle, Store } from 'lucide-react'
+import { LoaderCircle, Navigation, Store } from 'lucide-react'
 import { useState } from 'react'
 import { useView } from '../../api/hooks'
 import type { SellCarrierHint, SellPlaceView, SellStationView, SellView } from '../../api/types'
@@ -64,12 +64,14 @@ function Place({
   carrying,
   localCarto,
   now,
+  onRouteTo,
 }: {
   place: SellPlaceView
   carrying: Carrying
   /** Unsold bodies of the system you are in (shown on that place). */
   localCarto: number
   now: number
+  onRouteTo?: (system: string) => void
 }) {
   const here = place.distanceLy < 0.5
   return (
@@ -93,6 +95,17 @@ function Place({
         ))}
       </ul>
       {place.more > 0 && <p className="mt-1 text-xs text-zinc-500">{t.session.sell.more(place.more)}</p>}
+      {!here && onRouteTo && (
+        <button
+          type="button"
+          onClick={() => onRouteTo(place.systemName)}
+          title={t.route.goalHint.transit}
+          className="focus-ring mt-2 inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
+        >
+          <Navigation className="size-3.5" aria-hidden />
+          {t.session.sell.routeHere}
+        </button>
+      )}
       {here && localCarto > 0 && (
         <p className="mt-1 text-xs text-amber-200/70">{t.session.sell.localCarto(t.session.cartoBodies(localCarto))}</p>
       )}
@@ -169,7 +182,16 @@ function NearerCarrier({ hint, onShow }: { hint: SellCarrierHint; onShow: () => 
 }
 
 /** The nearest stations buying exploration and exobiology data (Spansh, and where you docked). */
-export function WhereToSell({ carrying, now }: { carrying: Carrying; now: number }) {
+export function WhereToSell({
+  carrying,
+  now,
+  onRouteTo,
+}: {
+  carrying: Carrying
+  now: number
+  /** Plan a route that just gets to this system (the Route tab). */
+  onRouteTo?: (system: string) => void
+}) {
   const [carriers, setCarriers] = useState(() => readStored(CARRIERS_KEY, ['on', 'off'], 'off') === 'on')
   const { data } = useView('sell', carriers ? { carriers: 'true' } : undefined)
   // The other variant keeps showing while the one just switched to loads.
@@ -211,6 +233,7 @@ export function WhereToSell({ carrying, now }: { carrying: Carrying; now: number
               carrying={carrying}
               localCarto={sell.hereCartoBodies}
               now={now}
+              onRouteTo={onRouteTo}
             />
           ))}
         </ol>
