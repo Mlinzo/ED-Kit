@@ -27,7 +27,7 @@ LIVE_EVENT_MAX_AGE_S = 120  # newer events may use the current Status.json posit
 GAME_CHECK_S = 5.0  # how often the process list is read
 FUEL_STEP_T = 0.5  # a fuel level change this big (scooping, jumping) refreshes the forecast
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
-DERIVED_TOPICS = frozenset({"stats", "history", "route", "navroute", "galaxy"})
+DERIVED_TOPICS = frozenset({"stats", "history", "route", "navroute", "galaxy", "sell"})
 # Not from the journal: they never make the journal-derived views stale.
 OWN_TOPICS = frozenset({"surface", "live"})
 

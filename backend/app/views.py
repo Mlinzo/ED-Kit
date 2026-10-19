@@ -23,6 +23,7 @@ from app.schemas import (
     OrbitView,
     ParentRef,
     RingView,
+    RiskPoint,
     SamplePoint,
     SessionView,
     SignalsView,
@@ -681,10 +682,12 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
 def session_view(conn: sqlite3.Connection, fid: str | None) -> SessionView:
     state = cmdr_state(conn, fid)
     odyssey = bool(state["odyssey"]) if state else True
+    # (when, exploration data, organic data): what each unsold item added, for the growth line
+    added: list[tuple[str, int, int]] = []
 
     bio_count, bio_value = 0, 0
     for scan in conn.execute(
-        "SELECT species, value, bonus FROM organic_scans "
+        "SELECT species, value, bonus, updated_at FROM organic_scans "
         "WHERE fid = ? AND status = 'analysed' AND sale = 'unsold'",
         (fid,),
     ):
@@ -694,10 +697,12 @@ def session_view(conn: sqlite3.Connection, fid: str | None) -> SessionView:
         )
         bio_count += 1
         bio_value += value + (scan["bonus"] or 0)
+        added.append((scan["updated_at"] or "", 0, value + (scan["bonus"] or 0)))
 
     carto_bodies, carto_value, systems = 0, 0, set()
     for row in conn.execute(
-        "SELECT bc.system_address, bc.mapped_at, bc.efficient, b.facts FROM body_cmdr bc "
+        "SELECT bc.system_address, bc.scanned_at, bc.mapped_at, bc.efficient, b.facts "
+        "FROM body_cmdr bc "
         "JOIN bodies b ON b.system_address = bc.system_address AND b.body_id = bc.body_id "
         "WHERE bc.fid = ? AND bc.carto = 'unsold'",
         (fid,),
@@ -705,16 +710,32 @@ def session_view(conn: sqlite3.Connection, fid: str | None) -> SessionView:
         facts = facts_from_json(row["facts"])
         efficient = not row["mapped_at"] or bool(row["efficient"])
         value = estimate_body_value(facts, odyssey=odyssey, efficient=efficient)
+        mapped = bool(row["mapped_at"]) and facts.kind == "planet"
         carto_bodies += 1
-        carto_value += value.dss if row["mapped_at"] and facts.kind == "planet" else value.fss
+        carto_value += value.dss if mapped else value.fss
         systems.add(row["system_address"])
+        scanned = row["scanned_at"] or row["mapped_at"] or ""
+        added.append((scanned, value.fss, 0))
+        if mapped:
+            added.append((row["mapped_at"], value.dss - value.fss, 0))
 
-    last_sale = conn.execute("SELECT MAX(ts) AS ts FROM sales WHERE fid = ?", (fid,)).fetchone()
+    last_sale = conn.execute(
+        "SELECT sa.ts, sa.station, s.name AS system_name FROM sales sa "
+        "LEFT JOIN systems s ON s.address = sa.system_address "
+        "WHERE sa.fid = ? ORDER BY sa.id DESC LIMIT 1",
+        (fid,),
+    ).fetchone()
     last_sale_at = last_sale["ts"] if last_sale else None
     jumps = conn.execute(
         "SELECT COUNT(*) AS n, COALESCE(SUM(distance_ly), 0) AS ly FROM jumps "
         "WHERE fid = ? AND ts > COALESCE(?, '')",
         (fid, last_sale_at),
+    ).fetchone()
+    docked = conn.execute(
+        "SELECT d.ts, d.station, s.name AS system_name FROM docks d "
+        "LEFT JOIN systems s ON s.address = d.system_address "
+        "WHERE d.fid = ? ORDER BY d.id DESC LIMIT 1",
+        (fid,),
     ).fetchone()
 
     return SessionView(
@@ -728,4 +749,53 @@ def session_view(conn: sqlite3.Connection, fid: str | None) -> SessionView:
         jumps=jumps["n"],
         distance_ly=round(jumps["ly"], 2),
         last_sale_at=last_sale_at,
+        last_sale_station=last_sale["station"] if last_sale else None,
+        last_sale_system=last_sale["system_name"] if last_sale else None,
+        last_docked_at=docked["ts"] if docked else None,
+        last_docked_station=docked["station"] if docked else None,
+        last_docked_system=docked["system_name"] if docked else None,
+        growth=_growth(conn, fid, last_sale, added),
     )
+
+
+GROWTH_POINTS = 300  # at most; long stretches keep every n-th system and the last
+
+
+def _growth(
+    conn: sqlite3.Connection,
+    fid: str | None,
+    last_sale: sqlite3.Row | None,
+    added: list[tuple[str, int, int]],
+) -> list[RiskPoint]:
+    """Unsold data when you left each system since the last sale: the first point is what the
+    sale left unsold, the last one is now."""
+    since = last_sale["ts"] if last_sale else None
+    stops: list[tuple[str, str | None]] = []
+    if since is not None:
+        stops.append((since, last_sale["system_name"]))
+    stops += [
+        (r["ts"], r["name"])
+        for r in conn.execute(
+            "SELECT v.ts, s.name FROM visits v LEFT JOIN systems s ON s.address = v.system_address "
+            "WHERE v.fid = ? AND v.ts > COALESCE(?, '') ORDER BY v.id",
+            (fid, since),
+        )
+    ]
+    if not stops:
+        return []
+    added.sort()
+    points: list[RiskPoint] = []
+    carto = bio = 0
+    i = 0
+    for n, (at, name) in enumerate(stops):
+        # What was added before you arrived in the next system (everything, for the last one).
+        until = stops[n + 1][0] if n + 1 < len(stops) else None
+        while i < len(added) and (until is None or added[i][0] < until):
+            carto += added[i][1]
+            bio += added[i][2]
+            i += 1
+        points.append(RiskPoint(at=at, system_name=name, carto=carto, bio=bio))
+    if len(points) > GROWTH_POINTS:
+        step = -(-len(points) // GROWTH_POINTS)
+        points = points[:-1:step] + points[-1:]
+    return points

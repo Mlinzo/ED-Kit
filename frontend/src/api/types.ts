@@ -243,6 +243,76 @@ export interface SessionView {
   jumps: number
   distanceLy: number
   lastSaleAt: string | null
+  lastSaleStation: string | null
+  lastSaleSystem: string | null
+  lastDockedAt: string | null
+  lastDockedStation: string | null
+  lastDockedSystem: string | null
+  /** Unsold data when you left each system since the last sale (the first point: right after it). */
+  growth: RiskPoint[]
+}
+
+export interface RiskPoint {
+  at: string
+  systemName: string | null
+  carto: number
+  bio: number
+}
+
+export type SellStationKind = 'starport' | 'outpost' | 'planetary' | 'settlement' | 'megaship' | 'carrier' | 'other'
+
+export interface SellStationView {
+  name: string
+  kind: SellStationKind
+  /** From the arrival star. */
+  distLs: number | null
+  /** Universal Cartographics: buys exploration data. */
+  cartographics: boolean
+  /** Vista Genomics: buys organic data. */
+  genomics: boolean
+  /** A carrier: when it was last reported there. */
+  seenAt: string | null
+  /** You docked here. */
+  docked: boolean
+  /** A carrier: open to all (per Spansh), or not known. Closed ones are never listed. */
+  access: 'all' | 'unknown' | null
+}
+
+export interface SellPlaceView {
+  systemName: string
+  systemAddress: string | null
+  distanceLy: number
+  /** At the current ship's jump range (null: unknown). */
+  jumps: number | null
+  /** One that buys both kinds of data, else the best for each. */
+  stations: SellStationView[]
+  /** Other stations there that buy data. */
+  more: number
+}
+
+/** The nearest carrier, when carriers are hidden and it is nearer than every station. */
+export interface SellCarrierHint {
+  name: string
+  systemName: string
+  distanceLy: number
+  jumps: number | null
+}
+
+/** GET /api/view/sell[?carriers=true]: where to sell data near you. */
+export interface SellView {
+  /** pending: asking Spansh; offline: only stations you docked at. */
+  state: 'ready' | 'pending' | 'failed' | 'offline' | 'unknown_position'
+  ship: string | null
+  /** The landing pad the current ship needs. */
+  pad: 'S' | 'M' | 'L' | null
+  /** Nearest first. */
+  places: SellPlaceView[]
+  /** Unsold bodies of the system you are in: its exploration data sells only in another system. */
+  hereCartoBodies: number
+  /** Fleet carriers listed (asked for with ?carriers=true). */
+  carriers: boolean
+  nearerCarrier: SellCarrierHint | null
+  searchedAt: string | null
 }
 
 export interface LiveStatus {
@@ -637,7 +707,7 @@ export type StarKind = 'scoopable' | 'neutron' | 'white_dwarf' | 'black_hole' | 
  * (seen in somebody's plotted route) | nothing | not asked yet.
  */
 export type DiscoveryState = 'scanned' | 'bodies' | 'seen' | 'unknown' | 'pending'
-/** visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area | popular_star */
+/** visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area | inner_area */
 export type DiscoveryReason = string
 
 export interface DiscoveryChanceView {
@@ -885,7 +955,17 @@ export interface LiveView {
   systems: LiveSystemView[]
 }
 
-export type Topic = 'system' | 'surface' | 'session' | 'stats' | 'history' | 'route' | 'navroute' | 'galaxy' | 'live'
+export type Topic =
+  | 'system'
+  | 'surface'
+  | 'session'
+  | 'sell'
+  | 'stats'
+  | 'history'
+  | 'route'
+  | 'navroute'
+  | 'galaxy'
+  | 'live'
 
 // Server-Sent Events on GET /api/stream:
 //   event: hello      data: { seq: number }

@@ -14,6 +14,8 @@ import type {
   Interest,
   OrbitView,
   ParentRef,
+  RiskPoint,
+  SellView,
   SessionView,
   SpeciesStatus,
   SpeciesView,
@@ -693,9 +695,29 @@ export function buildSurface(system: SystemView): SurfaceView {
   }
 }
 
+/** Bio sold per system on the way (index into the 23 systems since the sale). */
+const BIO_AT: ReadonlyArray<[number, number]> = [
+  [4, 1_000_000 * 5 + 1_689_800 * 5],
+  [11, 1_670_100],
+  [19, 2_637_500],
+]
+
 export function buildSession(): SessionView {
   const unsoldBioValue = 1_000_000 * 5 + 1_689_800 * 5 + 1_670_100 + 2_637_500
   const unsoldCartoValue = 18_452_310
+  const saleAt = Date.parse('2026-10-15T21:40:46Z')
+  // Carto grows system by system (uneven: some systems are empty), reaching the total at the end.
+  const weights = Array.from({ length: 23 }, (_, i) => ((i * 7919) % 13) + (i % 5 === 0 ? 9 : 1))
+  const weightSum = weights.reduce((a, b) => a + b, 0)
+  let carto = 0
+  let bio = 0
+  const growth: RiskPoint[] = [{ at: '2026-10-15T21:40:46Z', systemName: 'Gagarin Gate', carto: 0, bio: 0 }]
+  weights.forEach((w, i) => {
+    carto = i === weights.length - 1 ? unsoldCartoValue : carto + Math.round((unsoldCartoValue * w) / weightSum)
+    bio += BIO_AT.find(([at]) => at === i)?.[1] ?? 0
+    const at = new Date(saleAt + (i + 1) * 47 * 60_000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+    growth.push({ at, systemName: i === weights.length - 1 ? SYSTEM_NAME : `Oochoss Brou ${String.fromCharCode(65 + i)}Y-K d8-${i + 3}`, carto, bio })
+  })
   return {
     commander: 'Jameson',
     unsoldBioCount: 4,
@@ -707,5 +729,87 @@ export function buildSession(): SessionView {
     jumps: 23,
     distanceLy: 412.6,
     lastSaleAt: '2026-10-15T21:40:46Z',
+    lastSaleStation: 'Gagarin Gate',
+    lastSaleSystem: 'Eol Prou RS-T d3-94',
+    lastDockedAt: '2026-10-15T21:38:02Z',
+    lastDockedStation: 'Gagarin Gate',
+    lastDockedSystem: 'Eol Prou RS-T d3-94',
+    growth,
   }
+}
+
+/** Deep space: carriers nearby (listed on request), the Colonia stations far behind. */
+export function buildSell(carriers: boolean, now = Date.now()): SellView {
+  const daysAgo = (d: number) => new Date(now - d * 86_400_000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+  return {
+    state: 'ready',
+    ship: 'Mandalay',
+    pad: 'M',
+    searchedAt: daysAgo(0.02),
+    hereCartoBodies: 6,
+    carriers,
+    nearerCarrier: carriers
+      ? null
+      : { name: 'K7Q-2VZ', systemName: 'Oochoss Brou HW-V d2-17', distanceLy: 386.4, jumps: 6 },
+    places: [
+      ...(carriers ? carrierPlaces(daysAgo) : []),
+      {
+        systemName: 'Eol Prou RS-T d3-94',
+        systemAddress: '3238296097059',
+        distanceLy: 2_204.5,
+        jumps: 31,
+        stations: [
+          { name: 'Gagarin Gate', kind: 'starport', distLs: 518, cartographics: true, genomics: true, seenAt: null, docked: true, access: null },
+        ],
+        more: 3,
+      },
+      {
+        systemName: 'Kojeara',
+        systemAddress: '5031654888146',
+        distanceLy: 2_231.9,
+        jumps: 32,
+        stations: [
+          { name: 'Ohm City', kind: 'outpost', distLs: 2_480, cartographics: true, genomics: false, seenAt: null, docked: false, access: null },
+          { name: 'Lee Biological Hub', kind: 'settlement', distLs: 2_513, cartographics: false, genomics: true, seenAt: null, docked: false, access: null },
+        ],
+        more: 1,
+      },
+      {
+        systemName: 'Colonia',
+        systemAddress: '3238296097058',
+        distanceLy: 2_243.1,
+        jumps: 32,
+        stations: [
+          { name: 'Jaques Station', kind: 'starport', distLs: 1_530, cartographics: true, genomics: true, seenAt: null, docked: true, access: null },
+        ],
+        more: 11,
+      },
+    ],
+  }
+}
+
+/** The carriers on the way (only when carriers are asked for). */
+function carrierPlaces(daysAgo: (d: number) => string): SellView['places'] {
+  return [
+    {
+      systemName: 'Oochoss Brou HW-V d2-17',
+      systemAddress: '594828407163',
+      distanceLy: 386.4,
+      jumps: 6,
+      stations: [
+        { name: 'K7Q-2VZ', kind: 'carrier', distLs: 12, cartographics: true, genomics: true, seenAt: daysAgo(3), docked: false, access: 'all' },
+      ],
+      more: 0,
+    },
+    {
+      systemName: 'Oochoss Brou QN-A c15-4',
+      systemAddress: '1213117932650',
+      distanceLy: 912.8,
+      jumps: 13,
+      stations: [
+        { name: 'X2F-81B', kind: 'carrier', distLs: 0, cartographics: true, genomics: false, seenAt: daysAgo(21), docked: false, access: 'unknown' },
+      ],
+      more: 0,
+    },
+  ]
 }

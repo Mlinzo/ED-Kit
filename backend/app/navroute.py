@@ -325,7 +325,6 @@ def navroute_view(
                     row["spansh"] if row else None,
                     row["edsm"] if row else None,
                     (s.x, s.y, s.z),
-                    kinds[i],
                 )
                 discovery = DiscoveryChanceView(
                     probability=c.probability, state=c.state, reasons=list(c.reasons)

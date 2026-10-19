@@ -7,6 +7,7 @@ import type {
   LiveView,
   NavRouteView,
   RouteView,
+  SellView,
   SessionView,
   StatsView,
   StreamEvent,
@@ -19,6 +20,7 @@ export interface ViewMap {
   system: SystemView
   surface: SurfaceView
   session: SessionView
+  sell: SellView
   stats: StatsView
   history: HistoryView
   route: RouteView
@@ -37,7 +39,18 @@ export interface ViewEntry<T> {
   loading: boolean
 }
 
-export const TOPICS: readonly Topic[] = ['system', 'surface', 'session', 'stats', 'history', 'route', 'navroute', 'galaxy', 'live']
+export const TOPICS: readonly Topic[] = [
+  'system',
+  'surface',
+  'session',
+  'sell',
+  'stats',
+  'history',
+  'route',
+  'navroute',
+  'galaxy',
+  'live',
+]
 
 /** Minimum gap between two requests for the same view (coalesces invalidate bursts). */
 const MIN_GAP_MS = 250

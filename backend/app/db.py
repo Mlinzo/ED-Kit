@@ -163,6 +163,17 @@ CREATE TABLE IF NOT EXISTS neutron_plan(
   waypoints TEXT NOT NULL
 ) STRICT;
 
+-- The latest "where to sell" search (app.selling): Spansh stations with Universal Cartographics
+-- or Vista Genomics nearest to (x, y, z). One at a time. ok 0: the search failed.
+-- stations: JSON list of trimmed Spansh stations (app.spansh.STATION_FIELDS + services).
+CREATE TABLE IF NOT EXISTS sell_search(
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  fetched_at TEXT NOT NULL,
+  x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL,
+  ok INTEGER NOT NULL,
+  stations TEXT NOT NULL
+) STRICT;
+
 -- Commander position (from Status.json) at the moment of a ScanOrganic event.
 -- Not derivable from the journal, so it lives outside the rebuildable projections.
 CREATE TABLE IF NOT EXISTS sample_positions(
@@ -184,6 +195,7 @@ PROJECTION_TABLES = (
     "organic_scans",
     "organic_samples",
     "sales",
+    "docks",
     "jumps",
     "visits",
     "deaths",
@@ -209,6 +221,7 @@ CREATE TABLE IF NOT EXISTS cmdr_state(
   in_srv INTEGER NOT NULL DEFAULT 0,
   odyssey INTEGER NOT NULL DEFAULT 1,
   jump_range REAL,  -- MaxJumpRange of the current ship (Loadout), ly
+  ship_type TEXT,  -- Loadout.Ship, lower case (app.ships: the pad it needs)
   -- The current ship (Loadout) and what it carries: the fuel forecast (app.fuel).
   ship_id INTEGER,
   fsd_item TEXT,  -- FrameShiftDrive module symbol
@@ -311,7 +324,7 @@ CREATE TABLE IF NOT EXISTS organic_samples(
   PRIMARY KEY(scan_id, n)
 ) STRICT;
 
--- kind: bio | carto
+-- kind: bio | carto. station, system_address: where you were docked (the last Docked).
 CREATE TABLE IF NOT EXISTS sales(
   id INTEGER PRIMARY KEY,
   fid TEXT NOT NULL,
@@ -319,8 +332,29 @@ CREATE TABLE IF NOT EXISTS sales(
   ts TEXT NOT NULL,
   base INTEGER NOT NULL,
   bonus INTEGER NOT NULL,
-  total INTEGER NOT NULL
+  total INTEGER NOT NULL,
+  station TEXT,
+  system_address INTEGER
 ) STRICT;
+
+-- Dockings (Docked, or a Location while docked). uc: Universal Cartographics (buys exploration
+-- data), vg: Vista Genomics (buys organic data). Pads: NULL when the event does not say.
+CREATE TABLE IF NOT EXISTS docks(
+  id INTEGER PRIMARY KEY,
+  fid TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  system_address INTEGER NOT NULL,
+  market_id INTEGER,
+  station TEXT NOT NULL,
+  station_type TEXT,
+  dist_ls REAL,
+  uc INTEGER NOT NULL,
+  vg INTEGER NOT NULL,
+  small_pads INTEGER,
+  medium_pads INTEGER,
+  large_pads INTEGER
+) STRICT;
+CREATE INDEX IF NOT EXISTS docks_by_cmdr ON docks(fid, id);
 
 CREATE TABLE IF NOT EXISTS jumps(
   id INTEGER PRIMARY KEY,

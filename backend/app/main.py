@@ -37,6 +37,7 @@ from app import (
     notes,
     regionmap,
     routes,
+    selling,
     stats,
     usersettings,
     views,
@@ -56,6 +57,7 @@ from app.schemas import (
     RouteRequest,
     RouteStopUpdate,
     RouteView,
+    SellView,
     SessionView,
     StatsView,
     SurfaceView,
@@ -109,6 +111,11 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         else None
     )
     live = eddn.LiveListener(lambda: service.invalidate({"live"})) if settings.online else None
+    sellers = (
+        selling.SellFinder(settings.db_path, lambda: service.invalidate({"sell"}))
+        if settings.online
+        else None
+    )
     if rebuild:
         service.request_rebuild()
     local = threading.local()
@@ -156,6 +163,13 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def view_session() -> SessionView:
         conn = read_conn()
         return views.session_view(conn, active_fid(conn))
+
+    @app.get("/api/view/sell", response_model=SellView, response_model_by_alias=True)
+    def view_sell(carriers: bool = False) -> SellView:
+        """Where to sell data near you (asks Spansh when you moved away from the last search)."""
+        conn = read_conn()
+        fid = active_fid(conn)
+        return selling.sell_view(conn, fid, views.cmdr_state(conn, fid), sellers, carriers)
 
     @app.get("/api/view/stats", response_model=StatsView, response_model_by_alias=True)
     def view_stats() -> StatsView:

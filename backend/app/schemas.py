@@ -220,6 +220,59 @@ class SurfaceView(CamelModel):
     active_scan: ActiveScanView | None
 
 
+class SellStationView(CamelModel):
+    name: str
+    # starport | outpost | planetary | settlement | megaship | carrier | other
+    kind: str
+    dist_ls: int | None  # from the arrival star
+    cartographics: bool  # Universal Cartographics: buys exploration data
+    genomics: bool  # Vista Genomics: buys organic data
+    seen_at: str | None  # a carrier: when it was last reported there (ISO)
+    docked: bool  # you docked here
+    access: str | None  # a carrier: all (open to everybody, per Spansh) | unknown
+
+
+class SellPlaceView(CamelModel):
+    system_name: str
+    system_address: str | None
+    distance_ly: float  # from you
+    jumps: int | None  # at the current ship's jump range (None: unknown)
+    stations: list[SellStationView]  # one that buys both, else the best for each
+    more: int  # other stations there that buy data
+
+
+class SellCarrierHint(CamelModel):
+    """The nearest carrier, when carriers are hidden and it is nearer than every station."""
+
+    name: str
+    system_name: str
+    distance_ly: float
+    jumps: int | None
+
+
+class SellView(CamelModel):
+    # ready | pending (searching Spansh) | failed | offline (only where you docked)
+    # | unknown_position
+    state: str
+    ship: str | None  # the current ship's name
+    pad: str | None  # S | M | L: the landing pad it needs (None: unknown)
+    places: list[SellPlaceView]  # nearest first
+    # Unsold bodies of the system you are in: its exploration data sells only in another system
+    here_carto_bodies: int
+    carriers: bool  # fleet carriers listed (asked for)
+    nearer_carrier: SellCarrierHint | None
+    searched_at: str | None  # when Spansh was asked (ISO)
+
+
+class RiskPoint(CamelModel):
+    """Unsold data when you left a system (the first point: right after the last sale)."""
+
+    at: str  # ISO timestamp of the arrival
+    system_name: str | None
+    carto: int
+    bio: int
+
+
 class SessionView(CamelModel):
     commander: str | None
     unsold_bio_count: int
@@ -231,6 +284,12 @@ class SessionView(CamelModel):
     jumps: int  # since last exploration data sale
     distance_ly: float  # since last exploration data sale
     last_sale_at: str | None  # ISO timestamp
+    last_sale_station: str | None
+    last_sale_system: str | None
+    last_docked_at: str | None  # ISO timestamp
+    last_docked_station: str | None
+    last_docked_system: str | None
+    growth: list[RiskPoint]  # unsold data system by system since the last sale
 
 
 class LiveStatus(CamelModel):
@@ -585,7 +644,7 @@ class DiscoveryChanceView(CamelModel):
     probability: float | None  # that nobody has discovered it yet; None until checked
     state: DiscoveryState
     # visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area |
-    # popular_star
+    # inner_area
     reasons: list[str]
 
 

@@ -1,4 +1,4 @@
-import { Clock, Leaf, Map as MapIcon, Route, ShieldAlert, ShieldCheck, type LucideIcon } from 'lucide-react'
+import { Anchor, Clock, Leaf, Map as MapIcon, Route, ShieldAlert, ShieldCheck, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import { Credits } from '../../components/Credits'
@@ -6,6 +6,8 @@ import { Label, ViewFallback } from '../../components/States'
 import { useNow } from '../../hooks/useNow'
 import { t } from '../../i18n'
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format'
+import { Growth } from './Growth'
+import { WhereToSell } from './WhereToSell'
 
 function Card({
   icon: Icon,
@@ -52,6 +54,11 @@ function Metric({
   )
 }
 
+/** "Last sale · 15 Oct, 21:40 · Gagarin Gate" */
+function place(label: string, at: string | null, station: string | null): string {
+  return [label, at && formatDateTime(at), station].filter(Boolean).join(' · ')
+}
+
 export function SessionScreen() {
   const { data, error, refetch } = useView('session')
   const now = useNow()
@@ -92,6 +99,7 @@ export function SessionScreen() {
           <Credits value={atRisk} />
         </div>
         <p className="mt-4 text-sm text-zinc-400">{risky ? t.session.atRiskHint : t.session.allSold}</p>
+        {risky && <Growth points={data.growth} sold={data.lastSaleAt !== null} />}
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -116,7 +124,7 @@ export function SessionScreen() {
           <Route className="size-4" aria-hidden />
           {t.session.sinceSale}
         </Label>
-        <dl className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-3">
+        <dl className="mt-4 grid grid-cols-2 gap-6">
           <Metric value={formatNumber(data.jumps)} label={t.session.jumps(data.jumps)} />
           <Metric
             value={formatNumber(data.distanceLy, data.distanceLy < 100 ? 1 : 0)}
@@ -130,11 +138,30 @@ export function SessionScreen() {
                 {data.lastSaleAt ? formatRelative(data.lastSaleAt, now) : t.session.never}
               </span>
             }
-            label={data.lastSaleAt ? `${t.session.lastSale} · ${formatDateTime(data.lastSaleAt)}` : t.session.lastSale}
+            label={place(t.session.lastSale, data.lastSaleAt, data.lastSaleStation)}
             title={data.lastSaleAt ?? undefined}
+          />
+          <Metric
+            className="col-span-2 sm:col-span-1"
+            value={
+              <span className="inline-flex items-center gap-2">
+                <Anchor className="size-6 text-zinc-500" aria-hidden />
+                {data.lastDockedAt ? formatRelative(data.lastDockedAt, now) : t.session.never}
+              </span>
+            }
+            label={place(t.session.lastDocked, data.lastDockedAt, data.lastDockedStation)}
+            title={data.lastDockedAt ?? undefined}
           />
         </dl>
       </section>
+
+      <WhereToSell
+        carrying={{
+          carto: data.unsoldCartoValue > 0 || !risky,
+          bio: data.unsoldBioValue > 0 || !risky,
+        }}
+        now={now}
+      />
     </div>
   )
 }

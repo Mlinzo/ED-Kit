@@ -39,7 +39,6 @@ from app.config import default_data_dir  # noqa: E402
 from app.discovery import SYSTEMS_SEARCH, chance, edsm_lookup, spansh_lookup  # noqa: E402
 from app.eddn import RELAY  # noqa: E402
 from app.enrich import USER_AGENT  # noqa: E402
-from app.navroute import star_kind  # noqa: E402
 
 SOL = (0.0, 0.0, 0.0)
 COLONIA = (-9530.5, -910.28125, 19808.125)
@@ -348,8 +347,8 @@ def report(out: Path, with_neighbours: bool) -> None:
         if lk is None or s["t"] <= lk["t"] or s["a"] in seen:
             continue
         seen.add(s["a"])
-        pos, cls = where.get(s["a"], (None, None))
-        c = chance(lk["sp"], lk["ed"], pos, star_kind(cls) if cls else None)
+        pos, _cls = where.get(s["a"], (None, None))
+        c = chance(lk["sp"], lk["ed"], pos)
         cal.append(
             {
                 "first": not s["was"],

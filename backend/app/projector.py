@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 12
+VERSION = 13
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -72,6 +72,7 @@ class Projector:
             "LoadGame": self._load_game,
             "Loadout": self._loadout,
             "Location": self._location,
+            "Docked": self._docked,
             "FSDJump": self._jump,
             "CarrierJump": self._jump,
             "FuelScoop": self._fuel_scoop,
@@ -202,6 +203,7 @@ class Projector:
         scoop = any(str(m.get("Item", "")).startswith("int_fuelscoop") for m in modules)
         values: dict[str, Any] = {
             "ship_id": ev.get("ShipID"),
+            "ship_type": str(ev["Ship"]).lower() if ev.get("Ship") else None,
             "fsd_item": str(fsd["Item"]).lower() if fsd and fsd.get("Item") else None,
             "fsd_key": fsd_key(fsd, modules),
             "unladen_mass": _number(ev.get("UnladenMass")),
@@ -256,7 +258,41 @@ class Projector:
             body_id=ev.get("BodyID") if on_planet else None,
             body_name=ev.get("Body") if on_planet else None,
         )
+        if ev.get("Docked") and ev.get("StationName"):
+            self._record_dock(ev, address)
         return ALL_TOPICS
+
+    def _docked(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        address = ev.get("SystemAddress")
+        if not self.fid or not isinstance(address, int) or not ev.get("StationName"):
+            return frozenset()
+        self._record_dock(ev, address)
+        return frozenset({"session"})
+
+    def _record_dock(self, ev: dict[str, Any], address: int) -> None:
+        if not self.fid:
+            return
+        services = {str(s).lower() for s in ev.get("StationServices") or []}
+        pads = ev.get("LandingPads") if isinstance(ev.get("LandingPads"), dict) else {}
+        self.conn.execute(
+            "INSERT INTO docks(fid, ts, system_address, market_id, station, station_type, "
+            "dist_ls, uc, vg, small_pads, medium_pads, large_pads) "
+            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                self.fid,
+                ev.get("timestamp"),
+                address,
+                ev.get("MarketID"),
+                ev.get("StationName_Localised") or ev.get("StationName"),
+                ev.get("StationType"),
+                _number(ev.get("DistFromStarLS")),
+                int("exploration" in services),
+                int("vistagenomics" in services),
+                pads.get("Small"),
+                pads.get("Medium"),
+                pads.get("Large"),
+            ),
+        )
 
     def _jump(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         address = self._upsert_system(ev)
@@ -667,8 +703,11 @@ class Projector:
         self, kind: str, ev: dict[str, Any], base: int, bonus: int, total: int
     ) -> None:
         self.conn.execute(
-            "INSERT INTO sales(fid, kind, ts, base, bonus, total) VALUES(?, ?, ?, ?, ?, ?)",
-            (self.fid, kind, ev.get("timestamp"), base, bonus, total),
+            "INSERT INTO sales(fid, kind, ts, base, bonus, total, station, system_address) "
+            "SELECT ?, ?, ?, ?, ?, ?, d.station, d.system_address "
+            "FROM (SELECT 1) LEFT JOIN (SELECT station, system_address FROM docks "
+            "WHERE fid = ? ORDER BY id DESC LIMIT 1) d",
+            (self.fid, kind, ev.get("timestamp"), base, bonus, total, self.fid),
         )
 
     def _record_death(self, ev: dict[str, Any], state: sqlite3.Row | None, on_foot: bool) -> None:

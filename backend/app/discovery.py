@@ -9,12 +9,17 @@ most near the bubble, where everybody flies.
 
 The numbers are measured, not guessed (backend/tools/discovery_calibration.py): systems on
 routes uploaded to EDDN, looked up the moment the route came in, against the arrival-star scan
-uploaded later. 2026-10-19, 1.5 h, 538 systems: main star known 2.5 % first (403). Beyond
-10000 ly from Sol, in routes only 91 % (22) and in no database 98 % (66): a route-only entry
-says little, it is mostly the route's own upload. Nearer, the same two: 3000-10000 ly 71 %
-(31), within 3000 ly 1 of 7; neutron stars and white dwarfs 69 % (13). The name's mass code
-(a-h) added nothing. The old guesses (60 % / 90 %, x0.5 within 1000 ly) scored Brier 0.050;
-these 0.042, expecting 127 first discoveries where there were 127.
+uploaded later. 2026-10-19, 4 h, 2681 systems: main star known 1.6 % first (1916). Beyond
+10000 ly from Sol, in routes only 88 % (109) and in no database 96 % (374): a route-only entry
+says little, it is mostly the route's own upload. 3000-10000 ly: in routes only 61 % (127), in
+no database 73 % (95); 1000-3000 ly: 19 % (31) and 33 % (15); within 1000 ly 0 of 11. Neutron
+stars and white dwarfs far out are no less often first than their neighbours (97 %, 29: an
+early 69 % on 13 was noise), and the name's mass code (a-h) adds nothing either.
+The numbers were first fitted on the first 1.5 h; on the 2.5 h after (1907 systems) that fit
+scored Brier 0.039, expecting 460 first discoveries where there were 434. These, refitted on all
+4 h, score 0.038 there (450 expected) and 0.043 on all 4 h (659 expected, 640 found); the
+guesses before any measurement (60 % / 90 %, x0.5 within 1000 ly) scored 0.050 on the first
+1.5 h.
 
 Lookups run on a worker thread (Spansh first, EDSM for what Spansh does not know scanned),
 cached in the `discovery` table for a day.
@@ -57,14 +62,13 @@ EDSM_NONE, EDSM_SYSTEM, EDSM_STAR = 0, 1, 2
 State = Literal["scanned", "bodies", "seen", "unknown", "pending"]
 
 # First discoveries by what the databases know (see the module docstring).
-P_SCANNED, P_BODIES, P_SEEN, P_UNKNOWN = 0.03, 0.05, 0.9, 0.95
+P_SCANNED, P_BODIES, P_SEEN, P_UNKNOWN = 0.02, 0.05, 0.9, 0.95
 
 # Busy space: a system missing from the databases there says less. Distance from Sol (ly) below
 # which the chance is multiplied, with the reason shown; then Colonia, a second bubble.
 SOL = (0.0, 0.0, 0.0)
-NEAR_SOL = ((1000.0, 0.1, "busy_area"), (3000.0, 0.3, "busy_area"), (10000.0, 0.8, "inner_area"))
+NEAR_SOL = ((1000.0, 0.1, "busy_area"), (3000.0, 0.3, "busy_area"), (10000.0, 0.75, "inner_area"))
 COLONIA, COLONIA_RADIUS, COLONIA_FACTOR = (-9530.5, -910.28125, 19808.125), 500.0, 0.5
-POPULAR_STAR = 0.7  # neutron stars, white dwarfs, black holes: highways and sightseeing
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,7 +84,6 @@ def chance(
     spansh: int | None,
     edsm: int | None,
     position: tuple[float, float, float] | None,
-    star_kind: str | None,
 ) -> Chance:
     """A rough probability with the reasons behind it (codes the UI explains)."""
     if spansh is None and edsm is None:
@@ -98,10 +101,6 @@ def chance(
     if why:
         p *= factor
         reasons.append(why)
-    if star_kind in ("neutron", "white_dwarf", "black_hole"):
-        # Targets of neutron highways and sightseeing: more traffic than their neighbours.
-        p *= POPULAR_STAR
-        reasons.append("popular_star")
     return Chance(round(p, 2), state, tuple(reasons))
 
 

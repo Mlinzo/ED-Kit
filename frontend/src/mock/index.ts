@@ -6,6 +6,7 @@ import { createLiveTransport, type StreamHandlers, type Transport } from '../api
 import type { IngestState, LiveStatus, NoteRequest, SystemView, Topic } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
+  buildSell,
   buildSession,
   buildSurface,
   buildSystem,
@@ -118,6 +119,7 @@ export function createMockTransport(): Transport {
     },
     '/api/view/surface': () => surface,
     '/api/view/session': () => session,
+    '/api/view/sell': (query) => buildSell(query.get('carriers') === 'true'),
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,
     '/api/view/route': () => route.view(),

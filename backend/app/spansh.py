@@ -5,6 +5,7 @@ Searches reveal the area you plan to fly to the operator; `--offline` disables t
 
 from __future__ import annotations
 
+import gzip
 import json
 import threading
 import urllib.error
@@ -19,6 +20,7 @@ from app.enrich import USER_AGENT
 
 BODIES_SEARCH = "https://spansh.co.uk/api/bodies/search"
 SYSTEMS_SEARCH = "https://spansh.co.uk/api/systems/search"
+STATIONS_SEARCH = "https://spansh.co.uk/api/stations/search"
 TIMEOUT_S = 15
 PAGE_SIZE = 500
 MAX_WINDOW = 10_000  # Spansh does not page past the first 10 000 results
@@ -76,12 +78,20 @@ def _post(url: str, payload: dict[str, Any]) -> dict[str, Any]:
     request = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
+        headers={
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/json",
+            # Answers shrink ~10x (a station carries its whole market).
+            "Accept-Encoding": "gzip",
+        },
         method="POST",
     )
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:  # noqa: S310
-            data = json.loads(response.read().decode("utf-8"))
+            raw = response.read()
+            if response.headers.get("Content-Encoding") == "gzip":
+                raw = gzip.decompress(raw)
+            data = json.loads(raw.decode("utf-8"))
     except urllib.error.HTTPError as exc:
         if exc.code == 400:
             raise SpanshRejected("invalid request") from exc
@@ -91,6 +101,59 @@ def _post(url: str, payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(data, dict) or data.get("error"):
         raise SpanshError(str(data.get("error") if isinstance(data, dict) else "bad response"))
     return data
+
+
+def stations(
+    service: str, coords: tuple[float, float, float], size: int, types: list[str] | None = None
+) -> list[dict[str, Any]]:
+    """The stations offering a service (Spansh's name, e.g. "Vista Genomics"), of the given
+    types (Spansh's names) if any, nearest to `coords` first, with the fields app.selling reads."""
+    x, y, z = coords
+    filters: dict[str, Any] = {"services": [{"name": {"value": [service]}}]}
+    if types:
+        filters["type"] = {"value": types}
+    data = _post(
+        STATIONS_SEARCH,
+        {
+            "filters": filters,
+            "sort": [{"distance": {"direction": "asc"}}],
+            "size": size,
+            "page": 0,
+            "reference_coords": {"x": x, "y": y, "z": z},
+        },
+    )
+    return [
+        {k: r.get(k) for k in STATION_FIELDS} | {"services": _service_names(r)}
+        for r in data.get("results") or []
+        if isinstance(r, dict)
+    ]
+
+
+def _service_names(station: dict[str, Any]) -> list[str]:
+    return [
+        str(s["name"])
+        for s in station.get("services") or []
+        if isinstance(s, dict) and s.get("name")
+    ]
+
+
+# Station fields app.selling reads (a station also carries its whole market: dropped).
+STATION_FIELDS = (
+    "name",
+    "type",
+    "market_id",
+    "system_id64",
+    "system_name",
+    "system_x",
+    "system_y",
+    "system_z",
+    "distance_to_arrival",
+    "small_pads",
+    "medium_pads",
+    "large_pads",
+    "updated_at",
+    "carrier_docking_access",  # All | Squadron | Friends | Squadron Friends | None; often missing
+)
 
 
 class SpanshSearch:
