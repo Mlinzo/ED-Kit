@@ -211,7 +211,7 @@ export function buildGalaxy(history: HistoryView, route: RouteView, plotted: Nav
   const ids = systems.map((_, i) => i)
   const offset = (p: RoutePoint): RoutePoint => ({ ...p, x: p.x + ORIGIN[0], y: p.y + ORIGIN[1], z: p.z + ORIGIN[2] })
   return {
-    commander: 'Mlinzo',
+    commander: 'Jameson',
     systems,
     path: [ids.slice(0, 96), ids.slice(96)],
     current: systems.length - 1,
