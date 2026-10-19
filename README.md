@@ -17,7 +17,7 @@ shows everything in your browser.
 - **Stats**: all-time numbers and records.
 
 <p>
-  <img src="docs/screenshot-galaxy.png" width="49%" alt="The Galaxy tab: the whole galaxy with codex region borders, Colonia and where you are now">
+  <img src="docs/screenshot-galaxy.gif" width="49%" alt="The Galaxy tab turning slowly around your travels: the path with earnings and deaths, other players right now (EDDN) as violet dots, engineers as orange rings">
   <img src="docs/screenshot-stats.png" width="49%" alt="The Stats tab: all-time earnings split into mapping and exobiology, travel numbers and daily activity">
 </p>
 
