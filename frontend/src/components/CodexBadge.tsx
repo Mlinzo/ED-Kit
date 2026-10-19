@@ -1,6 +1,7 @@
 // Codex marks. New codex entries must jump out at a glance, so they get the one colour nothing
 // else in the app uses: a filled, glowing fuchsia chip with a book-plus icon. New for this region
-// only: the same hue, outlined. Uncertain (predicted, no DSS yet): the same book, faint and dashed.
+// only, or a new colour of a species you have here: the same hue, outlined. Uncertain (predicted,
+// no DSS yet): the same book, faint and dashed.
 // Already in your codex: a quiet grey check. (Violet stays reserved for community data.)
 
 import { BookCheck, BookPlus, type LucideIcon } from 'lucide-react'
@@ -14,7 +15,7 @@ const STRONG =
 const OUTLINE = 'bg-fuchsia-500/10 text-fuchsia-200 ring-1 ring-inset ring-fuchsia-400/75'
 const FAINT = 'border border-dashed border-fuchsia-400/50 text-fuchsia-300/85'
 
-const ICONS: Record<CodexStatus, LucideIcon> = { new: BookPlus, new_region: BookPlus, logged: BookCheck }
+const ICONS: Record<CodexStatus, LucideIcon> = { new: BookPlus, new_region: BookPlus, new_colour: BookPlus, logged: BookCheck }
 
 type ChipSize = 'xs' | 'sm' | 'md'
 
@@ -25,7 +26,8 @@ const CHIP: Record<ChipSize, { box: string; icon: string }> = {
 }
 
 /**
- * One species: "Новое в кодексе" (strong), "Новое для региона" (outlined), "В кодексе" (quiet).
+ * One species: "Новое в кодексе" (strong), "Новое для региона" / "Новый цвет" (outlined),
+ * "В кодексе" (quiet).
  * tentative (an uncertain prediction, no DSS yet): a new entry is faint and dashed, like the
  * body's "возможно новое" mark.
  */

@@ -2,7 +2,8 @@
 
 The game logs a codex entry per colour variant of a species and per galactic region
 (app.exobio.variants). The index holds your entries by variant symbol and by species symbol
-(any colour), each with the regions and times you logged them.
+(any colour), each with the regions and times you logged them. On the player's journals the
+marks agree with the game's own IsNewEntry on every CodexEntry (27 of 27, 2026-10-19).
 """
 
 from __future__ import annotations
@@ -44,6 +45,31 @@ def codex_status(
     return "new_region"
 
 
+def colour_status(
+    index: CodexIndex,
+    variant: str | None,
+    species: str,
+    region: str | None,
+    before: str | None = None,
+) -> CodexStatus:
+    """Codex state of one colour of a species: a colour not logged here is a new entry, but
+    "new_colour" when the species itself is logged in this region (in another colour), and
+    "new_region" when it is logged only elsewhere. Colour unknown: by species."""
+    if not variant or variant == species:
+        return codex_status(index, species, region, before)
+    status = codex_status(index, variant, region, before)
+    if status == "logged":
+        return status
+    by_species = codex_status(index, species, region, before)
+    if by_species == "logged":
+        return "new_colour"
+    return "new_region" if "new_region" in (status, by_species) else "new"
+
+
+# What a mix of colours shows: the strongest news among them.
+_RANK: dict[CodexStatus, int] = {"new": 0, "new_region": 1, "new_colour": 2, "logged": 3}
+
+
 def predicted_status(
     index: CodexIndex, species: str, found: Sequence[Variant] | None, region: str | None
 ) -> tuple[CodexStatus, float]:
@@ -52,8 +78,8 @@ def predicted_status(
     if found is None:
         status = codex_status(index, species, region)
         return status, 0.0 if status == "logged" else 1.0
-    states = [(codex_status(index, v.symbol, region), v.weight) for v in found]
+    states = [(colour_status(index, v.symbol, species, region), v.weight) for v in found]
     worth = sum(w for s, w in states if s != "logged")
     if worth <= 0:
         return "logged", 0.0
-    return ("new" if any(s == "new" for s, _ in states) else "new_region"), worth
+    return min((s for s, _ in states if s != "logged"), key=_RANK.__getitem__), worth

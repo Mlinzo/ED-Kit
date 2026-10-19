@@ -11,9 +11,10 @@ export interface HighlightSettings {
 
 export type SpeciesStatus = 'predicted' | 'sampling' | 'analysed'
 
-/** new: never in your codex; new_region: in your codex but not for this region; logged: known.
- *  Species level for now (colour variants are not predicted yet). */
-export type CodexStatus = 'new' | 'new_region' | 'logged'
+/** new: never in your codex; new_region: in your codex but not for this region; new_colour: the
+ *  species is in your codex for this region, this colour is not (a new entry all the same);
+ *  logged: known. */
+export type CodexStatus = 'new' | 'new_region' | 'new_colour' | 'logged'
 
 export interface SpeciesView {
   genus: string

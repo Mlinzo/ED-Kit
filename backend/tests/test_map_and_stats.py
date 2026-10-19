@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from app import db, stats, views
+from app import codex, db, stats, views
 from app.projector import Projector
 
 SA = 7270171747753
@@ -329,14 +329,14 @@ def test_firsts_footfall_and_codex(conn: sqlite3.Connection, proj: Projector) ->
 
     index = views.codex_index(conn, "F1")
     assert (
-        views.codex_status(index, "$Codex_Ent_Bacterial_01_Name;", "$Codex_RegionName_18;")
+        codex.codex_status(index, "$Codex_Ent_Bacterial_01_Name;", "$Codex_RegionName_18;")
         == "logged"
     )
     assert (
-        views.codex_status(index, "$Codex_Ent_Bacterial_01_Name;", "$Codex_RegionName_7;")
+        codex.codex_status(index, "$Codex_Ent_Bacterial_01_Name;", "$Codex_RegionName_7;")
         == "new_region"
     )
-    assert views.codex_status(index, "$Codex_Ent_Stratum_07_Name;", None) == "new"
+    assert codex.codex_status(index, "$Codex_Ent_Stratum_07_Name;", None) == "new"
 
 
 def test_thresholds_dim_cheap_bodies(conn: sqlite3.Connection, proj: Projector) -> None:

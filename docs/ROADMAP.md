@@ -13,6 +13,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
+### Session history
+- A list of past game sessions (asked for 2026-10-19), sortable by any column: when, how long
+  it lasted, what it earned (the exploration and biology data gathered in it, sold or not; not
+  the sales) and how many new codex entries it brought. A session is one game run, from
+  `LoadGame` to `Shutdown` (or the last event before the next `LoadGame`); the Session tab today
+  shows only the unsold data, whenever it was gathered.
+
 ### Release
 - Delete the `v0.1.0` release (2026-10-17; the repository is private for now) with its tag, and
   release again once the app is in decent shape (decided 2026-10-19). The GitHub release is deleted
@@ -47,6 +54,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- "New colour" codex mark (2026-10-19): a colour not logged in this region of a species that
+  is logged here (in another colour) is marked "New colour" (outlined), not "New to Codex";
+  the hints no longer say colours are ignored. Checked against the game: on every biological
+  CodexEntry in the player's journals (27) the app's mark agreed with the game's IsNewEntry.
+  Colours around Y dwarfs fixed: a body orbiting a Y brown dwarf takes the colour of the next
+  star up (Canonn biostats: Y dwarfs give their own colour in 1 % of 66,566 samples, T and L
+  dwarfs in 87 % and 96 %). Before, the app predicted Indigo for Stratum Cucumisis on HIP 16896
+  7 c/e/f (moons of a Y dwarf orbiting an F star) where the game gives Emerald, so a species
+  already logged looked new; the player's star-coloured samples now match 25 of 25 (18 before).
 - Jump range with the fuel aboard (2026-10-19): the journal's MaxJumpRange (34.90 ly in the game's
   brackets) is the range with fuel for just one jump; the app counted the jumps to the next stop
   with it and wrote "1 jump" where the game plotted two with a full 112 t tank (27.4 ly). The

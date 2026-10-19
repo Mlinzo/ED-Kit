@@ -15,10 +15,12 @@ describe('species codex marks', () => {
   it('labels the three states', () => {
     expect(codexLabel('new')).toBe(t.codex.new)
     expect(codexLabel('new_region')).toBe(t.codex.newRegion)
+    expect(codexLabel('new_colour')).toBe(t.codex.newColour)
     expect(codexLabel('logged')).toBe(t.codex.logged)
   })
   it('explains that the codex is per region and per species', () => {
     expect(codexTitle('new_region')).toContain(t.codex.newRegionHint)
+    expect(codexTitle('new_colour')).toContain(t.codex.newColourHint)
     expect(codexTitle('logged')).toContain(t.codex.note)
   })
   it('says when a new species is only predicted here', () => {
@@ -29,6 +31,7 @@ describe('species codex marks', () => {
   it('treats new for the region as a new entry', () => {
     expect(codexNewStatus('new')).toBe(true)
     expect(codexNewStatus('new_region')).toBe(true)
+    expect(codexNewStatus('new_colour')).toBe(true)
     expect(codexNewStatus('logged')).toBe(false)
   })
 })
@@ -59,6 +62,6 @@ describe('bodyCodex', () => {
     expect(bodyCodex(byName('A 5 b'))?.level).toBe('maybe')
     expect(bodyCodex(byName('B 1'))).toBeNull()
     const states = new Set(bodies.flatMap((b) => b.species.map((s) => s.codex)))
-    expect([...states].sort()).toEqual(['logged', 'new', 'new_region'])
+    expect([...states].sort()).toEqual(['logged', 'new', 'new_colour', 'new_region'])
   })
 })

@@ -53,8 +53,16 @@ def test_entries_of_a_body() -> None:
     assert est is not None and est.entries
     # Two genera confirmed by DSS: one entry each, shared among their candidate species/colours.
     assert sum(e.weight for e in est.entries) == pytest.approx(2.0)
-    # The parent star is a Y brown dwarf: star-coloured species carry its colour code.
-    star_coloured = [e for e in est.entries if e.colour and e.key.endswith("_Y_Name;")]
+    # The only parent star is a Y brown dwarf, which almost never colours its moons, and the
+    # main star is unknown: star-coloured species count by species, without a colour.
+    assert not [e for e in est.entries if e.key.endswith("_Y_Name;")]
+    assert [e for e in est.entries if e.colour is None and e.key == e.species]
+    # The dwarf orbits an F star: the colour is the F star's.
+    raw = bio_body(5, 7, (0, 0, 0), ("Bacterial", "Shrubs"), signals=2)
+    raw["parents"].append({"id64": 5, "subtype": "F (White) Star", "type": "Star"})
+    by_f = routebio.estimate(raw)
+    assert by_f is not None
+    star_coloured = [e for e in by_f.entries if e.colour and e.key.endswith("_F_Name;")]
     assert star_coloured
     guess = routebio.estimate(bio_body(5, 8, (0, 0, 0), (), signals=2))
     assert guess is not None

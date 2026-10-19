@@ -341,12 +341,12 @@ function buildBodies(): BodyView[] {
       wasMapped: false,
       signals: { bio: 3, geo: 0, human: 0, other: 0 },
       genuses: ['Bacterium', 'Concha', 'Stratum'],
-      // Codex: Tectonicas is new to you, Renibus only new for this region, the rest known.
+      // Codex: Tectonicas is new to you, Renibus only new for this region, Labiata a new colour.
       species: [
         sp('Stratum', 'Stratum Tectonicas', 19_010_800, 500, 'sampling', { samples: 2 }),
         sp('Bacterium', 'Bacterium Aurasus', 1_000_000, 500, 'analysed'),
         sp('Concha', 'Concha Renibus', 4_572_400, 150, 'predicted', { certain: true, codex: 'new_region' }),
-        sp('Concha', 'Concha Labiata', 2_352_400, 150, 'predicted', { certain: true, codex: 'logged' }),
+        sp('Concha', 'Concha Labiata', 2_352_400, 150, 'predicted', { certain: true, codex: 'new_colour' }),
       ],
       fssValue: 23_410,
       dssValue: 112_640,

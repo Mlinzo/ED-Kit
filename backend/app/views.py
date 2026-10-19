@@ -7,7 +7,7 @@ import sqlite3
 from collections.abc import Iterable
 
 from app import exobio, notes, usersettings
-from app.codex import CodexIndex, codex_index, codex_status, predicted_status
+from app.codex import CodexIndex, codex_index, colour_status, predicted_status
 from app.exobio.variants import colour_of, variants
 from app.facts import body_id64, facts_from_json, load_community_system, load_system
 from app.models import BodyFacts, SystemFacts
@@ -162,9 +162,10 @@ def _build_species(
                 samples=scan["samples"],
                 certain=True,
                 # The journal names the colour: that codex entry exactly.
-                codex=codex_status(
+                codex=colour_status(
                     codex,
-                    scan["variant"] or symbol,
+                    scan["variant"],
+                    symbol,
                     system.region,
                     before=scan["started_at"] if scan["status"] == "sampling" else None,
                 ),
@@ -673,8 +674,8 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
             value=base,
             bonus_value=base * multiplier,
             colony_range_m=colony,
-            codex=codex_status(
-                codex, active["variant"] or active["species"], region, before=active["started_at"]
+            codex=colour_status(
+                codex, active["variant"], active["species"], region, before=active["started_at"]
             ),
             samples=active["samples"],
             points=points,
