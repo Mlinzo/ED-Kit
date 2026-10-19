@@ -625,8 +625,10 @@ class RouteView(CamelModel):
     current_system: str | None
     current_position: RoutePoint | None  # the current system, when its coordinates are known
     distance_to_next_ly: float | None  # from where you are
-    jumps_to_next: int | None
-    jump_range_ly: float | None
+    jumps_to_next: int | None  # with the range now
+    jump_range_ly: float | None  # MaxJumpRange: empty hold, fuel for one jump (the game's max)
+    jump_range_now_ly: float | None  # with the fuel and cargo aboard
+    jump_range_full_ly: float | None  # with a full tank: the hops between stops, Spansh routes
     total_value: int
     collected_value: int  # mapping value of the route bodies you mapped
     total_ly: float
@@ -636,6 +638,8 @@ class RouteView(CamelModel):
     skipped_count: int
     neutron: NeutronPlanView | None  # Spansh neutron route to the next stop, once asked for
     codex_left: float = 0.0  # codex routes: new entries expected at the stops left
+    # The next stop is beyond the range now but one jump away with at most this much fuel (t).
+    one_jump_fuel_t: float | None = None
 
 
 class NeutronRequest(CamelModel):

@@ -158,8 +158,9 @@ export const guideEn: Strings['guide'] = {
       body: [
         'Far from stations, fuel only comes from stars, through a fuel scoop module. It works with main sequence stars O, B, A, F, G, K and M; brown dwarfs, white dwarfs, neutron stars and black holes give no fuel.',
         'Scooping heats the ship: watch the temperature, especially at hot white and blue stars. Do not set off on a long trip without a scoop, and refuel early: the next scoopable star may be several jumps away.',
+        'Fuel weighs like cargo, and a heavier ship jumps shorter. The game’s maximum jump range (the number in brackets in the galaxy map) is with fuel for just one jump; with a full tank it is lower. With a scoop aboard, extra fuel tanks are rarely worth their weight.',
       ],
-      inApp: 'For the route plotted in the game, the Route tab forecasts fuel jump by jump and warns where you must refuel.',
+      inApp: 'For the route plotted in the game, the Route tab forecasts fuel jump by jump and warns where you must refuel; it also shows your jump range with the fuel aboard.',
     },
     neutron: {
       title: 'Neutron stars and white dwarfs',

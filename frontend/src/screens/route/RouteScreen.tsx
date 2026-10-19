@@ -8,6 +8,7 @@ import {
   ChevronsUp,
   ExternalLink,
   Flag,
+  Fuel,
   List,
   LoaderCircle,
   MapPin,
@@ -30,7 +31,7 @@ import { CreditRange, Credits } from '../../components/Credits'
 import { Segmented } from '../../components/Segmented'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { t } from '../../i18n'
-import { exactCredits, formatCredits, formatLs, formatLy, formatRelative } from '../../lib/format'
+import { exactCredits, formatCredits, formatLs, formatLy, formatRelative, formatTons } from '../../lib/format'
 import { readStored, writeStored } from '../../lib/storage'
 import { eventFull } from '../../lib/when'
 import { BodyChips } from './kinds'
@@ -155,6 +156,13 @@ function NextTarget({
             ) : null}
             {!transit && <PopulatedBadge population={stop.population} />}
           </p>
+          {route.oneJumpFuelT !== null && !stop.here && (
+            <p className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-200/80">
+              <Fuel className="mt-px size-3.5 shrink-0 text-amber-300" aria-hidden />
+              {/* Rounded down: a ton more and the jump falls short. */}
+              {t.route.oneJump(`${formatTons(route.oneJumpFuelT >= 10 ? Math.floor(route.oneJumpFuelT) : route.oneJumpFuelT)} ${t.units.t}`)}
+            </p>
+          )}
         </div>
         {transit ? (
           stop.jumps ? (
@@ -221,6 +229,9 @@ function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onR
   const left = routeLeft(route)
   const transit = route.params?.goal === 'transit'
   const jumpsLeft = route.stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + (s.jumps ?? 0), 0)
+  // The range now (fuel and cargo aboard) first; the maximum and the full-tank one when they differ.
+  const { jumpRangeNowLy: now, jumpRangeLy: max, jumpRangeFullLy: full } = route
+  const differs = (ly: number) => now !== null && Math.abs(ly - now) >= 0.05
   return (
     <section aria-labelledby="route-progress" className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-zinc-800 sm:p-6">
       <Label as="h2" id="route-progress">
@@ -291,6 +302,20 @@ function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onR
             )}
           </dd>
         </div>
+        {now !== null && (
+          <div>
+            <dt className="text-zinc-500" title={t.route.jumpRangeHint}>
+              {t.route.jumpRange}
+            </dt>
+            <dd className="mt-0.5 text-lg font-semibold text-zinc-100">{formatLy(now)}</dd>
+            <dd className="text-xs text-zinc-500">
+              {max !== null && differs(max) && <span className="block whitespace-nowrap">{t.route.jumpRangeMax(formatLy(max))}</span>}
+              {full !== null && differs(full) && (
+                <span className="block whitespace-nowrap">{t.route.jumpRangeFull(formatLy(full))}</span>
+              )}
+            </dd>
+          </div>
+        )}
       </dl>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 pt-4 text-xs text-zinc-500">
         <span title={route.dataAt ? (eventFull(route.dataAt) ?? undefined) : undefined}>

@@ -654,8 +654,14 @@ export interface RouteView {
   /** The current system, when its coordinates are known. */
   currentPosition: RoutePoint | null
   distanceToNextLy: number | null
+  /** With the range now. */
   jumpsToNext: number | null
+  /** MaxJumpRange: empty hold, fuel for one jump (the game's maximum). */
   jumpRangeLy: number | null
+  /** With the fuel and cargo aboard. */
+  jumpRangeNowLy: number | null
+  /** With a full tank: the hops between stops, Spansh routes. */
+  jumpRangeFullLy: number | null
   totalValue: number
   collectedValue: number
   totalLy: number
@@ -668,6 +674,8 @@ export interface RouteView {
   neutron: NeutronPlanView | null
   /** Codex routes: new entries expected at the stops left. */
   codexLeft: number
+  /** The next stop is beyond the range now but one jump away with at most this much fuel (t). */
+  oneJumpFuelT: number | null
 }
 
 export interface NeutronWaypointView {

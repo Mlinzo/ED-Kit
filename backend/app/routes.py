@@ -118,6 +118,7 @@ def plan_transit(
     jump_range = state["jump_range"] if state else None
     if not jump_range:
         raise PlanError("no_jump_range")
+    jump_range = fuel.full_tank_range(fuel.ship_fuel(conn, fid), jump_range) or jump_range
     try:
         waypoints = plotter(
             neutron.NeutronRequest(
@@ -438,9 +439,20 @@ def route_view(
     fid: str | None,
     planner: RoutePlanner,
     neutron_planner: neutron.NeutronPlanner | None = None,
+    live_fuel: float | None = None,
 ) -> RouteView:
     state = cmdr_state(conn, fid)
-    jump_range = state["jump_range"] if state else None
+    max_range = state["jump_range"] if state else None
+    # The range now (the fuel and cargo aboard) counts the jumps from here; the range with a
+    # full tank the hops between stops further on (scooping refills it on the way).
+    ship = fuel.ship_fuel(conn, fid)
+    tank = live_fuel if live_fuel is not None else ship.level if ship is not None else None
+    if tank is None and ship is not None:
+        tank = ship.capacity
+    range_now = (ship.range_with(tank) if ship is not None and tank is not None else None) or (
+        max_range
+    )
+    range_full = fuel.full_tank_range(ship, max_range)
     here: tuple[int, tuple[float, float, float] | None, str] | None = None
     if state is not None and state["system_address"] is not None:
         row = conn.execute(
@@ -463,7 +475,9 @@ def route_view(
             if here is not None and here[1] is not None
             else None
         ),
-        "jump_range_ly": jump_range,
+        "jump_range_ly": max_range,
+        "jump_range_now_ly": round(range_now, 2) if range_now else None,
+        "jump_range_full_ly": round(range_full, 2) if range_full else None,
     }
     if route is None:
         return RouteView(
@@ -590,7 +604,7 @@ def route_view(
                 hop_ly=s["hop_ly"],
                 jumps=s["jumps"]
                 if transit and s["jumps"] is not None
-                else _jumps(s["hop_ly"], jump_range),
+                else _jumps(s["hop_ly"], range_full),
                 population=s["population"],
                 bodies=own,
                 value=sum(_body_value(b) for b in own),
@@ -608,6 +622,13 @@ def route_view(
     distance = None
     if nxt is not None and here is not None and here[1] is not None:
         distance = round(math.dist(here[1], coords[nxt.seq]), 2)
+    # Just out of reach: one jump with less fuel aboard. Worth saying only with fuel to spare,
+    # enough left on arrival for another full jump.
+    one_jump_fuel = None
+    if not transit and distance and ship is not None and tank is not None and range_now:
+        most, top = ship.most_fuel_for(distance), ship.max_fuel_per_jump()
+        if distance > range_now and most is not None and top is not None and 2 * top <= most < tank:
+            one_jump_fuel = math.floor(most * 10) / 10
     return RouteView(
         **base,
         params=params,
@@ -622,7 +643,8 @@ def route_view(
         # Transit: Spansh's count for the leg (supercharges included), not the straight estimate.
         jumps_to_next=(nxt.jumps if nxt else None)
         if transit
-        else (_jumps(distance, jump_range) if distance is not None else None),
+        else (_jumps(distance, range_now) if distance is not None else None),
+        one_jump_fuel_t=one_jump_fuel,
         total_value=sum(s.value for s in stops),
         collected_value=earned,
         total_ly=round(sum(s.hop_ly for s in stops), 2),
@@ -639,7 +661,7 @@ def route_view(
             neutron_planner,
             int(nxt.address) if nxt else None,
             here[0] if here else None,
-            jump_range,
+            range_full,
         ),
         codex_left=round(sum(s.codex_new for s in stops if not s.done and not s.skipped), 2),
     )

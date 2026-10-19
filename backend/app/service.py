@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 BATCH_LINES = 2000
 LIVE_EVENT_MAX_AGE_S = 120  # newer events may use the current Status.json position
 GAME_CHECK_S = 5.0  # how often the process list is read
-FUEL_STEP_T = 0.5  # a fuel level change this big (scooping, jumping) refreshes the forecast
+FUEL_STEP_T = 0.5  # a fuel change this big (scooping, jumping): new forecast and jump range
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
 DERIVED_TOPICS = frozenset({"stats", "history", "route", "navroute", "galaxy", "sell"})
 # Not from the journal: they never make the journal-derived views stale.
@@ -384,7 +384,7 @@ class IngestService(threading.Thread):
             and status.fuel_main is not None
             and abs(previous.fuel_main - status.fuel_main) >= FUEL_STEP_T
         ):
-            self._invalidate({"navroute"})
+            self._invalidate({"navroute", "route"})
 
     def _position_for(self, ts: str) -> tuple[float, float] | None:
         """Current position, but only for events happening now (not during backfill)."""

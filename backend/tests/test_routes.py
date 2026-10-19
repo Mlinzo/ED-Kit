@@ -756,3 +756,58 @@ def test_route_stops_can_be_moved_and_removed(conn: sqlite3.Connection) -> None:
     assert view.stops[0].hop_ly == 10.0 and len(view.stops[0].bodies) == 1
     assert conn.execute("SELECT COUNT(*) FROM route_bodies").fetchone()[0] == 3
     assert not routes.move_stop(conn, 9, 1) and not routes.remove_stop(conn, 9)
+
+
+def test_jumps_to_the_next_stop_count_the_fuel_aboard(conn: sqlite3.Connection) -> None:
+    # A Mandalay with 112 t of fuel: 34.9 ly at most, 27.4 ly with the tank full (the game's
+    # galaxy map), so a stop 32.6 ly away takes two jumps unless the tank holds <= 32 t.
+    k, power, unladen = 3.9e-10, 2.45, 383.2
+    used = k * (20.0 * (unladen + 112.0)) ** power
+    proj = Projector(conn)
+    feed(
+        conn,
+        proj,
+        {"timestamp": "2026-10-17T10:00:00Z", "event": "Commander", "FID": "F1", "Name": "T"},
+        {
+            "timestamp": "2026-10-17T10:00:01Z",
+            "event": "Loadout",
+            "Ship": "mandalay",
+            "ShipID": 3,
+            "UnladenMass": unladen,
+            "MaxJumpRange": 34.9,
+            "FuelCapacity": {"Main": 112.0, "Reserve": 0.5},
+            "Modules": [
+                {"Slot": "FrameShiftDrive", "Item": "int_hyperdrive_overcharge_size5_class5"},
+                {"Slot": "Slot06_Size3", "Item": "int_fuelscoop_size3_class4"},
+            ],
+        },
+        {
+            "timestamp": "2026-10-17T10:01:00Z",
+            "event": "FSDJump",
+            "StarSystem": "Start",
+            "SystemAddress": 999,
+            "StarPos": [0.0, 0.0, 0.0],
+            "JumpDist": 20.0,
+            "FuelUsed": used,
+            "FuelLevel": 112.0 - used,
+        },
+        {"timestamp": "2026-10-17T10:02:00Z", "event": "FuelScoop", "Total": 112.0},
+    )
+    stops = [body(1, 1, (32.62, 0, 0), name="Alpha"), body(2, 1, (65.24, 0, 0), name="Beta")]
+    plan = routeplan.plan(
+        PlanRequest(mode="riches", source="Start"), FakeSearch(stops), no_mapped, START
+    )
+    routes.store(conn, RouteRequest(mode="riches"), plan, None)
+
+    view = routes.route_view(conn, "F1", Planner())
+    assert view.jump_range_ly == 34.9
+    assert view.jump_range_now_ly == pytest.approx(27.37, abs=0.01)
+    assert view.jump_range_full_ly == view.jump_range_now_ly
+    assert view.jumps_to_next == 2 and view.stops[1].jumps == 2
+    assert view.one_jump_fuel_t == pytest.approx(32.3, abs=0.1)
+
+    # 20 t aboard (Status.json): one jump from here; the hops further on still count a full tank.
+    view = routes.route_view(conn, "F1", Planner(), live_fuel=20.0)
+    assert view.jump_range_now_ly is not None and view.jump_range_now_ly > 32.62
+    assert view.jumps_to_next == 1 and view.one_jump_fuel_t is None
+    assert view.stops[1].jumps == 2

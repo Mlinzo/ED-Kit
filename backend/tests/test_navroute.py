@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 import sqlite3
 from pathlib import Path
@@ -184,6 +185,66 @@ def test_a_new_drive_starts_a_new_curve(conn: sqlite3.Connection, proj: Projecto
     assert ship is not None and ship.curve is None
     feed(conn, proj, loadout())  # back to the stock drive: its jumps count again
     assert fuel.ship_fuel(conn, "F1").curve is not None
+
+
+def test_jump_range_scales_down_from_max_jump_range(
+    conn: sqlite3.Connection, proj: Projector
+) -> None:
+    feed(conn, proj, CMDR, loadout())
+    guess = fuel.ship_fuel(conn, "F1")
+    assert guess is not None and guess.max_fuel_per_jump() is None
+    # Before the drive's first jump its max fuel per jump is unknown: taken as 0.
+    assert guess.range_with(CAPACITY) == pytest.approx(34.9 * UNLADEN / (UNLADEN + CAPACITY))
+    assert guess.most_fuel_for(30.0) is None
+
+    feed(conn, proj, fsd_jump(1, "2026-10-17T10:01:00Z", 20.0, 30.0))
+    ship = fuel.ship_fuel(conn, "F1")
+    assert ship is not None
+    top = ship.max_fuel_per_jump()
+    assert top == pytest.approx(5.2, abs=0.03)  # the 5A SCO drive's (EDSY)
+    assert ship.range_with(top) == pytest.approx(34.9)
+    reach = 34.9 * (UNLADEN + top)
+    assert ship.range_with(CAPACITY) == pytest.approx(reach / (UNLADEN + CAPACITY))
+    assert ship.range_with(top / 2) < ship.range_with(top)  # too little fuel for a full jump
+    assert ship.most_fuel_for(ship.range_with(20.0)) == pytest.approx(20.0)
+    assert ship.most_fuel_for(34.95) is None  # beyond even the maximum
+    assert fuel.full_tank_range(ship, 34.9) == pytest.approx(ship.range_with(CAPACITY))
+    assert fuel.full_tank_range(None, 34.9) == 34.9
+
+    # The Mandalay of the screenshot: 112 t aboard, 27.4 ly; 32.6 ly in one jump with <= 32 t.
+    big = dataclasses.replace(ship, capacity=112.0)
+    assert big.range_with(112.0) == pytest.approx(27.37, abs=0.01)
+    assert big.most_fuel_for(32.62) == pytest.approx(32.3, abs=0.1)
+
+
+def test_fsd_booster_adds_to_every_jump() -> None:
+    assert fuel.booster_ly(f"{DRIVE}||int_guardianfsdbooster_size5") == 10.5
+    assert fuel.booster_ly(f"{DRIVE}||") == 0.0 and fuel.booster_ly(None) == 0.0
+    ship = fuel.ShipFuel(
+        curve=fuel.FuelCurve(K, POWER, 1),
+        unladen_mass=UNLADEN,
+        cargo=0.0,
+        capacity=CAPACITY,
+        level=CAPACITY,
+        has_scoop=True,
+        max_range=45.4,
+        booster=10.5,
+    )
+    # The booster's share does not shrink with the mass: (34.9 - 0) x mass + 10.5.
+    full = ship.range_with(CAPACITY)
+    assert full is not None and full - 10.5 == pytest.approx(
+        34.9 * (UNLADEN + ship.max_fuel_per_jump()) / (UNLADEN + CAPACITY), rel=0.01
+    )
+    assert ship.most_fuel_for(10.0) == CAPACITY
+
+
+def test_fuel_level_never_exceeds_a_smaller_tank(conn: sqlite3.Connection, proj: Projector) -> None:
+    big = loadout()
+    big["FuelCapacity"] = {"Main": 112.0, "Reserve": 0.5}
+    feed(conn, proj, CMDR, big, fsd_jump(1, "2026-10-17T10:01:00Z", 20.0, 112.0))
+    feed(conn, proj, loadout())  # the extra tanks sold: 32 t left
+    ship = fuel.ship_fuel(conn, "F1")
+    assert ship is not None and ship.level == CAPACITY
 
 
 # --------------------------------------------------------------------------- the plotted route

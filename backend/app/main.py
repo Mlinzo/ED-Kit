@@ -182,15 +182,17 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         conn = read_conn()
         return history.history_view(conn, active_fid(conn))
 
+    def live_fuel() -> float | None:
+        return service.live.fuel_main if service.live.in_ship else None
+
     @app.get("/api/view/route", response_model=RouteView, response_model_by_alias=True)
     def view_route() -> RouteView:
         conn = read_conn()
-        return routes.route_view(conn, active_fid(conn), planner, neutrons)
+        return routes.route_view(conn, active_fid(conn), planner, neutrons, live_fuel())
 
     def plotted_view(conn: sqlite3.Connection) -> NavRouteView:
-        live = service.live.fuel_main if service.live.in_ship else None
         return navroute.navroute_view(
-            conn, active_fid(conn), service.navroute.current, live, checker
+            conn, active_fid(conn), service.navroute.current, live_fuel(), checker
         )
 
     @app.get("/api/view/navroute", response_model=NavRouteView, response_model_by_alias=True)
@@ -241,15 +243,14 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         if stop is None or route.current_system is None:
             raise HTTPException(409, "no next stop, or your position is unknown")
         state = views.cmdr_state(conn, fid)
-        jump_range = state["jump_range"] if state else None
-        if not jump_range:
+        if not route.jump_range_full_ly:
             raise HTTPException(409, "jump range unknown")
         neutrons.start(
             neutron.NeutronRequest(
                 source=route.current_system,
                 destination=stop.name,
                 destination_address=int(stop.address),
-                range_ly=jump_range,
+                range_ly=route.jump_range_full_ly,
                 efficiency=body.efficiency,
                 multiplier=fuel.supercharge_multiplier(state["fsd_item"] if state else None),
             )

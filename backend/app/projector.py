@@ -220,7 +220,7 @@ class Projector:
         if total is None:
             return frozenset()
         self._update_state(fuel_level=total)
-        return frozenset({"navroute"})
+        return frozenset({"navroute", "route"})
 
     def _refuel(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         state = self._state()
@@ -236,14 +236,14 @@ class Projector:
         if level is None:
             return frozenset()
         self._update_state(fuel_level=level)
-        return frozenset({"navroute"})
+        return frozenset({"navroute", "route"})
 
     def _cargo(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         count = ev.get("Count")
         if ev.get("Vessel", "Ship") != "Ship" or not isinstance(count, int | float):
             return frozenset()
         self._update_state(cargo=float(count))
-        return frozenset({"navroute"})
+        return frozenset({"navroute", "route"})
 
     # ------------------------------------------------------------------ travel
 

@@ -81,6 +81,8 @@ function route(stops: RouteStopView[], extra: Partial<RouteView> = {}): RouteVie
     distanceToNextLy: null,
     jumpsToNext: null,
     jumpRangeLy: null,
+    jumpRangeNowLy: null,
+    jumpRangeFullLy: null,
     totalValue: 0,
     collectedValue: 0,
     totalLy: 0,
@@ -90,6 +92,7 @@ function route(stops: RouteStopView[], extra: Partial<RouteView> = {}): RouteVie
     skippedCount: 0,
     neutron: null,
     codexLeft: 0,
+    oneJumpFuelT: null,
     ...extra,
   }
 }

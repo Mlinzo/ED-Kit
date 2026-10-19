@@ -27,6 +27,8 @@ const DESTINATION = { x: 120, y: 15, z: 288 }
 
 type Xyz = [number, number, number]
 const dist = (a: Xyz, b: Xyz) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+/** The demo ship's jump range: at most (MaxJumpRange), with the fuel aboard, with a full tank. */
+const RANGE = { max: 34.9, now: 31.6, full: 30.8 }
 
 /** Where the i-th of `count` candidates lies: a loop within the radius, or along the corridor. */
 function placeStop(req: RouteRequest, random: () => number, from: Xyz, i: number, count: number): Xyz {
@@ -176,7 +178,7 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
       y: Math.round(to[1] * 100) / 100,
       z: Math.round(to[2] * 100) / 100,
       hopLy: Math.round(hop * 100) / 100,
-      jumps: Math.max(1, Math.ceil(hop / 34.9)),
+      jumps: Math.max(1, Math.ceil(hop / RANGE.full)),
       population: random() < 0.55 ? Math.round(random() * 90_000) : 0,
       bodies,
       value,
@@ -304,7 +306,7 @@ export function createMockRoute(system: SystemView, emit: () => void) {
     for (const s of stops) {
       const at: Xyz = [s.x, s.y, s.z]
       s.hopLy = Math.round(dist(prev, at) * 100) / 100
-      s.jumps = Math.max(1, Math.ceil(s.hopLy / 34.9))
+      s.jumps = Math.max(1, Math.ceil(s.hopLy / RANGE.full))
       prev = at
     }
   }
@@ -336,8 +338,10 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       currentSystem: position?.name ?? currentSystem,
       currentPosition: position,
       distanceToNextLy: toNext,
-      jumpsToNext: transit ? (next?.jumps ?? null) : toNext ? Math.max(1, Math.ceil(toNext / 34.9)) : null,
-      jumpRangeLy: 34.9,
+      jumpsToNext: transit ? (next?.jumps ?? null) : toNext ? Math.max(1, Math.ceil(toNext / RANGE.now)) : null,
+      jumpRangeLy: RANGE.max,
+      jumpRangeNowLy: RANGE.now,
+      jumpRangeFullLy: RANGE.full,
       totalValue: stops.reduce((s, x) => s + x.value, 0),
       collectedValue: stops.reduce(
         (s, x) => s + x.bodies.reduce((n, b) => n + (b.done ? (b.kind !== 'bio' ? b.mappingValue : 0) + b.bioMax : 0), 0),
@@ -350,6 +354,7 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       skippedCount: stops.filter((s) => s.skipped && !s.done).length,
       neutron: transit ? null : neutron && { ...neutron, stale: neutron.destination !== next?.name },
       codexLeft: stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + s.codexNew, 0),
+      oneJumpFuelT: null,
     }
   }
 
@@ -389,10 +394,10 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       destination: next.name,
       stale: false,
       efficiency: 60,
-      rangeLy: 34.9,
+      rangeLy: RANGE.full,
       multiplier: 4,
       totalJumps: waypoints.reduce((n, w) => n + w.jumps, 0),
-      directJumps: Math.ceil(total / 34.9),
+      directJumps: Math.ceil(total / RANGE.full),
       waypoints,
       nextIndex: 1,
     }

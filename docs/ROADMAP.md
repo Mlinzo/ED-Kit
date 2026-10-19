@@ -47,6 +47,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Jump range with the fuel aboard (2026-10-19): the journal's MaxJumpRange (34.90 ly in the game's
+  brackets) is the range with fuel for just one jump; the app counted the jumps to the next stop
+  with it and wrote "1 jump" where the game plotted two with a full 112 t tank (27.4 ly). The
+  range now follows the mass of the fuel and cargo aboard (EDSY's formula, the drive's max fuel
+  per jump from its own fuel curve; a Guardian FSD booster adds its flat share): the jumps from
+  here use the fuel aboard, the hops between stops and the Spansh neutron and transit routes a
+  full tank. The Route tab's Progress card shows the range with the maximum, and a stop just out
+  of reach says how much fuel at most makes it one jump (only with fuel to spare for another
+  full jump on arrival). The guide's fuel scoop topic says fuel weighs like cargo.
 - Genera deduced before DSS (2026-10-19): when the genera that can grow on a planet are as many as
   its biological signals, all of them are there. The System tab marks their species "Genus deduced"
   (certain, as after a DSS: the codex mark is solid, the "DSS needed" hint goes), and codex routes
