@@ -166,6 +166,11 @@ class SystemRef(CamelModel):
     name: str
 
 
+# A system you have not been to, shown from Spansh / EDSM: pending (being asked), missing (they
+# know no bodies), offline (--offline: not asked).
+CommunityLookup = Literal["pending", "missing", "offline"]
+
+
 class SystemView(CamelModel):
     address: str | None
     name: str | None
@@ -185,6 +190,7 @@ class SystemView(CamelModel):
     bodies: list[BodyView]
     barycentres: list[BarycentreView]
     totals: SystemTotals
+    lookup: CommunityLookup | None = None  # never visited: where its community data stands
 
 
 class SamplePoint(CamelModel):
@@ -686,6 +692,7 @@ class GalaxyView(CamelModel):
     region: int | None  # the region you are in
     regions: list[GalaxyRegionView]  # in the order you first came
     engineers: list[GalaxyEngineerView]
+    online: bool  # Spansh/EDSM are asked: any system opens on the System tab (else: only yours)
 
 
 class LiveSystemView(CamelModel):

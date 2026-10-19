@@ -130,6 +130,14 @@ export const uk: Strings = {
     allHistory: 'Уся історія',
     notFound: 'Систему не знайдено',
     notFoundHint: 'Її немає в історії цього командира.',
+    notVisited: 'Ви тут не були',
+    notVisitedHint: 'Це не поточна система: тіла — з даних Spansh і EDSM.',
+    community: 'дані Spansh і EDSM',
+    lookup: {
+      pending: 'Завантажую дані Spansh і EDSM…',
+      missing: 'У Spansh і EDSM немає тіл цієї системи.',
+      offline: 'Дані Spansh і EDSM недоступні: застосунок запущено з --offline.',
+    },
   },
 
   route: {
@@ -401,7 +409,6 @@ export const uk: Strings = {
       rank: (n: number) => `ранг ${n}`,
       unknown: 'Ще не зустрічали',
       away: (ly: string) => `${ly} від вас`,
-      copy: 'Клік — скопіювати систему',
     },
     live: {
       toggle: 'Гравці зараз (EDDN)',
@@ -418,8 +425,6 @@ export const uk: Strings = {
       docked: (n: number) => `стикування: ${n}`,
       carriers: (n: number) => `керієри поруч: ${n}`,
       codex: (names: string) => `Кодекс: ${names}`,
-      copy: 'Клік — скопіювати назву',
-      copied: (name: string) => `Скопійовано: ${name}`,
     },
     map: {
       label: (n: number) => `Карта галактики: ${n} ${plural(n, ['система', 'системи', 'систем'])}`,
@@ -429,8 +434,8 @@ export const uk: Strings = {
       regions: 'Регіони кодексу',
       you: 'До вас',
       top: 'Вигляд згори: ядро галактики вгорі',
-      hintMouse: 'Клік — відкрити систему · перетягування — обертати · коліщатко — масштаб · права кнопка — зсув',
-      hintTouch: 'Дотик — відкрити систему · один палець — обертати · два — масштаб',
+      hintMouse: 'Клік — картка системи · перетягування — обертати · коліщатко — масштаб · права кнопка — зсув',
+      hintTouch: 'Дотик — картка системи · один палець — обертати · два — масштаб',
       rings: (ly: string) => `Кільця навколо ядра — кожні ${ly}`,
       backdrop: 'Галактика на тлі — схема, а не справжні зорі',
       legend: {
@@ -451,7 +456,9 @@ export const uk: Strings = {
       killedBy: (who: string) => `від ${who}`,
       lost: (value: string) => `втрачено ${value}`,
       unsold: (value: string) => `${value} не продано`,
-      open: 'Клік — відкрити на вкладці «Система»',
+      pin: 'Клік — закріпити картку',
+      openNewTab: 'Відкрити в новій вкладці',
+      close: 'Закрити',
       fromSol: (ly: string) => `${ly} від Sol`,
       startLabel: (date: string) => `Початок · ${date}`,
     },

@@ -49,12 +49,15 @@ CREATE TABLE IF NOT EXISTS events(
 CREATE INDEX IF NOT EXISTS events_by_kind ON events(event, id);
 
 -- Community data (Spansh / EDSM) cached per system. Never overrides the journal.
+-- name, x, y, z: what the databases call the system and where (a system you have not been to).
 CREATE TABLE IF NOT EXISTS ext_systems(
   address INTEGER PRIMARY KEY,
   source TEXT,
   fetched_at TEXT NOT NULL,
   ok INTEGER NOT NULL,
-  body_count INTEGER
+  body_count INTEGER,
+  name TEXT,
+  x REAL, y REAL, z REAL
 ) STRICT;
 
 -- facts: JSON of app.models.BodyFacts; signals: {"bio": 3, ...}; genuses: [codex symbols]
@@ -430,6 +433,10 @@ ADDED_COLUMNS = (
     ("route_bodies", "bio_min", "INTEGER NOT NULL DEFAULT 0"),
     ("route_bodies", "bio_max", "INTEGER NOT NULL DEFAULT 0"),
     ("route_bodies", "genuses", "TEXT NOT NULL DEFAULT '[]'"),
+    ("ext_systems", "name", "TEXT"),
+    ("ext_systems", "x", "REAL"),
+    ("ext_systems", "y", "REAL"),
+    ("ext_systems", "z", "REAL"),
 )
 
 

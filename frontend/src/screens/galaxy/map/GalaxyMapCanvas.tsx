@@ -1,18 +1,19 @@
 // The galaxy map (lazy chunk): every system you visited on a sketch of the galaxy, your path,
 // where you died, the routes ahead, the codex regions and, when asked, other players right now
-// (EDDN). Hover names a system; a click opens yours on the System tab, copies another's name.
+// (EDDN). Hover shows a system's card; a click pins it: copy the name, open the system in a new tab.
 
 import { Canvas, useThree } from '@react-three/fiber'
-import { Crosshair, Flag, Globe, Layers, Map as MapIcon, MapPin, Maximize2, Radio, Wrench } from 'lucide-react'
+import { Crosshair, ExternalLink, Flag, Globe, Layers, Map as MapIcon, MapPin, Maximize2, Radio, Wrench, X } from 'lucide-react'
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Vector3 } from 'three'
 import { useView } from '../../../api/hooks'
 import type { GalaxyView, LiveView } from '../../../api/types'
+import { CopyButton } from '../../../components/CopyButton'
 import { Credits } from '../../../components/Credits'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
 import { t } from '../../../i18n'
-import { copyText } from '../../../lib/clipboard'
 import { formatCredits, formatDateTime, formatLy, formatNumber } from '../../../lib/format'
+import { pathOf } from '../../../lib/router'
 import { readStored, writeStored } from '../../../lib/storage'
 import { MapButton } from '../../../map/MapButton'
 import { Ticker } from '../../../map/Ticker'
@@ -35,7 +36,6 @@ import { useRegionMap, type RegionMap } from './useRegionMap'
 
 export interface GalaxyMapProps {
   view: GalaxyView
-  onOpenSystem: (address: string) => void
   /** Frame this codex region (a new nonce frames it again). */
   focusRegion?: { id: number; nonce: number } | null
   className?: string
@@ -46,12 +46,11 @@ const LIVE_KEY = 'edk.galaxyLive'
 const ENGINEERS_KEY = 'edk.galaxyEngineers'
 const NO_ENGINEERS: readonly EngineerPoint[] = []
 
-/** A dot that is not one of your systems (another player's, an engineer's): a click copies its system's name. */
+/** A dot that is not one of your systems (another player's, an engineer's). */
 interface OtherPoint {
   key: string
   pos: Vec3
   size: number
-  copy: string
 }
 /** While the layer is on, ask at least this often: the server hangs up on EDDN when nobody asks. */
 const LIVE_KEEPALIVE_MS = 45_000
@@ -92,21 +91,10 @@ const isOnLabel = (e: PointerEvent) => e.target instanceof Element && e.target.c
 
 /**
  * Hover and click on the dots, picked on screen: your systems first (their addresses in the
- * store), then other players' (their `live:` keys).
+ * store), then the others (their `live:` / `engineer:` keys). A click pins the card of the dot
+ * under it; a second click on it, or one on empty space, lets go.
  */
-function Picking({
-  scene,
-  others,
-  store,
-  onOpen,
-  onCopy,
-}: {
-  scene: GalaxyScene
-  others: readonly OtherPoint[]
-  store: PickStore
-  onOpen: (address: string) => void
-  onCopy: (name: string) => void
-}) {
+function Picking({ scene, others, store }: { scene: GalaxyScene; others: readonly OtherPoint[]; store: PickStore }) {
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
   const connected = useThree((s) => s.events.connected) as HTMLElement | undefined
@@ -152,11 +140,7 @@ function Picking({
       down = null
       if (!start || isOnLabel(e) || Math.hypot(e.clientX - start[0], e.clientY - start[1]) > 5) return
       const key = pick(e)
-      const other = key ? othersRef.current.find((p) => p.key === key) : undefined
-      // A finger has no hover: a tap on a dot that is not yours shows its card instead.
-      if (e.pointerType === 'touch' && (other || !key)) hover(other && store.get().hovered !== other.key ? other.key : null)
-      else if (other) onCopy(other.copy)
-      else if (key) onOpen(key)
+      store.set({ selected: key !== null && key !== store.get().selected ? key : null })
     }
     const onLeave = () => hover(null)
     el.addEventListener('pointermove', onMove)
@@ -170,14 +154,71 @@ function Picking({
       el.removeEventListener('pointerleave', onLeave)
       el.style.cursor = ''
     }
-  }, [camera, connected, gl, invalidate, onOpen, onCopy, store])
+  }, [camera, connected, gl, invalidate, store])
   return null
 }
 
-/** Region names last: the ones you have been to first, yours before them. */
-const PRIORITY = { hover: 60, you: 50, start: 45, landmark: 30, regionHere: 24, regionVisited: 20, region: 10 }
+/** The pinned card on top, then the hovered one; region names last: the ones you have been to first, yours before them. */
+const PRIORITY = { pinned: 70, hover: 60, you: 50, start: 45, landmark: 30, regionHere: 24, regionVisited: 20, region: 10 }
 
-function HoverCard({ view, index }: { view: GalaxyView; index: number }) {
+/** A hovered card, or a pinned one (closes, takes clicks). */
+interface CardMode {
+  pinned: boolean
+  onClose: () => void
+}
+
+/** The card of a dot: a hint at the bottom while hovered, what you can do once pinned. */
+function Card({ title, pinned, onClose, actions, children }: CardMode & { title: string; actions: ReactNode; children: ReactNode }) {
+  return (
+    <div
+      className={`rounded-xl bg-zinc-950/90 p-3 shadow-2xl ring-1 shadow-black/60 backdrop-blur-md ring-inset ${
+        pinned ? 'pointer-events-auto w-72 ring-white/20' : 'pointer-events-none w-64 ring-white/12'
+      }`}
+      // A press on the card is not the start of a drag of the map behind it.
+      onPointerDown={pinned ? (e) => e.stopPropagation() : undefined}
+    >
+      <div className="flex items-start gap-2">
+        <p className={`min-w-0 flex-1 text-sm font-semibold text-zinc-50 ${pinned ? 'break-words' : 'truncate'}`}>{title}</p>
+        {pinned && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t.galaxy.map.close}
+            title={t.galaxy.map.close}
+            className="focus-ring -mt-1 -mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+        )}
+      </div>
+      {children}
+      {pinned ? actions : <p className="mt-2 border-t border-white/8 pt-2 text-[11px] text-zinc-500">{t.galaxy.map.pin}</p>}
+    </div>
+  )
+}
+
+/** A pinned card's buttons: the system's name (for the game's galaxy map), and its page on the System tab (null: it has none). */
+function Actions({ name, address }: { name: string; address: string | null }) {
+  return (
+    <div className="mt-2.5 flex flex-wrap gap-2 border-t border-white/8 pt-2.5">
+      <CopyButton text={name} label className="grow" />
+      {address !== null && (
+        <a
+          href={`${pathOf({ tab: 'system', address })}${window.location.search}`}
+          target="_blank"
+          rel="noopener"
+          className="focus-ring inline-flex h-9 grow items-center justify-center gap-1.5 rounded-lg bg-zinc-800 px-3 text-sm font-medium text-zinc-100 ring-1 ring-zinc-700 ring-inset hover:bg-zinc-700"
+        >
+          <ExternalLink className="size-4 shrink-0" aria-hidden />
+          {t.galaxy.map.openNewTab}
+        </a>
+      )}
+    </div>
+  )
+}
+
+/** One of your systems: what you did there. */
+function SystemCard({ view, index, ...mode }: CardMode & { view: GalaxyView; index: number }) {
   const s = view.systems[index]
   const deaths = view.deaths.filter((d) => d.system === index)
   const region = s.region !== null ? view.regions.find((r) => r.id === s.region) : undefined
@@ -187,8 +228,7 @@ function HoverCard({ view, index }: { view: GalaxyView; index: number }) {
     s.species > 0 ? t.galaxy.map.species(s.species) : null,
   ].filter(Boolean)
   return (
-    <div className="pointer-events-none w-64 rounded-xl bg-zinc-950/90 p-3 shadow-2xl ring-1 shadow-black/60 ring-white/12 backdrop-blur-md ring-inset">
-      <p className="truncate text-sm font-semibold text-zinc-50">{s.name}</p>
+    <Card title={s.name} actions={<Actions name={s.name} address={s.address} />} {...mode}>
       <p className="mt-1 text-xs text-zinc-400">
         {facts.join(' · ')}
         <span className="block text-zinc-500">{t.galaxy.map.fromSol(formatLy(Math.hypot(s.x, s.y, s.z)))}</span>
@@ -203,8 +243,7 @@ function HoverCard({ view, index }: { view: GalaxyView; index: number }) {
           {d.lostValue > 0 && <span className="text-rose-300/70"> · {t.galaxy.map.lost(formatCredits(d.lostValue))}</span>}
         </p>
       ))}
-      <p className="mt-2 border-t border-white/8 pt-2 text-[11px] text-zinc-500">{t.galaxy.map.open}</p>
-    </div>
+    </Card>
   )
 }
 
@@ -225,16 +264,20 @@ function regionLabels(regions: RegionsShown, entries: Map<string, LabelEntry>, l
   })
 }
 
-/** An engineer: where, what they work on, how far you are with them. */
-function EngineerCard({ point, from }: { point: EngineerPoint; from: { x: number; y: number; z: number } | null }) {
+/** An engineer: where, what they work on, how far you are with them. `address`: their system's page, if it has one. */
+function EngineerCard({
+  point,
+  from,
+  address,
+  ...mode
+}: CardMode & { point: EngineerPoint; from: { x: number; y: number; z: number } | null; address: string | null }) {
   const e = point.engineer
   const standing = e.progress
     ? [t.galaxy.engineers.progress[e.progress], e.progress === 'unlocked' && e.rank ? t.galaxy.engineers.rank(e.rank) : null].filter(Boolean).join(', ')
     : t.galaxy.engineers.unknown
   const tone = e.progress === 'unlocked' ? 'text-emerald-300' : e.progress ? 'text-zinc-300' : 'text-zinc-500'
   return (
-    <div className="pointer-events-none w-64 rounded-xl bg-zinc-950/90 p-3 shadow-2xl ring-1 shadow-black/60 ring-white/12 backdrop-blur-md ring-inset">
-      <p className="truncate text-sm font-semibold text-zinc-50">{e.name}</p>
+    <Card title={e.name} actions={<Actions name={e.system} address={address} />} {...mode}>
       <p className="mt-0.5 text-xs" style={{ color: ENGINEER_COLOR }}>
         {e.kind === 'ship' ? t.galaxy.engineers.ship : t.galaxy.engineers.suit}
       </p>
@@ -243,13 +286,12 @@ function EngineerCard({ point, from }: { point: EngineerPoint; from: { x: number
       </p>
       {from && <p className="text-xs text-zinc-500">{t.galaxy.engineers.away(formatLy(Math.hypot(e.x - from.x, e.y - from.y, e.z - from.z)))}</p>}
       <p className={`mt-1.5 text-xs ${tone}`}>{standing}</p>
-      <p className="mt-2 border-t border-white/8 pt-2 text-[11px] text-zinc-500 pointer-coarse:hidden">{t.galaxy.engineers.copy}</p>
-    </div>
+    </Card>
   )
 }
 
-/** Another player's system: how we know someone was there (never who). */
-function LiveCard({ point, grid }: { point: LivePoint; grid: RegionGrid | null }) {
+/** Another player's system: how we know someone was there (never who). `address`: its page, if it has one. */
+function LiveCard({ point, grid, address, ...mode }: CardMode & { point: LivePoint; grid: RegionGrid | null; address: string | null }) {
   const s = point.system
   const region = grid ? regionAt(grid, s.x, s.z) : null
   const how = [
@@ -259,8 +301,7 @@ function LiveCard({ point, grid }: { point: LivePoint; grid: RegionGrid | null }
     s.carriers > 0 ? t.galaxy.live.carriers(s.carriers) : null,
   ].filter(Boolean)
   return (
-    <div className="pointer-events-none w-64 rounded-xl bg-zinc-950/90 p-3 shadow-2xl ring-1 shadow-black/60 ring-white/12 backdrop-blur-md ring-inset">
-      <p className="truncate text-sm font-semibold text-zinc-50">{s.name}</p>
+    <Card title={s.name} actions={<Actions name={s.name} address={address} />} {...mode}>
       <p className="mt-1 text-xs" style={{ color: LIVE_COLOR }}>
         {t.galaxy.live.players(s.players)} · {s.ageS < 60 ? t.time.justNow : t.time.minutesAgo(Math.floor(s.ageS / 60))}
       </p>
@@ -272,8 +313,7 @@ function LiveCard({ point, grid }: { point: LivePoint; grid: RegionGrid | null }
         </p>
       )}
       {s.codex.length > 0 && <p className="mt-1 text-xs text-amber-200/90">{t.galaxy.live.codex(s.codex.join(', '))}</p>}
-      <p className="mt-2 border-t border-white/8 pt-2 text-[11px] text-zinc-500 pointer-coarse:hidden">{t.galaxy.live.copy}</p>
-    </div>
+    </Card>
   )
 }
 
@@ -299,39 +339,50 @@ function Labels({
   engineers: readonly EngineerPoint[]
   grid: RegionGrid | null
 }) {
-  const { hovered } = usePick(store)
+  const { hovered, selected } = usePick(store)
+  const invalidate = useThree((s) => s.invalidate)
+  // The highlight of the pinned dot is drawn in the scene: a frame for every change.
+  useEffect(() => {
+    invalidate()
+  }, [selected, invalidate])
+  const close = useCallback(() => store.set({ selected: null }), [store])
   const [entries] = useState(() => new Map<string, LabelEntry>())
   const landmarks = useMemo(() => LANDMARKS.map((l) => ({ ...l, pos: at(l) })), [])
   const labelMap = regions?.map
   const regionPositions = useMemo(() => new Map((labelMap?.labels ?? []).map((l) => [l.id, at({ x: l.x, y: 0, z: l.z })])), [labelMap])
   const byAddress = useMemo(() => new Map(scene.systems.map((s) => [s.address, s])), [scene.systems])
-  const hover = hovered ? byAddress.get(hovered) : undefined
-  const liveHover = hovered && !hover ? live.find((p) => p.key === hovered) : undefined
-  const engineerHover = hovered && !hover && !liveHover ? engineers.find((p) => p.key === hovered) : undefined
   const current = view.current !== null ? view.systems[view.current] : null
+  // A system you have not been to opens from Spansh / EDSM; offline, only yours have a page.
+  const yours = (address: string) => (view.online || byAddress.has(address) ? address : null)
+  const card = (key: string, mode: CardMode): { pos: Vec3; lift: number; node: ReactNode } | null => {
+    const mine = byAddress.get(key)
+    if (mine) return { pos: mine.pos, lift: mine.size / 2 + 8, node: <SystemCard view={view} index={mine.index} {...mode} /> }
+    const player = live.find((p) => p.key === key)
+    if (player) return { pos: player.pos, lift: player.size + 6, node: <LiveCard point={player} grid={grid} address={yours(player.system.address)} {...mode} /> }
+    const engineer = engineers.find((p) => p.key === key)
+    if (engineer) {
+      const node = <EngineerCard point={engineer} from={current} address={yours(engineer.engineer.address)} {...mode} />
+      return { pos: engineer.pos, lift: engineer.size / 2 + 8, node }
+    }
+    return null
+  }
   const labels: ReactNode[] = []
-  if (hover) {
+  const carded = new Set<string>()
+  for (const [key, pinned] of [
+    [selected, true],
+    [hovered, false],
+  ] as const) {
+    const shown = key !== null && !carded.has(key) ? card(key, { pinned, onClose: close }) : null
+    if (!shown || key === null) continue
+    carded.add(key)
+    const id = `${pinned ? 'pinned' : 'hover'}:${key}`
     labels.push(
-      <Anchor key={`hover:${hover.address}`} id={`hover:${hover.address}`} pos={hover.pos} priority={PRIORITY.hover} lift={hover.size / 2 + 8} always beside entries={entries} layer={hoverLayer}>
-        <HoverCard view={view} index={hover.index} />
+      <Anchor key={id} id={id} pos={shown.pos} priority={pinned ? PRIORITY.pinned : PRIORITY.hover} lift={shown.lift} always beside entries={entries} layer={hoverLayer}>
+        {shown.node}
       </Anchor>,
     )
   }
-  if (liveHover) {
-    labels.push(
-      <Anchor key={`hover:${liveHover.key}`} id={`hover:${liveHover.key}`} pos={liveHover.pos} priority={PRIORITY.hover} lift={liveHover.size + 6} always beside entries={entries} layer={hoverLayer}>
-        <LiveCard point={liveHover} grid={grid} />
-      </Anchor>,
-    )
-  }
-  if (engineerHover) {
-    labels.push(
-      <Anchor key={`hover:${engineerHover.key}`} id={`hover:${engineerHover.key}`} pos={engineerHover.pos} priority={PRIORITY.hover} lift={engineerHover.size / 2 + 8} always beside entries={entries} layer={hoverLayer}>
-        <EngineerCard point={engineerHover} from={current} />
-      </Anchor>,
-    )
-  }
-  if (scene.you && current && hover?.index !== view.current) {
+  if (scene.you && current && !carded.has(current.address)) {
     labels.push(
       <Anchor key="you" id="you" pos={scene.you} priority={PRIORITY.you} lift={13} entries={entries} layer={layer}>
         <div className={`${PILL} bg-zinc-950/75 text-emerald-50 ring-emerald-400/40`}>
@@ -342,7 +393,7 @@ function Labels({
     )
   }
   const first = scene.start ? view.systems[scene.start.index] : null
-  if (scene.start && first && hover?.index !== scene.start.index && scene.start.index !== view.current) {
+  if (scene.start && first && !carded.has(first.address) && scene.start.index !== view.current) {
     labels.push(
       <Anchor key="start" id="start" pos={scene.start.pos} priority={PRIORITY.start} lift={11} entries={entries} layer={layer}>
         <div className={`${PILL} bg-zinc-950/75 text-zinc-100 ring-white/20`}>
@@ -375,8 +426,6 @@ const Scene = memo(function Scene({
   store,
   layer,
   hoverLayer,
-  onOpen,
-  onCopy,
   registerCamera,
   reducedMotion,
   regions,
@@ -389,8 +438,6 @@ const Scene = memo(function Scene({
   store: PickStore
   layer: RefObject<HTMLElement>
   hoverLayer: RefObject<HTMLElement>
-  onOpen: (address: string) => void
-  onCopy: (name: string) => void
   registerCamera: (api: RouteCameraApi | null) => void
   reducedMotion: boolean
   regions: RegionsShown | null
@@ -400,10 +447,7 @@ const Scene = memo(function Scene({
 }) {
   const landmarks = useMemo(() => LANDMARKS.map((l) => at(l)), [])
   const others = useMemo<OtherPoint[]>(
-    () => [
-      ...live.map((p) => ({ key: p.key, pos: p.pos, size: p.size, copy: p.system.name })),
-      ...engineers.map((p) => ({ key: p.key, pos: p.pos, size: p.size, copy: p.engineer.system })),
-    ],
+    () => [...live.map((p) => ({ key: p.key, pos: p.pos, size: p.size })), ...engineers.map((p) => ({ key: p.key, pos: p.pos, size: p.size }))],
     [live, engineers],
   )
   return (
@@ -426,9 +470,9 @@ const Scene = memo(function Scene({
           {!reducedMotion && <Marker pos={scene.you} color={YOU_COLOR} size={30} inner={0.9} opacity={0.7} pulse={2.4} order={6} />}
         </>
       )}
-      <Hovered scene={scene} others={others} store={store} />
+      <Highlighted scene={scene} others={others} store={store} />
       <Labels view={view} scene={scene} store={store} layer={layer} hoverLayer={hoverLayer} regions={regions} live={live} engineers={engineers} grid={grid} />
-      <Picking scene={scene} others={others} store={store} onOpen={onOpen} onCopy={onCopy} />
+      <Picking scene={scene} others={others} store={store} />
       <RouteCamera
         frame={scene.travels}
         routeKey="galaxy"
@@ -442,10 +486,18 @@ const Scene = memo(function Scene({
   )
 })
 
-function Hovered({ scene, others, store }: { scene: GalaxyScene; others: readonly OtherPoint[]; store: PickStore }) {
-  const { hovered } = usePick(store)
-  const s = hovered ? (scene.systems.find((x) => x.address === hovered) ?? others.find((p) => p.key === hovered)) : undefined
-  return s ? <Marker pos={s.pos} color="#ffffff" size={s.size + 9} inner={0.76} opacity={0.8} order={7} /> : null
+/** A ring around the pinned dot and the hovered one. */
+function Highlighted({ scene, others, store }: { scene: GalaxyScene; others: readonly OtherPoint[]; store: PickStore }) {
+  const { hovered, selected } = usePick(store)
+  const find = (key: string | null) => (key ? (scene.systems.find((x) => x.address === key) ?? others.find((p) => p.key === key)) : undefined)
+  const pinned = find(selected)
+  const hover = hovered !== selected ? find(hovered) : undefined
+  return (
+    <>
+      {pinned && <Marker pos={pinned.pos} color="#ffffff" size={pinned.size + 9} inner={0.76} opacity={0.95} order={7} />}
+      {hover && <Marker pos={hover.pos} color="#ffffff" size={hover.size + 9} inner={0.76} opacity={0.8} order={7} />}
+    </>
+  )
 }
 
 function Legend({ regions, live, engineers }: { regions: boolean; live: boolean; engineers: boolean }) {
@@ -562,21 +614,7 @@ function useEngineers(view: GalaxyView) {
   return { show, toggle, points: show ? all : NO_ENGINEERS }
 }
 
-/** "Copied: <name>" for a moment after a click on another player's system. */
-function useCopied() {
-  const [copied, setCopied] = useState<string | null>(null)
-  const copy = useCallback((name: string) => {
-    void copyText(name).then((ok) => ok && setCopied(name))
-  }, [])
-  useEffect(() => {
-    if (!copied) return
-    const id = setTimeout(() => setCopied(null), 2_500)
-    return () => clearTimeout(id)
-  }, [copied])
-  return { copied, copy }
-}
-
-export default function GalaxyMapCanvas({ view, onOpenSystem, focusRegion = null, className = '' }: GalaxyMapProps) {
+export default function GalaxyMapCanvas({ view, focusRegion = null, className = '' }: GalaxyMapProps) {
   const scene = useScene(view)
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const coarse = useMediaQuery('(pointer: coarse)')
@@ -585,19 +623,20 @@ export default function GalaxyMapCanvas({ view, onOpenSystem, focusRegion = null
   const labelLayer = useRef<HTMLDivElement>(null)
   const hoverLayer = useRef<HTMLDivElement>(null)
   const eventSource = useRef<HTMLDivElement>(null)
-  const openRef = useRef(onOpenSystem)
-  useLayoutEffect(() => {
-    openRef.current = onOpenSystem
-  }, [onOpenSystem])
-  const open = useCallback((address: string) => openRef.current(address), [])
   const registerCamera = useCallback((api: RouteCameraApi | null) => {
     camera.current = api
   }, [])
   const regions = useRegions(view, focusRegion)
   const live = useLive()
   const engineers = useEngineers(view)
-  const { copied, copy } = useCopied()
   const grid = regions.map?.grid
+  useEffect(() => {
+    const unpin = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') store.set({ selected: null })
+    }
+    window.addEventListener('keydown', unpin)
+    return () => window.removeEventListener('keydown', unpin)
+  }, [store])
   const focusNonce = focusRegion?.nonce
   const focusId = focusRegion?.id
   useEffect(() => {
@@ -635,8 +674,6 @@ export default function GalaxyMapCanvas({ view, onOpenSystem, focusRegion = null
             store={store}
             layer={labelLayer as RefObject<HTMLElement>}
             hoverLayer={hoverLayer as RefObject<HTMLElement>}
-            onOpen={open}
-            onCopy={copy}
             registerCamera={registerCamera}
             reducedMotion={reducedMotion}
             regions={regions.shown}
@@ -682,13 +719,6 @@ export default function GalaxyMapCanvas({ view, onOpenSystem, focusRegion = null
             <Radio className="size-4" aria-hidden />
           </MapButton>
         </div>
-      </div>
-      <div role="status" className="pointer-events-none absolute bottom-24 left-1/2 z-30 -translate-x-1/2">
-        {copied && (
-          <span className="block max-w-[80vw] truncate rounded-full bg-zinc-950/85 px-3 py-1.5 text-xs text-zinc-100 shadow-lg ring-1 ring-white/15 backdrop-blur-sm">
-            {t.galaxy.live.copied(copied)}
-          </span>
-        )}
       </div>
       <div className="pointer-events-none absolute bottom-2.5 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col gap-0.5 text-[11px] text-zinc-500 select-none">
         {live.show && (

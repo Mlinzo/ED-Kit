@@ -138,7 +138,7 @@ export default function App() {
         {tab === 'route' && <RouteScreen />}
         {tab === 'session' && <SessionScreen />}
         {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
-        {tab === 'galaxy' && <GalaxyScreen onOpenSystem={openSystem} onShowHistory={() => goTo('history')} />}
+        {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
         {tab === 'stats' && <StatsScreen />}
       </main>
       <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />

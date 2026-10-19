@@ -30,6 +30,8 @@ def galaxy_view(
     fid: str | None,
     route: list[RoutePoint],
     plotted: list[RoutePoint],
+    *,
+    online: bool = True,
 ) -> GalaxyView:
     entries = {int(e.address): e for e in history_view(conn, fid).systems}
     coords: dict[int, tuple[float, float, float]] = {}
@@ -131,6 +133,7 @@ def galaxy_view(
         region=systems[current].region if current is not None else None,
         regions=_regions(conn, fid, systems),
         engineers=engineers.engineers_view(conn, fid),
+        online=online,
     )
 
 

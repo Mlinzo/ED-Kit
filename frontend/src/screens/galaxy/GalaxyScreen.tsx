@@ -102,7 +102,7 @@ function Regions({ view, selected, onShow }: { view: GalaxyView; selected: numbe
   )
 }
 
-export function GalaxyScreen({ onOpenSystem, onShowHistory }: { onOpenSystem: (address: string) => void; onShowHistory: () => void }) {
+export function GalaxyScreen({ onShowHistory }: { onShowHistory: () => void }) {
   const { data, error, refetch } = useView('galaxy')
   const [focus, setFocus] = useState<{ id: number; nonce: number } | null>(null)
   const mapBox = useRef<HTMLDivElement>(null)
@@ -126,7 +126,7 @@ export function GalaxyScreen({ onOpenSystem, onShowHistory }: { onOpenSystem: (a
         <>
           <Kpis view={data} />
           <div ref={mapBox} className="scroll-mt-20">
-            <GalaxyMap view={data} onOpenSystem={onOpenSystem} onShowList={onShowHistory} focusRegion={focus} className="h-[clamp(28rem,74dvh,60rem)]" />
+            <GalaxyMap view={data} onShowList={onShowHistory} focusRegion={focus} className="h-[clamp(28rem,74dvh,60rem)]" />
           </div>
           <Regions view={data} selected={focus?.id ?? null} onShow={showRegion} />
         </>

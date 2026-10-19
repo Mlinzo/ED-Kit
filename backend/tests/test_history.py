@@ -208,8 +208,12 @@ def test_system_view_of_a_visited_system(conn: sqlite3.Connection, proj: Project
     first = views.system_view(conn, "F1", A)
     assert first.prev_system is None and first.next_system is not None
 
+    # Never visited: shown from community data, being asked for.
     unknown = views.system_view(conn, "F1", 999)
-    assert unknown.address is None and unknown.current_system is not None
+    assert unknown.address == "999" and unknown.name is None and unknown.lookup == "pending"
+    assert unknown.current_system is not None and not unknown.is_current
+    assert views.system_view(conn, "F1", 999, online=False).lookup == "offline"
+    assert live.lookup is None and past.lookup is None
 
 
 def test_opened_past_system_gets_community_data(

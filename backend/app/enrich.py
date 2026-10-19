@@ -2,7 +2,9 @@
 
 Other commanders' scans reach these databases through EDDN, so a system you have just
 jumped into is often fully known there: bodies, orbits, bio signal counts and even the
-genera found by DSS. That data fills the map and the predictions before you honk.
+genera found by DSS. That data fills the map and the predictions before you honk. A system
+opened by address (the history, the galaxy map) is looked up the same way, so one you have
+never been to is shown from this data alone, with the name and position the databases give.
 
 Rules:
 - The journal always wins: community bodies are stored apart (`ext_*` tables) and only
@@ -118,10 +120,13 @@ class ExternalBody:
 @dataclass(slots=True)
 class ExternalSystem:
     address: int
-    source: str | None  # None when nothing was found
+    source: str | None  # None when no bodies were found
     body_count: int | None = None
     bodies: list[ExternalBody] = field(default_factory=list)
     barycentres: dict[int, dict[str, Any]] = field(default_factory=dict)
+    # Known even without bodies (Spansh: both; EDSM: the name only).
+    name: str | None = None
+    star_pos: tuple[float, float, float] | None = None
 
 
 # --------------------------------------------------------------------------- parsing
@@ -306,22 +311,40 @@ def _get_json(url: str) -> Any:
         return json.loads(response.read().decode("utf-8"))
 
 
+def _coords(system: dict[str, Any]) -> tuple[float, float, float] | None:
+    c = system.get("coords")
+    if not isinstance(c, dict):
+        return None
+    xyz = (_num(c, "x"), _num(c, "y"), _num(c, "z"))
+    return None if None in xyz else xyz  # type: ignore[return-value]
+
+
 def fetch_system(address: int) -> ExternalSystem:
     """Spansh first (has bio signals and genera), then EDSM. Never raises."""
+    name: str | None = None
+    star_pos: tuple[float, float, float] | None = None
+    found: ExternalSystem | None = None
     try:
         data = _get_json(SPANSH_DUMP.format(address=address))
         system = data.get("system") if isinstance(data, dict) else None
-        if isinstance(system, dict) and system.get("bodies"):
-            return parse_system(address, system["bodies"], "spansh", system.get("bodyCount"))
+        if isinstance(system, dict):
+            name, star_pos = (str(system["name"]) if system.get("name") else None), _coords(system)
+            if system.get("bodies"):
+                found = parse_system(address, system["bodies"], "spansh", system.get("bodyCount"))
     except (urllib.error.URLError, TimeoutError, ValueError, OSError) as exc:
         log.info("spansh lookup failed for %s: %s", address, exc)
-    try:
-        data = _get_json(EDSM_BODIES.format(address=address))
-        if isinstance(data, dict) and data.get("bodies"):
-            return parse_system(address, data["bodies"], "edsm", data.get("bodyCount"))
-    except (urllib.error.URLError, TimeoutError, ValueError, OSError) as exc:
-        log.info("edsm lookup failed for %s: %s", address, exc)
-    return ExternalSystem(address=address, source=None)
+    if found is None:
+        try:
+            data = _get_json(EDSM_BODIES.format(address=address))
+            if isinstance(data, dict):
+                name = name or (str(data["name"]) if data.get("name") else None)
+                if data.get("bodies"):
+                    found = parse_system(address, data["bodies"], "edsm", data.get("bodyCount"))
+        except (urllib.error.URLError, TimeoutError, ValueError, OSError) as exc:
+            log.info("edsm lookup failed for %s: %s", address, exc)
+    found = found or ExternalSystem(address=address, source=None)
+    found.name, found.star_pos = name, star_pos
+    return found
 
 
 class Enricher:
@@ -375,15 +398,21 @@ def needs_fetch(conn: sqlite3.Connection, address: int, now: datetime | None = N
 
 def store(conn: sqlite3.Connection, system: ExternalSystem) -> None:
     """Replace the cached community data of one system (caller owns the transaction)."""
+    pos = system.star_pos or (None, None, None)
     conn.execute(
-        "INSERT OR REPLACE INTO ext_systems(address, source, fetched_at, ok, body_count) "
-        "VALUES(?, ?, ?, ?, ?)",
+        "INSERT INTO ext_systems(address, source, fetched_at, ok, body_count, name, x, y, z) "
+        "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(address) DO UPDATE SET "
+        "source = excluded.source, fetched_at = excluded.fetched_at, ok = excluded.ok, "
+        "body_count = excluded.body_count, name = COALESCE(excluded.name, name), "
+        "x = COALESCE(excluded.x, x), y = COALESCE(excluded.y, y), z = COALESCE(excluded.z, z)",
         (
             system.address,
             system.source,
             datetime.now(UTC).isoformat(timespec="seconds"),
             int(system.source is not None),
             system.body_count,
+            system.name,
+            *pos,
         ),
     )
     if system.source is None:

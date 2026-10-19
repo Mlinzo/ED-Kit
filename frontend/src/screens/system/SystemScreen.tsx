@@ -3,8 +3,10 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleCheck,
+  Globe,
   History,
   List,
+  LoaderCircle,
   LocateFixed,
   Orbit,
   Ruler,
@@ -84,6 +86,9 @@ function BioRange({ min, max }: { min: number; max: number }) {
 /** Opens a system from the history; null opens the current system. */
 type OpenSystem = (address: string | null) => void
 
+/** A system you have never been to (opened from the galaxy map): everything on it is from Spansh / EDSM. */
+const unvisited = (system: SystemView) => !system.isCurrent && system.visits === 0
+
 function openRef(system: SystemView, target: SystemRef, onOpen: OpenSystem) {
   onOpen(target.address === system.currentSystem?.address ? null : target.address)
 }
@@ -118,7 +123,7 @@ function StepButton({
   )
 }
 
-/** Shown above a system from the history: it must never pass for the one you are in. */
+/** Shown above a system from the history (or one you have not been to): it must never pass for the one you are in. */
 function PastBanner({
   system,
   onOpenSystem,
@@ -130,13 +135,16 @@ function PastBanner({
 }) {
   const when = eventDayTime(system.lastVisitAt)
   const current = system.currentSystem
+  const never = unvisited(system)
+  const Icon = never ? Globe : History
   return (
     <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-sky-500/10 px-4 py-2.5 ring-1 ring-sky-500/25 ring-inset">
       <p className="flex min-w-0 items-center gap-2.5 text-sm text-zinc-300">
-        <History className="size-4 shrink-0 text-accent" aria-hidden />
+        <Icon className="size-4 shrink-0 text-accent" aria-hidden />
         <span className="min-w-0">
-          <span className="font-medium text-zinc-50">{t.system.past}</span>
-          <span className="sr-only">. {t.system.pastHint}</span>
+          <span className="font-medium text-zinc-50">{never ? t.system.notVisited : t.system.past}</span>
+          <span className="sr-only">. {never ? t.system.notVisitedHint : t.system.pastHint}</span>
+          {never && <span aria-hidden> · {t.system.community}</span>}
           {when && (
             <span title={eventFull(system.lastVisitAt) ?? undefined}>
               {' · '}
@@ -147,14 +155,16 @@ function PastBanner({
         </span>
       </p>
       <div className="ml-auto flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={onShowHistory}
-          className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50"
-        >
-          <List className="size-4" aria-hidden />
-          {t.system.allHistory}
-        </button>
+        {!never && (
+          <button
+            type="button"
+            onClick={onShowHistory}
+            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-50"
+          >
+            <List className="size-4" aria-hidden />
+            {t.system.allHistory}
+          </button>
+        )}
         {current && (
           <button
             type="button"
@@ -179,11 +189,13 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
     <section aria-labelledby="system-title" className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <Label>{system.isCurrent ? t.tabs.system : t.system.past}</Label>
-          <div className="flex items-center gap-1.5">
-            <StepButton target={system.prevSystem} direction="prev" system={system} onOpenSystem={onOpenSystem} />
-            <StepButton target={system.nextSystem} direction="next" system={system} onOpenSystem={onOpenSystem} />
-          </div>
+          <Label>{system.isCurrent ? t.tabs.system : unvisited(system) ? t.system.notVisited : t.system.past}</Label>
+          {!unvisited(system) && (
+            <div className="flex items-center gap-1.5">
+              <StepButton target={system.prevSystem} direction="prev" system={system} onOpenSystem={onOpenSystem} />
+              <StepButton target={system.nextSystem} direction="next" system={system} onOpenSystem={onOpenSystem} />
+            </div>
+          )}
         </div>
         <h1
           id="system-title"
@@ -244,6 +256,34 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
         </Stat>
       </dl>
     </section>
+  )
+}
+
+function ToCurrentButton({ onOpenSystem }: { onOpenSystem: OpenSystem }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenSystem(null)}
+      className="focus-ring -mt-8 inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-800 px-4 text-sm font-medium text-zinc-100 hover:bg-zinc-700"
+    >
+      <LocateFixed className="size-4" aria-hidden />
+      {t.system.toCurrent}
+    </button>
+  )
+}
+
+/** A system you have not been to, without bodies: still being asked for, unknown, or offline. */
+function NoCommunityData({ system, onOpenSystem }: { system: SystemView; onOpenSystem: OpenSystem }) {
+  const pending = system.lookup === 'pending'
+  return (
+    <div className="flex flex-col items-center" aria-busy={pending}>
+      <EmptyState
+        icon={pending ? <LoaderCircle className="size-10 motion-safe:animate-spin" /> : <SearchX className="size-10" />}
+        title={system.name ?? (system.lookup === 'missing' ? t.system.notFound : t.system.notVisited)}
+        hint={t.system.lookup[system.lookup ?? 'missing']}
+      />
+      <ToCurrentButton onOpenSystem={onOpenSystem} />
+    </div>
   )
 }
 
@@ -375,16 +415,12 @@ export function SystemScreen({
     return (
       <div className="flex flex-col items-center">
         <EmptyState icon={<SearchX className="size-10" />} title={t.system.notFound} hint={t.system.notFoundHint} />
-        <button
-          type="button"
-          onClick={() => onOpenSystem(null)}
-          className="focus-ring -mt-8 inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-800 px-4 text-sm font-medium text-zinc-100 hover:bg-zinc-700"
-        >
-          <LocateFixed className="size-4" aria-hidden />
-          {t.system.toCurrent}
-        </button>
+        <ToCurrentButton onOpenSystem={onOpenSystem} />
       </div>
     )
+  }
+  if (unvisited(data) && data.bodies.length === 0) {
+    return <NoCommunityData system={data} onOpenSystem={onOpenSystem} />
   }
   if (!data.name && data.bodies.length === 0) {
     return <EmptyState icon={<Orbit className="size-10" />} title={t.system.noData} hint={t.system.noDataHint} />

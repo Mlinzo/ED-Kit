@@ -164,12 +164,37 @@ def load_system(
         facts = facts_from_json(body["facts"])
         system.bodies[facts.body_id] = facts
     if community:
-        for body in conn.execute(
-            "SELECT body_id, facts FROM ext_bodies WHERE system_address = ?", (address,)
-        ):
-            if body["body_id"] not in system.bodies:
-                system.bodies[body["body_id"]] = facts_from_json(body["facts"])
+        _add_community_bodies(conn, system)
     return system
+
+
+def load_community_system(conn: sqlite3.Connection, address: int) -> SystemFacts | None:
+    """A system you have never been to, from community data alone (app.enrich); None until
+    Spansh or EDSM has named it."""
+    row = conn.execute(
+        "SELECT name, x, y, z FROM ext_systems WHERE address = ?", (address,)
+    ).fetchone()
+    if row is None or not row["name"]:
+        return None
+    star_pos = (row["x"], row["y"], row["z"]) if row["x"] is not None else None
+    system = SystemFacts(
+        address=address,
+        name=row["name"],
+        star_pos=star_pos,
+        region=region_symbol(region_at(star_pos[0], star_pos[2])) if star_pos else None,
+        populated=None,
+    )
+    _add_community_bodies(conn, system)
+    return system
+
+
+def _add_community_bodies(conn: sqlite3.Connection, system: SystemFacts) -> None:
+    """Community bodies you have not scanned yourself."""
+    for body in conn.execute(
+        "SELECT body_id, facts FROM ext_bodies WHERE system_address = ?", (system.address,)
+    ):
+        if body["body_id"] not in system.bodies:
+            system.bodies[body["body_id"]] = facts_from_json(body["facts"])
 
 
 def body_id64(system_address: int, body_id: int) -> int:

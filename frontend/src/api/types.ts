@@ -198,6 +198,9 @@ export interface SystemView {
   bodies: BodyView[]
   barycentres: BarycentreView[]
   totals: SystemTotals
+  /** A system you have not been to (shown from Spansh / EDSM): its data is being asked for,
+   * they know no bodies, or the app runs offline. null: you have been there, or the data is in. */
+  lookup: 'pending' | 'missing' | 'offline' | null
 }
 
 export interface SamplePoint {
@@ -789,6 +792,8 @@ export interface GalaxyView {
   /** In the order you first came. */
   regions: GalaxyRegionView[]
   engineers: GalaxyEngineerView[]
+  /** Spansh / EDSM are asked: any system opens on the System tab (else only yours). */
+  online: boolean
 }
 
 /** A system with someone in it lately (EDDN): how we know, never who. */

@@ -138,11 +138,12 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
 
     @app.get("/api/view/system", response_model=SystemView, response_model_by_alias=True)
     def view_system(address: int | None = None) -> SystemView:
-        """The current system, or a visited one by its SystemAddress."""
+        """The current system, or any other by its SystemAddress (yours, or from Spansh/EDSM)."""
         conn = read_conn()
         if address is not None:
             service.want_community_data(address)
-        return views.system_view(conn, active_fid(conn), address)
+        online = service.enricher is not None
+        return views.system_view(conn, active_fid(conn), address, online=online)
 
     @app.get("/api/view/surface", response_model=SurfaceView, response_model_by_alias=True)
     def view_surface() -> SurfaceView:
@@ -195,7 +196,7 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
             for h in plotted.hops
             if h.status != "passed"
         ]
-        return galaxy.galaxy_view(conn, fid, remaining, ahead)
+        return galaxy.galaxy_view(conn, fid, remaining, ahead, online=service.enricher is not None)
 
     @app.get("/api/view/live", response_model=LiveView, response_model_by_alias=True)
     def view_live() -> LiveView:

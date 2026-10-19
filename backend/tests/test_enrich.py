@@ -140,3 +140,60 @@ def test_fetch_cache_freshness(conn: sqlite3.Connection) -> None:
     enrich.store(conn, enrich.ExternalSystem(address=SA, source=None))  # failed lookup
     assert conn.execute("SELECT COUNT(*) FROM ext_bodies").fetchone()[0] > 0  # data kept
     assert enrich.needs_fetch(conn, SA, now=datetime.now(UTC) + timedelta(hours=2))
+
+
+def test_fetch_keeps_the_name_and_position(monkeypatch: pytest.MonkeyPatch) -> None:
+    dump = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    answers: dict[str, object] = {}
+
+    def get(url: str) -> object:
+        answer = answers["spansh" if "spansh" in url else "edsm"]
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setattr(enrich, "_get_json", get)
+    answers["spansh"] = dump
+    found = enrich.fetch_system(SA)
+    assert found.source == "spansh" and found.name == SYSTEM
+    assert found.star_pos == (99.90625, -5.625, -60.375)
+
+    # Spansh knows the system but no bodies: EDSM's bodies, Spansh's position.
+    answers["spansh"] = {"system": {"name": SYSTEM, "coords": {"x": 1, "y": 2, "z": 3}}}
+    answers["edsm"] = {"name": SYSTEM, "bodyCount": 1, "bodies": dump["system"]["bodies"][:1]}
+    found = enrich.fetch_system(SA)
+    assert found.source == "edsm" and found.name == SYSTEM and found.star_pos == (1.0, 2.0, 3.0)
+
+    # Unknown to Spansh (404), EDSM names it without bodies: no data, but a name.
+    answers["spansh"] = enrich.urllib.error.URLError("404")
+    answers["edsm"] = {"name": "Nowhere", "bodies": []}
+    found = enrich.fetch_system(SA)
+    assert found.source is None and found.name == "Nowhere" and found.star_pos is None
+
+
+def test_system_never_visited(conn: sqlite3.Connection) -> None:
+    pending = views.system_view(conn, None, SA)
+    assert pending.address == str(SA) and pending.name is None and pending.lookup == "pending"
+    assert pending.bodies == [] and not pending.is_current
+
+    found = spansh_system()
+    found.name, found.star_pos = SYSTEM, (99.90625, -5.625, -60.375)
+    enrich.store(conn, found)
+    view = views.system_view(conn, None, SA)
+    assert view.name == SYSTEM and view.lookup is None and view.visits == 0
+    assert view.star_pos == (99.90625, -5.625, -60.375) and not view.is_current
+    assert view.bodies and all(b.source == "spansh" for b in view.bodies)
+    assert view.scanned_count == 0 and view.body_count == found.body_count
+    assert view.totals.fss > 0 and view.barycentres
+
+    # A failed refresh keeps the bodies and the name.
+    enrich.store(conn, enrich.ExternalSystem(address=SA, source=None))
+    again = views.system_view(conn, None, SA)
+    assert again.name == SYSTEM and again.bodies and again.lookup is None
+
+    # Named but without bodies anywhere.
+    enrich.store(conn, enrich.ExternalSystem(address=42, source=None, name="Nowhere"))
+    empty = views.system_view(conn, None, 42)
+    assert empty.name == "Nowhere" and empty.bodies == [] and empty.lookup == "missing"
+    # Offline, nothing cached: never asked.
+    assert views.system_view(conn, None, 43, online=False).lookup == "offline"

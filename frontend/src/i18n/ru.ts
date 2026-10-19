@@ -131,6 +131,14 @@ export const ru = {
     allHistory: 'Вся история',
     notFound: 'Система не найдена',
     notFoundHint: 'Её нет в истории этого командира.',
+    notVisited: 'Вы здесь не были',
+    notVisitedHint: 'Это не текущая система: тела — из данных Spansh и EDSM.',
+    community: 'данные Spansh и EDSM',
+    lookup: {
+      pending: 'Загружаю данные Spansh и EDSM…',
+      missing: 'В Spansh и EDSM нет тел этой системы.',
+      offline: 'Данные Spansh и EDSM недоступны: приложение запущено с --offline.',
+    },
   },
 
   route: {
@@ -402,7 +410,6 @@ export const ru = {
       rank: (n: number) => `ранг ${n}`,
       unknown: 'Ещё не встречали',
       away: (ly: string) => `${ly} от вас`,
-      copy: 'Клик — скопировать систему',
     },
     live: {
       toggle: 'Игроки сейчас (EDDN)',
@@ -419,8 +426,6 @@ export const ru = {
       docked: (n: number) => `стыковки: ${n}`,
       carriers: (n: number) => `кэрриеры рядом: ${n}`,
       codex: (names: string) => `Кодекс: ${names}`,
-      copy: 'Клик — скопировать название',
-      copied: (name: string) => `Скопировано: ${name}`,
     },
     map: {
       label: (n: number) => `Карта галактики: ${n} ${plural(n, ['система', 'системы', 'систем'])}`,
@@ -430,8 +435,8 @@ export const ru = {
       regions: 'Регионы кодекса',
       you: 'К вам',
       top: 'Вид сверху: ядро галактики вверху',
-      hintMouse: 'Клик — открыть систему · перетаскивание — вращать · колесо — масштаб · правая кнопка — сдвиг',
-      hintTouch: 'Касание — открыть систему · один палец — вращать · два — масштаб',
+      hintMouse: 'Клик — карточка системы · перетаскивание — вращать · колесо — масштаб · правая кнопка — сдвиг',
+      hintTouch: 'Касание — карточка системы · один палец — вращать · два — масштаб',
       rings: (ly: string) => `Кольца вокруг ядра — каждые ${ly}`,
       backdrop: 'Галактика на фоне — схема, а не настоящие звёзды',
       legend: {
@@ -452,7 +457,9 @@ export const ru = {
       killedBy: (who: string) => `от ${who}`,
       lost: (value: string) => `потеряно ${value}`,
       unsold: (value: string) => `${value} не продано`,
-      open: 'Клик — открыть на вкладке «Система»',
+      pin: 'Клик — закрепить карточку',
+      openNewTab: 'Открыть в новой вкладке',
+      close: 'Закрыть',
       fromSol: (ly: string) => `${ly} от Sol`,
       startLabel: (date: string) => `Начало · ${date}`,
     },

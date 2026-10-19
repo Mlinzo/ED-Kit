@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 
 from app import exobio, usersettings
-from app.facts import body_id64, facts_from_json, load_system
+from app.facts import body_id64, facts_from_json, load_community_system, load_system
 from app.models import BodyFacts, SystemFacts
 from app.schemas import (
     ActiveScanView,
@@ -16,6 +16,7 @@ from app.schemas import (
     BodyView,
     BodyVisual,
     CodexStatus,
+    CommunityLookup,
     HighlightSettings,
     Interest,
     LiveStatus,
@@ -546,10 +547,19 @@ def _empty_system(current: SystemRef | None = None) -> SystemView:
     )
 
 
+def _lookup(conn: sqlite3.Connection, address: int, online: bool) -> CommunityLookup | None:
+    """Where the community data of a system you have not been to stands (None: it is in)."""
+    row = conn.execute("SELECT ok FROM ext_systems WHERE address = ?", (address,)).fetchone()
+    if row is None:
+        return "pending" if online else "offline"
+    return None if row["ok"] else "missing"
+
+
 def system_view(
-    conn: sqlite3.Connection, fid: str | None, address: int | None = None
+    conn: sqlite3.Connection, fid: str | None, address: int | None = None, *, online: bool = True
 ) -> SystemView:
-    """The commander's current system, or any other system by address (history)."""
+    """The commander's current system, or any other system by address: one from the history,
+    or one you have never been to (community data alone; `online`: Spansh/EDSM are asked)."""
     state = cmdr_state(conn, fid)
     current_address = state["system_address"] if state else None
     current = _system_ref(conn, current_address)
@@ -558,14 +568,28 @@ def system_view(
     if address is None:
         return _empty_system(current)
     system = load_system(conn, address)
+    lookup: CommunityLookup | None = None
     if system is None:
-        return _empty_system(current)
+        if address == current_address:
+            return _empty_system(current)
+        lookup = _lookup(conn, address, online)
+        system = load_community_system(conn, address)
+        if system is None:
+            return _empty_system(current).model_copy(
+                update={"address": str(address), "lookup": lookup}
+            )
+        if system.bodies:
+            lookup = None  # bodies from an earlier lookup stand, whatever the last one said
     is_current = address == current_address
-    row = conn.execute(
-        "SELECT s.body_count, s.all_found, e.body_count AS ext_count FROM systems s "
-        "LEFT JOIN ext_systems e ON e.address = s.address WHERE s.address = ?",
-        (system.address,),
+    mine = conn.execute(
+        "SELECT body_count, all_found FROM systems WHERE address = ?", (system.address,)
     ).fetchone()
+    ext = conn.execute(
+        "SELECT body_count FROM ext_systems WHERE address = ?", (system.address,)
+    ).fetchone()
+    body_count = mine["body_count"] if mine else None
+    if body_count is None and ext is not None:
+        body_count = ext["body_count"]
     visits = conn.execute(
         "SELECT COUNT(*) AS n, MIN(ts) AS first_at, MAX(ts) AS last_at, MAX(id) AS last_id "
         "FROM visits WHERE fid = ? AND system_address = ?",
@@ -583,9 +607,10 @@ def system_view(
         address=str(system.address),
         name=system.name,
         star_pos=system.star_pos,
-        body_count=row["body_count"] if row["body_count"] is not None else row["ext_count"],
+        body_count=body_count,
         scanned_count=sum(1 for b in bodies if b.source == "journal"),
-        all_bodies_found=bool(row["all_found"]),
+        all_bodies_found=bool(mine and mine["all_found"]),
+        lookup=lookup,
         is_current=is_current,
         current_system=current,
         current_body_id=state["body_id"] if is_current else None,

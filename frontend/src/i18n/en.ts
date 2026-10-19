@@ -127,6 +127,14 @@ export const en: Strings = {
     allHistory: 'Full history',
     notFound: 'System not found',
     notFoundHint: 'It is not in this commander’s history.',
+    notVisited: 'Not visited',
+    notVisitedHint: 'Not the current system: its bodies come from Spansh and EDSM.',
+    community: 'data from Spansh and EDSM',
+    lookup: {
+      pending: 'Loading data from Spansh and EDSM…',
+      missing: 'Spansh and EDSM know no bodies in this system.',
+      offline: 'Spansh and EDSM data is unavailable: the app runs with --offline.',
+    },
   },
 
   route: {
@@ -397,7 +405,6 @@ export const en: Strings = {
       rank: (n: number) => `rank ${n}`,
       unknown: 'Not met yet',
       away: (ly: string) => `${ly} from you`,
-      copy: 'Click to copy the system name',
     },
     live: {
       toggle: 'Players now (EDDN)',
@@ -414,8 +421,6 @@ export const en: Strings = {
       docked: (n: number) => `dockings: ${n}`,
       carriers: (n: number) => `carriers around: ${n}`,
       codex: (names: string) => `Codex: ${names}`,
-      copy: 'Click to copy the name',
-      copied: (name: string) => `Copied: ${name}`,
     },
     map: {
       label: (n: number) => `Galaxy map: ${n} ${plural(n, ['system', 'systems'])}`,
@@ -425,8 +430,8 @@ export const en: Strings = {
       regions: 'Codex regions',
       you: 'Go to you',
       top: 'Top view: galactic core up',
-      hintMouse: 'Click to open a system · drag to rotate · scroll to zoom · right-drag to pan',
-      hintTouch: 'Tap to open a system · drag to rotate · pinch to zoom',
+      hintMouse: 'Click a system for its card · drag to rotate · scroll to zoom · right-drag to pan',
+      hintTouch: 'Tap a system for its card · drag to rotate · pinch to zoom',
       rings: (ly: string) => `Rings around the core every ${ly}`,
       backdrop: 'The galaxy behind is a sketch, not real stars',
       legend: {
@@ -447,7 +452,9 @@ export const en: Strings = {
       killedBy: (who: string) => `by ${who}`,
       lost: (value: string) => `${value} lost`,
       unsold: (value: string) => `${value} unsold`,
-      open: 'Click to open on the System tab',
+      pin: 'Click to pin this card',
+      openNewTab: 'Open in a new tab',
+      close: 'Close',
       fromSol: (ly: string) => `${ly} from Sol`,
       startLabel: (date: string) => `Start · ${date}`,
     },

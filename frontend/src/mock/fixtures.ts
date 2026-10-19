@@ -666,6 +666,7 @@ export function buildSystem(): SystemView {
       bioMin: sum((b) => b.bioValueMin),
       bioMax: sum((b) => b.bioValueMax),
     },
+    lookup: null,
   }
 }
 

@@ -223,6 +223,7 @@ export function buildGalaxy(history: HistoryView, route: RouteView, plotted: Nav
     farthestFromSol: { name: systems[systems.length - 1].name, detail: null, value: Math.hypot(...ORIGIN), at: null },
     region: 18,
     engineers: DEMO_ENGINEERS,
+    online: true,
     regions: [
       {
         id: 18,

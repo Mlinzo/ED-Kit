@@ -38,6 +38,7 @@ function view(extra: Partial<GalaxyView> = {}): GalaxyView {
     region: 18,
     regions: [],
     engineers: [],
+    online: true,
     ...extra,
   }
 }

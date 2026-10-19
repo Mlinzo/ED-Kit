@@ -281,7 +281,8 @@ class IngestService(threading.Thread):
                     system.address,
                     system.source,
                 )
-                self._invalidate({"system", "surface"})
+            # Found or not: a system you have not been to stops waiting for it.
+            self._invalidate({"system", "surface"})
         while True:
             try:
                 wanted = self._enrich_wanted.get_nowait()
@@ -346,7 +347,7 @@ class IngestService(threading.Thread):
         return live.lat, live.lon
 
     def want_community_data(self, address: int) -> None:
-        """Look up community data for a system opened from the history (any thread)."""
+        """Look up community data for a system opened by address (any thread)."""
         if self.enricher is not None:
             self._enrich_wanted.put(address)
 
