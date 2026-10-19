@@ -16,6 +16,11 @@ shows everything in your browser.
 - **Galaxy**: all your journeys on a 3D galaxy map: path, earnings, first discoveries, deaths, and the codex regions you have been to, the engineers with your progress. On request, other players right now (from EDDN, no names).
 - **Stats**: all-time numbers and records.
 
+<p>
+  <img src="docs/screenshot-galaxy.png" width="49%" alt="The Galaxy tab: the whole galaxy with codex region borders, Colonia and where you are now">
+  <img src="docs/screenshot-stats.png" width="49%" alt="The Stats tab: all-time earnings split into mapping and exobiology, travel numbers and daily activity">
+</p>
+
 The interface is in English, Ukrainian or Russian; switch it in Settings.
 
 ## Quick start (Windows)
