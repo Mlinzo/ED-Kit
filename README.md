@@ -143,6 +143,10 @@ Elite Dangerous is a trademark of Frontier Developments plc.
 ED Explorer Kit is free. If it helps you on your journeys, you can support its development on
 [Patreon](https://www.patreon.com/mlinzo).
 
+## Contact
+
+Questions, ideas or bug reports: [mlinzo.dev@gmail.com](mailto:mlinzo.dev@gmail.com).
+
 ## License
 
 [MIT](LICENSE)
