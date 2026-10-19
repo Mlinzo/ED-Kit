@@ -121,6 +121,7 @@ export const guideEn: Strings['guide'] = {
       body: [
         'Land and disembark in the Artemis suit: it is the only suit with a Genetic Sampler. A species is complete after three samples from three different plants, each outside the colony range of the others.',
         'The sampler holds one species at a time: sample another species before the third sample and the samples you had are lost. The sampler’s scan pulse highlights plants within 750 m: green ones are not sampled yet, blue ones are.',
+        'A species pays once per planet: once it is analysed, the sampler marks its other plants there “Unavailable”. The same species on another planet pays in full again.',
       ],
       inApp: 'The Surface tab opens by itself when you start sampling: where your samples were and how far you still have to walk.',
     },
