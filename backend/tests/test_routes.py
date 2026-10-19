@@ -543,6 +543,7 @@ def test_spansh_genus_names_map_to_codex_symbols() -> None:
     assert routebio.genus_symbol("Cactoids") == "$Codex_Ent_Cactoid_Genus_Name;"
     assert routebio.genus_symbol("Bark Mounds") == "$Codex_Ent_Cone_Name;"
     assert routebio.genus_symbol("Anemones") == "$Codex_Ent_Sphere_Name;"
+    assert routebio.genus_symbol("Tubers") == "$Codex_Ent_Tube_Name;"  # Sinuous Tubers
     assert routebio.genus_symbol("Something new") is None
 
 

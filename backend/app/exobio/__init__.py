@@ -6,6 +6,7 @@ Public API (used by the projector and views — keep signatures stable):
     get_genus(symbol)    -> GenusInfo | None # by codex genus symbol
     predict(body, system, genuses=None) -> list[Prediction]
     genus_ranges(predictions, genuses, skip) / range_total(ranges, slots)  # value estimates
+    deduced_genera(predictions, signals, known) -> set[str]  # sure before DSS
     FIRST_FOOTFALL_MULTIPLIER
 
 Modules: `catalog` (names, values, colony ranges), `rules` (where each species grows),
@@ -43,6 +44,7 @@ __all__ = [
     "GENERA",
     "SPECIES",
     "GenusInfo",
+    "deduced_genera",
     "genus_ranges",
     "get_genus",
     "get_species",
@@ -90,6 +92,24 @@ def genus_ranges(
         if info is not None:
             ranges[genus] = (info.min_value, info.max_value)
     return ranges
+
+
+def deduced_genera(
+    predictions: Iterable[Prediction], signals: int, known: Iterable[str] = ()
+) -> set[str]:
+    """Genera surely on a body before DSS: when the genera that can grow there are exactly as
+    many as its biological signals, every one of them is there (one signal is one genus).
+    `predictions`: made without DSS genera; `known`: genera sampled there already. Empty
+    while there is a choice.
+
+    Pre-Odyssey organisms are not predicted before DSS, so one of them can hide behind the
+    conclusion. Measured on 6977 Spansh bodies with DSS genera from 12 parts of the galaxy
+    (2026-10-19): the rule applied to 2250 of them and was wrong once (Crystalline Shards
+    where a Bacterium was expected). Counting the pre-Odyssey genera too was never wrong but
+    applied to 482 only: their rules are loose.
+    """
+    genera = {p.species.genus for p in predictions} | set(known)
+    return genera if signals > 0 and len(genera) == signals else set()
 
 
 def range_total(ranges: dict[str, tuple[int, int]], slots: int) -> tuple[int, int]:

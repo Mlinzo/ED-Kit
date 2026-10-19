@@ -177,6 +177,8 @@ def _build_species(
     if bio_signals > 0 or genuses:
         predictions = exobio.predict(facts, system, genuses or None)
         ranges = exobio.genus_ranges(predictions, genuses, skip=seen_genera)
+        # Before DSS: sure when the genera that can grow here fill every signal.
+        deduced = set() if genuses else exobio.deduced_genera(predictions, bio_signals, seen_genera)
         for p in sorted(predictions, key=lambda p: -p.species.base_value):
             sp = p.species
             if sp.genus in seen_genera:
@@ -193,7 +195,8 @@ def _build_species(
                     colony_range_m=sp.colony_range_m,
                     status="predicted",
                     samples=0,
-                    certain=sp.genus in genuses,
+                    certain=sp.genus in genuses or sp.genus in deduced,
+                    deduced=sp.genus in deduced,
                     codex=status,
                     colour=" / ".join(colours) or None,
                 )

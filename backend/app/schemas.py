@@ -36,7 +36,9 @@ class SpeciesView(CamelModel):
     colony_range_m: int
     status: SpeciesStatus
     samples: int  # 0..3
-    certain: bool  # True once genus is confirmed by DSS or species was scanned
+    certain: bool  # True once the genus is confirmed by DSS (or deduced) or species was scanned
+    # Certain without DSS: the genera that can grow on the body fill every bio signal.
+    deduced: bool = False
     # By colour variant (the parent star's class, or a material on the body); by species when
     # the colour cannot be told.
     codex: CodexStatus

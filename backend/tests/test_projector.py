@@ -225,6 +225,40 @@ def test_carto_sale_marks_system_sold(conn: sqlite3.Connection, proj: Projector)
     assert session.jumps == 0
 
 
+def bio_signals(count: int, body_id: int = 24) -> dict:
+    return {
+        "timestamp": "2026-10-15T20:31:00Z",
+        "event": "FSSBodySignals",
+        "BodyID": body_id,
+        "SystemAddress": SA,
+        "BodyName": "x",
+        "Signals": [{"Type": "$SAA_SignalType_Biological;", "Count": count}],
+    }
+
+
+def test_genus_deduced_before_dss(conn: sqlite3.Connection, proj: Projector) -> None:
+    # Thin neon at 40 K: only a Bacterium can grow there.
+    neon = dict(
+        PlanetClass="Icy body",
+        Atmosphere="thin neon atmosphere",
+        AtmosphereType="Neon",
+        SurfaceTemperature=40.0,
+        SurfaceGravity=2.94,
+        SurfacePressure=200.0,
+    )
+    feed(conn, proj, [CMDR, jump(), scan_planet(**neon), bio_signals(1)])
+    body = views.system_view(conn, "F1").bodies[0]
+    assert body.genuses == []  # no DSS yet
+    assert body.species and all(s.genus == "Bacterium" for s in body.species)
+    assert all(s.certain and s.deduced for s in body.species)
+    assert (body.codex_new, body.codex_maybe) == (1, 0)
+
+    feed(conn, proj, [bio_signals(2)])  # a genus the rules do not foresee: no conclusion
+    body = views.system_view(conn, "F1").bodies[0]
+    assert not any(s.certain or s.deduced for s in body.species)
+    assert (body.codex_new, body.codex_maybe) == (0, 1)
+
+
 def test_system_view_lists_bodies(conn: sqlite3.Connection, proj: Projector) -> None:
     feed(conn, proj, [CMDR, jump(), scan_planet()])
     feed(

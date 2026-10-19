@@ -113,7 +113,7 @@ export const guideEn: Strings['guide'] = {
         'A DSS map shows which genera the planet has. Which species, you find out on the surface, but the atmosphere, temperature, gravity and star narrow it down to a few candidates.',
         'Values differ a lot: from about 1 to 20 million credits per species (without the first footfall bonus).',
       ],
-      inApp: 'The System tab predicts the species on each body with their value; after the DSS the confirmed genera replace the guesses.',
+      inApp: 'The System tab predicts the species on each body with their value; after the DSS the confirmed genera replace the guesses. When only as many genera can grow on a planet as it has signals, they are all there: the tab says "Genus deduced" without waiting for the DSS.',
     },
     sampling: {
       title: 'Taking samples',

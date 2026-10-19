@@ -1,5 +1,6 @@
 import { CircleCheck, CircleDashed, Dna } from 'lucide-react'
 import type { SpeciesView } from '../api/types'
+import { HelpTip } from '../guide/HelpTip'
 import { t } from '../i18n'
 import { sortSpecies } from '../lib/body'
 import { exactCredits, formatMeters } from '../lib/format'
@@ -11,6 +12,7 @@ import { SampleDots } from './SampleDots'
 function statusLabel(s: SpeciesView): string {
   if (s.status === 'analysed') return t.species.analysed
   if (s.status === 'sampling') return t.species.sampling
+  if (s.deduced) return t.species.predictedDeduced
   return s.certain ? t.species.predictedCertain : t.species.predicted
 }
 
@@ -71,6 +73,7 @@ function grouped(species: readonly SpeciesView[]): SpeciesView[] {
 export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
   const sorted = grouped(species)
   const candidates = candidateCounts(species)
+  const firstDeduced = sorted.find((s) => s.deduced)
   return (
     <ul className="divide-y divide-zinc-800/70">
       {sorted.map((s) => {
@@ -96,7 +99,10 @@ export function SpeciesList({ species }: { species: readonly SpeciesView[] }) {
                 )}
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
-                <span>{statusLabel(s)}</span>
+                <span className="inline-flex items-center gap-1" title={s.deduced ? t.species.deducedHint : undefined}>
+                  {statusLabel(s)}
+                  {s === firstDeduced && <HelpTip topic="bio" />}
+                </span>
                 {s.status === 'predicted' && (candidates.get(s.genus) ?? 0) > 1 && (
                   <>
                     <span aria-hidden>·</span>

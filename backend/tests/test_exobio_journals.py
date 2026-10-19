@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from app.exobio import get_genus, get_species, predict
+from app.exobio import deduced_genera, get_genus, get_species, predict
 from app.models import BodyFacts, SystemFacts
 
 FIXTURE = Path(__file__).parent / "fixtures" / "exobio" / "bio_systems.jsonl"
@@ -200,6 +200,22 @@ def test_observed_genera_are_predicted(journals: JournalData) -> None:
         pytest.skip("no SAASignalsFound genera in the journals")
     print(f"\n[exobio] genus recall: {found}/{observed} = {found / observed:.0%}")
     assert not misses, misses
+
+
+def test_deduced_genera_are_the_dss_genera(journals: JournalData) -> None:
+    """When the genera that can grow on a body fill its signals, DSS finds those genera."""
+    applied = 0
+    wrong = []
+    for key, truth in journals.truth.items():
+        if not truth.dss_done or truth.bio_signals <= 0 or (pair := _body(journals, key)) is None:
+            continue
+        deduced = deduced_genera(predict(*pair), truth.bio_signals)
+        if deduced:
+            applied += 1
+            if deduced != truth.genera:
+                wrong.append((pair[0].name, sorted(deduced), sorted(truth.genera)))
+    print(f"\n[exobio] genera deduced before DSS: {applied}, wrong: {len(wrong)}")
+    assert not wrong, wrong
 
 
 def test_bodies_with_bio_signals_get_predictions(journals: JournalData) -> None:

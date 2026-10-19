@@ -47,6 +47,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Genera deduced before DSS (2026-10-19): when the genera that can grow on a planet are as many as
+  its biological signals, all of them are there. The System tab marks their species "Genus deduced"
+  (certain, as after a DSS: the codex mark is solid, the "DSS needed" hint goes), and codex routes
+  count them fully instead of at half weight. Measured first on 18,000 Spansh bodies from 12 parts
+  of the galaxy, 6977 of them with DSS genera: the rule applied to 2250 and was wrong once (a
+  pre-Odyssey organism, Crystalline Shards, where a Bacterium was expected); in your own journals 4
+  of 4. Counting the pre-Odyssey genera too would never be wrong but would apply to 482 bodies only
+  (their rules are loose), so it is not done. Spansh's genus name "Tubers" (Sinuous Tubers, 131
+  bodies) is now recognised in routes.
 - First run (2026-10-19): a welcome card on the System tab until closed — the app reads the journal
   on this computer and sends it nowhere, the tabs fill in by themselves — with a button to the
   guide's five steps. The journal folder is chosen in Settings (paste a path; quotes from "Copy as
@@ -140,8 +149,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   Names from the game stay in English. Russian stays as the third language (decided 2026-10-19).
 
 ## Open questions
-- Bio signals: when the number of possible genera after FSS equals the number of signals, mark the
-  genera as certain before DSS? Risk: a wrong conclusion if the prediction rules miss some genus.
 - A separate interface for miners (a Discord player's request, 2026-10-17): places in the galaxy,
   places on planets, refinery output in tonnes per hour. The journal has it (`ProspectedAsteroid`,
   `AsteroidCracked`, `MiningRefined`). First find out which tools he uses.

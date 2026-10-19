@@ -96,7 +96,7 @@ function sp(
   value: number,
   colonyRangeM: number,
   status: SpeciesStatus,
-  opts: { samples?: number; certain?: boolean; bonus?: boolean; codex?: CodexStatus } = {},
+  opts: { samples?: number; certain?: boolean; deduced?: boolean; bonus?: boolean; codex?: CodexStatus } = {},
 ): SpeciesView {
   const bonus = opts.bonus ?? true
   return {
@@ -108,7 +108,8 @@ function sp(
     colonyRangeM,
     status,
     samples: opts.samples ?? (status === 'analysed' ? 3 : 0),
-    certain: opts.certain ?? status !== 'predicted',
+    certain: opts.certain ?? (opts.deduced || status !== 'predicted'),
+    deduced: opts.deduced ?? false,
     codex: opts.codex ?? (status === 'analysed' ? 'logged' : 'new'),
   }
 }
@@ -424,9 +425,10 @@ function buildBodies(): BodyView[] {
       signals: { bio: 1, geo: 3, human: 0, other: 0 },
       signalsSource: 'spansh',
       species: [
-        // No DSS yet: uncertain predictions, one of them would be new (codexMaybe 1).
-        sp('Bacterium', 'Bacterium Tela', 1_949_000, 500, 'predicted', { codex: 'new' }),
-        sp('Bacterium', 'Bacterium Bullaris', 1_152_500, 500, 'predicted', { codex: 'logged' }),
+        // No DSS yet, but only a Bacterium can grow here and there is one signal: the genus is
+        // deduced, one of its species would be new (codexNew 1).
+        sp('Bacterium', 'Bacterium Tela', 1_949_000, 500, 'predicted', { deduced: true, codex: 'new' }),
+        sp('Bacterium', 'Bacterium Bullaris', 1_152_500, 500, 'predicted', { deduced: true, codex: 'logged' }),
       ],
       fssValue: 2_140,
       dssValue: 9_870,
@@ -436,17 +438,24 @@ function buildBodies(): BodyView[] {
       bodyId: 10,
       shortName: 'A 5 b',
       kind: 'planet',
-      subtype: 'Icy body',
+      subtype: 'Rocky ice body',
       parents: OF_A([{ kind: 'Planet', bodyId: 8 }]),
       orbit: around(310 * M_EARTH, 9.6e8, 200),
       distanceLs: 2_252.3,
       landable: true,
+      atmosphere: 'thin nitrogen atmosphere',
       gravityG: 0.09,
       temperatureK: 71,
       radiusKm: 1_380,
+      signals: { bio: 1, geo: 0, human: 0, other: 0 },
+      species: [
+        // No DSS yet, two genera possible for one signal: uncertain, one would be new (codexMaybe 1).
+        sp('Bacterium', 'Bacterium Informem', 8_418_000, 500, 'predicted', { codex: 'new' }),
+        sp('Osseus', 'Osseus Pumice', 3_156_300, 800, 'predicted', { codex: 'logged' }),
+      ],
       fssValue: 1_870,
       dssValue: 8_040,
-      vis: { massEm: 0.02, composition: ICY, tidalLock: true },
+      vis: { atmosphereType: 'Nitrogen', massEm: 0.02, composition: ICY, tidalLock: true },
     }),
     body({
       bodyId: 11,

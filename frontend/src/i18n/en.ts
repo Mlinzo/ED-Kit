@@ -647,6 +647,9 @@ export const en: Strings = {
     analysed: 'Analysed',
     sampling: 'Sampling',
     predictedCertain: 'Genus confirmed',
+    predictedDeduced: 'Genus deduced',
+    deducedHint:
+      'Known without a DSS scan: the planet has as many biological signals as there are genera that can grow on it, so all of them are here. Checked on 2,250 planets with DSS data where this applies: wrong once (a pre-Odyssey organism the prediction does not cover).',
     predicted: 'Predicted',
     samples: (n: number) => `${n} / 3`,
     colonyRange: 'Colony range',
@@ -673,7 +676,7 @@ export const en: Strings = {
     bodyNew: (n: number) => `New to Codex: ${n} ${plural(n, ['species', 'species'])}`,
     bodyMaybe: (n: number) => `Maybe new: ${n} ${plural(n, ['species', 'species'])}`,
     alsoMaybe: (n: number) => `${n} more — maybe`,
-    bodyNewHint: 'Species found or their genus confirmed by DSS, but missing from your Codex for this region.',
+    bodyNewHint: 'Species found, or their genus is certain (confirmed by DSS or deduced), but missing from your Codex for this region.',
     bodyMaybeHint: 'Prediction not confirmed by DSS: if these species are here, they are new to your Codex.',
     dssHint: 'A DSS scan will confirm the genera.',
     tentativeHint: 'Only predicted here so far: a DSS scan will confirm the genus.',

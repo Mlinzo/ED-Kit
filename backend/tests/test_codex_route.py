@@ -62,6 +62,27 @@ def test_entries_of_a_body() -> None:
     assert sum(e.weight for e in guess.entries) == pytest.approx(1.0)
 
 
+def test_deduced_genus_counts_fully() -> None:
+    # Thin neon at 40 K: only a Bacterium can grow there, so one signal is surely it.
+    raw = {
+        **bio_body(5, 9, (0, 0, 0), (), signals=1),
+        "subtype": "Icy body",
+        "atmosphere": "Thin Neon",
+        "atmosphere_composition": [{"name": "Neon", "share": 100.0}],
+        "surface_temperature": 40.0,
+        "gravity": 0.3,
+        "surface_pressure": 0.002,
+    }
+    est = routebio.estimate(raw)
+    assert est is not None and est.genuses == ()  # nobody mapped it
+    assert {e.species.split("_")[2] for e in est.entries} == {"Bacterial"}
+    assert sum(e.weight for e in est.entries) == pytest.approx(1.0)
+    # Two signals and one genus possible: the rules miss one, nothing is sure.
+    est = routebio.estimate({**raw, "signals": [{"count": 2, "name": "Biological"}]})
+    assert est is not None
+    assert sum(e.weight for e in est.entries) == pytest.approx(routebio.UNCONFIRMED_GENUS)
+
+
 def test_each_entry_counts_once() -> None:
     c = collector()
     a = stop(1, 10, INNER, ("X", 1.0))

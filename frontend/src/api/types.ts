@@ -24,6 +24,8 @@ export interface SpeciesView {
   status: SpeciesStatus
   samples: number
   certain: boolean
+  /** Certain without DSS: the genera that can grow on the body fill every bio signal. */
+  deduced: boolean
   codex: CodexStatus
   /** "Teal"; candidates joined with " / " when not certain. */
   colour: string | null

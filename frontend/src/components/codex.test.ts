@@ -55,7 +55,8 @@ describe('bodyCodex', () => {
   it('the demo shows every state', () => {
     expect(bodyCodex(byName('A 3'))?.level).toBe('new')
     expect(bodyCodex(byName('B 3'))?.level).toBe('new')
-    expect(bodyCodex(byName('A 5 a'))?.level).toBe('maybe')
+    expect(bodyCodex(byName('A 5 a'))?.level).toBe('new') // the genus is deduced
+    expect(bodyCodex(byName('A 5 b'))?.level).toBe('maybe')
     expect(bodyCodex(byName('B 1'))).toBeNull()
     const states = new Set(bodies.flatMap((b) => b.species.map((s) => s.codex)))
     expect([...states].sort()).toEqual(['logged', 'new', 'new_region'])

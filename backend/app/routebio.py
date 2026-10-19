@@ -7,9 +7,10 @@ physical facts, like for your own scans; the estimate is a (min, max) range of b
 
 For codex routes the same predictions become codex entries (a species' colour variant, from
 the parent star or the body's materials) with the chance of each being there: a genus
-confirmed by DSS counts fully, one only predicted at half weight and shared among the
-signals left; the candidate species of a genus share it equally, and so do the candidate
-colours of a species.
+confirmed by DSS counts fully, and so do the genera that can grow there when they are as
+many as the signals (`exobio.deduced_genera`); one only predicted counts at half weight,
+shared among the signals left; the candidate species of a genus share it equally, and so
+do the candidate colours of a species.
 """
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ def _genus_keys() -> dict[str, str]:
         name = info.genus_name.lower()
         for key in (core, core + "s", name, name + "s"):
             keys.setdefault(key, symbol)
+    keys.setdefault("tubers", "$Codex_Ent_Tube_Name;")  # Sinuous Tubers
     return keys
 
 
@@ -171,12 +173,13 @@ def estimate(raw: dict[str, Any]) -> BioEstimate | None:
     predictions = exobio.predict(body, system, genuses or None)
     ranges = exobio.genus_ranges(predictions, genuses)
     low, high = exobio.range_total(ranges, max(signals, len(genuses)))
+    certain = genuses or exobio.deduced_genera(predictions, signals)
     return BioEstimate(
         signals=signals,
         low=low,
         high=high,
         genuses=tuple(sorted(genuses)),
-        entries=codex_chances(predictions, body, system, genuses, signals),
+        entries=codex_chances(predictions, body, system, certain, signals),
     )
 
 
@@ -187,7 +190,8 @@ def codex_chances(
     genuses: set[str],
     signals: int,
 ) -> tuple[CodexChance, ...]:
-    """The codex entries the predicted species stand for, with their chances."""
+    """The codex entries the predicted species stand for, with their chances. `genuses`: the
+    genera surely there (confirmed by DSS, or deduced)."""
     by_genus: dict[str, list[Prediction]] = {}
     for p in predictions:
         by_genus.setdefault(p.species.genus, []).append(p)

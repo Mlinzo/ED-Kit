@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.exobio import predict
+from app.exobio import deduced_genera, predict
 from app.models import BodyFacts, G, SystemFacts
 
 STAR_ID = 1
@@ -214,6 +214,24 @@ def test_legacy_only_with_confirmed_genus() -> None:
     assert "Gypseeum Brain Tree" in names(trees)
     # An Odyssey genus cannot be on an airless body.
     assert predict(body, system, {"$Codex_Ent_Bacterial_Genus_Name;"}) == []
+
+
+def test_genera_deduced_when_they_fill_every_signal() -> None:
+    # Thin neon at 40 K: only a Bacterium can grow there.
+    body, system = make(
+        planet_class="Icy body", atmosphere="Neon", temp=40, g=0.3, pressure_atm=0.002
+    )
+    preds = predict(body, system)
+    bacterium = "$Codex_Ent_Bacterial_Genus_Name;"
+    assert {p.species.genus for p in preds} == {bacterium}
+    assert deduced_genera(preds, 1) == {bacterium}
+    assert deduced_genera(preds, 2) == set()  # the rules miss a genus: no conclusion
+    assert deduced_genera(preds, 0) == set()
+    # A genus sampled there fills a signal too.
+    shrubs = "$Codex_Ent_Shrubs_Genus_Name;"
+    assert deduced_genera(preds, 2, {shrubs}) == {bacterium, shrubs}
+    # More genera possible than signals: a choice left.
+    assert deduced_genera(predict(*make()), 1) == set()
 
 
 def test_sorted_likely_first_then_value() -> None:

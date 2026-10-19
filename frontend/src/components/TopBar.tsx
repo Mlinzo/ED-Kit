@@ -35,7 +35,8 @@ function MockBadge() {
       className="focus-ring relative inline-flex h-7 items-center gap-1.5 rounded-full after:absolute after:-inset-x-1 after:-inset-y-2.5 bg-sky-500/10 px-2.5 text-xs font-medium text-accent ring-1 ring-sky-500/30 ring-inset hover:bg-sky-500/20"
     >
       <FlaskConical className="size-3.5" aria-hidden />
-      <span className="whitespace-nowrap sm:hidden">{t.mock.badgeShort}</span>
+      {/* At 360 px the word pushes the bar past the screen edge: the flask and the cross say it. */}
+      <span className="hidden whitespace-nowrap min-[400px]:inline sm:hidden">{t.mock.badgeShort}</span>
       <span className="hidden whitespace-nowrap sm:inline">{t.mock.badge}</span>
       <X className="size-3.5 opacity-70" aria-hidden />
       <span className="sr-only">{t.mock.exit}</span>
