@@ -17,6 +17,7 @@ import {
 import { buildHistory, buildPastSystem, withHistory } from './history'
 import { createMockNotes } from './notes'
 import { createMockRoute } from './route'
+import { buildSessions } from './sessions'
 import { buildGalaxy, buildLive, buildNavRoute } from './travel'
 import { buildStats } from './stats'
 
@@ -91,6 +92,7 @@ export function createMockTransport(): Transport {
   const system = withHistory(buildSystem(), history)
   const surface = buildSurface(system)
   const session = buildSession()
+  const sessions = buildSessions()
   const stats = buildStats()
   let notify: ((topics: Topic[]) => void) | null = null
   const route = createMockRoute(system, () => notify?.(['route']))
@@ -122,6 +124,7 @@ export function createMockTransport(): Transport {
     },
     '/api/view/surface': () => surface,
     '/api/view/session': () => session,
+    '/api/view/sessions': () => sessions,
     '/api/view/sell': (query) => buildSell(query.get('carriers') === 'true'),
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,

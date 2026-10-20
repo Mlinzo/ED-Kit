@@ -235,6 +235,50 @@ export interface SurfaceView {
   activeScan: ActiveScanView | null
 }
 
+/** A first entry in your codex (the game's IsNewEntry). */
+export interface SessionCodexEntry {
+  /** As the game named it. */
+  name: string
+  category: 'bio' | 'stellar' | 'other'
+}
+
+/** One game run: from loading the commander to quitting the game. */
+export interface SessionEntry {
+  /** The first LoadGame. */
+  startedAt: string
+  /** Shutdown, or the last event of the run (the game crashed, or is still running). */
+  endedAt: string
+  /** The latest run with no Shutdown yet: still playing, unless the game crashed. */
+  open: boolean
+  durationS: number
+  jumps: number
+  distanceLy: number
+  /** Systems arrived in. */
+  systems: number
+  bodiesScanned: number
+  bodiesMapped: number
+  speciesAnalysed: number
+  firstDiscoveries: number
+  firstMapped: number
+  firstFootfalls: number
+  /** Estimate for the bodies scanned and mapped then, sold or not. */
+  cartoValue: number
+  /** The species analysed then, incl. bonus (the sale value once sold). */
+  bioValue: number
+  /** cartoValue + bioValue */
+  value: number
+  /** Gathered then and lost on a death since (not in value). */
+  lostValue: number
+  deaths: number
+  /** New codex entries, in the order logged. */
+  codex: SessionCodexEntry[]
+}
+
+export interface SessionsView {
+  /** Newest first. */
+  sessions: SessionEntry[]
+}
+
 export interface SessionView {
   commander: string | null
   unsoldBioCount: number
@@ -979,6 +1023,7 @@ export type Topic =
   | 'system'
   | 'surface'
   | 'session'
+  | 'sessions'
   | 'sell'
   | 'stats'
   | 'history'

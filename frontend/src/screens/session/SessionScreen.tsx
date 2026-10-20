@@ -8,6 +8,7 @@ import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format'
 import { Growth } from './Growth'
+import { PastSessions } from './PastSessions'
 import { WhereToSell } from './WhereToSell'
 
 function Card({
@@ -165,6 +166,8 @@ export function SessionScreen({ onRouteTo }: { onRouteTo?: (system: string) => v
         now={now}
         onRouteTo={onRouteTo}
       />
+
+      <PastSessions now={now} />
     </div>
   )
 }

@@ -296,6 +296,41 @@ class SessionView(CamelModel):
     growth: list[RiskPoint]  # unsold data system by system since the last sale
 
 
+class SessionCodexEntry(CamelModel):
+    """A first entry in your codex (the game's IsNewEntry)."""
+
+    name: str  # as the game named it (Name_Localised)
+    category: Literal["bio", "stellar", "other"]
+
+
+class SessionEntry(CamelModel):
+    """One game run (app.sessions): from loading the commander to quitting the game."""
+
+    started_at: str  # ISO timestamp of the first LoadGame
+    ended_at: str  # Shutdown, or the last event of the run (the game crashed, or still running)
+    open: bool  # the latest run, with no Shutdown yet: still playing (or the game crashed)
+    duration_s: int
+    jumps: int
+    distance_ly: float
+    systems: int  # systems arrived in
+    bodies_scanned: int
+    bodies_mapped: int
+    species_analysed: int
+    first_discoveries: int
+    first_mapped: int
+    first_footfalls: int
+    carto_value: int  # estimate for the bodies scanned and mapped then, sold or not
+    bio_value: int  # the species analysed then, incl. bonus (the sale value once sold)
+    value: int  # carto + bio
+    lost_value: int  # gathered then and lost on a death since (not in `value`)
+    deaths: int
+    codex: list[SessionCodexEntry]  # new codex entries, in the order logged
+
+
+class SessionsView(CamelModel):
+    sessions: list[SessionEntry]  # newest first
+
+
 class LiveStatus(CamelModel):
     """Decoded Status.json; pushed over SSE as it changes, never persisted."""
 

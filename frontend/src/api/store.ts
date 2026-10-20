@@ -8,6 +8,7 @@ import type {
   NavRouteView,
   RouteView,
   SellView,
+  SessionsView,
   SessionView,
   StatsView,
   StreamEvent,
@@ -20,6 +21,7 @@ export interface ViewMap {
   system: SystemView
   surface: SurfaceView
   session: SessionView
+  sessions: SessionsView
   sell: SellView
   stats: StatsView
   history: HistoryView
@@ -43,6 +45,7 @@ export const TOPICS: readonly Topic[] = [
   'system',
   'surface',
   'session',
+  'sessions',
   'sell',
   'stats',
   'history',

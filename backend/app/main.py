@@ -38,6 +38,7 @@ from app import (
     regionmap,
     routes,
     selling,
+    sessions,
     stats,
     usersettings,
     views,
@@ -59,6 +60,7 @@ from app.schemas import (
     RouteStopUpdate,
     RouteView,
     SellView,
+    SessionsView,
     SessionView,
     StatsView,
     SurfaceView,
@@ -164,6 +166,11 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def view_session() -> SessionView:
         conn = read_conn()
         return views.session_view(conn, active_fid(conn))
+
+    @app.get("/api/view/sessions", response_model=SessionsView, response_model_by_alias=True)
+    def view_sessions() -> SessionsView:
+        conn = read_conn()
+        return sessions.sessions_view(conn, active_fid(conn))
 
     @app.get("/api/view/sell", response_model=SellView, response_model_by_alias=True)
     def view_sell(carriers: bool = False) -> SellView:

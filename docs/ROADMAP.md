@@ -13,13 +13,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
-### Session history
-- A list of past game sessions (asked for 2026-10-19), sortable by any column: when, how long
-  it lasted, what it earned (the exploration and biology data gathered in it, sold or not; not
-  the sales) and how many new codex entries it brought. A session is one game run, from
-  `LoadGame` to `Shutdown` (or the last event before the next `LoadGame`); the Session tab today
-  shows only the unsold data, whenever it was gathered.
-
 ### Release
 - Delete the `v0.1.0` release (2026-10-17; the repository is private for now) with its tag, and
   release again once the app is in decent shape (decided 2026-10-19). The GitHub release is deleted
@@ -54,6 +47,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Past sessions (2026-10-20): at the bottom of the Session tab, one row per game run (from loading
+  the commander to quitting; the main menu and another game mode stay in the same session, a crash
+  ends it at its last event): when, how long, jumps, bodies, species, new codex entries, earned and
+  per hour, sorted by any column. Earned is the data gathered in the session, sold or not (mapping
+  estimate and analysed species), not what was sold then; data lost on a death since shows as a red
+  mark, in the session that gathered it. A row opens the details: systems, distance, mapped bodies,
+  firsts, mapping and exobiology apart, deaths and the new codex entries by name. The session going
+  on is marked "Now" and counts up live. On the player's journals: 24 sessions, 52 h; the codex count
+  (the game's IsNewEntry) agreed with the first occurrence of each entry in all 61 CodexEntry events.
 - "New colour" codex mark (2026-10-19): a colour not logged in this region of a species that
   is logged here (in another colour) is marked "New colour" (outlined), not "New to Codex";
   the hints no longer say colours are ignored. Checked against the game: on every biological
