@@ -1,9 +1,9 @@
 # Builds the frontend (if needed) and starts the ED Explorer Kit backend.
-#   .\start.ps1          local only:  http://127.0.0.1:8765
-#   .\start.ps1 -Lan     also reachable from a phone/tablet on the same Wi-Fi
+#   .\start.ps1          http://127.0.0.1:8765, and from a phone/tablet on the same Wi-Fi
+#   .\start.ps1 -Local   this PC only
 #   .\start.ps1 -Rebuild rebuild the database projections from stored events
 param(
-    [switch]$Lan,
+    [switch]$Local,
     [switch]$Rebuild,
     [switch]$SkipBuild
 )
@@ -20,7 +20,7 @@ if (-not $SkipBuild) {
 }
 
 $backendArgs = @()
-if ($Lan) { $backendArgs += '--lan' }
+if ($Local) { $backendArgs += '--local' }
 if ($Rebuild) { $backendArgs += '--rebuild' }
 
 Push-Location (Join-Path $root 'backend')

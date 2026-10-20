@@ -32,6 +32,10 @@ The interface is in English, Ukrainian or Russian; switch it in Settings.
 Close the black console window to stop the app. Running the exe again while it is already
 running just opens the page.
 
+**On your phone or tablet**: on the PC, open **Settings → On your phone** (or the button on the
+welcome card) and scan the QR code with the phone, which has to be on the same Wi-Fi. On the first
+start Windows asks about the firewall: allow private networks.
+
 > Windows may show "Windows protected your PC" because the exe is not code-signed.
 > Click **More info → Run anyway**. If you would rather not trust a downloaded exe, use
 > Docker or run from source (below): both build from this repository's code.
@@ -72,8 +76,8 @@ Requires [uv](https://docs.astral.sh/uv/) and [Node.js](https://nodejs.org/) 22 
 Clone or download this repository, then in its folder (PowerShell):
 
 ```powershell
-.\start.ps1            # builds the UI, then serves http://127.0.0.1:8765
-.\start.ps1 -Lan       # also reachable from other devices on your network (Windows asks about the firewall)
+.\start.ps1            # builds the UI, then serves http://127.0.0.1:8765, and to your phone on the same Wi-Fi
+.\start.ps1 -Local     # this PC only
 .\start.ps1 -SkipBuild # start without rebuilding the UI
 ```
 
@@ -94,7 +98,7 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 
 | Option | What it does |
 |---|---|
-| `--lan` | Allow access from other devices on your network |
+| `--local` | This PC only: no access from your phone or other devices on the network |
 | `--offline` | No requests to Spansh/EDSM and no EDDN (route planning and live players are then off) |
 | `--port 8765` | Use another port |
 | `--journal-dir PATH` | Journal folder, if not in the standard place (or choose it in Settings; set here, Settings cannot change it) |
@@ -105,6 +109,7 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 ## Your data
 
 - The app reads the game journal (`Saved Games\Frontier Developments\Elite Dangerous`) and never writes to it.
+- Devices on your network (your phone) can open the page; the journal folder can only be changed on the PC itself. `--local` keeps the page to this PC.
 - The database lives in `%LOCALAPPDATA%\EDExplorerKit\data.db`. Deleting it is safe while the journals are there: it is rebuilt from them on the next start. It also stores the journal events themselves, so after losing the journals (reinstall, new PC) your history survives only in this file. Keep a copy.
 - Only these requests go online: community data for the current system, route search, neutron routes and checks of the plotted route's systems (Spansh and EDSM). While the "players now" layer of the galaxy map is on, the app also listens to the [EDDN](https://github.com/EDCD/EDDN) relay: it only receives (about 20 KiB/s at busy times, the whole feed) and sends nothing; it hangs up a couple of minutes after the layer is closed. `--offline` turns them all off.
 

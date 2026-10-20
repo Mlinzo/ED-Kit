@@ -4,9 +4,12 @@ import { useIngest, useStream } from '../api/hooks'
 import type { IngestState } from '../api/types'
 import { t } from '../i18n'
 
-type Problem = 'not_found' | 'failed'
+type Problem = 'not_found' | 'other_device' | 'failed'
 
-/** PUT /api/journal-dir (null: the default folder). The new ingest state also comes through the stream. */
+/**
+ * PUT /api/journal-dir (null: the default folder). The new ingest state also comes through the stream.
+ * Only the PC the app runs on may change it (403 from a phone).
+ */
 async function changeJournalDir(path: string | null): Promise<Problem | null> {
   try {
     const response = await fetch('/api/journal-dir', {
@@ -15,6 +18,7 @@ async function changeJournalDir(path: string | null): Promise<Problem | null> {
       body: JSON.stringify({ path }),
     })
     if (response.status === 422) return 'not_found'
+    if (response.status === 403) return 'other_device'
     return response.ok ? null : 'failed'
   } catch {
     return 'failed'
@@ -36,9 +40,10 @@ function FolderState({ ingest }: { ingest: IngestState }) {
 
 /**
  * The journal folder in the settings: where it is read from, whether it has journals, and a field to
- * read another one. A folder set at launch (--journal-dir) is only shown.
+ * read another one. A folder set at launch (--journal-dir) is only shown, and so is the folder on a
+ * phone: it is changed on the PC.
  */
-export function JournalFolder({ autoFocus }: { autoFocus: boolean }) {
+export function JournalFolder({ autoFocus, thisPc }: { autoFocus: boolean; thisPc: boolean }) {
   const ingest = useIngest()
   const { mock } = useStream()
   const [path, setPath] = useState('')
@@ -85,6 +90,8 @@ export function JournalFolder({ autoFocus }: { autoFocus: boolean }) {
         <p className="mt-2 text-xs text-zinc-500">{s.fixed}</p>
       ) : mock ? (
         <p className="mt-2 text-xs text-zinc-500">{s.demo}</p>
+      ) : !thisPc ? (
+        <p className="mt-2 text-xs text-zinc-500">{s.otherDevice}</p>
       ) : (
         <form onSubmit={submit} className="mt-3">
           <label htmlFor={inputId} className="block text-xs text-zinc-500">
@@ -113,7 +120,7 @@ export function JournalFolder({ autoFocus }: { autoFocus: boolean }) {
           <p className="mt-1.5 text-xs text-zinc-500">{s.copyHint}</p>
           {problem && (
             <p role="alert" className="mt-2 text-sm text-rose-300">
-              {problem === 'not_found' ? s.notFound : s.failed}
+              {problem === 'not_found' ? s.notFound : problem === 'other_device' ? s.otherDevice : s.failed}
             </p>
           )}
           {ingest.journalDir !== ingest.journalDirDefault && (

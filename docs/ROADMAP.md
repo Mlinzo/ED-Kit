@@ -15,8 +15,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 
 ### Release
 - Delete the `v0.1.0` release (2026-10-17; the repository is private for now) with its tag, and
-  release again once the app is in decent shape (decided 2026-10-19). The GitHub release is deleted
-  in the web UI (Releases), the tag with `git push origin :refs/tags/v0.1.0` and `git tag -d v0.1.0`.
+  release again once the app is in decent shape (decided 2026-10-19). On 2026-10-20 origin had no
+  tags left, but the local `v0.1.0` still points at the 2026-10-17 commit: `git tag -d v0.1.0`
+  before tagging again, and delete a leftover draft release in the web UI (Releases). The version
+  stays 0.1.0: nobody outside has seen it. Make the repository public before announcing it (the
+  post links to `releases/latest`).
 
 ## Deferred
 - Rank progress (Explorer, Exobiologist).
@@ -47,6 +50,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Phone access by default (2026-10-20): the app listens on the network unless started with
+  `--local` (before, `--lan` opted in), so a newcomer's phone on the same Wi-Fi opens it with no
+  flags. Settings → "On your phone" (shown on the PC only) has a QR code of the address (the default
+  route's address first, the others below) and what to check when the phone does not get through:
+  the same Wi-Fi, the Windows firewall (allow private networks; after Cancel, "Allow an app through
+  firewall"), the network marked private. The welcome card has a button to it, the console prints
+  the address. The journal folder can only be changed from the PC itself (403 from another device: a
+  path sent over the network could point the app at someone's share); a phone shows it read-only.
+  Docker is unchanged: its port stays on 127.0.0.1, and the container cannot know the PC's address.
 - Past sessions (2026-10-20): at the bottom of the Session tab, one row per game run (from loading
   the commander to quitting; the main menu and another game mode stay in the same session, a crash
   ends it at its last event): when, how long, jumps, bodies, species, new codex entries, earned and

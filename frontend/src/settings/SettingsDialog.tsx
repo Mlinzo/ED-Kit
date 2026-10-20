@@ -5,6 +5,8 @@ import { SUPPORT_URL } from '../components/SupportLink'
 import { lang, LANGS, setLang, t } from '../i18n'
 import { SettingsContext, useSettings, type SettingsFocus } from './context'
 import { JournalFolder } from './JournalFolder'
+import { PhoneAccess } from './PhoneAccess'
+import { useNetwork } from './useNetwork'
 
 /** Lets the gear and the journal strip open the settings; the dialog renders only while open. */
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -39,6 +41,7 @@ export function SettingsButton() {
 function SettingsDialog({ focus, onClose }: { focus: SettingsFocus | null; onClose: () => void }) {
   const titleId = useId()
   const panel = useRef<HTMLDivElement>(null)
+  const network = useNetwork()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -103,7 +106,10 @@ function SettingsDialog({ focus, onClose }: { focus: SettingsFocus | null; onClo
           </div>
         </fieldset>
 
-        <JournalFolder autoFocus={focus === 'journal'} />
+        {/* On the phone itself there is nothing to open. */}
+        {network?.thisPc && <PhoneAccess network={network} autoFocus={focus === 'phone'} />}
+
+        <JournalFolder autoFocus={focus === 'journal'} thisPc={network?.thisPc ?? true} />
 
         {SUPPORT_URL && (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-5">

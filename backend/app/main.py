@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import ipaddress
 import json
 import logging
 import socket
@@ -16,7 +17,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -53,6 +54,7 @@ from app.schemas import (
     LiveStatus,
     LiveView,
     NavRouteView,
+    NetworkInfo,
     NeutronRequest,
     NoteRequest,
     RoutePoint,
@@ -363,12 +365,23 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def ingest() -> IngestState:
         return service.ingest
 
+    @app.get("/api/network", response_model=NetworkInfo, response_model_by_alias=True)
+    def network(request: Request) -> NetworkInfo:
+        return NetworkInfo(
+            lan=not _is_loopback(settings.host),
+            urls=_phone_urls(settings),
+            this_pc=_from_this_pc(request),
+        )
+
     @app.put("/api/journal-dir", response_model=IngestState, response_model_by_alias=True)
-    def put_journal_dir(body: JournalDirRequest) -> IngestState:
+    def put_journal_dir(body: JournalDirRequest, request: Request) -> IngestState:
         """Reads the journal from another folder; no path: the default one. 409 when the
-        folder was set at launch, 422 when it does not exist."""
+        folder was set at launch, 403 from another device (a path from the network could
+        point the app at someone's share), 422 when it does not exist."""
         if settings.journal_dir_fixed:
             raise HTTPException(409, "fixed")
+        if not _from_this_pc(request):
+            raise HTTPException(403, "this_pc_only")
         chosen = parse_dir(body.path) if body.path and body.path.strip() else None
         if chosen is not None and not chosen.is_dir():
             raise HTTPException(422, "not_found")
@@ -421,19 +434,55 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
 
 
 def _lan_addresses() -> Iterator[str]:
-    seen: set[str] = set()
+    """This PC's IPv4 addresses: the one of the default route first (the Wi-Fi or the cable,
+    not a VPN or a virtual adapter as a rule), then the others."""
+    primary: str | None = None
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("10.255.255.255", 1))  # no packets are sent for UDP connect
-            seen.add(s.getsockname()[0])
+            primary = s.getsockname()[0]
     except OSError:
         pass
+    others: set[str] = set()
     try:
         for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
-            seen.add(str(info[4][0]))
+            others.add(str(info[4][0]))
     except OSError:
         pass
-    yield from sorted(a for a in seen if not a.startswith("127."))
+    usable = [a for a in [primary, *sorted(others - {primary})] if a and _reachable(a)]
+    yield from usable
+
+
+def _reachable(address: str) -> bool:
+    """Whether another device could reach the PC at this address (not loopback, not a
+    link-local 169.254 one Windows gives an adapter without a network)."""
+    ip = ipaddress.ip_address(address)
+    return not (ip.is_loopback or ip.is_link_local or ip.is_unspecified)
+
+
+def _is_loopback(host: str | None) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return host is not None and ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _phone_urls(settings: Settings) -> list[str]:
+    """Where other devices open the page; none when only this PC can (--local)."""
+    host = settings.host
+    if _is_loopback(host):
+        return []
+    addresses = list(_lan_addresses()) if host == "0.0.0.0" else [host]
+    return [f"http://{address}:{settings.port}" for address in addresses]
+
+
+def _from_this_pc(request: Request) -> bool:
+    """The request comes from the PC the app runs on: over loopback, or from one of its own
+    addresses (its browser opened the network address)."""
+    client = request.client.host if request.client else None
+    return _is_loopback(client) or client in set(_lan_addresses())
 
 
 def _already_running(port: int) -> bool:
@@ -468,8 +517,10 @@ def run() -> None:
     frozen = getattr(sys, "frozen", False)
     parser = argparse.ArgumentParser(description="ED Explorer Kit backend")
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--lan", action="store_true", help="allow access from phone/tablet on LAN")
-    parser.add_argument("--host", help="listen address, e.g. 0.0.0.0 in Docker (overrides --lan)")
+    parser.add_argument(
+        "--local", action="store_true", help="only this PC: no access from phones on the network"
+    )
+    parser.add_argument("--host", help="listen address, e.g. 0.0.0.0 in Docker (overrides --local)")
     parser.add_argument(
         "--no-browser", action="store_true", help="do not open the browser (the .exe opens it)"
     )
@@ -486,7 +537,7 @@ def run() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    settings = Settings(port=args.port, lan=args.lan, bind=args.host, online=not args.offline)
+    settings = Settings(port=args.port, lan=not args.local, bind=args.host, online=not args.offline)
     if args.journal_dir:
         settings.journal_dir = Path(args.journal_dir)
         settings.journal_dir_fixed = True
@@ -503,9 +554,12 @@ def run() -> None:
     log.info("database:    %s", settings.db_path)
     log.info("open:        %s", url)
     log.info("community:   %s", "Spansh/EDSM lookups on" if settings.online else "offline")
-    if settings.lan:
-        for address in _lan_addresses():
-            log.info("on LAN:      http://%s:%d", address, settings.port)
+    # Docker (--host) listens on the container's addresses: no use to a phone.
+    phone_urls = [] if settings.bind else _phone_urls(settings)
+    for phone_url in phone_urls:
+        log.info("on phone:    %s (same Wi-Fi; the QR code is in Settings)", phone_url)
+    if phone_urls:
+        log.info("firewall:    if Windows asks, allow private networks for the phone to connect")
     if frozen:
         log.info("close this window to stop ED Explorer Kit")
     if open_browser:

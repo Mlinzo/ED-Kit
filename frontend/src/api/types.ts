@@ -400,6 +400,16 @@ export interface IngestState {
   gameRunning: boolean | null
 }
 
+/** GET /api/network: where a phone opens the page. */
+export interface NetworkInfo {
+  /** Other devices may connect (off when the app was started with --local). */
+  lan: boolean
+  /** The page on this PC's network addresses, the likeliest first. */
+  urls: string[]
+  /** The page is open on the PC the app runs on. */
+  thisPc: boolean
+}
+
 export interface StatCount {
   /** Stable code labelled by the UI: elw, ww, aw, terraformable, gg_water_life, gg_ammonia_life,
    *  neutron, black_hole, white_dwarf, wolf_rayet, carbon, giant, blue_star, ringed, landable_atmo */

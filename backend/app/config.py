@@ -85,7 +85,7 @@ class Settings:
     data_dir: Path = field(default_factory=default_data_dir)
     static_dir: Path | None = field(default_factory=default_static_dir)
     port: int = 8765
-    lan: bool = False
+    lan: bool = True  # phones on the same network can open the page (off: --local)
     bind: str | None = None  # explicit listen address (Docker: 0.0.0.0); overrides `lan`
     online: bool = True  # Spansh / EDSM requests and the EDDN listener (off with --offline)
     poll_interval: float = 0.25  # seconds between journal/status reads

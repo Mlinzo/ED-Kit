@@ -134,6 +134,7 @@ export function createMockTransport(): Transport {
     '/api/view/live': () => players,
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,
+    '/api/network': () => ({ lan: true, urls: ['http://192.168.1.20:8765'], thisPc: true }),
   }
 
   return {

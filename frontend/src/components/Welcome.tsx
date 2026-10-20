@@ -1,20 +1,25 @@
-import { BookOpen, Telescope } from 'lucide-react'
+import { BookOpen, Smartphone, Telescope } from 'lucide-react'
 import { useState } from 'react'
 import { useGuide } from '../guide/context'
 import { t } from '../i18n'
 import { readStored, writeStored } from '../lib/storage'
+import { useSettings } from '../settings/context'
+import { useNetwork } from '../settings/useNetwork'
 
 /** Closed once, closed for good (per browser). */
 const KEY = 'edk.welcome'
 
 /**
- * First visit: what the app does with your data, and the guide's five steps for a newcomer.
- * Shown on the System tab until closed.
+ * First visit: what the app does with your data, the guide's five steps for a newcomer and, on the
+ * PC, the way to the phone (the QR code in the settings). Shown on the System tab until closed.
  */
 export function Welcome() {
   const [open, setOpen] = useState(() => readStored(KEY, ['open', 'closed'], 'open') === 'open')
   const guide = useGuide()
+  const settings = useSettings()
+  const network = useNetwork()
   if (!open) return null
+  const phone = network?.thisPc && network.urls.length > 0
 
   const close = () => {
     writeStored(KEY, 'closed')
@@ -43,6 +48,16 @@ export function Welcome() {
             <BookOpen className="size-4" aria-hidden />
             {t.welcome.guide}
           </button>
+          {phone && (
+            <button
+              type="button"
+              onClick={() => settings.open('phone')}
+              className="focus-ring inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-800 px-4 text-sm font-medium text-zinc-100 ring-1 ring-zinc-700 ring-inset hover:bg-zinc-700"
+            >
+              <Smartphone className="size-4" aria-hidden />
+              {t.welcome.phone}
+            </button>
+          )}
           <button
             type="button"
             onClick={close}

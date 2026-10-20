@@ -68,7 +68,34 @@ def test_pages_get_the_app_and_unknown_files_404(tmp_path: Path) -> None:
 
 
 def test_listen_address() -> None:
-    assert Settings().host == "127.0.0.1"
-    assert Settings(lan=True).host == "0.0.0.0"
+    assert Settings().host == "0.0.0.0"  # a phone on the same Wi-Fi can open the page
+    assert Settings(lan=False).host == "127.0.0.1"  # --local
     assert Settings(bind="0.0.0.0").host == "0.0.0.0"  # Docker: --host 0.0.0.0
-    assert Settings(lan=True, bind="192.168.1.5").host == "192.168.1.5"
+    assert Settings(lan=False, bind="192.168.1.5").host == "192.168.1.5"
+
+
+def test_network_addresses_for_a_phone(tmp_path: Path) -> None:
+    def client(lan: bool, peer: str, bind: str | None = None) -> TestClient:
+        settings = Settings(
+            journal_dir=tmp_path / "journals",
+            data_dir=tmp_path / "data",
+            static_dir=None,
+            online=False,
+            lan=lan,
+            bind=bind,
+            port=8765,
+        )
+        return TestClient(create_app(settings), client=(peer, 50000))
+
+    with client(True, "127.0.0.1") as pc:
+        info = pc.get("/api/network").json()
+        assert info["lan"] is True and info["thisPc"] is True
+        for url in info["urls"]:  # none on a machine without a network
+            assert url.startswith("http://") and url.endswith(":8765")
+            assert "//127." not in url and "//169.254." not in url
+    with client(True, "192.0.2.7") as phone:
+        assert phone.get("/api/network").json()["thisPc"] is False
+    with client(False, "127.0.0.1") as local:
+        assert local.get("/api/network").json() == {"lan": False, "urls": [], "thisPc": True}
+    with client(False, "127.0.0.1", bind="192.168.1.5") as bound:
+        assert bound.get("/api/network").json()["urls"] == ["http://192.168.1.5:8765"]

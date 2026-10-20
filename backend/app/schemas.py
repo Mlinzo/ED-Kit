@@ -370,6 +370,14 @@ class JournalDirRequest(CamelModel):
     path: str | None = None  # None or empty: the standard folder
 
 
+class NetworkInfo(CamelModel):
+    """Where a phone opens the page."""
+
+    lan: bool  # other devices may connect (off with --local)
+    urls: list[str]  # the page on this PC's network addresses, the likeliest first
+    this_pc: bool  # the request comes from the PC the app runs on
+
+
 class StatCount(CamelModel):
     key: str  # stable code, labelled by the frontend (e.g. "elw", "neutron")
     count: int

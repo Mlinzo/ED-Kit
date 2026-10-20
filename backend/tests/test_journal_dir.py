@@ -22,7 +22,7 @@ def write_journal(folder: Path, stamp: str, commander: str) -> None:
     (folder / name).write_text("".join(json.dumps(x) + "\n" for x in lines), encoding="utf-8")
 
 
-def make_client(tmp_path: Path, **kwargs: object) -> TestClient:
+def make_client(tmp_path: Path, peer: str = "127.0.0.1", **kwargs: object) -> TestClient:
     settings = Settings(
         journal_dir=tmp_path / "standard",
         data_dir=tmp_path / "data",
@@ -30,7 +30,7 @@ def make_client(tmp_path: Path, **kwargs: object) -> TestClient:
         online=False,
         **kwargs,  # type: ignore[arg-type]
     )
-    return TestClient(create_app(settings))
+    return TestClient(create_app(settings), client=(peer, 50000))
 
 
 def wait_ingest(client: TestClient, done: object) -> dict:
@@ -85,3 +85,11 @@ def test_folder_set_at_launch_cannot_change(tmp_path: Path) -> None:
         assert client.get("/api/ingest").json()["journalDirFixed"] is True
         response = client.put("/api/journal-dir", json={"path": str(tmp_path / "other")})
         assert response.status_code == 409
+
+
+def test_folder_changes_only_on_this_pc(tmp_path: Path) -> None:
+    (tmp_path / "other").mkdir()
+    with make_client(tmp_path, peer="192.0.2.7") as phone:
+        response = phone.put("/api/journal-dir", json={"path": str(tmp_path / "other")})
+        assert response.status_code == 403
+        assert phone.get("/api/ingest").json()["journalDir"] == str(tmp_path / "standard")
