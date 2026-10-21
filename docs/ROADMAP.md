@@ -50,6 +50,17 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- The ×5 exobiology bonus as "likely" (2026-10-21): the game pays it per species for "First
+  Logged" (nobody handed that species in from that body before you), and the app can only guess it
+  from "nobody landed here" in an unpopulated system. The guess failed on HR 1172 A 8 a: no footfall
+  recorded, yet another commander had logged its species. The species line now says "×5 bonus
+  likely" and tells how to check in the game (system map → Organic Information, "First logged by").
+  `ScanOrganic.WasLogged: true` rules the bonus out for that species on that body (its value, the
+  body total, unsold and at-risk sums), marked "already handed in". `false` proves nothing: the game
+  only writes the real value once the bio details were opened on the system map (Frontier issue
+  81891), so a species analysed before that keeps the bonus until the sale brings the real figure.
+  Not done: Canonn's per-system scans, which would flag such planets before landing (the only two
+  such bodies in the player's history are both in HR 1172).
 - Phone access by default (2026-10-20): the app listens on the network unless started with
   `--local` (before, `--lan` opted in), so a newcomer's phone on the same Wi-Fi opens it with no
   flags. Settings → "On your phone" (shown on the PC only) has a QR code of the address (the default

@@ -43,7 +43,9 @@ def scan_planet(body_id: int = 24, **extra: object) -> dict:
     return ev
 
 
-def organic(scan_type: str, ts: str, species: str = "$Codex_Ent_Bacterial_01_Name;") -> dict:
+def organic(
+    scan_type: str, ts: str, species: str = "$Codex_Ent_Bacterial_01_Name;", **extra: object
+) -> dict:
     return {
         "timestamp": ts,
         "event": "ScanOrganic",
@@ -54,6 +56,7 @@ def organic(scan_type: str, ts: str, species: str = "$Codex_Ent_Bacterial_01_Nam
         "Variant": "$Codex_Ent_Bacterial_01_G_Name;",
         "SystemAddress": SA,
         "Body": 24,
+        **extra,
     }
 
 
@@ -134,6 +137,46 @@ def test_new_species_abandons_unfinished(conn: sqlite3.Connection, proj: Project
     )
     statuses = [r[0] for r in conn.execute("SELECT status FROM organic_scans ORDER BY id")]
     assert statuses == ["abandoned", "sampling"]
+
+
+def test_was_logged_rules_out_the_bonus(conn: sqlite3.Connection, proj: Projector) -> None:
+    # No footfall on the body, but the game says the second species was handed in before.
+    # WasLogged turns true only mid-sampling (after the system map was opened).
+    other = "$Codex_Ent_Bacterial_12_Name;"
+    feed(conn, proj, [CMDR, jump(), scan_planet()])
+    feed(
+        conn,
+        proj,
+        [
+            organic("Log", "2026-10-15T20:48:00Z", WasLogged=False),
+            organic("Sample", "2026-10-15T20:49:00Z", WasLogged=False),
+            organic("Analyse", "2026-10-15T20:49:05Z", WasLogged=False),
+            organic("Log", "2026-10-15T20:50:00Z", species=other, WasLogged=False),
+            organic("Sample", "2026-10-15T20:51:00Z", species=other, WasLogged=True),
+            organic("Analyse", "2026-10-15T20:51:05Z", species=other, WasLogged=True),
+        ],
+    )
+    rows = conn.execute("SELECT value, bonus, was_logged FROM organic_scans ORDER BY id")
+    first, second = (dict(r) for r in rows)
+    assert first["bonus"] == first["value"] * 4 and not first["was_logged"]
+    assert second["bonus"] == 0 and second["was_logged"]
+
+    body = views.system_view(conn, "F1").bodies[0]
+    analysed = sorted(
+        (s for s in body.species if s.status == "analysed"), key=lambda s: s.bonus_ruled_out
+    )
+    assert len(analysed) == 2
+    kept, lost = analysed
+    assert kept.bonus_value == kept.value * 5 and not kept.bonus_ruled_out
+    assert lost.bonus_value == lost.value and lost.bonus_ruled_out
+    session = views.session_view(conn, "F1")
+    assert session.unsold_bio_value == first["value"] * 5 + second["value"]
+
+    # A later session may say false again: the species stays without the bonus.
+    feed(conn, proj, [organic("Log", "2026-10-16T10:00:00Z", species=other, WasLogged=False)])
+    surface = views.surface_view(conn, "F1", None)
+    assert surface.active_scan is not None and surface.active_scan.bonus_ruled_out
+    assert surface.active_scan.bonus_value == surface.active_scan.value
 
 
 def test_sale_and_death(conn: sqlite3.Connection, proj: Projector) -> None:

@@ -23,7 +23,13 @@ function StatusIcon({ s }: { s: SpeciesView }) {
   return <CircleDashed className="size-5 text-zinc-600" aria-hidden />
 }
 
-export function SpeciesValue({ s, className = '' }: { s: SpeciesView | { value: number; bonusValue: number }; className?: string }) {
+export function SpeciesValue({
+  s,
+  className = '',
+}: {
+  s: Pick<SpeciesView, 'value' | 'bonusValue' | 'bonusRuledOut'>
+  className?: string
+}) {
   // Species missing from the catalog come with value 0: show "unknown", not "0".
   if (s.bonusValue <= 0) {
     return (
@@ -39,9 +45,14 @@ export function SpeciesValue({ s, className = '' }: { s: SpeciesView | { value: 
       {bonus && (
         <span
           className="text-[11px] font-normal text-zinc-500"
-          title={`${t.species.baseValue}: ${exactCredits(s.value)} · ${t.species.withBonus}: ${exactCredits(s.bonusValue)}`}
+          title={`${t.species.baseValue}: ${exactCredits(s.value)} · ${t.species.withBonus}: ${exactCredits(s.bonusValue)}. ${t.species.bonusLikelyHint}`}
         >
-          <span className="text-emerald-500/80">×{Math.round(s.bonusValue / s.value)}</span> {t.species.firstFootfall.toLowerCase()}
+          <span className="text-emerald-500/80">×{Math.round(s.bonusValue / s.value)}</span> {t.species.bonusLikely}
+        </span>
+      )}
+      {s.bonusRuledOut && (
+        <span className="text-[11px] font-normal text-zinc-500" title={t.species.bonusRuledOutHint}>
+          {t.species.bonusRuledOut}
         </span>
       )}
     </span>

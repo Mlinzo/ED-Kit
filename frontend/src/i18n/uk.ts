@@ -666,7 +666,11 @@ export const uk: Strings = {
     candidates: (n: number) => `один із ${n} варіантів`,
     candidatesHint: (genus: string) =>
       `Один біосигнал — один рід: із цих видів ${genus} на планеті росте лише один. Новим записом у Кодексі стане один.`,
-    firstFootfall: 'Бонус першої висадки',
+    bonusLikely: 'бонус ймовірний',
+    bonusLikelyHint:
+      'Платять, якщо цей вид із цієї планети до вас ніхто не здавав. Перевірити: після першого зразка відкрийте мапу системи → Organic Information («First logged by»).',
+    bonusRuledOut: 'вже зданий іншим',
+    bonusRuledOutHint: 'Гра повідомила, що цей вид із цієї планети до вас уже хтось здав: бонусу ×5 не буде.',
     baseValue: 'Базова ціна',
     withBonus: 'З бонусом першої висадки',
     valueUnknown: 'Ціна виду невідома',

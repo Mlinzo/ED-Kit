@@ -150,13 +150,16 @@ def _build_species(
         catalog = exobio.get_species(scan["species"])
         symbol = catalog.species if catalog else scan["species"]
         seen_genera.add(catalog.genus if catalog else scan["genus"])
-        confirmed_values.append(value)
+        ruled_out = multiplier > 1 and bool(scan["was_logged"])
+        bonus_value = value if ruled_out else value * multiplier
+        confirmed_values.append(bonus_value)
         views.append(
             SpeciesView(
                 genus=genus_name,
                 species=species_name,
                 value=value,
-                bonus_value=value * multiplier,
+                bonus_value=bonus_value,
+                bonus_ruled_out=ruled_out,
                 colony_range_m=colony,
                 status="analysed" if scan["status"] == "analysed" else "sampling",
                 samples=scan["samples"],
@@ -214,7 +217,7 @@ def _build_species(
     open_slots = max(max(bio_signals, len(genuses)) - len(certain_new), 0)
     codex_new = len(certain_new)
     codex_maybe = min(len(maybe_new), open_slots)
-    low, high = (confirmed + still_low) * multiplier, (confirmed + still_high) * multiplier
+    low, high = confirmed + still_low * multiplier, confirmed + still_high * multiplier
     return views, low, high, codex_new, codex_maybe
 
 
@@ -668,11 +671,13 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
                 (active["id"],),
             )
         ]
+        ruled_out = multiplier > 1 and bool(active["was_logged"])
         active_view = ActiveScanView(
             genus=genus_name,
             species=species_name,
             value=base,
-            bonus_value=base * multiplier,
+            bonus_value=base if ruled_out else base * multiplier,
+            bonus_ruled_out=ruled_out,
             colony_range_m=colony,
             codex=colour_status(
                 codex, active["variant"], active["species"], region, before=active["started_at"]

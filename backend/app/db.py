@@ -310,6 +310,7 @@ CREATE TABLE IF NOT EXISTS organic_scans(
   status TEXT NOT NULL,
   sale TEXT NOT NULL DEFAULT 'unsold',
   first_footfall INTEGER NOT NULL DEFAULT 0,
+  was_logged INTEGER NOT NULL DEFAULT 0,  -- WasLogged seen: handed in before you, no bonus
   value INTEGER,
   bonus INTEGER,
   started_at TEXT NOT NULL,

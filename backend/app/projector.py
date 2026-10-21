@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 13
+VERSION = 14
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -598,13 +598,13 @@ class Projector:
         elif scan_type == "Analyse":
             scan_id = active["id"] if same else self._new_organic_scan(ev, 3, ts)
             row = self.conn.execute(
-                "SELECT first_footfall FROM organic_scans WHERE id = ?", (scan_id,)
+                "SELECT first_footfall, was_logged FROM organic_scans WHERE id = ?", (scan_id,)
             ).fetchone()
             catalog = exobio.get_species(str(species))
             value = catalog.base_value if catalog else None
             bonus = (
                 value * (exobio.FIRST_FOOTFALL_MULTIPLIER - 1)
-                if value is not None and row["first_footfall"]
+                if value is not None and row["first_footfall"] and not row["was_logged"]
                 else 0
             )
             self.conn.execute(
@@ -612,15 +612,31 @@ class Projector:
                 "value = ?, bonus = ?, updated_at = ? WHERE id = ?",
                 (value, bonus, ts, scan_id),
             )
+        if ev.get("WasLogged") is True:
+            # Someone handed this species in from this body before you: no bonus. The game
+            # only writes the real value after you open the bio details on the system map,
+            # so `false` proves nothing (Frontier issue 81891).
+            self.conn.execute(
+                "UPDATE organic_scans SET was_logged = 1, "
+                "bonus = CASE WHEN status = 'analysed' AND sale != 'sold' THEN 0 ELSE bonus END "
+                "WHERE fid = ? AND system_address = ? AND body_id = ? AND species = ?",
+                (self.fid, address, body_id, species),
+            )
         return ALL_TOPICS
 
     def _new_organic_scan(self, ev: dict[str, Any], samples: int, ts: str) -> int:
         address, body_id = int(ev["SystemAddress"]), int(ev["Body"])
         first_footfall = self._first_footfall(address, body_id)
+        # A later session may write WasLogged: false again; what was seen once stays.
+        was_logged = self.conn.execute(
+            "SELECT 1 FROM organic_scans WHERE fid = ? AND system_address = ? AND body_id = ? "
+            "AND species = ? AND was_logged = 1",
+            (self.fid, address, body_id, str(ev["Species"])),
+        ).fetchone()
         cur = self.conn.execute(
             "INSERT INTO organic_scans(fid, system_address, body_id, genus, species, species_name, "
-            "variant, samples, status, first_footfall, started_at, updated_at) "
-            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, 'sampling', ?, ?, ?)",
+            "variant, samples, status, first_footfall, was_logged, started_at, updated_at) "
+            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, 'sampling', ?, ?, ?, ?)",
             (
                 self.fid,
                 address,
@@ -631,6 +647,7 @@ class Projector:
                 ev.get("Variant"),
                 samples,
                 int(first_footfall),
+                int(was_logged is not None),
                 ts,
                 ts,
             ),

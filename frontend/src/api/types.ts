@@ -21,6 +21,9 @@ export interface SpeciesView {
   species: string
   value: number
   bonusValue: number
+  /** The body would give the bonus, but the journal (WasLogged) says someone handed this
+   *  species in from it before you. */
+  bonusRuledOut: boolean
   colonyRangeM: number
   status: SpeciesStatus
   samples: number
@@ -224,6 +227,8 @@ export interface ActiveScanView {
   species: string
   value: number
   bonusValue: number
+  /** As in SpeciesView. */
+  bonusRuledOut: boolean
   colonyRangeM: number
   codex: CodexStatus
   samples: number

@@ -662,7 +662,11 @@ export const en: Strings = {
     candidates: (n: number) => `one of ${n} candidates`,
     candidatesHint: (genus: string) =>
       `One bio signal is one genus: only one of these ${genus} species grows on the planet, so only one becomes a new Codex entry.`,
-    firstFootfall: 'First footfall bonus',
+    bonusLikely: 'bonus likely',
+    bonusLikelyHint:
+      'Paid if nobody handed this species in from this planet before you. To check: after the first sample, open the system map → Organic Information (“First logged by”).',
+    bonusRuledOut: 'already handed in',
+    bonusRuledOutHint: 'The game says someone handed this species in from this planet before you: no ×5 bonus.',
     baseValue: 'Base value',
     withBonus: 'With first footfall bonus',
     valueUnknown: 'Species value unknown',

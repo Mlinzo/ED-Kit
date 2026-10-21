@@ -35,6 +35,9 @@ class SpeciesView(CamelModel):
     species: str  # English species name, e.g. "Stratum Tectonicas"
     value: int  # base value, credits
     bonus_value: int  # value incl. first-footfall bonus when it applies, else == value
+    # The body would give the bonus, but the journal (WasLogged) says someone handed this
+    # species in from it before you.
+    bonus_ruled_out: bool = False
     colony_range_m: int
     status: SpeciesStatus
     samples: int  # 0..3
@@ -213,6 +216,7 @@ class ActiveScanView(CamelModel):
     species: str
     value: int
     bonus_value: int
+    bonus_ruled_out: bool = False  # as in SpeciesView
     colony_range_m: int
     codex: CodexStatus
     samples: int  # 1..3 (Log counts as the first sample)

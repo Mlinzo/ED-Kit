@@ -140,9 +140,10 @@ export const guideEn: Strings['guide'] = {
       body: [
         'Be the first to step out (on foot or in an SRV) on a planet in an unpopulated system and the system map shows “First footfall” with your name. The tag itself pays nothing.',
         'The money comes at Vista Genomics: a species nobody handed in from that planet before you pays its value plus a bonus four times as large — five times in total. If you landed first, the bonus is almost certainly yours.',
+        'It is not a guarantee: now and then the species of a planet nobody landed on were handed in all the same. To check, after the first sample open the system map → Organic Information: “First logged by” names whoever handed the species in first.',
         'Populated systems have no first footfall, and their planets give no bonus.',
       ],
-      inApp: 'The System tab shows species values with and without the bonus, and whether the bonus is still possible on a planet.',
+      inApp: 'The System tab shows species values with and without the bonus, and whether the bonus is still possible on a planet. Once you have looked at the planet’s bio details on the system map, the next sample tells the app whether the species was handed in before, and the bonus goes away if it was.',
     },
     codex: {
       title: 'Codex and regions',
