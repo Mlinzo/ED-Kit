@@ -18,6 +18,7 @@ import { buildHistory, buildPastSystem, withHistory } from './history'
 import { createMockNotes } from './notes'
 import { createMockRoute } from './route'
 import { buildSessions } from './sessions'
+import { buildShop } from './shop'
 import { buildGalaxy, buildLive, buildNavRoute } from './travel'
 import { buildStats } from './stats'
 
@@ -126,6 +127,7 @@ export function createMockTransport(): Transport {
     '/api/view/session': () => session,
     '/api/view/sessions': () => sessions,
     '/api/view/sell': (query) => buildSell(query.get('carriers') === 'true'),
+    '/api/view/shop': (query) => buildShop(query.get('item'), query.get('carriers') === 'true'),
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,
     '/api/view/route': () => route.view(),
@@ -143,7 +145,7 @@ export function createMockTransport(): Transport {
     async fetchJson<T>(path: string): Promise<T> {
       const url = new URL(path, window.location.origin)
       // Game data, not yours: from the real server when one is running (no region layer otherwise).
-      if (url.pathname === '/api/regions') return live.fetchJson<T>(path)
+      if (url.pathname === '/api/regions' || url.pathname === '/api/shop/catalog') return live.fetchJson<T>(path)
       await delay(60 + Math.random() * 80)
       const handler = routes[url.pathname]
       if (!handler) throw new Error(`HTTP 404: ${path}`)

@@ -10,6 +10,7 @@ import { GalaxyScreen } from './screens/galaxy/GalaxyScreen'
 import { HistoryScreen } from './screens/history/HistoryScreen'
 import { RouteScreen } from './screens/route/RouteScreen'
 import { SessionScreen } from './screens/session/SessionScreen'
+import { ShopScreen } from './screens/shop/ShopScreen'
 import { StatsScreen } from './screens/stats/StatsScreen'
 import { SurfaceScreen } from './screens/surface/SurfaceScreen'
 import { SystemScreen } from './screens/system/SystemScreen'
@@ -119,7 +120,7 @@ export default function App() {
 
   const openSystem = (address: string | null) => navigate({ tab: 'system', address })
 
-  /** "Route here" from Where to sell: the Route tab opens its form on that system. */
+  /** "Route here" from Where to sell and the Shop: the Route tab opens its form on that system. */
   const [routeTo, setRouteTo] = useState<string | null>(null)
   const routeToUsed = useCallback(() => setRouteTo(null), [])
   const planRouteTo = (name: string) => {
@@ -153,6 +154,7 @@ export default function App() {
             {tab === 'session' && <SessionScreen onRouteTo={planRouteTo} />}
             {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
             {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
+            {tab === 'shop' && <ShopScreen onRouteTo={planRouteTo} />}
             {tab === 'stats' && <StatsScreen />}
           </main>
           <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />

@@ -140,7 +140,7 @@ function Status({ sell }: { sell: SellView }) {
 const CARRIERS_KEY = 'edk.sellCarriers'
 
 /** Fleet carriers on or off: they move and their owner decides who docks, so off by default. */
-function CarriersSwitch({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+export function CarriersSwitch({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
   const s = t.session.sell
   return (
     <button
@@ -165,7 +165,7 @@ function CarriersSwitch({ on, onChange }: { on: boolean; onChange: (on: boolean)
 }
 
 /** Carriers hidden, and one is nearer than every station: say so, and offer to show them. */
-function NearerCarrier({ hint, onShow }: { hint: SellCarrierHint; onShow: () => void }) {
+export function NearerCarrier({ hint, onShow }: { hint: SellCarrierHint; onShow: () => void }) {
   const s = t.session.sell
   const distance = `${formatLy(hint.distanceLy)}${hint.jumps ? ` (${t.route.jumps(hint.jumps)})` : ''}`
   return (

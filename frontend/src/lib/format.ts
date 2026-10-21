@@ -99,6 +99,14 @@ const dateTimeFormat = new Intl.DateTimeFormat(locale, {
   minute: '2-digit',
 })
 
+const monthYearFormat = new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric' })
+
+/** "Jun 2021": for dates long past. */
+export function formatMonthYear(iso: string): string {
+  const ms = Date.parse(iso)
+  return Number.isNaN(ms) ? t.common.unknown : monthYearFormat.format(ms)
+}
+
 export function formatDateTime(iso: string): string {
   const ms = Date.parse(iso)
   return Number.isNaN(ms) ? t.common.unknown : tidyDate(dateTimeFormat.format(ms))

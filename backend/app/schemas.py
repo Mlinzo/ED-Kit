@@ -272,6 +272,75 @@ class SellView(CamelModel):
     searched_at: str | None  # when Spansh was asked (ISO)
 
 
+class ShopShipView(CamelModel):
+    symbol: str  # journal symbol, lower case
+    name: str
+
+
+class ShopVariantView(CamelModel):
+    symbol: str  # journal symbol, lower case: what the search asks for
+    size: int  # the module class
+    rating: str
+    mount: str | None  # Fixed | Gimballed | Turreted
+    guidance: str | None  # Dumbfire | Seeker
+
+
+class ShopModuleView(CamelModel):
+    name: str
+    category: str  # core | optional | hardpoint | utility
+    unlock: str | None  # powerplay | techbroker: sold only to commanders who unlocked it
+    variants: list[ShopVariantView]
+
+
+class ShopCatalogView(CamelModel):
+    ships: list[ShopShipView]
+    modules: list[ShopModuleView]
+
+
+class ShopStationView(CamelModel):
+    name: str
+    kind: str  # as in SellStationView
+    dist_ls: int | None
+    price: int | None
+    offer_at: str | None  # when Spansh last had its shipyard / outfitting (ISO)
+    access: str | None  # a carrier: all | unknown
+    permit: bool  # the system needs a permit
+    # Nothing chosen: how many ships / modules Spansh knows it sells (None: no shipyard /
+    # outfitting; 0: has one, but no list)
+    ship_count: int | None = None
+    module_count: int | None = None
+
+
+class ShopPlaceView(CamelModel):
+    system_name: str
+    system_address: str | None
+    distance_ly: float
+    jumps: int | None
+    stations: list[ShopStationView]  # the best first
+    more: int  # other stations there selling it
+
+
+class ShopRankView(CamelModel):
+    navy: str  # empire | federation
+    need: str  # the rank needed to buy the ship
+    have: str | None  # yours, from the journal (None: unknown)
+    ok: bool | None
+
+
+class ShopView(CamelModel):
+    # ready | unknown_item | offline | unknown_position | failed
+    state: str
+    item: str | None  # what is looked for, e.g. "Frame Shift Drive 5A"; None: the shops
+    ship: str | None  # the current ship's name
+    pad: str | None  # the landing pad it needs
+    carriers: bool  # fleet carriers listed (asked for)
+    places: list[ShopPlaceView]  # nearest first
+    nearer_carrier: SellCarrierHint | None
+    rank: ShopRankView | None
+    unlock: str | None  # as in ShopModuleView
+    searched_at: str | None  # when Spansh was asked (ISO)
+
+
 class RiskPoint(CamelModel):
     """Unsold data when you left a system (the first point: right after the last sale)."""
 

@@ -367,6 +367,89 @@ export interface SellView {
   searchedAt: string | null
 }
 
+/** GET /api/shop/catalog: what the Shop tab can look for (game names, in English). */
+export interface ShopShipView {
+  /** Journal symbol, lower case. */
+  symbol: string
+  name: string
+}
+
+export interface ShopVariantView {
+  /** Journal symbol, lower case: what the search asks for. */
+  symbol: string
+  /** The module class. */
+  size: number
+  rating: string
+  mount: 'Fixed' | 'Gimballed' | 'Turreted' | null
+  guidance: 'Dumbfire' | 'Seeker' | null
+}
+
+export type ShopCategory = 'core' | 'optional' | 'hardpoint' | 'utility'
+export type ShopUnlock = 'powerplay' | 'techbroker'
+
+export interface ShopModuleView {
+  name: string
+  category: ShopCategory
+  /** Sold only to commanders who unlocked it. */
+  unlock: ShopUnlock | null
+  variants: ShopVariantView[]
+}
+
+export interface ShopCatalogView {
+  ships: ShopShipView[]
+  modules: ShopModuleView[]
+}
+
+export interface ShopStationView {
+  name: string
+  kind: SellStationView['kind']
+  distLs: number | null
+  price: number | null
+  /** When Spansh last had its shipyard / outfitting (ISO). */
+  offerAt: string | null
+  /** A carrier: open to all, or access unknown. */
+  access: 'all' | 'unknown' | null
+  /** The system needs a permit. */
+  permit: boolean
+  /** Nothing chosen: ships / modules Spansh knows it sells (null: no shipyard / outfitting; 0: no list). */
+  shipCount: number | null
+  moduleCount: number | null
+}
+
+export interface ShopPlaceView {
+  systemName: string
+  systemAddress: string | null
+  distanceLy: number
+  jumps: number | null
+  /** The best first. */
+  stations: ShopStationView[]
+  /** Other stations there selling it. */
+  more: number
+}
+
+export interface ShopRankView {
+  navy: 'empire' | 'federation'
+  /** The rank the ship needs (game name). */
+  need: string
+  /** Yours, from the journal. */
+  have: string | null
+  ok: boolean | null
+}
+
+export interface ShopView {
+  state: 'ready' | 'unknown_item' | 'offline' | 'unknown_position' | 'failed'
+  /** What is looked for, e.g. "Frame Shift Drive 5A"; null: the nearest shipyards and outfitting. */
+  item: string | null
+  ship: string | null
+  pad: 'S' | 'M' | 'L' | null
+  carriers: boolean
+  places: ShopPlaceView[]
+  nearerCarrier: SellCarrierHint | null
+  rank: ShopRankView | null
+  unlock: ShopUnlock | null
+  searchedAt: string | null
+}
+
 export interface LiveStatus {
   timestamp: string | null
   flags: number
@@ -1040,6 +1123,7 @@ export type Topic =
   | 'session'
   | 'sessions'
   | 'sell'
+  | 'shop'
   | 'stats'
   | 'history'
   | 'route'

@@ -108,10 +108,21 @@ def stations(
 ) -> list[dict[str, Any]]:
     """The stations offering a service (Spansh's name, e.g. "Vista Genomics"), of the given
     types (Spansh's names) if any, nearest to `coords` first, with the fields app.selling reads."""
+    found = station_search({"services": [{"name": {"value": [service]}}]}, coords, size, types)
+    return [{k: r.get(k) for k in STATION_FIELDS} | {"services": _service_names(r)} for r in found]
+
+
+def station_search(
+    filters: dict[str, Any],
+    coords: tuple[float, float, float],
+    size: int,
+    types: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Stations matching `filters` (Spansh's form), of the given types if any, nearest to
+    `coords` first, as Spansh sends them (with the whole market, shipyard and outfitting)."""
     x, y, z = coords
-    filters: dict[str, Any] = {"services": [{"name": {"value": [service]}}]}
     if types:
-        filters["type"] = {"value": types}
+        filters = filters | {"type": {"value": types}}
     data = _post(
         STATIONS_SEARCH,
         {
@@ -122,11 +133,7 @@ def stations(
             "reference_coords": {"x": x, "y": y, "z": z},
         },
     )
-    return [
-        {k: r.get(k) for k in STATION_FIELDS} | {"services": _service_names(r)}
-        for r in data.get("results") or []
-        if isinstance(r, dict)
-    ]
+    return [r for r in data.get("results") or [] if isinstance(r, dict)]
 
 
 def _service_names(station: dict[str, Any]) -> list[str]:

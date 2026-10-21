@@ -10,6 +10,15 @@ export function readStored<T extends string>(key: string, allowed: readonly T[],
   }
 }
 
+/** A free-form stored string (null: none, or storage unavailable). */
+export function readStoredText(key: string): string | null {
+  try {
+    return localStorage.getItem(key) || null
+  } catch {
+    return null
+  }
+}
+
 export function writeStored(key: string, value: string): void {
   try {
     localStorage.setItem(key, value)

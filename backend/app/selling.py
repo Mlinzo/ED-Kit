@@ -129,7 +129,7 @@ def fits(pads: tuple[int, int, int] | None, pad: Pad | None) -> bool:
     return {"S": small + medium + large, "M": medium + large, "L": large}[pad] > 0
 
 
-def _time(value: Any) -> datetime | None:
+def parse_time(value: Any) -> datetime | None:
     if not isinstance(value, str) or not value:
         return None
     try:
@@ -167,7 +167,7 @@ def from_spansh(raw: dict[str, Any]) -> Station | None:
         cartographics=CARTOGRAPHICS in services,
         genomics=GENOMICS in services,
         pads=(pads[0], pads[1], pads[2]) if any(pads) else None,
-        seen_at=_time(raw.get("updated_at")),
+        seen_at=parse_time(raw.get("updated_at")),
         access=access_of(raw.get("carrier_docking_access")) if kind == "carrier" else None,
     )
 
@@ -195,7 +195,7 @@ def journal_stations(conn: sqlite3.Connection, fid: str | None) -> list[Station]
                 cartographics=bool(r["uc"]),
                 genomics=bool(r["vg"]),
                 pads=None if None in pads else (pads[0], pads[1], pads[2]),
-                seen_at=_time(r["ts"]),
+                seen_at=parse_time(r["ts"]),
                 docked=True,
                 access="unknown" if kind_of(r["station_type"]) == "carrier" else None,
             )
@@ -463,7 +463,7 @@ def sell_view(
             system_name=show[0].system_name,
             system_address=str(show[0].system_address) if show[0].system_address else None,
             distance_ly=round(distance, 1),
-            jumps=_jumps(distance, jump_range),
+            jumps=jumps_to(distance, jump_range),
             stations=[_station_view(s) for s in show],
             more=more,
         )
@@ -474,7 +474,7 @@ def sell_view(
             name=nearer[1].name,
             system_name=nearer[1].system_name,
             distance_ly=round(nearer[0], 1),
-            jumps=_jumps(nearer[0], jump_range),
+            jumps=jumps_to(nearer[0], jump_range),
         )
         if nearer is not None
         else None
@@ -482,7 +482,7 @@ def sell_view(
     return base.model_copy(update={"places": places, "nearer_carrier": hint})
 
 
-def _jumps(distance: float, jump_range: float | None) -> int | None:
+def jumps_to(distance: float, jump_range: float | None) -> int | None:
     if not jump_range or jump_range <= 0:
         return None
     return max(1, math.ceil(distance / jump_range)) if distance >= 0.5 else 0

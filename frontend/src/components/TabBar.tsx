@@ -38,7 +38,7 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
 
   return (
     <div role="tablist" aria-label={t.tabs.label} onKeyDown={onKeyDown} className="flex items-center gap-1">
-      {TABS.map(({ id, label, icon: Icon }) => {
+      {TABS.map(({ id, label, short, icon: Icon }) => {
         const active = id === tab
         return (
           <button
@@ -59,8 +59,13 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
             }`}
           >
             <Icon className={`size-4 ${active ? 'text-accent' : ''}`} aria-hidden />
-            {/* Icons only below xl: seven labels do not fit next to the rest of the bar there. */}
-            <span className="sr-only xl:not-sr-only">{label}</span>
+            {/* Icons only below xl, the short names up to 2xl: eight labels do not fit next to the rest of the bar there. */}
+            {short !== label && (
+              <span aria-hidden className="hidden xl:inline 2xl:hidden">
+                {short}
+              </span>
+            )}
+            <span className={short !== label ? 'sr-only 2xl:not-sr-only' : 'sr-only xl:not-sr-only'}>{label}</span>
             {id === 'surface' && surfaceLive && (
               <>
                 <LiveDot />
@@ -91,7 +96,7 @@ export function BottomTabs({ tab, onTab, surfaceLive }: TabProps) {
                 aria-current={active ? 'page' : undefined}
                 aria-controls={active ? panelId(id) : undefined}
                 onClick={() => onTab(id)}
-                className={`focus-ring relative flex h-16 w-full flex-col items-center justify-center gap-1 text-[10px] font-medium ${
+                className={`focus-ring relative flex h-16 w-full flex-col items-center justify-center gap-1 text-[10px] font-medium tracking-tight ${
                   active ? 'text-accent' : 'text-zinc-400 active:text-zinc-200'
                 }`}
               >

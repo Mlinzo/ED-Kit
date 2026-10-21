@@ -25,9 +25,10 @@ export const ru = {
     history: 'История',
     route: 'Маршрут',
     galaxy: 'Галактика',
+    shop: 'Магазин',
     surfaceActive: 'Идёт сбор образцов',
-    // The phone tab bar: seven tabs share a narrow screen, so the long names are shortened.
-    short: { system: 'Система', surface: 'Поверхн.', session: 'Сессия', stats: 'Стат.', history: 'История', route: 'Маршрут', galaxy: 'Галактика' },
+    // The phone tab bar and a mid-width top bar: eight tabs share the room, so long names are shortened.
+    short: { system: 'Система', surface: 'Поверх.', session: 'Сессия', stats: 'Стат.', history: 'История', route: 'Маршрут', galaxy: 'Галакт.', shop: 'Магазин' },
   },
 
   connection: {
@@ -729,6 +730,54 @@ export const ru = {
     east: 'В',
     south: 'Ю',
     west: 'З',
+  },
+
+  // Вкладка «Магазин»: ShopView и каталог кораблей и модулей (/api/shop/catalog).
+
+  shop: {
+    title: 'Магазин',
+    searchLabel: 'Найти корабль или модуль',
+    searchPlaceholder: 'Anaconda, FSD 5A, multi-cannon…',
+    searchClear: 'Очистить поиск',
+    noMatches: 'Ничего не нашлось',
+    browse: 'Выбрать из списка',
+    groups: { ships: 'Корабли', core: 'Основные', optional: 'Дополнительные', hardpoint: 'Оружие', utility: 'Вспомогательные' },
+    size: 'Класс',
+    rating: 'Рейтинг',
+    mount: 'Крепление',
+    mounts: { Fixed: 'фиксированное', Gimballed: 'шарнирное', Turreted: 'турель' },
+    guidance: 'Наведение',
+    guidances: { Dumbfire: 'неуправляемые', Seeker: 'самонаводящиеся' },
+    back: 'Все магазины',
+    backHint: 'Назад к ближайшим верфям и магазинам модулей',
+    nearest: 'Ближайшие верфи и магазины модулей',
+    whereToBuy: 'Где купить',
+    ships: (n: number) => `${n} ${plural(n, ['корабль', 'корабля', 'кораблей'])}`,
+    modules: (n: number) => `${n} ${plural(n, ['модуль', 'модуля', 'модулей'])}`,
+    noShipList: 'верфь, список неизвестен',
+    noModuleList: 'модули, список неизвестен',
+    dataAge: (ago: string) => `данные ${ago}`,
+    dataFrom: (date: string) => `данные: ${date}`,
+    oldDataHint: 'Данные давние: сейчас станция может продавать уже другое',
+    permit: 'пропуск',
+    permitHint: 'Для системы нужен пропуск',
+    rankNeeded: (navy: string, need: string) => `Нужен ранг ${navy}: ${need}`,
+    rankYours: (have: string) => `ваш: ${have}`,
+    navies: { empire: 'Имперского флота', federation: 'Федерального флота' },
+    unlock: {
+      powerplay: 'Модуль Powerplay: станции продают его только тем, кто его открыл, поэтому здесь их мало.',
+      techbroker: 'Сначала открывается у техброкера: станции продают его только тем, у кого он открыт, поэтому здесь их мало.',
+    },
+    padNote: (ship: string, pad: string) => `Только где сядет ваш ${ship} (${pad})`,
+    loading: 'Спрашиваю Spansh…',
+    failed: 'Spansh не ответил',
+    retry: 'Повторить',
+    offline: 'Нет сети: магазину нужен Spansh (приложение запущено с --offline)',
+    unknownPosition: 'Ваше положение пока неизвестно',
+    unknownItem: 'Такого нет в каталоге',
+    empty: 'Поблизости никто не видел это в продаже',
+    emptyShops: 'Поблизости не нашлось ни верфей, ни магазинов модулей',
+    source: 'Spansh: верфи и магазины модулей по отчётам игроков через EDDN',
   },
 
   session: {

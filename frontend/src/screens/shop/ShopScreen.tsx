@@ -1,0 +1,462 @@
+// The Shop tab: the nearest shipyards and outfitting as soon as it opens, and where to buy a
+// ship or a module once one is chosen, by words or from the lists. A module's class, mount,
+// rating and guidance are buttons above its results.
+
+import { ChevronDown, LoaderCircle, Navigation, Search, ShieldAlert, ShoppingCart, X } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useStore, useView } from '../../api/hooks'
+import type { ShopCatalogView, ShopModuleView, ShopPlaceView, ShopStationView, ShopVariantView, ShopView } from '../../api/types'
+import { CopyButton } from '../../components/CopyButton'
+import { Credits } from '../../components/Credits'
+import { CommunityGlyph } from '../../components/SourceBadge'
+import { Label } from '../../components/States'
+import { useNow } from '../../hooks/useNow'
+import { t } from '../../i18n'
+import { formatLs, formatLy, formatMonthYear, formatRelative } from '../../lib/format'
+import { readStored, readStoredText, writeStored } from '../../lib/storage'
+import { CarriersSwitch, NearerCarrier } from '../session/WhereToSell'
+import { lookup, optionsFor, searchCatalog, variantFor, type Pick, type Want } from './catalog'
+
+const ITEM_KEY = 'edk.shopItem'
+const CARRIERS_KEY = 'edk.shopCarriers'
+/** Reported earlier than this, a station's offer is marked as old. */
+const OLD_AFTER_MS = 30 * 86_400_000
+/** Reported earlier than this, the month is told instead of "1946 days ago". */
+const MONTH_AFTER_MS = 60 * 86_400_000
+
+type Group = 'ships' | ShopModuleView['category']
+const GROUPS: readonly Group[] = ['ships', 'core', 'optional', 'hardpoint', 'utility']
+
+let catalogRequest: Promise<ShopCatalogView> | null = null
+
+/** The catalog, fetched once per page load (it changes only with the app). */
+function useShopCatalog(): ShopCatalogView | null {
+  const store = useStore()
+  const [catalog, setCatalog] = useState<ShopCatalogView | null>(null)
+  useEffect(() => {
+    let alive = true
+    catalogRequest ??= store.transport.fetchJson<ShopCatalogView>('/api/shop/catalog')
+    catalogRequest.then(
+      (c) => alive && setCatalog(c),
+      () => {
+        catalogRequest = null
+      },
+    )
+    return () => {
+      alive = false
+    }
+  }, [store])
+  return catalog
+}
+
+function Chip({ active, onClick, children, title }: { active: boolean; onClick: () => void; children: ReactNode; title?: string }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      title={title}
+      className={`focus-ring min-h-9 rounded-lg px-2.5 py-1 text-left text-sm ring-1 ring-inset transition-colors ${
+        active ? 'bg-accent/15 font-medium text-zinc-50 ring-accent/50' : 'bg-zinc-800/50 text-zinc-300 ring-zinc-700/70 hover:bg-zinc-800 hover:text-zinc-50'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function pickLabel(p: Pick): string {
+  if (p.kind === 'ship') return p.ship.name
+  const v = p.want.size !== undefined ? variantFor(p.module, p.want) : null
+  return v ? `${p.module.name} ${v.size}${v.rating}` : p.module.name
+}
+
+/** "Frame Shift Drive 5A", "Multi-Cannon 1G · gimballed". */
+function variantTitle(module: ShopModuleView, v: ShopVariantView): string {
+  const extra = [v.mount && t.shop.mounts[v.mount], v.guidance && t.shop.guidances[v.guidance]].filter(Boolean)
+  return [`${module.name} ${v.size}${v.rating}`, ...extra].join(' · ')
+}
+
+/** Search by words, and the lists by group (always shown on a wide screen, folded on a phone). */
+function Picker({
+  catalog,
+  chosen,
+  want,
+  onChoose,
+}: {
+  catalog: ShopCatalogView | null
+  /** The chosen ship's symbol or module's name. */
+  chosen: string | null
+  /** The chosen module's variant: another module keeps its class and rating where it has them. */
+  want: Want
+  onChoose: (symbol: string) => void
+}) {
+  const s = t.shop
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [group, setGroup] = useState<Group>('ships')
+  const found = catalog && query.trim() ? searchCatalog(catalog, query) : []
+  const choose = (p: Pick) => {
+    onChoose(p.kind === 'ship' ? p.ship.symbol : variantFor(p.module, { ...want, ...p.want }).symbol)
+    setQuery('')
+    setOpen(false)
+  }
+  const listed: Pick[] = !catalog
+    ? []
+    : group === 'ships'
+      ? catalog.ships.map((ship) => ({ kind: 'ship', ship }))
+      : catalog.modules.filter((m) => m.category === group).map((module) => ({ kind: 'module', module, want: {} }))
+
+  return (
+    <section
+      aria-label={s.searchLabel}
+      className="rounded-2xl bg-zinc-900/50 p-4 ring-1 ring-zinc-800 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto"
+    >
+      <label className="relative block">
+        <span className="sr-only">{s.searchLabel}</span>
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" aria-hidden />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && found[0]) choose(found[0])
+            if (e.key === 'Escape') setQuery('')
+          }}
+          placeholder={s.searchPlaceholder}
+          className="focus-ring h-11 w-full rounded-lg bg-zinc-950/60 pr-10 pl-9 text-base text-zinc-100 ring-1 ring-zinc-700 ring-inset placeholder:text-zinc-500 sm:h-10 sm:text-sm"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            aria-label={s.searchClear}
+            className="focus-ring absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
+        )}
+      </label>
+
+      {query.trim() !== '' && (
+        <div className="mt-2">
+          {found.length === 0 ? (
+            <p className="px-1 py-2 text-sm text-zinc-500">{s.noMatches}</p>
+          ) : (
+            <ul className="space-y-1">
+              {found.map((p) => (
+                <li key={p.kind === 'ship' ? p.ship.symbol : p.module.name}>
+                  <button
+                    type="button"
+                    onClick={() => choose(p)}
+                    className="focus-ring flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-3 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+                  >
+                    <span className="min-w-0 break-words">{pickLabel(p)}</span>
+                    <span className="shrink-0 text-xs text-zinc-500">{s.groups[p.kind === 'ship' ? 'ships' : p.module.category]}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="focus-ring mt-3 flex h-10 w-full items-center justify-between rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 lg:hidden"
+      >
+        {s.browse}
+        <ChevronDown className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+      </button>
+      <div className={open ? 'mt-3' : 'mt-3 hidden lg:block'}>
+        <div role="group" aria-label={s.browse} className="flex flex-wrap gap-1.5">
+          {GROUPS.map((g) => (
+            <button
+              key={g}
+              type="button"
+              aria-pressed={g === group}
+              onClick={() => setGroup(g)}
+              className={`focus-ring h-9 rounded-lg px-3 text-sm font-medium transition-colors ${
+                g === group ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'
+              }`}
+            >
+              {s.groups[g]}
+            </button>
+          ))}
+        </div>
+        <ul className="mt-3 flex flex-wrap gap-1.5">
+          {listed.map((p) => {
+            const key = p.kind === 'ship' ? p.ship.symbol : p.module.name
+            return (
+              <li key={key}>
+                <Chip active={key === chosen} onClick={() => choose(p)}>
+                  {p.kind === 'ship' ? p.ship.name : p.module.name}
+                </Chip>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+/** Class, mount, rating and guidance of the chosen module: only the choices that exist. */
+function Variants({ module, variant, onChoose }: { module: ShopModuleView; variant: ShopVariantView; onChoose: (symbol: string) => void }) {
+  const s = t.shop
+  const options = optionsFor(module, variant)
+  const set = (want: Want) => onChoose(variantFor(module, { ...variant, ...want }).symbol)
+  const rows: { label: string; items: { key: string; label: string; active: boolean; want: Want }[] }[] = [
+    { label: s.size, items: options.sizes.map((size) => ({ key: String(size), label: String(size), active: size === variant.size, want: { size } })) },
+    { label: s.mount, items: options.mounts.map((mount) => ({ key: mount, label: s.mounts[mount], active: mount === variant.mount, want: { mount } })) },
+    { label: s.rating, items: options.ratings.map((rating) => ({ key: rating, label: rating, active: rating === variant.rating, want: { rating } })) },
+    {
+      label: s.guidance,
+      items: options.guidances.map((guidance) => ({ key: guidance, label: s.guidances[guidance], active: guidance === variant.guidance, want: { guidance } })),
+    },
+  ]
+  return (
+    <div className="mt-3 space-y-2">
+      {rows
+        .filter((row) => row.items.length > 1)
+        .map((row) => (
+          <div key={row.label} className="flex flex-wrap items-center gap-1.5">
+            <span className="w-20 shrink-0 text-xs text-zinc-500">{row.label}</span>
+            {row.items.map((item) => (
+              <Chip key={item.key} active={item.active} onClick={() => set(item.want)}>
+                {item.label}
+              </Chip>
+            ))}
+          </div>
+        ))}
+    </div>
+  )
+}
+
+function Station({ station, now }: { station: ShopStationView; now: number }) {
+  const s = t.shop
+  const sell = t.session.sell
+  const age = station.offerAt !== null ? now - Date.parse(station.offerAt) : 0
+  const counts = [
+    station.shipCount === null ? null : station.shipCount > 0 ? s.ships(station.shipCount) : s.noShipList,
+    station.moduleCount === null ? null : station.moduleCount > 0 ? s.modules(station.moduleCount) : s.noModuleList,
+  ].filter((x) => x !== null)
+  return (
+    <li className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <span className="min-w-0 break-words text-zinc-200">{station.name}</span>
+      <span className="text-zinc-500">
+        {sell.kind[station.kind]}
+        {station.distLs !== null && ` · ${formatLs(station.distLs)}`}
+      </span>
+      {station.price !== null && <Credits value={station.price} className="font-medium text-zinc-100 tabular-nums" />}
+      {counts.length > 0 && <span className="text-zinc-400">{counts.join(' · ')}</span>}
+      {station.permit && (
+        <span title={s.permitHint} className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-200 ring-1 ring-amber-400/25 ring-inset">
+          {s.permit}
+        </span>
+      )}
+      {station.access && (
+        <span className={`text-xs ${station.access === 'all' ? 'text-zinc-400' : 'text-amber-200/70'}`}>{sell.access[station.access]}</span>
+      )}
+      {station.offerAt && (
+        <span className={`text-xs ${age > OLD_AFTER_MS ? 'text-amber-200/70' : 'text-zinc-500'}`} title={age > OLD_AFTER_MS ? s.oldDataHint : undefined}>
+          {age > MONTH_AFTER_MS ? s.dataFrom(formatMonthYear(station.offerAt)) : s.dataAge(formatRelative(station.offerAt, now))}
+        </span>
+      )}
+    </li>
+  )
+}
+
+function Place({ place, now, onRouteTo }: { place: ShopPlaceView; now: number; onRouteTo: (system: string) => void }) {
+  const here = place.distanceLy < 0.5
+  return (
+    <li className="py-3">
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="min-w-0 font-medium break-words text-zinc-50">{place.systemName}</span>
+          <CopyButton text={place.systemName} />
+        </div>
+        <div className="flex items-baseline gap-2 sm:block sm:shrink-0 sm:text-right">
+          <div className="font-semibold whitespace-nowrap text-zinc-50 tabular-nums">{here ? t.route.youAreHere : formatLy(place.distanceLy)}</div>
+          {!here && place.jumps ? <div className="text-xs whitespace-nowrap text-zinc-500">{t.route.jumps(place.jumps)}</div> : null}
+        </div>
+      </div>
+      <ul className="mt-1 space-y-1">
+        {place.stations.map((station) => (
+          <Station key={station.name} station={station} now={now} />
+        ))}
+      </ul>
+      {place.more > 0 && <p className="mt-1 text-xs text-zinc-500">{t.session.sell.more(place.more)}</p>}
+      {!here && (
+        <button
+          type="button"
+          onClick={() => onRouteTo(place.systemName)}
+          title={t.route.goalHint.transit}
+          className="focus-ring mt-2 inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
+        >
+          <Navigation className="size-3.5" aria-hidden />
+          {t.session.sell.routeHere}
+        </button>
+      )}
+    </li>
+  )
+}
+
+function Status({ view, failed, onRetry }: { view: ShopView | null; failed: boolean; onRetry: () => void }) {
+  const s = t.shop
+  if (!view && !failed)
+    return (
+      <p className="mt-3 flex items-center gap-2 text-sm text-zinc-400" role="status">
+        <LoaderCircle className="size-4 shrink-0 animate-spin text-zinc-500" aria-hidden />
+        {s.loading}
+      </p>
+    )
+  const text =
+    !view || view.state === 'failed'
+      ? s.failed
+      : view.state === 'offline'
+        ? s.offline
+        : view.state === 'unknown_position'
+          ? s.unknownPosition
+          : view.state === 'unknown_item'
+            ? s.unknownItem
+            : view.places.length === 0 && !view.nearerCarrier
+              ? view.item
+                ? s.empty
+                : s.emptyShops
+              : null
+  if (!text) return null
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-400" role="status">
+      <p>{text}</p>
+      {(!view || view.state === 'failed') && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="focus-ring h-10 rounded-lg bg-zinc-800 px-3 font-medium text-zinc-100 ring-1 ring-zinc-700 ring-inset hover:bg-zinc-700 sm:h-8"
+        >
+          {s.retry}
+        </button>
+      )}
+    </div>
+  )
+}
+
+export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void }) {
+  const s = t.shop
+  const catalog = useShopCatalog()
+  const now = useNow()
+  const [symbol, setSymbol] = useState<string | null>(() => readStoredText(ITEM_KEY))
+  const [carriers, setCarriers] = useState(() => readStored(CARRIERS_KEY, ['on', 'off'], 'off') === 'on')
+  const params: Record<string, string> = {}
+  if (symbol) params.item = symbol
+  if (carriers) params.carriers = 'true'
+  const { data, error, refetch } = useView('shop', params)
+  // The answer for the previous choice stays while the new one loads.
+  const [last, setLast] = useState<ShopView | null>(null)
+  if (data && data !== last) setLast(data)
+  const view = data ?? last
+
+  const choose = (next: string | null) => {
+    setSymbol(next)
+    writeStored(ITEM_KEY, next ?? '')
+  }
+  const toggleCarriers = (on: boolean) => {
+    setCarriers(on)
+    writeStored(CARRIERS_KEY, on ? 'on' : 'off')
+  }
+  const results = useRef<HTMLElement>(null)
+  /** Chosen in the search or the lists: on a phone the results are below them, so go there. */
+  const chooseAndShow = (next: string) => {
+    choose(next)
+    if (window.matchMedia('(max-width: 1023px)').matches)
+      requestAnimationFrame(() => results.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+  const chosen = catalog && symbol ? lookup(catalog, symbol) : null
+  const want: Want = chosen?.kind === 'module' ? chosen.variant : {}
+  const title = chosen ? (chosen.kind === 'ship' ? chosen.ship.name : chosen.module.name) : null
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+      <Picker
+        catalog={catalog}
+        chosen={chosen ? (chosen.kind === 'ship' ? chosen.ship.symbol : chosen.module.name) : null}
+        want={want}
+        onChoose={chooseAndShow}
+      />
+      <section ref={results} aria-labelledby="shop-title" className="min-w-0 scroll-mt-20 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0">
+            <Label className="flex items-center gap-2">
+              <ShoppingCart className="size-4" aria-hidden />
+              {title ? s.whereToBuy : s.nearest}
+            </Label>
+            {title && (
+              <h2 id="shop-title" className="mt-1 text-xl font-semibold break-words text-zinc-50">
+                {chosen?.kind === 'module' ? variantTitle(chosen.module, chosen.variant) : title}
+              </h2>
+            )}
+            {!title && <h2 id="shop-title" className="sr-only">{s.nearest}</h2>}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {title && (
+              <button
+                type="button"
+                onClick={() => choose(null)}
+                title={s.backHint}
+                className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
+              >
+                <X className="size-3.5" aria-hidden />
+                {s.back}
+              </button>
+            )}
+            <CarriersSwitch on={carriers} onChange={toggleCarriers} />
+          </div>
+        </div>
+
+        {chosen?.kind === 'module' && <Variants module={chosen.module} variant={chosen.variant} onChoose={choose} />}
+
+        {view?.ship && view.pad && (
+          <p className="mt-3 text-xs text-zinc-500">{s.padNote(view.ship, t.session.sell.pad[view.pad])}</p>
+        )}
+        {data?.rank && (
+          <p
+            className={`mt-3 flex items-start gap-2 rounded-xl p-3 text-sm ring-1 ${
+              data.rank.ok === false ? 'bg-amber-500/10 text-amber-100 ring-amber-400/25' : 'bg-zinc-800/40 text-zinc-300 ring-zinc-700/60'
+            }`}
+          >
+            <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>
+              {s.rankNeeded(s.navies[data.rank.navy], data.rank.need)}
+              {data.rank.have && ` · ${s.rankYours(data.rank.have)}`}
+            </span>
+          </p>
+        )}
+        {data?.unlock && <p className="mt-3 rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{s.unlock[data.unlock]}</p>}
+
+        <Status view={data} failed={error !== null} onRetry={refetch} />
+        {view && !carriers && view.nearerCarrier && <NearerCarrier hint={view.nearerCarrier} onShow={() => toggleCarriers(true)} />}
+        {view && view.places.length > 0 && (
+          <ol className={`mt-1 divide-y divide-zinc-800/80 ${data ? '' : 'opacity-60'}`}>
+            {view.places.map((place) => (
+              <Place key={place.systemAddress ?? place.systemName} place={place} now={now} onRouteTo={onRouteTo} />
+            ))}
+          </ol>
+        )}
+        {view && (view.searchedAt || view.carriers) && (
+          <div className="mt-2 space-y-1 border-t border-zinc-800/80 pt-3 text-xs text-zinc-500">
+            {view.searchedAt && (
+              <p className="flex items-center gap-1.5">
+                <CommunityGlyph />
+                {s.source} · {formatRelative(view.searchedAt, now)}
+              </p>
+            )}
+            {view.carriers && <p>{t.session.sell.carriers}</p>}
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}

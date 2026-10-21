@@ -40,6 +40,7 @@ from app import (
     routes,
     selling,
     sessions,
+    shop,
     stats,
     usersettings,
     views,
@@ -64,6 +65,8 @@ from app.schemas import (
     SellView,
     SessionsView,
     SessionView,
+    ShopCatalogView,
+    ShopView,
     StatsView,
     SurfaceView,
     SystemView,
@@ -121,6 +124,7 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         if settings.online
         else None
     )
+    shops = shop.ShopFinder(settings.db_path) if settings.online else None
     if rebuild:
         service.request_rebuild()
     local = threading.local()
@@ -180,6 +184,17 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         conn = read_conn()
         fid = active_fid(conn)
         return selling.sell_view(conn, fid, views.cmdr_state(conn, fid), sellers, carriers)
+
+    @app.get("/api/shop/catalog", response_model=ShopCatalogView, response_model_by_alias=True)
+    def shop_catalog() -> ShopCatalogView:
+        """The ships and modules the Shop tab can look for."""
+        return shop.catalog_view()
+
+    @app.get("/api/view/shop", response_model=ShopView, response_model_by_alias=True)
+    def view_shop(item: str | None = None, carriers: bool = False) -> ShopView:
+        """The nearest stations selling a ship or module (journal symbol), asked from Spansh."""
+        conn = read_conn()
+        return shop.shop_view(conn, views.cmdr_state(conn, active_fid(conn)), shops, item, carriers)
 
     @app.get("/api/view/stats", response_model=StatsView, response_model_by_alias=True)
     def view_stats() -> StatsView:

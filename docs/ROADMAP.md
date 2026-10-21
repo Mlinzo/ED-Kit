@@ -50,6 +50,16 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Shop tab (2026-10-21): on opening, the nearest shipyards and outfitting with how many ships and
+  modules Spansh knows each sells; choose a ship or a module by words ("fsd 5a", "dbx", "mc
+  gimballed") or from the lists (ships; core, optional, hardpoints, utility), and a module's class,
+  mount, rating and missile guidance are buttons. The nearest stations selling exactly that, with
+  price, the date of the station's report (old ones marked; Spansh had shipyards from 2021), "Route
+  here", the pad your ship needs; carriers on request as in "Where to sell". Told, not filtered:
+  the navy rank a ship needs against yours (journal), modules unlocked through Powerplay or a
+  technology broker, permit-locked systems. The catalog (48 ships, 136 modules) comes from EDCD
+  FDevIDs under Spansh's names, minus what no station sells (`tools/shop_catalog.py`). Eight tabs:
+  the top bar shows short names between xl and 2xl, the phone bar is tighter.
 - The ×5 exobiology bonus as "likely" (2026-10-21): the game pays it per species for "First
   Logged" (nobody handed that species in from that body before you), and the app can only guess it
   from "nobody landed here" in an unpopulated system. The guess failed on HR 1172 A 8 a: no footfall
