@@ -309,7 +309,7 @@ CREATE TABLE IF NOT EXISTS organic_scans(
   samples INTEGER NOT NULL,
   status TEXT NOT NULL,
   sale TEXT NOT NULL DEFAULT 'unsold',
-  first_footfall INTEGER NOT NULL DEFAULT 0,
+  first_footfall INTEGER NOT NULL DEFAULT 0,  -- the x5 bonus counted (exobio.bonus_likely)
   was_logged INTEGER NOT NULL DEFAULT 0,  -- WasLogged seen: handed in before you, no bonus
   value INTEGER,
   bonus INTEGER,

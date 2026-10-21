@@ -7,6 +7,7 @@ Public API (used by the projector and views — keep signatures stable):
     predict(body, system, genuses=None) -> list[Prediction]
     genus_ranges(predictions, genuses, skip) / range_total(ranges, slots)  # value estimates
     deduced_genera(predictions, signals, known) -> set[str]  # sure before DSS
+    bonus_likely(body, populated) -> bool  # the x5 bonus counted for its species
     FIRST_FOOTFALL_MULTIPLIER
 
 Modules: `catalog` (names, values, colony ranges), `rules` (where each species grows),
@@ -44,6 +45,7 @@ __all__ = [
     "GENERA",
     "SPECIES",
     "GenusInfo",
+    "bonus_likely",
     "deduced_genera",
     "genus_ranges",
     "get_genus",
@@ -56,6 +58,19 @@ __all__ = [
 # on before: Vista Genomics pays base x 5. In `SellOrganicData` this shows up as
 # `Value` = base and `Bonus` = 4 x base. The bonus is not paid in populated systems.
 FIRST_FOOTFALL_MULTIPLIER = 5
+
+
+def bonus_likely(body: BodyFacts, populated: bool | None) -> bool:
+    """Whether the x5 bonus is counted for the species of a body: nobody has mapped it or
+    walked on it, outside a populated system.
+
+    The game pays it for handing a species in first ("First Logged"), which the journal does
+    not tell. A footfall can be missing from the record (HR 1172 A 8 a: no footfall, every
+    species logged by others), while whoever samples a planet nearly always maps it with the
+    DSS first, and the first map is reliably recorded. Older journals without the flags: no.
+    """
+    return body.was_footfalled is False and body.was_mapped is False and not populated
+
 
 _ENTRIES: tuple[tuple[Species, SpeciesRule], ...] = tuple(
     (SPECIES_BY_CODE[code], rule) for code, rule in RULES.items()

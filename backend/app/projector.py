@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 14
+VERSION = 15
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -157,17 +157,17 @@ class Projector:
             (self.fid, ts, address, how),
         )
 
-    def _first_footfall(self, system_address: int, body_id: int) -> bool:
-        """Whether a first-footfall bonus applies: nobody walked here, system unpopulated."""
+    def _bonus_likely(self, system_address: int, body_id: int) -> bool:
+        """Whether the x5 bonus is counted (`exobio.bonus_likely`)."""
         row = self.conn.execute(
             "SELECT b.facts, s.population FROM bodies b "
             "LEFT JOIN systems s ON s.address = b.system_address "
             "WHERE b.system_address = ? AND b.body_id = ?",
             (system_address, body_id),
         ).fetchone()
-        if row is None or row["population"]:
+        if row is None:
             return False
-        return facts_from_json(row["facts"]).was_footfalled is False
+        return exobio.bonus_likely(facts_from_json(row["facts"]), bool(row["population"]))
 
     # ------------------------------------------------------------------ commander
 
@@ -626,7 +626,7 @@ class Projector:
 
     def _new_organic_scan(self, ev: dict[str, Any], samples: int, ts: str) -> int:
         address, body_id = int(ev["SystemAddress"]), int(ev["Body"])
-        first_footfall = self._first_footfall(address, body_id)
+        first_footfall = self._bonus_likely(address, body_id)
         # A later session may write WasLogged: false again; what was seen once stays.
         was_logged = self.conn.execute(
             "SELECT 1 FROM organic_scans WHERE fid = ? AND system_address = ? AND body_id = ? "

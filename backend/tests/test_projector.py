@@ -179,6 +179,26 @@ def test_was_logged_rules_out_the_bonus(conn: sqlite3.Connection, proj: Projecto
     assert surface.active_scan.bonus_value == surface.active_scan.value
 
 
+def test_no_bonus_on_a_mapped_body(conn: sqlite3.Connection, proj: Projector) -> None:
+    # Nobody walked here (as recorded), but someone mapped it: they most likely sampled too.
+    feed(conn, proj, [CMDR, jump(), scan_planet(WasDiscovered=True, WasMapped=True)])
+    feed(
+        conn,
+        proj,
+        [
+            organic("Log", "2026-10-15T20:48:00Z"),
+            organic("Sample", "2026-10-15T20:49:00Z"),
+            organic("Analyse", "2026-10-15T20:49:05Z"),
+        ],
+    )
+    row = conn.execute("SELECT first_footfall, bonus FROM organic_scans").fetchone()
+    assert (row["first_footfall"], row["bonus"]) == (0, 0)
+    [species] = [
+        s for s in views.system_view(conn, "F1").bodies[0].species if s.status == "analysed"
+    ]
+    assert species.bonus_value == species.value and not species.bonus_ruled_out
+
+
 def test_sale_and_death(conn: sqlite3.Connection, proj: Projector) -> None:
     feed(conn, proj, [CMDR, jump(), scan_planet(), scan_planet(body_id=25)])
     for t, ts in (

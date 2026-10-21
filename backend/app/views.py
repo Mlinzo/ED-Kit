@@ -96,11 +96,9 @@ def cmdr_state(conn: sqlite3.Connection, fid: str | None) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM cmdr_state WHERE fid = ?", (fid,)).fetchone()
 
 
-def _footfall_multiplier(facts: BodyFacts, system: SystemFacts) -> int:
-    """First-footfall bonus applies on untouched bodies in unpopulated systems."""
-    if facts.was_footfalled is False and not system.populated:
-        return exobio.FIRST_FOOTFALL_MULTIPLIER
-    return 1
+def _bonus_multiplier(facts: BodyFacts, system: SystemFacts) -> int:
+    """x5 where the bonus is likely (`exobio.bonus_likely`), else 1."""
+    return exobio.FIRST_FOOTFALL_MULTIPLIER if exobio.bonus_likely(facts, system.populated) else 1
 
 
 def _species_names(symbol: str, fallback_name: str | None) -> tuple[str, str, int, int]:
@@ -130,7 +128,7 @@ def _build_species(
 ) -> tuple[list[SpeciesView], int, int, int, int]:
     """Species list for a body, (min, max) estimated bio value incl. bonus, and how many
     certain / uncertain species would be new codex entries."""
-    multiplier = _footfall_multiplier(facts, system)
+    multiplier = _bonus_multiplier(facts, system)
     views: list[SpeciesView] = []
     seen_genera: set[str] = set()
     confirmed_values: list[int] = []
@@ -657,7 +655,7 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
             body = _body_view(
                 conn, system, facts, fid, bool(state["odyssey"]), codex, usersettings.load(conn)
             )
-            multiplier = _footfall_multiplier(facts, system)
+            multiplier = _bonus_multiplier(facts, system)
 
     active_view: ActiveScanView | None = None
     if active is not None:

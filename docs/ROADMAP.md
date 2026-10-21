@@ -60,6 +60,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   technology broker, permit-locked systems. The catalog (48 ships, 136 modules) comes from EDCD
   FDevIDs under Spansh's names, minus what no station sells (`tools/shop_catalog.py`). Eight tabs:
   the top bar shows short names between xl and 2xl, the phone bar is tighter.
+- The ×5 bonus only on planets nobody mapped (2026-10-21): besides no recorded footfall and no
+  population, `WasMapped` must be false (`exobio.bonus_likely`): whoever samples a planet nearly
+  always maps it first, and the first map is recorded reliably, unlike the footfall (HR 1172 A 8 a
+  and A 8 d: no footfall recorded, both mapped, every species logged by others). Routes never
+  counted the bonus.
 - The ×5 exobiology bonus as "likely" (2026-10-21): the game pays it per species for "First
   Logged" (nobody handed that species in from that body before you), and the app can only guess it
   from "nobody landed here" in an unpopulated system. The guess failed on HR 1172 A 8 a: no footfall
