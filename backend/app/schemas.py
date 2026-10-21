@@ -221,6 +221,7 @@ class ActiveScanView(CamelModel):
     codex: CodexStatus
     samples: int  # 1..3 (Log counts as the first sample)
     points: list[SamplePoint]  # positions of taken samples
+    colour: str | None = None  # "Teal": the journal names the variant
 
 
 class SurfaceView(CamelModel):
@@ -272,9 +273,38 @@ class SellView(CamelModel):
     searched_at: str | None  # when Spansh was asked (ISO)
 
 
+class ShopShipStats(CamelModel):
+    """A ship as sold (EDSY): base price, stock performance and its slots."""
+
+    pad: str | None  # S | M | L
+    price: int | None  # base price, credits
+    speed: int | None  # m/s
+    boost: int | None
+    shields: int | None  # base strength (MJ)
+    armour: int | None  # base hull
+    mass: float | None  # hull, t
+    hardness: int | None
+    masslock: int | None
+    crew: int | None  # seats
+    core: list[int]  # power plant, thrusters, FSD, life support, distributor, sensors, tank
+    internal: list[int]  # optional internal sizes
+    military: list[int]  # military slot sizes
+    hardpoints: list[int]  # 1 small .. 4 huge
+    utility: int  # utility mounts
+    fighter_bay: bool = False  # a fighter hangar fits
+
+
+class ShopRankNeed(CamelModel):
+    navy: str  # empire | federation
+    need: str  # the rank's game name
+
+
 class ShopShipView(CamelModel):
     symbol: str  # journal symbol, lower case
     name: str
+    stats: ShopShipStats | None = None
+    rank: ShopRankNeed | None = None  # the navy rank needed to buy it
+    unsold: bool = False  # no station sells it yet (a new ship, for ARX first)
 
 
 class ShopVariantView(CamelModel):
@@ -283,11 +313,17 @@ class ShopVariantView(CamelModel):
     rating: str
     mount: str | None  # Fixed | Gimballed | Turreted
     guidance: str | None  # Dumbfire | Seeker
+    price: int | None = None  # credits (EDSY)
+    mass: float | None = None  # t
+    power: float | None = None  # MW
+    integrity: int | None = None
+    stats: dict[str, float] = {}  # the figures of its kind, EDSY attribute -> value
 
 
 class ShopModuleView(CamelModel):
     name: str
     category: str  # core | optional | hardpoint | utility
+    type: str | None = None  # EDSY module type (cfsd, isg, hmc...): its icon
     unlock: str | None  # powerplay | techbroker: sold only to commanders who unlocked it
     variants: list[ShopVariantView]
 

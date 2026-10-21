@@ -209,6 +209,7 @@ export function SurfaceScreen() {
             <Label>{activeScan.genus}</Label>
             <h1 id="scan-title" className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
               {activeScan.species}
+              {activeScan.colour && <span className="font-normal text-zinc-400"> · {activeScan.colour}</span>}
             </h1>
             <CodexBadge status={activeScan.codex} size="md" className="mt-2" />
             <p className="mt-2 text-sm text-zinc-500">

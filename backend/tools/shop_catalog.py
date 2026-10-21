@@ -3,9 +3,16 @@
 Ships and modules come from EDCD FDevIDs (`shipyard.csv`, `outfitting.csv`), the tables EDMC
 and Spansh name them by. Left out: suits and on-foot gear, ship armour (each ship's own, sold
 wherever the ship is serviced), and anything Spansh has at no station at all (Guardian modules,
-removed scanners...): asked one by one, a minute or so. A module is listed under the name
+removed scanners...): asked one by one, a minute or so. The starter kit's `_free` copies
+of modules are left out too. A module is listed under the name
 Spansh uses (they differ for one fighter hangar), with its variants (class, rating, mount,
 missile guidance) by journal symbol.
+
+Prices and characteristics come from EDSY's data (https://edsy.org/eddb.js; EDSY by taleden,
+CC BY-NC 4.0; the game data in it is Frontier's): a ship's base price, speeds, shields, armour,
+hull mass, hardness, mass lock, crew seats, slots and whether a fighter hangar fits; a module's
+price, mass, power draw, integrity and the figures of its kind (`STAT_KEYS`). EDSY's file is
+JavaScript: Node reads it.
 
     uv run python tools/shop_catalog.py
 """
@@ -15,6 +22,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import subprocess
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -22,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 FDEVIDS = "https://raw.githubusercontent.com/EDCD/FDevIDs/master/"
+EDSY = "https://edsy.org/eddb.js"
 SPANSH = "https://spansh.co.uk/api/stations/search"
 OUT = Path(__file__).resolve().parents[1] / "app" / "data" / "shop.json"
 HEADERS = {"User-Agent": "EDExplorerKit-tools", "Content-Type": "application/json"}
@@ -43,6 +52,70 @@ TECH_BROKER = (
     "STABILISER",
     "CORROSION",
 )
+
+
+# Module figures kept, in the order a card lists them (EDSY attribute names).
+STAT_KEYS = (
+    "fsdoptmass", "maxfuel", "jumpbst", "fuelcap", "emgcylife", "pwrcap", "heateff",
+    "wepcap", "wepchg", "engcap", "engchg", "syscap", "syschg", "maxrng",
+    "engoptmass", "engoptmul", "genoptmass", "genmaxmass", "genoptmul", "shieldbst",
+    "kinres", "thmres", "expres", "hullrnf", "dmgprot", "shieldrnfps", "scbdur", "spinup",
+    "dps", "damage", "maximumrng", "rof", "ammoclip", "ammomax", "distdraw", "thmload",
+    "afmrepcap", "maxlimpet", "lpactrng", "cargocap", "scooprate", "cabincap", "bins",
+    "vslots", "scanrng", "hsdur",
+)  # fmt: skip
+PADS = {1: "S", 2: "M", 3: "L"}
+
+
+def edsy() -> dict[str, Any]:
+    """EDSY's ships and modules (its file is a script: Node evaluates it)."""
+    req = urllib.request.Request(EDSY, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310
+        source = resp.read().decode("utf-8-sig")
+    script = (
+        "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{"
+        "const e=new Function(s+';return eddb;')();"
+        "process.stdout.write(JSON.stringify({ship:e.ship,module:e.module},"
+        "(k,v)=>typeof v==='number'&&!isFinite(v)?null:v))})"
+    )
+    out = subprocess.run(
+        ["node", "-e", script], input=source, capture_output=True, text=True, encoding="utf-8",
+        check=True, shell=False,
+    )  # fmt: skip
+    return json.loads(out.stdout)
+
+
+def ship_stats(e: dict[str, Any], hangar: set[str]) -> dict[str, Any]:
+    slots = e["slots"]
+    return {
+        "pad": PADS.get(e.get("class")),
+        "price": e.get("retail"),
+        "speed": e.get("topspd"),
+        "boost": e.get("bstspd"),
+        "shields": e.get("shields"),
+        "armour": e.get("armour"),
+        "mass": e.get("mass"),
+        "hardness": e.get("hardness"),
+        "masslock": e.get("masslock"),
+        "crew": e.get("crew"),
+        # EDSY's components start with the bulkheads (size 1 as a placeholder): left out.
+        "core": slots["component"][1:],
+        "internal": slots["internal"],
+        "military": slots.get("military") or [],
+        "hardpoints": [n for n in slots["hardpoint"] if n > 0],
+        "utility": sum(1 for n in slots["hardpoint"] + slots["utility"] if n == 0),
+        "fighter_bay": str(e["id"]) in hangar,
+    }
+
+
+def module_stats(e: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "price": e.get("cost"),
+        "mass": e.get("mass", 0),
+        "power": e.get("pwrdraw", 0),
+        "integrity": e.get("integ"),
+        "stats": {k: e[k] for k in STAT_KEYS if isinstance(e.get(k), int | float)},
+    }
 
 
 def _get(path: str) -> list[dict[str, str]]:
@@ -80,22 +153,51 @@ def unlock_of(entitlement: str) -> str | None:
 
 def build() -> dict[str, Any]:
     names = spansh_names()
+    data = edsy()
+    edsy_ships = {str(e["fdname"]).lower(): e for e in data["ship"].values() if e.get("fdname")}
+    edsy_modules = {str(e["fdname"]).lower(): e for e in data["module"].values() if e.get("fdname")}
+    # The ships a fighter hangar fits: EDSY lists them in each hangar's `reserved` (ship ids).
+    hangar = {
+        ship_id
+        for e in data["module"].values()
+        if e.get("mtype") == "ifh" and not e.get("hidden")
+        for ship_id in e.get("reserved") or {}
+    }
     ships = [
         {"symbol": r["symbol"].lower(), "name": r["name"]}
+        | (
+            {"stats": ship_stats(edsy_ships[r["symbol"].lower()], hangar)}
+            if r["symbol"].lower() in edsy_ships
+            else {}
+        )
         for r in _get("shipyard.csv")
         if r["entitlement"] != "removed"
     ]
+    # Ships newer than FDevIDs (EDSY lists them first): kept even when no station sells them yet
+    # (a new ship comes out for ARX first), marked `unsold`.
+    listed = {s["symbol"] for s in ships}
+    newer = [
+        {"symbol": symbol, "name": e["name"], "stats": ship_stats(e, hangar)}
+        for symbol, e in edsy_ships.items()
+        if symbol not in listed and e.get("stype") == "sh" and e.get("slots")
+    ]
+    ships += newer
     modules: dict[str, dict[str, Any]] = {}
     for r in _get("outfitting.csv"):
         category = CATEGORIES.get(r["category"])
+        symbol = r["symbol"].lower()
         if category is None or r["ship"] or r["entitlement"] in ("removed", "?"):
             continue  # suits, armour, gone from the game
-        symbol = r["symbol"].lower()
+        if symbol.endswith("_free"):
+            continue  # the starter kit's copies of a module: never sold
         name = names.get(symbol, r["name"])
+        found = edsy_modules.get(symbol)
         item = modules.setdefault(
-            name, {"name": name, "category": category, "unlock": None, "variants": []}
+            name,
+            {"name": name, "category": category, "type": None, "unlock": None, "variants": []},
         )
         item["unlock"] = item["unlock"] or unlock_of(r["entitlement"])
+        item["type"] = item["type"] or (found or {}).get("mtype")
         item["variants"].append(
             {
                 "symbol": symbol,
@@ -104,6 +206,7 @@ def build() -> dict[str, Any]:
                 "mount": r["mount"] or None,
                 "guidance": r["guidance"] or None,
             }
+            | (module_stats(found) if found else {})
         )
 
     def sold(kind: str, name: str) -> bool:
@@ -112,6 +215,10 @@ def build() -> dict[str, Any]:
     with ThreadPoolExecutor(4) as pool:
         ship_sold = list(pool.map(lambda s: sold("ships", s["name"]), ships))
         module_sold = list(pool.map(lambda n: sold("modules", n), modules))
+    for s, ok in zip(ships, ship_sold, strict=True):
+        if s in newer and not ok:
+            s["unsold"] = True
+    ship_sold = [ok or s in newer for s, ok in zip(ships, ship_sold, strict=True)]
     dropped = [s["name"] for s, ok in zip(ships, ship_sold, strict=True) if not ok]
     dropped += [n for n, ok in zip(modules, module_sold, strict=True) if not ok]
     order = {"core": 0, "optional": 1, "hardpoint": 2, "utility": 3}
@@ -121,7 +228,10 @@ def build() -> dict[str, Any]:
             key=lambda v: (v["class"], v["rating"], v["mount"] or "", v["guidance"] or "")
         )
     return {
-        "source": f"EDCD FDevIDs ({FDEVIDS}), Spansh station search; {datetime.now(UTC):%Y-%m-%d}",
+        "source": (
+            f"EDCD FDevIDs ({FDEVIDS}), Spansh station search, EDSY ({EDSY}, taleden, "
+            f"CC BY-NC 4.0); {datetime.now(UTC):%Y-%m-%d}"
+        ),
         "dropped": sorted(dropped),
         "ships": sorted(
             (s for s, ok in zip(ships, ship_sold, strict=True) if ok), key=lambda s: s["name"]
@@ -134,6 +244,9 @@ def main() -> None:
     data = build()
     OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     variants = sum(len(m["variants"]) for m in data["modules"])
+    no_stats = [s["name"] for s in data["ships"] if "stats" not in s]
+    no_stats += [v["symbol"] for m in data["modules"] for v in m["variants"] if "price" not in v]
+    print("without EDSY figures:", ", ".join(no_stats) or "none")
     print(
         f"{OUT}: {len(data['ships'])} ships, {len(data['modules'])} modules ({variants} variants)"
     )

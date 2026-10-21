@@ -225,3 +225,37 @@ def test_finder_reuses_an_answer_nearby() -> None:
     finder.stations(None, (15, 0, 0))  # the shops: an answer of their own
     finder.stations(fsd, (30, 0, 0))  # 30 ly away: asked again
     assert finder.asked == [(FSD_5A, (0, 0, 0)), (None, (15, 0, 0)), (FSD_5A, (30, 0, 0))]
+
+
+def test_catalog_carries_prices_and_figures() -> None:
+    catalog = shop.catalog_view()
+    anaconda = next(s for s in catalog.ships if s.symbol == "anaconda")
+    assert anaconda.stats is not None and anaconda.stats.pad == "L" and anaconda.stats.price
+    assert len(anaconda.stats.core) == 7 and anaconda.stats.hardpoints[0] == 4
+    corvette = next(s for s in catalog.ships if s.symbol == "federation_corvette")
+    assert corvette.rank is not None and corvette.rank.need == "Rear Admiral"
+    # A fighter hangar fits a few big ships only.
+    bays = {s.symbol for s in catalog.ships if s.stats and s.stats.fighter_bay}
+    assert {"anaconda", "explorer_nx", "federation_corvette", "type9"} <= bays
+    assert not {"sidewinder", "asp", "mandalay"} & bays
+    # A ship newer than FDevIDs stays in the catalog, marked: no station sells it yet.
+    mk2 = next(s for s in catalog.ships if s.symbol == "anacondamkii")
+    assert mk2.unsold and mk2.stats is not None and mk2.stats.pad == "L"
+    assert not anaconda.unsold
+    fsd = next(m for m in catalog.modules if m.name == "Frame Shift Drive")
+    assert fsd.type == "cfsd"
+    five_a = next(v for v in fsd.variants if v.symbol == FSD_5A)
+    assert five_a.price and five_a.stats["fsdoptmass"] > 0 and five_a.stats["maxfuel"] > 0
+    # The starter kit's copies are never sold: left out.
+    assert not any(v.symbol.endswith("_free") for m in catalog.modules for v in m.variants)
+
+
+def test_catalog_endpoint_is_gzipped(tmp_path: Path) -> None:
+    from tests.test_health import make_client
+
+    with make_client(tmp_path) as client:
+        packed = client.get("/api/shop/catalog", headers={"Accept-Encoding": "gzip"})
+        assert packed.headers["content-encoding"] == "gzip"
+        assert packed.json()["ships"][0]["name"]  # the client unpacks it
+        plain = client.get("/api/shop/catalog", headers={"Accept-Encoding": "identity"})
+        assert "content-encoding" not in plain.headers and plain.json() == packed.json()

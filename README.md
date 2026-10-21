@@ -13,7 +13,7 @@ shows everything in your browser.
 - **Route**: systems worth visiting for high-value mapping (Road to Riches) and biology, around a point or along a line (Spansh data). Shown as a list or a 3D map, and stops tick off by themselves as you fly. Also covers the route you plotted in the galaxy map: fuel and where to scoop, neutron stars and white dwarfs ahead, and the chance a system is still undiscovered. Neutron routes come from Spansh.
 - **Session**: how much unsold data you are carrying right now.
 - **History**: every system you visited: what you scanned, found and sold.
-- **Shop**: the nearest shipyards and outfitting as soon as you open it, and where to buy a ship or a module: by name or from the lists, with prices, the navy rank a ship needs and how old the station's data is (Spansh data).
+- **Shop**: the nearest shipyards and outfitting as soon as you open it, and where to buy a ship or a module: by name or from the lists, with prices, the navy rank a ship needs and how old the station's data is (Spansh data). Flip through every ship and module, ships by type (combat, exploration, freight...) and price: a ship's blueprint sketch, base price, performance, slots and whether a fighter hangar fits; a module's figures for each class and rating (EDSY data).
 - **Galaxy**: all your journeys on a 3D galaxy map: path, earnings, first discoveries, deaths, and the codex regions you have been to, the engineers with your progress. On request, other players right now (from EDDN, no names).
 - **Stats**: all-time numbers and records.
 
@@ -141,7 +141,8 @@ Community data: [Spansh](https://spansh.co.uk/) and [EDSM](https://www.edsm.net/
 Exobiology rules are derived from [Canonn](https://canonn.science/) research data
 (details in [backend/app/exobio/SOURCES.md](backend/app/exobio/SOURCES.md)).
 Other players: [EDDN](https://github.com/EDCD/EDDN), the Elite Dangerous Data Network.
-Ship and module names: [EDCD FDevIDs](https://github.com/EDCD/FDevIDs).
+Ship and module names: [EDCD FDevIDs](https://github.com/EDCD/FDevIDs). Ship and module prices and figures:
+[EDSY](https://edsy.org) by taleden (CC BY-NC 4.0). Ship outlines: traced from the blueprint sheets by [elite-dangerous-blog.co.uk](https://www.elite-dangerous-blog.co.uk) on the Elite Dangerous Wiki (35 ships); the others are fan art drawn for this app, not Frontier's art.
 Codex region map: [EliteDangerousRegionMap](https://github.com/klightspeed/EliteDangerousRegionMap)
 by Ben Peddell (MIT, [backend/app/data/regionmap-LICENSE](backend/app/data/regionmap-LICENSE)).
 

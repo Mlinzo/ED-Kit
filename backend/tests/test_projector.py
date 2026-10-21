@@ -109,6 +109,7 @@ def test_sampling_flow(conn: sqlite3.Connection, proj: Projector) -> None:
     surface = views.surface_view(conn, "F1", None)
     assert surface.active_scan is not None
     assert surface.active_scan.samples == 2
+    assert surface.active_scan.colour == "Emerald"  # the journal's Variant names it
     assert len(surface.active_scan.points) == 2
     assert surface.body is not None and surface.body.body_id == 24
 

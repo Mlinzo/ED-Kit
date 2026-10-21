@@ -2,10 +2,10 @@
 // ship or a module once one is chosen, by words or from the lists. A module's class, mount,
 // rating and guidance are buttons above its results.
 
-import { ChevronDown, LoaderCircle, Navigation, Search, ShieldAlert, ShoppingCart, X } from 'lucide-react'
+import { ChevronDown, LoaderCircle, Navigation, Search, ShoppingCart, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore, useView } from '../../api/hooks'
-import type { ShopCatalogView, ShopModuleView, ShopPlaceView, ShopStationView, ShopVariantView, ShopView } from '../../api/types'
+import type { ShopCatalogView, ShopModuleView, ShopPlaceView, ShopShipView, ShopStationView, ShopView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
 import { Credits } from '../../components/Credits'
 import { CommunityGlyph } from '../../components/SourceBadge'
@@ -15,7 +15,10 @@ import { t } from '../../i18n'
 import { formatLs, formatLy, formatMonthYear, formatRelative } from '../../lib/format'
 import { readStored, readStoredText, writeStored } from '../../lib/storage'
 import { CarriersSwitch, NearerCarrier } from '../session/WhereToSell'
-import { lookup, optionsFor, searchCatalog, variantFor, type Pick, type Want } from './catalog'
+import { lookup, neighbour, nextModule, orderShips, searchCatalog, SHIP_ORDERS, variantFor, type Pick, type ShipOrder, type Want } from './catalog'
+import { ModuleCard, ShipCard } from './ItemCard'
+import { Chip, ShipRow } from './parts'
+import { fitsRole, ROLE_FILTERS, type RoleFilter } from './roles'
 
 const ITEM_KEY = 'edk.shopItem'
 const CARRIERS_KEY = 'edk.shopCarriers'
@@ -49,32 +52,10 @@ function useShopCatalog(): ShopCatalogView | null {
   return catalog
 }
 
-function Chip({ active, onClick, children, title }: { active: boolean; onClick: () => void; children: ReactNode; title?: string }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      title={title}
-      className={`focus-ring min-h-9 rounded-lg px-2.5 py-1 text-left text-sm ring-1 ring-inset transition-colors ${
-        active ? 'bg-accent/15 font-medium text-zinc-50 ring-accent/50' : 'bg-zinc-800/50 text-zinc-300 ring-zinc-700/70 hover:bg-zinc-800 hover:text-zinc-50'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
 function pickLabel(p: Pick): string {
   if (p.kind === 'ship') return p.ship.name
   const v = p.want.size !== undefined ? variantFor(p.module, p.want) : null
   return v ? `${p.module.name} ${v.size}${v.rating}` : p.module.name
-}
-
-/** "Frame Shift Drive 5A", "Multi-Cannon 1G · gimballed". */
-function variantTitle(module: ShopModuleView, v: ShopVariantView): string {
-  const extra = [v.mount && t.shop.mounts[v.mount], v.guidance && t.shop.guidances[v.guidance]].filter(Boolean)
-  return [`${module.name} ${v.size}${v.rating}`, ...extra].join(' · ')
 }
 
 /** Search by words, and the lists by group (always shown on a wide screen, folded on a phone). */
@@ -82,6 +63,9 @@ function Picker({
   catalog,
   chosen,
   want,
+  ships,
+  role,
+  onRole,
   onChoose,
 }: {
   catalog: ShopCatalogView | null
@@ -89,6 +73,10 @@ function Picker({
   chosen: string | null
   /** The chosen module's variant: another module keeps its class and rating where it has them. */
   want: Want
+  /** The ships the card flips through, in its order: of the chosen type. */
+  ships: readonly ShopShipView[]
+  role: RoleFilter
+  onRole: (role: RoleFilter) => void
   onChoose: (symbol: string) => void
 }) {
   const s = t.shop
@@ -101,11 +89,7 @@ function Picker({
     setQuery('')
     setOpen(false)
   }
-  const listed: Pick[] = !catalog
-    ? []
-    : group === 'ships'
-      ? catalog.ships.map((ship) => ({ kind: 'ship', ship }))
-      : catalog.modules.filter((m) => m.category === group).map((module) => ({ kind: 'module', module, want: {} }))
+  const modules = catalog && group !== 'ships' ? catalog.modules.filter((m) => m.category === group) : []
 
   return (
     <section
@@ -186,52 +170,37 @@ function Picker({
             </button>
           ))}
         </div>
-        <ul className="mt-3 flex flex-wrap gap-1.5">
-          {listed.map((p) => {
-            const key = p.kind === 'ship' ? p.ship.symbol : p.module.name
-            return (
-              <li key={key}>
-                <Chip active={key === chosen} onClick={() => choose(p)}>
-                  {p.kind === 'ship' ? p.ship.name : p.module.name}
-                </Chip>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    </section>
-  )
-}
-
-/** Class, mount, rating and guidance of the chosen module: only the choices that exist. */
-function Variants({ module, variant, onChoose }: { module: ShopModuleView; variant: ShopVariantView; onChoose: (symbol: string) => void }) {
-  const s = t.shop
-  const options = optionsFor(module, variant)
-  const set = (want: Want) => onChoose(variantFor(module, { ...variant, ...want }).symbol)
-  const rows: { label: string; items: { key: string; label: string; active: boolean; want: Want }[] }[] = [
-    { label: s.size, items: options.sizes.map((size) => ({ key: String(size), label: String(size), active: size === variant.size, want: { size } })) },
-    { label: s.mount, items: options.mounts.map((mount) => ({ key: mount, label: s.mounts[mount], active: mount === variant.mount, want: { mount } })) },
-    { label: s.rating, items: options.ratings.map((rating) => ({ key: rating, label: rating, active: rating === variant.rating, want: { rating } })) },
-    {
-      label: s.guidance,
-      items: options.guidances.map((guidance) => ({ key: guidance, label: s.guidances[guidance], active: guidance === variant.guidance, want: { guidance } })),
-    },
-  ]
-  return (
-    <div className="mt-3 space-y-2">
-      {rows
-        .filter((row) => row.items.length > 1)
-        .map((row) => (
-          <div key={row.label} className="flex flex-wrap items-center gap-1.5">
-            <span className="w-20 shrink-0 text-xs text-zinc-500">{row.label}</span>
-            {row.items.map((item) => (
-              <Chip key={item.key} active={item.active} onClick={() => set(item.want)}>
-                {item.label}
+        {catalog && group === 'ships' && (
+          <div role="group" aria-label={s.roleFilter} className="mt-3 flex flex-wrap gap-1.5">
+            {ROLE_FILTERS.map((r) => (
+              <Chip key={r} active={r === role} onClick={() => onRole(r)}>
+                {s.roles[r]}
               </Chip>
             ))}
           </div>
-        ))}
-    </div>
+        )}
+        {group === 'ships' && ships.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {ships.map((ship) => (
+              <li key={ship.symbol}>
+                <ShipRow ship={ship} active={ship.symbol === chosen} onClick={() => choose({ kind: 'ship', ship })} />
+              </li>
+            ))}
+          </ul>
+        )}
+        {modules.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {modules.map((module) => (
+              <li key={module.name}>
+                <Chip active={module.name === chosen} onClick={() => choose({ kind: 'module', module, want: {} })}>
+                  {module.name}
+                </Chip>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -344,39 +313,96 @@ function Status({ view, failed, onRetry }: { view: ShopView | null; failed: bool
   )
 }
 
+const ORDER_KEY = 'edk.shopOrder'
+const ROLE_KEY = 'edk.shopRole'
+/** Flipping waits this long before asking Spansh, so a quick flip through asks once. */
+const FLIP_SETTLE_MS = 450
+
 export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void }) {
   const s = t.shop
   const catalog = useShopCatalog()
   const now = useNow()
+  // `symbol` is shown on the card; `query` is what the results are asked for (it trails a flip).
   const [symbol, setSymbol] = useState<string | null>(() => readStoredText(ITEM_KEY))
+  const [query, setQuery] = useState<string | null>(symbol)
   const [carriers, setCarriers] = useState(() => readStored(CARRIERS_KEY, ['on', 'off'], 'off') === 'on')
+  const [order, setOrder] = useState<ShipOrder>(() => readStored(ORDER_KEY, SHIP_ORDERS, 'price'))
+  const [role, setRole] = useState<RoleFilter>(() => readStored(ROLE_KEY, ROLE_FILTERS, 'all'))
   const params: Record<string, string> = {}
-  if (symbol) params.item = symbol
+  if (query) params.item = query
   if (carriers) params.carriers = 'true'
   const { data, error, refetch } = useView('shop', params)
   // The answer for the previous choice stays while the new one loads.
   const [last, setLast] = useState<ShopView | null>(null)
   if (data && data !== last) setLast(data)
   const view = data ?? last
+  const settled = data !== null && query === symbol
 
-  const choose = (next: string | null) => {
+  const flipTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(flipTimer.current), [])
+  const choose = (next: string | null, settle = 0) => {
     setSymbol(next)
     writeStored(ITEM_KEY, next ?? '')
+    clearTimeout(flipTimer.current)
+    if (settle) flipTimer.current = setTimeout(() => setQuery(next), settle)
+    else setQuery(next)
   }
   const toggleCarriers = (on: boolean) => {
     setCarriers(on)
     writeStored(CARRIERS_KEY, on ? 'on' : 'off')
   }
-  const results = useRef<HTMLElement>(null)
-  /** Chosen in the search or the lists: on a phone the results are below them, so go there. */
+  const changeOrder = (next: ShipOrder) => {
+    setOrder(next)
+    writeStored(ORDER_KEY, next)
+  }
+  const changeRole = (next: RoleFilter) => {
+    setRole(next)
+    writeStored(ROLE_KEY, next)
+  }
+  // The list and the card's arrows: the ships of the chosen type, in the chosen order.
+  const ships = catalog ? orderShips(catalog.ships, order).filter((x) => fitsRole(x.symbol, role)) : []
+  const top = useRef<HTMLDivElement>(null)
+  /** Chosen in the search or the lists: on a phone the card is below them, so go there. */
   const chooseAndShow = (next: string) => {
     choose(next)
     if (window.matchMedia('(max-width: 1023px)').matches)
-      requestAnimationFrame(() => results.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+      requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
   const chosen = catalog && symbol ? lookup(catalog, symbol) : null
   const want: Want = chosen?.kind === 'module' ? chosen.variant : {}
-  const title = chosen ? (chosen.kind === 'ship' ? chosen.ship.name : chosen.module.name) : null
+
+  let card: ReactNode = null
+  if (catalog && chosen?.kind === 'ship') {
+    // A ship of another type than the filter's (chosen by words) stays; the arrows enter the list.
+    const current = ships.find((x) => x.symbol === chosen.ship.symbol)
+    card = (
+      <ShipCard
+        ship={chosen.ship}
+        position={`${current ? ships.indexOf(current) + 1 : '–'} / ${ships.length}`}
+        onStep={(step) => {
+          const next = neighbour(ships, current, step)
+          if (next) choose(next.symbol, FLIP_SETTLE_MS)
+        }}
+        order={order}
+        onOrder={changeOrder}
+        yours={settled ? (data?.rank ?? null) : null}
+      />
+    )
+  } else if (catalog && chosen?.kind === 'module') {
+    const group = catalog.modules.filter((m) => m.category === chosen.module.category)
+    card = (
+      <ModuleCard
+        module={chosen.module}
+        variant={chosen.variant}
+        position={`${group.indexOf(chosen.module) + 1} / ${group.length}`}
+        onStep={(step) => {
+          const next = nextModule(catalog, chosen.module, chosen.variant, step)
+          if (next) choose(next.symbol, FLIP_SETTLE_MS)
+        }}
+        onChoose={(next) => choose(next)}
+      />
+    )
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
@@ -384,79 +410,58 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
         catalog={catalog}
         chosen={chosen ? (chosen.kind === 'ship' ? chosen.ship.symbol : chosen.module.name) : null}
         want={want}
+        ships={ships}
+        role={role}
+        onRole={changeRole}
         onChoose={chooseAndShow}
       />
-      <section ref={results} aria-labelledby="shop-title" className="min-w-0 scroll-mt-20 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <div className="min-w-0">
-            <Label className="flex items-center gap-2">
+      <div ref={top} className="min-w-0 scroll-mt-20 space-y-4 lg:space-y-6">
+        {card}
+        <section aria-labelledby="shop-title" className="min-w-0 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <Label as="h2" id="shop-title" className="flex items-center gap-2">
               <ShoppingCart className="size-4" aria-hidden />
-              {title ? s.whereToBuy : s.nearest}
+              {chosen ? s.whereToBuy : s.nearest}
             </Label>
-            {title && (
-              <h2 id="shop-title" className="mt-1 text-xl font-semibold break-words text-zinc-50">
-                {chosen?.kind === 'module' ? variantTitle(chosen.module, chosen.variant) : title}
-              </h2>
-            )}
-            {!title && <h2 id="shop-title" className="sr-only">{s.nearest}</h2>}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              {chosen && (
+                <button
+                  type="button"
+                  onClick={() => choose(null)}
+                  title={s.backHint}
+                  className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
+                >
+                  <X className="size-3.5" aria-hidden />
+                  {s.back}
+                </button>
+              )}
+              <CarriersSwitch on={carriers} onChange={toggleCarriers} />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {title && (
-              <button
-                type="button"
-                onClick={() => choose(null)}
-                title={s.backHint}
-                className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
-              >
-                <X className="size-3.5" aria-hidden />
-                {s.back}
-              </button>
-            )}
-            <CarriersSwitch on={carriers} onChange={toggleCarriers} />
-          </div>
-        </div>
+          {view?.ship && view.pad && <p className="mt-3 text-xs text-zinc-500">{s.padNote(view.ship, t.session.sell.pad[view.pad])}</p>}
 
-        {chosen?.kind === 'module' && <Variants module={chosen.module} variant={chosen.variant} onChoose={choose} />}
-
-        {view?.ship && view.pad && (
-          <p className="mt-3 text-xs text-zinc-500">{s.padNote(view.ship, t.session.sell.pad[view.pad])}</p>
-        )}
-        {data?.rank && (
-          <p
-            className={`mt-3 flex items-start gap-2 rounded-xl p-3 text-sm ring-1 ${
-              data.rank.ok === false ? 'bg-amber-500/10 text-amber-100 ring-amber-400/25' : 'bg-zinc-800/40 text-zinc-300 ring-zinc-700/60'
-            }`}
-          >
-            <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <span>
-              {s.rankNeeded(s.navies[data.rank.navy], data.rank.need)}
-              {data.rank.have && ` · ${s.rankYours(data.rank.have)}`}
-            </span>
-          </p>
-        )}
-        {data?.unlock && <p className="mt-3 rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{s.unlock[data.unlock]}</p>}
-
-        <Status view={data} failed={error !== null} onRetry={refetch} />
-        {view && !carriers && view.nearerCarrier && <NearerCarrier hint={view.nearerCarrier} onShow={() => toggleCarriers(true)} />}
-        {view && view.places.length > 0 && (
-          <ol className={`mt-1 divide-y divide-zinc-800/80 ${data ? '' : 'opacity-60'}`}>
-            {view.places.map((place) => (
-              <Place key={place.systemAddress ?? place.systemName} place={place} now={now} onRouteTo={onRouteTo} />
-            ))}
-          </ol>
-        )}
-        {view && (view.searchedAt || view.carriers) && (
-          <div className="mt-2 space-y-1 border-t border-zinc-800/80 pt-3 text-xs text-zinc-500">
-            {view.searchedAt && (
-              <p className="flex items-center gap-1.5">
-                <CommunityGlyph />
-                {s.source} · {formatRelative(view.searchedAt, now)}
-              </p>
-            )}
-            {view.carriers && <p>{t.session.sell.carriers}</p>}
-          </div>
-        )}
-      </section>
+          <Status view={settled ? data : null} failed={error !== null} onRetry={refetch} />
+          {view && !carriers && view.nearerCarrier && <NearerCarrier hint={view.nearerCarrier} onShow={() => toggleCarriers(true)} />}
+          {view && view.places.length > 0 && (
+            <ol className={`mt-1 divide-y divide-zinc-800/80 ${settled ? '' : 'opacity-60'}`}>
+              {view.places.map((place) => (
+                <Place key={place.systemAddress ?? place.systemName} place={place} now={now} onRouteTo={onRouteTo} />
+              ))}
+            </ol>
+          )}
+          {view && (view.searchedAt || view.carriers) && (
+            <div className="mt-2 space-y-1 border-t border-zinc-800/80 pt-3 text-xs text-zinc-500">
+              {view.searchedAt && (
+                <p className="flex items-center gap-1.5">
+                  <CommunityGlyph />
+                  {s.source} · {formatRelative(view.searchedAt, now)}
+                </p>
+              )}
+              {view.carriers && <p>{t.session.sell.carriers}</p>}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   )
 }

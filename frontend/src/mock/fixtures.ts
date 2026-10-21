@@ -697,6 +697,7 @@ export function buildSurface(system: SystemView): SurfaceView {
       bonusRuledOut: false,
       colonyRangeM: 500,
       codex: 'new',
+      colour: 'Teal',
       samples: 2,
       points: SAMPLE_OFFSETS.map((o, i) => ({
         n: i + 1,

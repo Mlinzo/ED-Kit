@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ShopCatalogView, ShopModuleView, ShopVariantView } from '../../api/types'
-import { lookup, optionsFor, parseQuery, searchCatalog, variantFor } from './catalog'
+import { lookup, neighbour, nextModule, optionsFor, orderShips, parseQuery, searchCatalog, variantFor } from './catalog'
 
 const v = (symbol: string, size: number, rating: string, mount: ShopVariantView['mount'] = null, guidance: ShopVariantView['guidance'] = null): ShopVariantView => ({
   symbol,
@@ -8,33 +8,41 @@ const v = (symbol: string, size: number, rating: string, mount: ShopVariantView[
   rating,
   mount,
   guidance,
+  price: null,
+  mass: null,
+  power: null,
+  integrity: null,
+  stats: {},
 })
 
 const fsd: ShopModuleView = {
   name: 'Frame Shift Drive',
   category: 'core',
+  type: null,
   unlock: null,
   variants: [v('fsd2e', 2, 'E'), v('fsd2a', 2, 'A'), v('fsd5d', 5, 'D'), v('fsd5a', 5, 'A')],
 }
 const mc: ShopModuleView = {
   name: 'Multi-Cannon',
   category: 'hardpoint',
+  type: null,
   unlock: null,
   variants: [v('mc1f', 1, 'F', 'Fixed'), v('mc1g', 1, 'G', 'Gimballed'), v('mc2e', 2, 'E', 'Fixed'), v('mc2f', 2, 'F', 'Gimballed'), v('mc2t', 2, 'F', 'Turreted')],
 }
 const missiles: ShopModuleView = {
   name: 'Missile Rack',
   category: 'hardpoint',
+  type: null,
   unlock: null,
   variants: [v('mrd', 2, 'B', 'Fixed', 'Dumbfire'), v('mrs', 2, 'B', 'Fixed', 'Seeker')],
 }
 const catalog: ShopCatalogView = {
   ships: [
-    { symbol: 'anaconda', name: 'Anaconda' },
-    { symbol: 'diamondbackxl', name: 'Diamondback Explorer' },
-    { symbol: 'ferdelance', name: 'Fer-de-Lance' },
+    { symbol: 'anaconda', name: 'Anaconda', stats: null, rank: null },
+    { symbol: 'diamondbackxl', name: 'Diamondback Explorer', stats: null, rank: null },
+    { symbol: 'ferdelance', name: 'Fer-de-Lance', stats: null, rank: null },
   ],
-  modules: [fsd, { name: 'Frame Shift Drive (SCO)', category: 'core', unlock: null, variants: [v('sco5a', 5, 'A')] }, mc, missiles],
+  modules: [fsd, { name: 'Frame Shift Drive (SCO)', category: 'core', type: null, unlock: null, variants: [v('sco5a', 5, 'A')] }, mc, missiles],
 }
 
 const names = (query: string) => searchCatalog(catalog, query).map((p) => (p.kind === 'ship' ? p.ship.name : p.module.name))
@@ -88,5 +96,35 @@ describe('module variants', () => {
     expect(lookup(catalog, 'anaconda')).toMatchObject({ kind: 'ship' })
     expect(lookup(catalog, 'mc2t')).toMatchObject({ kind: 'module', variant: { mount: 'Turreted' } })
     expect(lookup(catalog, 'gone')).toBeNull()
+  })
+})
+
+describe('flipping through the catalog', () => {
+  const ship = (symbol: string, name: string, price: number, pad: 'S' | 'M' | 'L') => ({
+    symbol,
+    name,
+    rank: null,
+    stats: { pad, price, speed: null, boost: null, shields: null, armour: null, mass: null, hardness: null, masslock: null, crew: null, core: [], internal: [], military: [], hardpoints: [], utility: 0, fighterBay: false },
+  })
+  const ships = [ship('anaconda', 'Anaconda', 146_000_000, 'L'), ship('adder', 'Adder', 87_000, 'S'), ship('python', 'Python', 57_000_000, 'M')]
+
+  it('orders ships by name, price or size', () => {
+    expect(orderShips(ships, 'name').map((s) => s.symbol)).toEqual(['adder', 'anaconda', 'python'])
+    expect(orderShips(ships, 'price').map((s) => s.symbol)).toEqual(['adder', 'python', 'anaconda'])
+    expect(orderShips(ships, 'size').map((s) => s.symbol)).toEqual(['adder', 'python', 'anaconda'])
+  })
+
+  it('wraps round both ways', () => {
+    expect(neighbour([1, 2, 3], 3, 1)).toBe(1)
+    expect(neighbour([1, 2, 3], 1, -1)).toBe(3)
+    expect(neighbour([1, 2, 3], 9, 1)).toBe(1)
+    expect(neighbour([], 1, 1)).toBeUndefined()
+  })
+
+  it('keeps the class and rating on the next module of the group', () => {
+    // Frame Shift Drive -> Frame Shift Drive (SCO): 5A carries over.
+    expect(nextModule(catalog, fsd, variantFor(fsd, { size: 5, rating: 'A' }), 1)?.symbol).toBe('sco5a')
+    // The last core module wraps round to the first, still 5A.
+    expect(nextModule(catalog, catalog.modules[1], variantFor(catalog.modules[1]), 1)?.symbol).toBe('fsd5a')
   })
 })

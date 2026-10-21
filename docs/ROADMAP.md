@@ -50,6 +50,23 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Shop catalog cards (2026-10-21): choosing a ship opens its card: a blueprint sketch (top, side
+  and rear views in true scale, dimension lines; 35 ships traced from the wiki's blueprint sheets
+  by `tools/ship_outlines.py`, which also reads screenshots of the game's schematics; the other 13
+  hand-drawn for the app as fan art from the wiki's
+  pictures and dimensions, without a rear view; the Anaconda Mk II, out for ARX only since
+  2026-10-20 and missing from FDevIDs, is listed from EDSY with "no station sells it yet" and no
+  drawing), the maker, the base price, speed and boost, shields and armour,
+  hull mass, hardness, mass lock, crew seats, the core, optional and military slots and the
+  hardpoints by size, and the navy rank against yours. A module card shows an icon by kind, the
+  price, mass, power draw, integrity and its own figures (an FSD's optimal mass and fuel per jump,
+  a weapon's DPS, range and ammo...). Arrows flip through the ships (by price by default, or by
+  name or pad size; the ship list follows the same order with each pad and price, and type
+  buttons above it (combat, multipurpose, exploration, freight, passengers, mining, from the wiki)
+  narrow both; the card names the ship's types and whether a fighter hangar fits) or a group's
+  modules; "where to buy" follows below. Prices and figures from EDSY (CC BY-NC 4.0).
+  The starter kit's `_free` modules left the catalog (a variant could pick one and find nothing).
+  The Surface tab names the colour of the species being sampled.
 - Shop tab (2026-10-21): on opening, the nearest shipyards and outfitting with how many ships and
   modules Spansh knows each sells; choose a ship or a module by words ("fsd 5a", "dbx", "mc
   gimballed") or from the lists (ships; core, optional, hardpoints, utility), and a module's class,

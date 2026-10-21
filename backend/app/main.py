@@ -186,9 +186,17 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         return selling.sell_view(conn, fid, views.cmdr_state(conn, fid), sellers, carriers)
 
     @app.get("/api/shop/catalog", response_model=ShopCatalogView, response_model_by_alias=True)
-    def shop_catalog() -> ShopCatalogView:
-        """The ships and modules the Shop tab can look for."""
-        return shop.catalog_view()
+    def shop_catalog(request: Request) -> Response:
+        """The ships and modules the Shop tab can look for, with prices and figures (gzipped
+        when the browser takes it: the rest of the API is not, the event stream must not be)."""
+        raw, packed = shop.catalog_json()
+        if "gzip" in request.headers.get("accept-encoding", ""):
+            return Response(
+                packed,
+                media_type="application/json",
+                headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"},
+            )
+        return Response(raw, media_type="application/json", headers={"Vary": "Accept-Encoding"})
 
     @app.get("/api/view/shop", response_model=ShopView, response_model_by_alias=True)
     def view_shop(item: str | None = None, carriers: bool = False) -> ShopView:

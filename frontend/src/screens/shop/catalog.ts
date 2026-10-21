@@ -153,3 +153,33 @@ export function lookup(
   }
   return null
 }
+
+export type ShipOrder = 'name' | 'price' | 'size'
+export const SHIP_ORDERS: readonly ShipOrder[] = ['price', 'name', 'size']
+const PAD_RANK = { S: 0, M: 1, L: 2 }
+
+/** Ships in the order the card flips through: by name, by base price, or by landing pad then price. */
+export function orderShips(ships: readonly ShopShipView[], order: ShipOrder): ShopShipView[] {
+  const price = (s: ShopShipView) => s.stats?.price ?? Number.MAX_SAFE_INTEGER
+  const pad = (s: ShopShipView) => (s.stats?.pad ? PAD_RANK[s.stats.pad] : 3)
+  return [...ships].sort((a, b) => {
+    if (order === 'price') return price(a) - price(b) || a.name.localeCompare(b.name)
+    if (order === 'size') return pad(a) - pad(b) || price(a) - price(b) || a.name.localeCompare(b.name)
+    return a.name.localeCompare(b.name)
+  })
+}
+
+/** The item `step` places away in a list, wrapping round (the first one when `current` is not in it). */
+export function neighbour<T>(list: readonly T[], current: T | undefined, step: number): T | undefined {
+  if (list.length === 0) return undefined
+  const i = current === undefined ? -1 : list.indexOf(current)
+  if (i < 0) return list[0]
+  return list[(((i + step) % list.length) + list.length) % list.length]
+}
+
+/** Flipping to the next module of the same group keeps the variant where the module has it. */
+export function nextModule(catalog: ShopCatalogView, module: ShopModuleView, variant: ShopVariantView, step: number): ShopVariantView | undefined {
+  const group = catalog.modules.filter((m) => m.category === module.category)
+  const next = neighbour(group, module, step)
+  return next ? variantFor(next, variant) : undefined
+}

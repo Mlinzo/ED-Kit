@@ -40,6 +40,7 @@ SHIPS: dict[str, tuple[str, Pad]] = {
     "krait_mkii": ("Krait Mk II", "M"),
     "lakonminer": ("Type-11 Prospector", "M"),
     "mamba": ("Mamba", "M"),
+    "mediumtransport01": ("Lynx Highliner", "M"),  # EDSY and the wiki, 2026-10-21
     "mandalay": ("Mandalay", "M"),
     "python": ("Python", "M"),
     "python_nx": ("Python Mk II", "M"),
@@ -49,6 +50,7 @@ SHIPS: dict[str, tuple[str, Pad]] = {
     "typex_2": ("Alliance Crusader", "M"),
     "typex_3": ("Alliance Challenger", "M"),
     "anaconda": ("Anaconda", "L"),
+    "anacondamkii": ("Anaconda Mk II", "L"),  # EDSY, 2026-10-22: not in FDevIDs yet
     "belugaliner": ("Beluga Liner", "L"),
     "cutter": ("Imperial Cutter", "L"),
     "empire_trader": ("Imperial Clipper", "L"),

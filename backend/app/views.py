@@ -682,6 +682,7 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
             ),
             samples=active["samples"],
             points=points,
+            colour=colour_of(active["variant"]),
         )
     return SurfaceView(body=body, active_scan=active_view)
 

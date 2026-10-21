@@ -22,6 +22,7 @@ The catalog (app/data/shop.json) is built by tools/shop_catalog.py from EDCD FDe
 
 from __future__ import annotations
 
+import gzip
 import json
 import math
 import sqlite3
@@ -40,7 +41,9 @@ from app.schemas import (
     ShopCatalogView,
     ShopModuleView,
     ShopPlaceView,
+    ShopRankNeed,
     ShopRankView,
+    ShopShipStats,
     ShopShipView,
     ShopStationView,
     ShopVariantView,
@@ -168,14 +171,29 @@ def find(symbol: str) -> Item | None:
     return _items().get(symbol.lower())
 
 
+def _rank_need(symbol: str) -> ShopRankNeed | None:
+    need = RANKS.get(symbol)
+    return ShopRankNeed(navy=need[0], need=RANK_NAMES[need[0]][need[1]]) if need else None
+
+
 def catalog_view() -> ShopCatalogView:
     data = _catalog()
     return ShopCatalogView(
-        ships=[ShopShipView(symbol=s["symbol"], name=s["name"]) for s in data["ships"]],
+        ships=[
+            ShopShipView(
+                symbol=s["symbol"],
+                name=s["name"],
+                stats=ShopShipStats(**s["stats"]) if "stats" in s else None,
+                rank=_rank_need(s["symbol"]),
+                unsold=s.get("unsold", False),
+            )
+            for s in data["ships"]
+        ],
         modules=[
             ShopModuleView(
                 name=m["name"],
                 category=m["category"],
+                type=m.get("type"),
                 unlock=m["unlock"],
                 variants=[
                     ShopVariantView(
@@ -184,6 +202,11 @@ def catalog_view() -> ShopCatalogView:
                         rating=v["rating"],
                         mount=v["mount"],
                         guidance=v["guidance"],
+                        price=v.get("price"),
+                        mass=v.get("mass"),
+                        power=v.get("power"),
+                        integrity=v.get("integrity"),
+                        stats=v.get("stats") or {},
                     )
                     for v in m["variants"]
                 ],
@@ -191,6 +214,13 @@ def catalog_view() -> ShopCatalogView:
             for m in data["modules"]
         ],
     )
+
+
+@cache
+def catalog_json() -> tuple[bytes, bytes]:
+    """The catalog as JSON, plain and gzipped (~200 KB / ~25 KB): it changes only with the app."""
+    raw = catalog_view().model_dump_json(by_alias=True).encode("utf-8")
+    return raw, gzip.compress(raw, 6)
 
 
 # --------------------------------------------------------------------------- the search

@@ -19,6 +19,10 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.1",
 ]
+tools = [
+    "numpy>=2.5.4",
+    "opencv-python-headless>=5.0.0.93",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

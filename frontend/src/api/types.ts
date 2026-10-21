@@ -233,6 +233,8 @@ export interface ActiveScanView {
   codex: CodexStatus
   samples: number
   points: SamplePoint[]
+  /** "Teal": the journal names the variant. */
+  colour: string | null
 }
 
 export interface SurfaceView {
@@ -367,11 +369,43 @@ export interface SellView {
   searchedAt: string | null
 }
 
+/** A ship as sold (EDSY): base price, stock performance and its slots. */
+export interface ShopShipStats {
+  pad: 'S' | 'M' | 'L' | null
+  /** Base price, credits. */
+  price: number | null
+  /** m/s */
+  speed: number | null
+  boost: number | null
+  shields: number | null
+  armour: number | null
+  /** Hull mass, t. */
+  mass: number | null
+  hardness: number | null
+  masslock: number | null
+  /** Crew seats. */
+  crew: number | null
+  /** Power plant, thrusters, FSD, life support, distributor, sensors, fuel tank. */
+  core: number[]
+  internal: number[]
+  military: number[]
+  /** A fighter hangar fits. */
+  fighterBay: boolean
+  /** 1 small .. 4 huge. */
+  hardpoints: number[]
+  utility: number
+}
+
 /** GET /api/shop/catalog: what the Shop tab can look for (game names, in English). */
 export interface ShopShipView {
   /** Journal symbol, lower case. */
   symbol: string
   name: string
+  stats: ShopShipStats | null
+  /** The navy rank needed to buy it. */
+  rank: { navy: 'empire' | 'federation'; need: string } | null
+  /** No station sells it yet (a new ship comes out for ARX first). */
+  unsold?: boolean
 }
 
 export interface ShopVariantView {
@@ -382,6 +416,15 @@ export interface ShopVariantView {
   rating: string
   mount: 'Fixed' | 'Gimballed' | 'Turreted' | null
   guidance: 'Dumbfire' | 'Seeker' | null
+  /** Credits (EDSY). */
+  price: number | null
+  /** t */
+  mass: number | null
+  /** MW */
+  power: number | null
+  integrity: number | null
+  /** The figures of its kind: EDSY attribute -> value. */
+  stats: Record<string, number>
 }
 
 export type ShopCategory = 'core' | 'optional' | 'hardpoint' | 'utility'
@@ -390,6 +433,8 @@ export type ShopUnlock = 'powerplay' | 'techbroker'
 export interface ShopModuleView {
   name: string
   category: ShopCategory
+  /** EDSY module type (cfsd, isg, hmc...): its icon. */
+  type: string | null
   /** Sold only to commanders who unlocked it. */
   unlock: ShopUnlock | null
   variants: ShopVariantView[]
