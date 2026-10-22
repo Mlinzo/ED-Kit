@@ -222,8 +222,6 @@ export const en: Strings = {
     cancel: 'Cancel',
     clear: 'Delete route',
     clearConfirm: 'Delete the route? Its progress will be lost.',
-    refresh: 'Refresh data',
-    refreshHint: 'Rebuild with the same settings from fresh Spansh data',
     offline: 'Route building is unavailable: the app was started with --offline (no access to Spansh).',
     errors: {
       unknown_system: (name: string | null) =>
@@ -247,6 +245,7 @@ export const en: Strings = {
     jumps: (n: number) => `≈ ${n} ${plural(n, ['jump', 'jumps'])}`,
     oneJump: (fuel: string) => `One jump with at most ${fuel} of fuel in the tank`,
     youAreHere: 'You are here',
+    then: 'Then',
     skip: 'Skip',
     unskip: 'Restore',
     moveUp: 'Move up',

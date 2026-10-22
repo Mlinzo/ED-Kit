@@ -57,6 +57,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   allows (a secure page: the PC itself); on a phone over the LAN the picture is held to save it.
   A drawn 16:9 card with the galaxy and your travels was tried first and dropped: the tab as it
   is was wanted.
+- Route tab fixes (2026-10-22): while you are at the next stop and it is not done yet, its card
+  also names the stop after it ("Then:", with the copy button and the distance), so the last
+  system can be copied from the second to last. "Refresh data" is gone: it rebuilt the route from
+  scratch with the same settings, dropping the stops skipped, moved or removed (a new route is
+  made with the form; `POST /api/route` still takes `refresh` to bypass the Spansh cache).
 - First footfalls by the bonus's rule (2026-10-22): stepping out counts as your first footfall
   only where nobody has mapped the planet or walked on it, outside populated systems
   (`exobio.untouched`, shared with the ×5 bonus). `WasFootfalled: false` alone counted HR 1172

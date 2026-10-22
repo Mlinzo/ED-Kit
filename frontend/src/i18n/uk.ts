@@ -225,8 +225,6 @@ export const uk: Strings = {
     cancel: 'Скасувати',
     clear: 'Видалити маршрут',
     clearConfirm: 'Видалити маршрут? Його прогрес буде втрачено.',
-    refresh: 'Оновити дані',
-    refreshHint: 'Перебудувати з тими самими налаштуваннями за свіжими даними Spansh',
     offline: 'Побудова маршруту недоступна: застосунок запущено з --offline (без доступу до Spansh).',
     errors: {
       unknown_system: (name: string | null) =>
@@ -250,6 +248,7 @@ export const uk: Strings = {
     jumps: (n: number) => `≈ ${n} ${plural(n, ['стрибок', 'стрибки', 'стрибків'])}`,
     oneJump: (fuel: string) => `Одним стрибком — якщо в баку не більше ${fuel} пального`,
     youAreHere: 'Ви тут',
+    then: 'Далі',
     skip: 'Пропустити',
     unskip: 'Повернути',
     moveUp: 'Вище',

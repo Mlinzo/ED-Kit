@@ -226,8 +226,6 @@ export const ru = {
     cancel: 'Отмена',
     clear: 'Удалить маршрут',
     clearConfirm: 'Удалить маршрут? Прогресс по нему пропадёт.',
-    refresh: 'Обновить данные',
-    refreshHint: 'Перестроить с теми же настройками по свежим данным Spansh',
     offline: 'Построение маршрута недоступно: приложение запущено с --offline (без доступа к Spansh).',
     errors: {
       unknown_system: (name: string | null) =>
@@ -251,6 +249,7 @@ export const ru = {
     jumps: (n: number) => `≈ ${n} ${plural(n, ['прыжок', 'прыжка', 'прыжков'])}`,
     oneJump: (fuel: string) => `Одним прыжком — если в баке не больше ${fuel} топлива`,
     youAreHere: 'Вы здесь',
+    then: 'Затем',
     skip: 'Пропустить',
     unskip: 'Вернуть',
     moveUp: 'Выше',

@@ -14,7 +14,6 @@ import {
   MapPin,
   Orbit,
   Pencil,
-  RefreshCw,
   Route,
   SkipForward,
   Trash2,
@@ -115,6 +114,7 @@ function NextTarget({
     )
   }
   const left = stopLeft(stop)
+  const after = route.stops.find((s) => s.seq > stop.seq && !s.done && !s.skipped)
   const bio = stop.bodies.some((b) => b.bioSignals > 0)
   const codex = route.params?.goal === 'codex'
   const transit = route.params?.goal === 'transit'
@@ -156,6 +156,15 @@ function NextTarget({
             ) : null}
             {!transit && <PopulatedBadge population={stop.population} />}
           </p>
+          {/* Here and not done yet: the system after it, to copy into the galaxy map meanwhile. */}
+          {stop.here && after && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-400">
+              <span>{t.route.then}:</span>
+              <span className="min-w-0 font-medium break-words text-zinc-200 proportional-nums">{after.name}</span>
+              <CopyButton text={after.name} />
+              <span className="text-zinc-500">{formatLy(Math.hypot(after.x - stop.x, after.y - stop.y, after.z - stop.z))}</span>
+            </p>
+          )}
           {route.oneJumpFuelT !== null && !stop.here && (
             <p className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-200/80">
               <Fuel className="mt-px size-3.5 shrink-0 text-amber-300" aria-hidden />
@@ -223,7 +232,7 @@ function NextTarget({
   )
 }
 
-function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onRefresh: () => void; refreshDisabled: boolean }) {
+function Progress({ route }: { route: RouteView }) {
   const total = route.stops.length
   const pct = (n: number) => (total ? (n / total) * 100 : 0)
   const left = routeLeft(route)
@@ -321,16 +330,6 @@ function Progress({ route, onRefresh, refreshDisabled }: { route: RouteView; onR
         <span title={route.dataAt ? (eventFull(route.dataAt) ?? undefined) : undefined}>
           {route.dataAt ? t.route.dataFrom(formatRelative(route.dataAt)) : null}
         </span>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={refreshDisabled}
-          title={t.route.refreshHint}
-          className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 font-medium text-zinc-400 ring-1 ring-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-40"
-        >
-          <RefreshCw className="size-3.5" aria-hidden />
-          {t.route.refresh}
-        </button>
       </div>
     </section>
   )
@@ -641,13 +640,7 @@ export function RouteScreen({
               onPlanNeutron={() => void actions.planNeutron()}
               onClearNeutron={() => void actions.clearNeutron()}
             />
-            {data.stops.length > 0 && (
-              <Progress
-                route={data}
-                refreshDisabled={data.building || !data.online}
-                onRefresh={() => data.params && void actions.plan({ ...data.params, refresh: true })}
-              />
-            )}
+            {data.stops.length > 0 && <Progress route={data} />}
           </div>
           {data.stops.length > 0 && (
             <section aria-labelledby="route-stops">
