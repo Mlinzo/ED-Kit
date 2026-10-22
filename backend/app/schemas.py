@@ -248,6 +248,7 @@ class SellPlaceView(CamelModel):
     jumps: int | None  # at the current ship's jump range (None: unknown)
     stations: list[SellStationView]  # one that buys both, else the best for each
     more: int  # other stations there that buy data
+    next_jump: bool = False  # the next system of the route plotted in the game
 
 
 class SellCarrierHint(CamelModel):

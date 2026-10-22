@@ -923,6 +923,7 @@ export const uk: Strings = {
       nearerCarrier: (name: string, system: string, distance: string) =>
         `Ближче є керієр ${name} (${system}), ${distance}. Він може полетіти або бути закритим для посадки.`,
       routeHere: 'Маршрут сюди',
+      nextJump: 'Наступний стрибок',
       showCarriers: 'Показати керієри',
       carriers:
         'Керієри переміщуються, а власник може закрити посадку будь-коли: місце й доступ — на момент, коли їх бачили. Закриті для сторонніх не показуємо.',

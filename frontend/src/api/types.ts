@@ -342,6 +342,8 @@ export interface SellPlaceView {
   stations: SellStationView[]
   /** Other stations there that buy data. */
   more: number
+  /** The next system of the route plotted in the game (listed first). */
+  nextJump: boolean
 }
 
 /** The nearest carrier, when carriers are hidden and it is nearer than every station. */

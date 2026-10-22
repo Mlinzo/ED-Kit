@@ -183,7 +183,9 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         """Where to sell data near you (asks Spansh when you moved away from the last search)."""
         conn = read_conn()
         fid = active_fid(conn)
-        return selling.sell_view(conn, fid, views.cmdr_state(conn, fid), sellers, carriers)
+        return selling.sell_view(
+            conn, fid, views.cmdr_state(conn, fid), sellers, carriers, service.navroute.current
+        )
 
     @app.get("/api/shop/catalog", response_model=ShopCatalogView, response_model_by_alias=True)
     def shop_catalog(request: Request) -> Response:

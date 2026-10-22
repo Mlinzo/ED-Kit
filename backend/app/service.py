@@ -166,7 +166,7 @@ class IngestService(threading.Thread):
         last_rescan = time.monotonic()
 
         if self.navroute.poll():
-            self._invalidate({"navroute", "galaxy"})
+            self._invalidate({"navroute", "galaxy", "sell"})
         while not self._halt.is_set():
             switched = self._switch_dir(conn)
             if switched:
@@ -176,7 +176,7 @@ class IngestService(threading.Thread):
                 last_rescan = time.monotonic()
             self._poll_status(status_reader)
             if self.navroute.poll():
-                self._invalidate({"navroute", "galaxy"})
+                self._invalidate({"navroute", "galaxy", "sell"})
             if time.monotonic() - last_rescan >= self.settings.rescan_interval:
                 files = directory.discover()
                 last_rescan = time.monotonic()
@@ -206,7 +206,7 @@ class IngestService(threading.Thread):
         self.navroute = NavRouteReader(path / "NavRoute.json")
         self.live = LiveStatus()
         self.bus.publish("status", self.live)
-        self._invalidate({"navroute", "galaxy", "surface"})
+        self._invalidate({"navroute", "galaxy", "sell", "surface"})
         return JournalDirectory(path, conn), StatusReader(path / "Status.json")
 
     # ------------------------------------------------------------------ ingest

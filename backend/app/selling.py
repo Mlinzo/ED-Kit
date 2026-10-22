@@ -17,6 +17,10 @@ closed to the public (squadron, friends, nobody) are always left out, the rest a
 or unknown; the owner can still close it any time. When carriers are hidden, the nearest one
 nearer than every station is named as a hint. Each place is checked against the landing pad
 your ship needs (app.ships).
+
+The next jump of the route plotted in the game is asked about on its own (its stations, kept 6 h
+in memory) and, when it has somewhere to sell, listed first: it is on the way, wherever the
+nearest is.
 """
 
 from __future__ import annotations
@@ -35,6 +39,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app import db, spansh
+from app.navroute import PlottedRoute, PlottedSystem
 from app.schemas import SellCarrierHint, SellPlaceView, SellStationView, SellView
 from app.ships import Pad, pad_size, ship_name
 
@@ -63,6 +68,7 @@ REUSE_WITHIN_LY = 20.0
 REUSE_SHARE = 0.1  # of the distance to the nearest station found
 CARRIER_SEEN_WITHIN = timedelta(days=30)
 PLACES = 5
+SYSTEM_SIZE = 5  # per service, around the next jump: its own stations come first
 
 Kind = Literal["starport", "outpost", "planetary", "settlement", "megaship", "carrier", "other"]
 # Who may dock at a carrier: everybody, not the public (squadron, friends, nobody), or not known.
@@ -242,13 +248,15 @@ def pick(
     now: datetime,
     limit: int = PLACES,
     carriers: bool = False,
+    first: int | None = None,
 ) -> tuple[list[Place], tuple[float, Station] | None]:
     """The nearest systems where you can sell, and (carriers hidden) the nearest carrier when it
     is nearer than all of them.
 
     In each system the best station that buys both kinds of data, else the best for each kind.
-    The `limit` nearest systems, plus the nearest for each kind when they are farther. Carriers
-    closed to the public or not seen for 30 days are never used.
+    The `limit` nearest systems, plus the nearest for each kind when they are farther. The system
+    `first` (the next jump), when you can sell there, leads the list (after the one you are in).
+    Carriers closed to the public or not seen for 30 days are never used.
     """
     usable: list[Station] = []
     hidden: list[Station] = []
@@ -286,6 +294,12 @@ def pick(
             ]
         chosen.append((math.dist(here, group[0].position), show, len(group) - len(show)))
 
+    if first is not None:
+        at = next((i for i, c in enumerate(chosen) if c[1][0].system_address == first), None)
+        if at is not None:
+            lead = 1 if at != 0 and chosen[0][0] < 0.5 else 0  # after the system you are in
+            chosen.insert(lead, chosen.pop(at))
+
     top = chosen[:limit]
     for wanted in ("cartographics", "genomics"):
         if not any(getattr(s, wanted) for _, show, _ in top for s in show):
@@ -296,7 +310,7 @@ def pick(
     nearer = min(
         ((math.dist(here, s.position), s) for s in hidden), default=None, key=lambda c: c[0]
     )
-    if nearer is not None and top and nearer[0] >= top[0][0]:
+    if nearer is not None and top and nearer[0] >= min(c[0] for c in top):
         nearer = None
     return top, nearer
 
@@ -315,6 +329,33 @@ def search(coords: Vec) -> list[dict[str, Any]]:
     with ThreadPoolExecutor(len(jobs)) as pool:
         parts = list(pool.map(lambda job: spansh.stations(job[0], coords, job[1], job[2]), jobs))
     return [station for part in parts for station in part]
+
+
+def search_system(system: PlottedSystem) -> list[dict[str, Any]]:
+    """The stations in one system that buy data: the searches of `search` around it, a few
+    places each (nearest first, so its own come first), kept to that system; raises
+    spansh.SpanshError."""
+    coords = (system.x, system.y, system.z)
+    jobs = [
+        (service, types)
+        for service in (CARTOGRAPHICS, GENOMICS)
+        for types in (STATION_TYPES, CARRIER_TYPES)
+    ]
+    with ThreadPoolExecutor(len(jobs)) as pool:
+        parts = list(
+            pool.map(lambda job: spansh.stations(job[0], coords, SYSTEM_SIZE, job[1]), jobs)
+        )
+    return [s for part in parts for s in part if s.get("system_id64") == system.address]
+
+
+def next_jump(route: PlottedRoute | None, here: int | None) -> PlottedSystem | None:
+    """The next system of the route plotted in the game, from where you are (None: no route,
+    its end, or off it)."""
+    if route is None or here is None:
+        return None
+    systems = route.systems
+    at = next((i for i in range(len(systems) - 1, -1, -1) if systems[i].address == here), None)
+    return systems[at + 1] if at is not None and at + 1 < len(systems) else None
 
 
 def cached(conn: sqlite3.Connection) -> sqlite3.Row | None:
@@ -338,20 +379,26 @@ def covers(row: sqlite3.Row | None, here: Vec, now: datetime) -> bool:
 
 class SellFinder:
     """Runs the station searches on a worker thread, one at a time; calls `on_change` when one
-    is stored."""
+    is stored. The searches around you go to `sell_search`; those of single systems (the next
+    jump) stay in memory."""
 
     def __init__(
         self,
         db_path: Path,
         on_change: Callable[[], None],
         find: Callable[[Vec], list[dict[str, Any]]] = search,
+        find_system: Callable[[PlottedSystem], list[dict[str, Any]]] = search_system,
     ) -> None:
         self.db_path = db_path
         self.on_change = on_change
         self.find = find
-        self._queue: queue.Queue[Vec] = queue.Queue()
+        self.find_system = find_system
+        self._queue: queue.Queue[Vec | PlottedSystem] = queue.Queue()
         self._lock = threading.Lock()
         self._busy = False
+        # By system address: when it was asked about, and its stations (None: Spansh failed).
+        self._systems: dict[int, tuple[datetime, list[dict[str, Any]] | None]] = {}
+        self._asking: set[int] = set()
         self._thread = threading.Thread(target=self._run, name="selling", daemon=True)
         self._thread.start()
 
@@ -370,17 +417,55 @@ class SellFinder:
             self._busy = True
         self._queue.put(here)
 
+    def request_system(self, system: PlottedSystem) -> None:
+        """Ask about the stations of one system unless that was done lately."""
+        now = datetime.now(UTC)
+        with self._lock:
+            known = self._systems.get(system.address)
+            if known is not None:
+                within = FRESH_FOR if known[1] is not None else RETRY_FAILED_AFTER
+                if now - known[0] < within:
+                    return
+            if system.address in self._asking:
+                return
+            self._asking.add(system.address)
+        self._queue.put(system)
+
+    def system_stations(self, address: int) -> list[dict[str, Any]]:
+        """What the last search of that system found (none yet, or it failed: nothing)."""
+        with self._lock:
+            known = self._systems.get(address)
+        return (known[1] or []) if known is not None else []
+
     def _run(self) -> None:
         while True:
-            here = self._queue.get()
+            job = self._queue.get()
             try:
-                self._search(here)
+                if isinstance(job, PlottedSystem):
+                    self._search_system(job)
+                else:
+                    self._search(job)
             except Exception:  # noqa: BLE001 - never kill the worker
                 log.exception("sell search failed")
             finally:
                 with self._lock:
-                    self._busy = False
+                    if isinstance(job, PlottedSystem):
+                        self._asking.discard(job.address)
+                    else:
+                        self._busy = False
                 self.on_change()
+
+    def _search_system(self, system: PlottedSystem) -> None:
+        found: list[dict[str, Any]] | None
+        try:
+            found = self.find_system(system)
+        except spansh.SpanshError as exc:
+            log.info("sell search in %s failed: %s", system.name, exc)
+            found = None
+        now = datetime.now(UTC)
+        with self._lock:
+            self._systems = {a: v for a, v in self._systems.items() if now - v[0] < FRESH_FOR}
+            self._systems[system.address] = (now, found)
 
     def _search(self, here: Vec) -> None:
         ok, stations = True, []
@@ -414,6 +499,7 @@ def sell_view(
     state: sqlite3.Row | None,
     finder: SellFinder | None,
     carriers: bool = False,
+    plotted: PlottedRoute | None = None,
 ) -> SellView:
     ship = state["ship_type"] if state else None
     pad = pad_size(ship)
@@ -456,8 +542,14 @@ def sell_view(
         elif row is None or not row["ok"]:
             base = base.model_copy(update={"state": "failed"})
 
+    upcoming = next_jump(plotted, state["system_address"])
+    if finder is not None and upcoming is not None:
+        finder.request_system(upcoming)
+        found += [s for s in map(from_spansh, finder.system_stations(upcoming.address)) if s]
+
     stations = merge(found, journal_stations(conn, fid))
-    picked, nearer = pick(stations, here, pad, datetime.now(UTC), carriers=carriers)
+    first = upcoming.address if upcoming is not None else None
+    picked, nearer = pick(stations, here, pad, datetime.now(UTC), carriers=carriers, first=first)
     places = [
         SellPlaceView(
             system_name=show[0].system_name,
@@ -466,6 +558,7 @@ def sell_view(
             jumps=jumps_to(distance, jump_range),
             stations=[_station_view(s) for s in show],
             more=more,
+            next_jump=first is not None and show[0].system_address == first,
         )
         for distance, show, more in picked
     ]

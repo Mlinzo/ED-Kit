@@ -57,6 +57,10 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   allows (a secure page: the PC itself); on a phone over the LAN the picture is held to save it.
   A drawn 16:9 card with the galaxy and your travels was tried first and dropped: the tab as it
   is was wanted.
+- Where to sell: the next jump first (2026-10-22): the next system of the route plotted in the
+  game is asked about on its own (Spansh, the stations of that system) and, when you can sell
+  there, it leads the list as "Next jump" (after the system you are in, when that one buys data),
+  wherever the nearest station is: it is on the way.
 - Route tab fixes (2026-10-22): while you are at the next stop and it is not done yet, its card
   also names the stop after it ("Then:", with the copy button and the distance), so the last
   system can be copied from the second to last. "Refresh data" is gone: it rebuilt the route from

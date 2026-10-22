@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from app import db, selling, views
+from app.navroute import PlottedRoute, PlottedSystem
 from app.projector import Projector
 from app.selling import Station, covers, fits, merge, pick
 from app.ships import pad_size, ship_name
@@ -316,3 +317,72 @@ def test_finder_searches_once_and_the_view_lists_it(
     assert with_carriers.places[0].stations[0].access == "all"
     assert with_carriers.nearer_carrier is None
     assert len(fake.calls) == 1  # the stored search covers the same spot
+
+
+def test_pick_puts_the_next_jump_first() -> None:
+    stations = [
+        station("Near Port", "Near", 10.0),
+        station("Mid Port", "Mid", 50.0),
+        station("Ahead Port", "Ahead", 60.0, uc=False),
+    ]
+    ahead = stations[2].system_address
+    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, first=ahead)
+    assert [p[1][0].system_name for p in places] == ["Ahead", "Near", "Mid"]
+    # Where you are stays on top.
+    places, _ = pick(
+        [station("Here Port", "Here", 0.0), *stations], (0.0, 0.0, 0.0), "M", NOW, first=ahead
+    )
+    assert [p[1][0].system_name for p in places] == ["Here", "Ahead", "Near", "Mid"]
+    # Nowhere to sell there: the nearest first, as always.
+    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, first=123)
+    assert [p[1][0].system_name for p in places] == ["Near", "Mid", "Ahead"]
+
+
+def test_next_jump_of_the_plotted_route() -> None:
+    systems = tuple(
+        PlottedSystem(n, a, x, 0.0, 0.0, "K")
+        for n, a, x in [("A", 1, 0), ("B", 2, 30), ("C", 3, 60)]
+    )
+    route = PlottedRoute("2026-10-22T10:00:00Z", systems)
+    assert selling.next_jump(route, 1) == systems[1]
+    assert selling.next_jump(route, 2) == systems[2]
+    assert selling.next_jump(route, 3) is None  # its end
+    assert selling.next_jump(route, 9) is None  # off it
+    assert selling.next_jump(None, 1) is None
+
+
+def test_the_view_lists_the_next_jump_first(
+    tmp_path: Path, conn: sqlite3.Connection, proj: Projector
+) -> None:
+    feed(conn, proj, [CMDR, jump()])
+    ahead = PlottedSystem("Ahead System", 777, 61.0, 2.0, 3.0, "K")
+    route = PlottedRoute(
+        "2026-10-22T10:00:00Z",
+        (PlottedSystem("Col 285 Sector TT-H c10-4", SA, 1.0, 2.0, 3.0, "K"), ahead),
+    )
+    asked: list[str] = []
+
+    def find_system(system: PlottedSystem) -> list[dict[str, Any]]:
+        asked.append(system.name)
+        port = raw_station("Ahead", system.x, system_y=system.y, system_z=system.z)
+        return [{**port, "system_id64": system.address, "services": ["Vista Genomics"]}]
+
+    changed = threading.Event()
+    finder = selling.SellFinder(
+        tmp_path / "test.db", changed.set, find=FakeSpansh(), find_system=find_system
+    )
+    state = views.cmdr_state(conn, "F1")
+    selling.sell_view(conn, "F1", state, finder, plotted=route)
+    for _ in range(50):  # both searches stored
+        if asked and not finder.busy and finder.system_stations(777):
+            break
+        changed.wait(0.1)
+        changed.clear()
+    sell = selling.sell_view(conn, "F1", state, finder, plotted=route)
+    assert [p.system_name for p in sell.places] == ["Ahead System", "Hub System"]
+    assert sell.places[0].next_jump and not sell.places[1].next_jump
+    assert sell.places[0].stations[0].genomics and not sell.places[0].stations[0].cartographics
+    # The hidden carrier is still nearer than every station listed.
+    assert sell.nearer_carrier is not None and sell.nearer_carrier.name == "FC"
+    selling.sell_view(conn, "F1", state, finder, plotted=route)
+    assert asked == ["Ahead System"]  # asked once

@@ -77,6 +77,12 @@ function Place({
   const here = place.distanceLy < 0.5
   return (
     <li className="py-3">
+      {place.nextJump && (
+        <p className="mb-0.5 flex items-center gap-1.5 text-xs font-medium text-sky-300">
+          <Navigation className="size-3.5" aria-hidden />
+          {t.session.sell.nextJump}
+        </p>
+      )}
       {/* Phones: the distance goes under the name (long system names need the width). */}
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="flex min-w-0 items-center gap-1">
