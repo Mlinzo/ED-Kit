@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 15
+VERSION = 16
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -353,18 +353,16 @@ class Projector:
         self._update_state(on_foot=1, in_srv=0)
         address, body_id = ev.get("SystemAddress"), ev.get("BodyID")
         if ev.get("OnPlanet") and self.fid and address is not None and body_id is not None:
-            # First footfall is never available in populated systems, although the journal
-            # still says WasFootfalled: false there.
+            # A first footfall only where nobody has walked or mapped (`exobio.untouched`): the
+            # journal's WasFootfalled: false is not enough, and populated systems have none.
             row = self.conn.execute(
                 "SELECT b.facts, s.population FROM bodies b "
                 "LEFT JOIN systems s ON s.address = b.system_address "
                 "WHERE b.system_address = ? AND b.body_id = ?",
                 (address, body_id),
             ).fetchone()
-            if (
-                row is not None
-                and not row["population"]
-                and facts_from_json(row["facts"]).was_footfalled is False
+            if row is not None and exobio.untouched(
+                facts_from_json(row["facts"]), bool(row["population"])
             ):
                 self.conn.execute(
                     "UPDATE body_cmdr SET footfall_at = COALESCE(footfall_at, ?) "

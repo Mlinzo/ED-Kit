@@ -57,6 +57,10 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   allows (a secure page: the PC itself); on a phone over the LAN the picture is held to save it.
   A drawn 16:9 card with the galaxy and your travels was tried first and dropped: the tab as it
   is was wanted.
+- First footfalls by the bonus's rule (2026-10-22): stepping out counts as your first footfall
+  only where nobody has mapped the planet or walked on it, outside populated systems
+  (`exobio.untouched`, shared with the ×5 bonus). `WasFootfalled: false` alone counted HR 1172
+  A 8 a and A 8 d, where others had landed and logged every species (and had mapped both).
 - Shop catalog cards (2026-10-21): choosing a ship opens its card: a blueprint sketch (top, side
   and rear views in true scale, dimension lines; 35 ships traced from the wiki's blueprint sheets
   by `tools/ship_outlines.py`, which also reads screenshots of the game's schematics; the other 13

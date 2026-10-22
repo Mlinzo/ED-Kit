@@ -514,3 +514,30 @@ def test_no_first_footfall_in_populated_systems(conn: sqlite3.Connection, proj: 
     assert stats.stats_view(conn, "F1").first_footfalls_total == 0
     body = next(b for b in views.system_view(conn, "F1").bodies if b.body_id == 13)
     assert not body.footfall_claimable and not body.footfall_by_me
+
+
+def test_no_first_footfall_on_planets_others_mapped(
+    conn: sqlite3.Connection, proj: Projector
+) -> None:
+    # HR 1172 A 8 a: WasFootfalled false, no population, yet others had landed and logged its
+    # species; they had mapped it first.
+    feed(
+        conn,
+        proj,
+        CMDR,
+        JUMP,
+        star(1, "A"),
+        planet(22, "A 8 a", [{"Star": 1}, {"Null": 0}], WasMapped=True, WasFootfalled=False),
+        {
+            "timestamp": "2026-10-21T12:51:59Z",
+            "event": "Disembark",
+            "SRV": False,
+            "OnPlanet": True,
+            "SystemAddress": SA,
+            "BodyID": 22,
+            "Body": f"{SYSTEM} A 8 a",
+        },
+    )
+    s = stats.stats_view(conn, "F1")
+    assert s.first_footfalls_total == 0
+    assert all(f.footfall_at is None for f in s.firsts)

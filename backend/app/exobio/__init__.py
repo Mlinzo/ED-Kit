@@ -8,6 +8,7 @@ Public API (used by the projector and views — keep signatures stable):
     genus_ranges(predictions, genuses, skip) / range_total(ranges, slots)  # value estimates
     deduced_genera(predictions, signals, known) -> set[str]  # sure before DSS
     bonus_likely(body, populated) -> bool  # the x5 bonus counted for its species
+    untouched(body, populated) -> bool     # nobody mapped or walked there: first footfall
     FIRST_FOOTFALL_MULTIPLIER
 
 Modules: `catalog` (names, values, colony ranges), `rules` (where each species grows),
@@ -52,6 +53,7 @@ __all__ = [
     "get_species",
     "predict",
     "range_total",
+    "untouched",
 ]
 
 # Total payout factor when the species is the first logged on a body nobody has set foot
@@ -60,16 +62,22 @@ __all__ = [
 FIRST_FOOTFALL_MULTIPLIER = 5
 
 
-def bonus_likely(body: BodyFacts, populated: bool | None) -> bool:
-    """Whether the x5 bonus is counted for the species of a body: nobody has mapped it or
-    walked on it, outside a populated system.
+def untouched(body: BodyFacts, populated: bool | None) -> bool:
+    """Whether nobody has mapped a body or walked on it, outside a populated system: the first
+    footfall is likely yours to take there, and the x5 bonus likely paid.
 
-    The game pays it for handing a species in first ("First Logged"), which the journal does
-    not tell. A footfall can be missing from the record (HR 1172 A 8 a: no footfall, every
-    species logged by others), while whoever samples a planet nearly always maps it with the
-    DSS first, and the first map is reliably recorded. Older journals without the flags: no.
+    A footfall can be missing from the record (HR 1172 A 8 a and A 8 d: `WasFootfalled: false`,
+    yet others had landed and logged every species there), while whoever lands to sample a
+    planet nearly always maps it with the DSS first, and the first map is reliably recorded.
+    Populated systems have neither. Older journals without the flags: no.
     """
     return body.was_footfalled is False and body.was_mapped is False and not populated
+
+
+def bonus_likely(body: BodyFacts, populated: bool | None) -> bool:
+    """Whether the x5 bonus is counted for the species of a body (`untouched`). The game pays it
+    for handing a species in first ("First Logged"), which the journal does not tell."""
+    return untouched(body, populated)
 
 
 _ENTRIES: tuple[tuple[Species, SpeciesRule], ...] = tuple(
