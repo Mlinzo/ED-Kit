@@ -1,5 +1,6 @@
 // All-time statistics: a glanceable dashboard over GET /api/view/stats.
 import { ChartNoAxesColumn } from 'lucide-react'
+import { useRef } from 'react'
 import { useView } from '../../api/hooks'
 import type { StatsView } from '../../api/types'
 import { EmptyState, ViewFallback } from '../../components/States'
@@ -13,6 +14,7 @@ import { Kpis } from './Kpis'
 import { Notable } from './Notable'
 import { Records } from './Records'
 import { Scanning } from './Scanning'
+import { ShareButton } from './share/ShareButton'
 
 function isEmpty(s: StatsView): boolean {
   return s.jumps === 0 && s.bodiesScanned === 0 && s.speciesAnalysed === 0 && s.earningsCarto + s.earningsBio === 0
@@ -20,15 +22,17 @@ function isEmpty(s: StatsView): boolean {
 
 export function StatsScreen() {
   const { data, error, refetch } = useView('stats')
+  // What "Share" takes a picture of.
+  const root = useRef<HTMLDivElement>(null)
   if (!data) return <ViewFallback error={error} onRetry={refetch} />
   if (isEmpty(data)) {
     return <EmptyState icon={<ChartNoAxesColumn className="size-10" />} title={t.stats.noData} hint={t.stats.noDataHint} />
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-12">
+    <div ref={root} className="grid grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-12">
       <div className="min-w-0 xl:col-span-7">
-        <Hero stats={data} />
+        <Hero stats={data} action={<ShareButton target={root} hasName={!!data.commander} />} />
       </div>
       <div className="min-w-0 xl:col-span-5">
         <Kpis stats={data} />

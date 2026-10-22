@@ -50,6 +50,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Share the stats (2026-10-22): "Share" on the Stats tab takes the whole tab, as it is on the
+  screen, into one long PNG (twice the screen's pixels where the canvas allows it), with the
+  commander name or without it (remembered per browser); "?" tips and show-more buttons stay out.
+  Download, copy to the clipboard, or send through the system's share sheet where the browser
+  allows (a secure page: the PC itself); on a phone over the LAN the picture is held to save it.
+  A drawn 16:9 card with the galaxy and your travels was tried first and dropped: the tab as it
+  is was wanted.
 - Shop catalog cards (2026-10-21): choosing a ship opens its card: a blueprint sketch (top, side
   and rear views in true scale, dimension lines; 35 ships traced from the wiki's blueprint sheets
   by `tools/ship_outlines.py`, which also reads screenshots of the game's schematics; the other 13

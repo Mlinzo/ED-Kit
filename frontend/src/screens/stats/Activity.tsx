@@ -221,6 +221,7 @@ export function Activity({ timeline }: { timeline: readonly DayStats[] }) {
             type="button"
             aria-pressed={showTable}
             onClick={() => setShowTable((v) => !v)}
+            data-no-snapshot
             className="focus-ring relative inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-zinc-400 ring-1 ring-zinc-800 after:absolute after:-inset-1.5 hover:bg-zinc-800 hover:text-zinc-200"
           >
             {showTable ? <X className="size-3.5" aria-hidden /> : <Table2 className="size-3.5" aria-hidden />}

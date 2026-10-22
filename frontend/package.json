@@ -16,6 +16,7 @@
     "@react-three/fiber": "^9.8.2",
     "@tailwindcss/vite": "^4.3.3",
     "lucide-react": "1.50.0",
+    "modern-screenshot": "4.7.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3",

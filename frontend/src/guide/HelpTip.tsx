@@ -16,6 +16,7 @@ export function HelpTip({ topic, className = '' }: { topic: TopicId; className?:
       onClick={() => open(topic)}
       title={short}
       aria-label={t.guide.about(title)}
+      data-no-snapshot
       className={`focus-ring relative inline-flex size-4 shrink-0 items-center justify-center rounded-full align-middle text-zinc-500 normal-case after:absolute after:-inset-3 hover:text-accent-strong ${className}`}
     >
       <CircleHelp className="size-3.5" aria-hidden />

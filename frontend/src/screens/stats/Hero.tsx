@@ -1,5 +1,5 @@
 import { Trophy } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { StatsView } from '../../api/types'
 import { AreaChart } from '../../components/charts/AreaChart'
 import { StackedBar } from '../../components/charts/Bars'
@@ -12,7 +12,7 @@ import { percent } from './numbers'
 import { cumulativeEarnings, longDate, shortDay } from './timeline'
 import { VIZ } from './palette'
 
-export function Hero({ stats }: { stats: StatsView }) {
+export function Hero({ stats, action }: { stats: StatsView; action?: ReactNode }) {
   const total = stats.earningsCarto + stats.earningsBio
   const growth = useMemo(() => cumulativeEarnings(stats.timeline), [stats.timeline])
   const [chartRef, chartWidth] = useElementWidth<HTMLDivElement>()
@@ -31,21 +31,31 @@ export function Hero({ stats }: { stats: StatsView }) {
       <div aria-hidden className="pointer-events-none absolute -top-32 -right-20 -z-10 size-80 rounded-full bg-sky-500/10 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-40 -left-16 -z-10 size-80 rounded-full bg-emerald-500/[0.07] blur-3xl" />
 
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      {/* Phones: the title and the action on one line, who and since when under them. */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2">
         <h1 id="stats-earned" className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
           {t.stats.earnedAllTime}
         </h1>
-        {(stats.commander || stats.since) && (
-          <p className="text-xs text-zinc-500">
-            {stats.commander && (
-              <>
-                {t.common.commander} <span className="font-medium text-zinc-300">{stats.commander}</span>
-              </>
-            )}
-            {stats.commander && stats.since && <span aria-hidden> · </span>}
-            {stats.since && t.stats.since(longDate(stats.since))}
-          </p>
-        )}
+        <div className="contents sm:flex sm:min-w-0 sm:items-center">
+          {(stats.commander || stats.since) && (
+            <p className="col-span-2 row-start-2 text-xs text-zinc-500">
+              {stats.commander && (
+                // Left out of the shared picture on request.
+                <span data-snapshot-name>
+                  {t.common.commander} <span className="font-medium text-zinc-300">{stats.commander}</span>
+                  {stats.since && <span aria-hidden> · </span>}
+                </span>
+              )}
+              {stats.since && t.stats.since(longDate(stats.since))}
+            </p>
+          )}
+          {action && (
+            // Never in the shared picture.
+            <div data-no-snapshot className="col-start-2 row-start-1 sm:ml-3">
+              {action}
+            </div>
+          )}
+        </div>
       </div>
 
       <p className="mt-3 flex items-baseline gap-2" title={exactCredits(total)}>

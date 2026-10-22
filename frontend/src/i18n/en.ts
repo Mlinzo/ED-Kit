@@ -1178,6 +1178,21 @@ export const en: Strings = {
     noFirsts: 'No firsts yet',
     noFirstsHint: 'Bodies you are first to discover, map or set foot on will show up here.',
     noFirstsFilter: 'No bodies with this tag',
+
+    share: {
+      button: 'Share',
+      title: 'Share your stats',
+      showName: 'Show commander name',
+      download: 'Download PNG',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyFailed: 'Could not copy',
+      send: 'Send…',
+      preparing: 'Making the picture…',
+      failed: 'Could not make the picture',
+      holdToSave: 'To save the picture, tap and hold it.',
+      alt: 'All-time stats as one picture',
+    },
   },
 
   time: {

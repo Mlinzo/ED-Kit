@@ -52,6 +52,7 @@ export function MoreButton({
       type="button"
       onClick={onClick}
       aria-expanded={expanded}
+      data-no-snapshot
       className={`focus-ring relative inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-zinc-400 ring-1 ring-zinc-800 after:absolute after:-inset-1 hover:bg-zinc-800 hover:text-zinc-200 ${className}`}
     >
       {children}

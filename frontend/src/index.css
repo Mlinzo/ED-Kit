@@ -46,6 +46,25 @@ body {
   }
 }
 
+/* While "Share" takes the Stats tab's picture: controls out, the commander's name on request.
+   Hidden on the page itself, so the layout closes up before the picture copies it. */
+[data-snapshot] [data-no-snapshot],
+[data-snapshot='no-name'] [data-snapshot-name] {
+  display: none !important;
+}
+/* Text a hair wider in the copy must not wrap anew (ShareDialog's markSingleLines), nor make a
+   table's box scroll. */
+[data-snapshot] [data-snapshot-line] {
+  white-space: nowrap;
+}
+[data-snapshot] [data-snapshot-line='fits'] {
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+[data-snapshot] :is(.overflow-auto, .overflow-x-auto, .overflow-y-auto) {
+  overflow: hidden !important;
+}
+
 /* Visible keyboard focus everywhere, invisible for mouse/touch. */
 @utility focus-ring {
   outline: 2px solid transparent;

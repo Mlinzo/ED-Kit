@@ -15,7 +15,7 @@ shows everything in your browser.
 - **History**: every system you visited: what you scanned, found and sold.
 - **Shop**: the nearest shipyards and outfitting as soon as you open it, and where to buy a ship or a module: by name or from the lists, with prices, the navy rank a ship needs and how old the station's data is (Spansh data). Flip through every ship and module, ships by type (combat, exploration, freight...) and price: a ship's blueprint sketch, base price, performance, slots and whether a fighter hangar fits; a module's figures for each class and rating (EDSY data).
 - **Galaxy**: all your journeys on a 3D galaxy map: path, earnings, first discoveries, deaths, and the codex regions you have been to, the engineers with your progress. On request, other players right now (from EDDN, no names).
-- **Stats**: all-time numbers and records.
+- **Stats**: all-time numbers and records, shared as one picture (with or without your commander name).
 
 <p>
   <img src="docs/screenshot-galaxy.gif" width="49%" alt="The Galaxy tab turning slowly around your travels: the path with earnings and deaths, other players right now (EDDN) as violet dots, engineers as orange rings">
