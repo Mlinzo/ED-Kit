@@ -42,7 +42,7 @@ function sceneKey(route: RouteView): string {
     route.destination,
     route.currentPosition,
     route.nextSeq,
-    route.stops.map((s) => [s.address, s.seq, s.x, s.y, s.z, s.value, s.done, s.skipped, s.here]),
+    route.stops.map((s) => [s.address, s.seq, s.x, s.y, s.z, s.value, s.done, s.skipped, s.passed, s.here]),
   ])
 }
 

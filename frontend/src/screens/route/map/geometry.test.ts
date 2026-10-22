@@ -30,6 +30,7 @@ const PARAMS: RouteRequest = {
   minValue: 0,
   minSystemValue: 0,
   bioMinValue: 0,
+  bioMinSpeciesValue: 0,
   bioRequireGenuses: false,
   includePopulated: true,
   skipMapped: true,
@@ -54,6 +55,7 @@ function stop(seq: number, x: number, y: number, z: number, extra: Partial<Route
     visited: false,
     done: false,
     skipped: false,
+    passed: false,
     here: false,
     codexNew: 0,
     neutron: false,
@@ -62,7 +64,7 @@ function stop(seq: number, x: number, y: number, z: number, extra: Partial<Route
 }
 
 function route(stops: RouteStopView[], extra: Partial<RouteView> = {}): RouteView {
-  const next = stops.find((s) => !s.done && !s.skipped) ?? null
+  const next = stops.find((s) => !s.done && !s.skipped && !s.passed) ?? null
   return {
     online: true,
     building: false,
@@ -139,6 +141,11 @@ describe('buildScene', () => {
     expect(done.size).toBe(skipped.size)
     expect(next.size).toBeGreaterThan(ahead.size)
     expect(ahead.size).toBeGreaterThan(done.size)
+  })
+
+  it('shows a stop you went past unfinished as skipped', () => {
+    const passed = [stop(1, 10, 0, 0, { passed: true, visited: true }), stop(2, 20, 0, 0, { here: true })]
+    expect(buildScene(route(passed)).stops.map((s) => s.state)).toEqual(['skipped', 'next'])
   })
 
   it('fits the route into the scene radius around its centre', () => {

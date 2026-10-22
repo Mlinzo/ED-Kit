@@ -811,3 +811,102 @@ def test_jumps_to_the_next_stop_count_the_fuel_aboard(conn: sqlite3.Connection) 
     assert view.jump_range_now_ly is not None and view.jump_range_now_ly > 32.62
     assert view.jumps_to_next == 1 and view.one_jump_fuel_t is None
     assert view.stops[1].jumps == 2
+
+
+def test_systems_you_sampled_species_in_are_left_out() -> None:
+    bodies = [
+        bio_body(1, 3, (10, 0, 0), ("Bacterial", "Shrubs")),
+        bio_body(2, 3, (20, 0, 0), ("Bacterial",), signals=1),
+    ]
+    req = PlanRequest(mode="riches", source="Start", body_types=("bio",), bio_min_value=0)
+    # One of two species analysed in system 1: what is left there does not bring you back.
+    sampled = {(1, 3): (False, 1)}
+    assert [
+        s.address for s in routeplan.plan(req, FakeSearch(bodies), lambda ids: sampled).stops
+    ] == [2]
+    keep = PlanRequest(
+        mode="riches", source="Start", body_types=("bio",), bio_min_value=0, skip_mapped=False
+    )
+    assert [
+        s.address for s in routeplan.plan(keep, FakeSearch(bodies), lambda ids: sampled).stops
+    ] == [1, 2]
+
+
+def test_stops_you_went_past_count_as_skipped(conn: sqlite3.Connection) -> None:
+    proj = Projector(conn)
+    feed(
+        conn,
+        proj,
+        {"timestamp": "2026-10-17T10:00:00Z", "event": "Commander", "FID": "F1", "Name": "T"},
+        {
+            "timestamp": "2026-10-17T10:00:02Z",
+            "event": "Location",
+            "StarSystem": "Start",
+            "SystemAddress": 999,
+            "StarPos": [0.0, 0.0, 0.0],
+        },
+    )
+    bodies = [
+        body(1, 1, (10, 0, 0), name="Alpha"),
+        body(2, 1, (20, 0, 0), name="Beta"),
+        body(3, 1, (30, 0, 0), name="Gamma"),
+    ]
+    plan = routeplan.plan(
+        PlanRequest(mode="riches", source="Start"), FakeSearch(bodies), no_mapped, START
+    )
+    routes.store(conn, RouteRequest(mode="riches"), plan, None)
+    conn.execute("UPDATE route SET created_at = '2026-10-17T10:05:00+00:00'")
+
+    def arrive(name: str, address: int, x: float, ts: str) -> None:
+        feed(
+            conn,
+            proj,
+            {
+                "timestamp": ts,
+                "event": "FSDJump",
+                "StarSystem": name,
+                "SystemAddress": address,
+                "StarPos": [x, 0.0, 0.0],
+                "JumpDist": 10.0,
+            },
+        )
+
+    arrive("Alpha", 1, 10.0, "2026-10-17T10:10:00Z")
+    view = routes.route_view(conn, "F1", Planner())
+    assert view.next_seq == 1 and view.stops[0].here and not view.stops[0].passed
+
+    # On to Beta with Alpha unmapped: Alpha was skipped, Beta is the next stop.
+    arrive("Beta", 2, 20.0, "2026-10-17T10:20:00Z")
+    view = routes.route_view(conn, "F1", Planner())
+    alpha, beta = view.stops[0], view.stops[1]
+    assert alpha.passed and not alpha.skipped and not alpha.done
+    assert view.next_seq == 2 and beta.here and view.skipped_count == 1
+
+    # Back at Alpha: it is the next stop again.
+    arrive("Alpha", 1, 10.0, "2026-10-17T10:30:00Z")
+    view = routes.route_view(conn, "F1", Planner())
+    assert view.next_seq == 1 and not view.stops[0].passed
+
+
+def test_bio_route_minimum_value_of_one_species() -> None:
+    cheap = bio_body(1, 3, (10, 0, 0), ("Bacterial",), signals=1)
+    dear = bio_body(2, 3, (20, 0, 0), ("Conchas",), signals=1)
+    both = bio_body(3, 3, (30, 0, 0), ("Bacterial", "Conchas"))
+    low, high = routebio.estimate(cheap), routebio.estimate(dear)
+    assert low is not None and high is not None and low.best < 5_000_000 <= high.best
+    bodies = [cheap, dear, both]
+
+    def stops(threshold: int) -> list[int]:
+        req = PlanRequest(
+            mode="riches",
+            source="Start",
+            body_types=("bio",),
+            bio_min_value=0,
+            bio_min_species_value=threshold,
+        )
+        return [s.address for s in routeplan.plan(req, FakeSearch(bodies), no_mapped).stops]
+
+    assert stops(0) == [1, 2, 3]
+    # Only planets where a species worth 5M may grow: the cheap one is left out, the one with
+    # both genera stays.
+    assert stops(5_000_000) == [2, 3]

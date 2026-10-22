@@ -738,6 +738,8 @@ export interface RouteRequest {
   minSystemValue: number
   /** Biology per body, optimistic estimate (credits). */
   bioMinValue: number
+  /** A species that may grow on the body is worth at least this (base value, credits; 0: any). */
+  bioMinSpeciesValue: number
   /** Only bodies whose genera are known (DSS). */
   bioRequireGenuses: boolean
   includePopulated: boolean
@@ -812,6 +814,9 @@ export interface RouteStopView {
   /** Every body mapped. */
   done: boolean
   skipped: boolean
+  /** Left unfinished on the way: you arrived at a later stop since the route was made (shown as
+   *  skipped; not in transit routes). */
+  passed: boolean
   /** You are in this system now. */
   here: boolean
   /** Codex routes: new entries expected here (none counted twice). */

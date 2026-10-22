@@ -114,7 +114,7 @@ function NextTarget({
     )
   }
   const left = stopLeft(stop)
-  const after = route.stops.find((s) => s.seq > stop.seq && !s.done && !s.skipped)
+  const after = route.stops.find((s) => s.seq > stop.seq && !s.done && !s.skipped && !s.passed)
   const bio = stop.bodies.some((b) => b.bioSignals > 0)
   const codex = route.params?.goal === 'codex'
   const transit = route.params?.goal === 'transit'
@@ -237,7 +237,7 @@ function Progress({ route }: { route: RouteView }) {
   const pct = (n: number) => (total ? (n / total) * 100 : 0)
   const left = routeLeft(route)
   const transit = route.params?.goal === 'transit'
-  const jumpsLeft = route.stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + (s.jumps ?? 0), 0)
+  const jumpsLeft = route.stops.filter((s) => !s.done && !s.skipped && !s.passed).reduce((n, s) => n + (s.jumps ?? 0), 0)
   // The range now (fuel and cargo aboard) first; the maximum and the full-tank one when they differ.
   const { jumpRangeNowLy: now, jumpRangeLy: max, jumpRangeFullLy: full } = route
   const differs = (ly: number) => now !== null && Math.abs(ly - now) >= 0.05
@@ -357,7 +357,9 @@ function StopRow({
   /** A transit route: jumps instead of a value, neutron stars marked. */
   transit?: boolean
 }) {
-  const dim = stop.done || stop.skipped
+  // Gone past it unfinished: skipped, though not by the button (so no "restore": fly back instead).
+  const skipped = stop.skipped || stop.passed
+  const dim = stop.done || skipped
   const label = (action: string) => `${action}: ${stop.name}`
   return (
     <li
@@ -369,7 +371,7 @@ function StopRow({
         {stop.jumps ? <span className="block text-xs text-zinc-600">{t.route.jumps(stop.jumps)}</span> : null}
       </span>
       <span className="flex min-w-0 items-center gap-1.5">
-        <span className={`truncate font-medium proportional-nums ${dim ? 'text-zinc-500' : 'text-zinc-100'} ${stop.skipped ? 'line-through' : ''}`} title={stop.name}>
+        <span className={`truncate font-medium proportional-nums ${dim ? 'text-zinc-500' : 'text-zinc-100'} ${skipped ? 'line-through' : ''}`} title={stop.name}>
           {stop.name}
         </span>
         <CopyButton text={stop.name} />
@@ -395,7 +397,7 @@ function StopRow({
               .filter(Boolean)
               .join(' · ')}
           >
-            <BodyChips body={b} dim={b.done || stop.skipped} />
+            <BodyChips body={b} dim={b.done || skipped} />
             <span className="text-xs text-zinc-500">
               {b.shortName}
               {b.bioSignals > 0 && <span className="text-zinc-600"> · {b.bioDone}/{b.bioSignals}</span>}
@@ -433,7 +435,7 @@ function StopRow({
               <ArrowDown className="size-4" aria-hidden />
             </IconButton>
           )}
-          {!stop.done && (
+          {!stop.done && !stop.passed && (
             <IconButton label={label(stop.skipped ? t.route.unskip : t.route.skip)} onClick={() => actions.skip(stop.seq, !stop.skipped)}>
               {stop.skipped ? <Undo2 className="size-4" aria-hidden /> : <SkipForward className="size-4" aria-hidden />}
             </IconButton>

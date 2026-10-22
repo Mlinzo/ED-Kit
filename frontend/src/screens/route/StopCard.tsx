@@ -66,7 +66,7 @@ export function StopCard({
             <StopStatus stop={stop} next={next} />
           </p>
           <div className="mt-0.5 flex items-center gap-1.5">
-            <h3 className={`truncate text-lg font-semibold text-zinc-50 proportional-nums ${stop.skipped ? 'line-through' : ''}`} title={stop.name}>
+            <h3 className={`truncate text-lg font-semibold text-zinc-50 proportional-nums ${stop.skipped || stop.passed ? 'line-through' : ''}`} title={stop.name}>
               {stop.name}
             </h3>
             <CopyButton text={stop.name} />
@@ -122,7 +122,7 @@ export function StopCard({
               {t.route.makeNext}
             </Action>
           )}
-          {!stop.done && (
+          {!stop.done && !stop.passed && (
             <Action onClick={() => actions.skip(stop.seq, !stop.skipped)}>
               {stop.skipped ? <Undo2 className="size-3.5" aria-hidden /> : <SkipForward className="size-3.5" aria-hidden />}
               {stop.skipped ? t.route.unskip : t.route.skip}

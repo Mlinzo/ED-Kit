@@ -165,8 +165,9 @@ class PlanRequest:
     min_value: int = 300_000  # mapping payout per body
     min_system_value: int = 0  # what is still to earn in a system (mapping + biology)
     include_populated: bool = True
-    skip_mapped: bool = True  # leave out systems you have finished
+    skip_mapped: bool = True  # leave out systems you have finished or sampled species in
     bio_min_value: int = 5_000_000  # biology per body (optimistic estimate); "bio" in types
+    bio_min_species_value: int = 0  # a species that may grow on the body is worth at least this
     bio_require_genuses: bool = False  # only bodies whose genera are known (DSS)
 
 
@@ -305,6 +306,7 @@ class _Collector:
         self.system_info: dict[int, dict[str, Any] | None] = {}
         self.permits: set[int] | None = None
         self.progress: dict[tuple[int, int], BodyProgress] = {}
+        self.sampled: set[int] = set()  # systems where you have analysed species
         self.looked_up: set[int] = set()
         self.reference: Any = None
 
@@ -341,7 +343,7 @@ class _Collector:
                 )
                 if sum(e.weight for e in new) < MIN_CODEX_BODY:
                     return
-            elif bio.high < self.req.bio_min_value:
+            elif bio.high < self.req.bio_min_value or bio.best < self.req.bio_min_species_value:
                 return
             if self.req.bio_require_genuses and not bio.genuses:
                 return
@@ -398,7 +400,9 @@ class _Collector:
         """Your own progress (local journal data) in the systems seen so far."""
         new = [a for a in self.stops if a not in self.looked_up]
         if new:
-            self.progress.update(self.progress_lookup(new))
+            found = self.progress_lookup(new)
+            self.progress.update(found)
+            self.sampled.update(key[0] for key, (_, species) in found.items() if species > 0)
             self.looked_up.update(new)
 
     def done(self, stop: PlanStop, body: PlanBody) -> bool:
@@ -416,7 +420,11 @@ class _Collector:
             or (self.check_population and (info.get("population") or 0) > 0)
         ):
             return False
-        if self.req.skip_mapped and all(self.done(stop, b) for b in stop.bodies.values()):
+        # Systems you have finished, or sampled species in: whatever is left there (what you
+        # passed by), a route should not take you back for it.
+        if self.req.skip_mapped and (
+            stop.address in self.sampled or all(self.done(stop, b) for b in stop.bodies.values())
+        ):
             return False
         if self.req.goal == "codex":
             return self.codex_value(stop, {}) >= MIN_CODEX_STOP

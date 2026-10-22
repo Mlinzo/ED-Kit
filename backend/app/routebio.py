@@ -154,6 +154,7 @@ class BioEstimate:
     high: int  # optimistic
     genuses: tuple[str, ...]  # codex genus symbols confirmed by DSS (may be empty)
     entries: tuple[CodexChance, ...] = ()  # every codex entry predicted (logged or not)
+    best: int = 0  # base value of the dearest species that may grow there
 
 
 def estimate(raw: dict[str, Any]) -> BioEstimate | None:
@@ -180,6 +181,7 @@ def estimate(raw: dict[str, Any]) -> BioEstimate | None:
         high=high,
         genuses=tuple(sorted(genuses)),
         entries=codex_chances(predictions, body, system, certain, signals),
+        best=max((hi for _, hi in ranges.values()), default=0),
     )
 
 

@@ -95,6 +95,7 @@ def _plan_request(req: RouteRequest, source: Point | None) -> PlanRequest:
         include_populated=req.include_populated,
         skip_mapped=req.skip_mapped,
         bio_min_value=req.bio_min_value,
+        bio_min_species_value=req.bio_min_species_value,
         bio_require_genuses=req.bio_require_genuses,
     )
 
@@ -558,19 +559,19 @@ def route_view(
 
     params = RouteRequest.model_validate_json(route["params"])
     transit = params.goal == "transit"
-    # Transit: a waypoint is passed once you arrive there (or further on) after the route was made.
+    # The farthest stop you arrived at since the route was made. Transit: the waypoints up to it
+    # are passed. Otherwise the stops before it you left unfinished were skipped: you went on.
+    since = {
+        r[0]
+        for r in conn.execute(
+            "SELECT DISTINCT system_address FROM visits WHERE fid = ? AND ts >= ?",
+            (fid, route["created_at"].replace("+00:00", "Z")),
+        )
+    }
     passed_seq = 0
-    if transit:
-        since = {
-            r[0]
-            for r in conn.execute(
-                "SELECT DISTINCT system_address FROM visits WHERE fid = ? AND ts >= ?",
-                (fid, route["created_at"].replace("+00:00", "Z")),
-            )
-        }
-        for s in conn.execute("SELECT seq, system_address FROM route_stops ORDER BY seq"):
-            if s["system_address"] in since:
-                passed_seq = s["seq"]
+    for s in conn.execute("SELECT seq, system_address FROM route_stops ORDER BY seq"):
+        if s["system_address"] in since:
+            passed_seq = s["seq"]
     codex_rows = (
         {
             (b["system_address"], b["body_id"]): json.loads(b["codex"] or "[]")
@@ -586,6 +587,8 @@ def route_view(
     coords: dict[int, tuple[float, float, float]] = {}
     for s in conn.execute("SELECT * FROM route_stops ORDER BY seq"):
         own = bodies.get(s["system_address"], [])
+        here_now = here is not None and here[0] == s["system_address"]
+        done = s["seq"] <= passed_seq if transit else bool(own) and all(b.done for b in own)
         codex_new = 0.0
         if params.goal == "codex":
             region = regionmap.region_symbol(regionmap.region_at(s["x"], s["z"]))
@@ -610,15 +613,20 @@ def route_view(
                 value=sum(_body_value(b) for b in own),
                 value_min=sum(_body_value(b, low=True) for b in own),
                 visited=s["system_address"] in visited,
-                done=s["seq"] <= passed_seq if transit else bool(own) and all(b.done for b in own),
+                done=done,
                 skipped=bool(s["skipped"]),
-                here=here is not None and here[0] == s["system_address"],
+                passed=not transit
+                and not done
+                and not s["skipped"]
+                and not here_now
+                and s["seq"] < passed_seq,
+                here=here_now,
                 codex_new=round(codex_new, 2),
                 neutron=bool(s["neutron"]),
             )
         )
 
-    nxt = next((s for s in stops if not s.done and not s.skipped), None)
+    nxt = next((s for s in stops if not s.done and not s.skipped and not s.passed), None)
     distance = None
     if nxt is not None and here is not None and here[1] is not None:
         distance = round(math.dist(here[1], coords[nxt.seq]), 2)
@@ -651,7 +659,7 @@ def route_view(
         direct_ly=_direct(route["source"], route["destination"]),
         remaining_ly=round(sum(s.hop_ly for s in stops if nxt and s.seq >= nxt.seq), 2),
         done_count=sum(1 for s in stops if s.done),
-        skipped_count=sum(1 for s in stops if s.skipped and not s.done),
+        skipped_count=sum(1 for s in stops if (s.skipped or s.passed) and not s.done),
         # Transit: the route itself goes through the neutron stars.
         neutron=None
         if transit

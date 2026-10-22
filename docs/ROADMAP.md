@@ -50,6 +50,16 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Minimum value of one species in routes (2026-10-22): besides the biology a planet is worth in
+  total, the route form takes the least a single species there must be worth (base value, no
+  ×5 bonus; 0, the default: any): a planet counts only if the dearest species that may grow on
+  it (DSS genera when known, else the predicted ones) reaches it, so planets with only cheap
+  species are left out. Their values still count every species.
+- Routes do not bring you back, and follow you on (2026-10-22): new routes leave out systems
+  where you analysed any species (with "skip finished", on by default): a 50-stop route took
+  the player back to Pleiades Sector GW-W c1-15 for the 8 species left after 14 analysed there.
+  A stop you leave unfinished and fly past (arriving at a later stop since the route was made)
+  counts as skipped, and the next stop follows you; back there, it is the next one again.
 - Share the stats (2026-10-22): "Share" on the Stats tab takes the whole tab, as it is on the
   screen, into one long PNG (twice the screen's pixels where the canvas allows it), with the
   commander name or without it (remembered per browser); "?" tips and show-more buttons stay out.

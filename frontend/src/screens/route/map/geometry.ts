@@ -83,7 +83,7 @@ export function toScene(p: Xyz, center: Vec3, scale: number): Vec3 {
 export function stopState(stop: RouteStopView, nextSeq: number | null): StopState {
   if (stop.seq === nextSeq) return 'next'
   if (stop.done) return 'done'
-  if (stop.skipped) return 'skipped'
+  if (stop.skipped || stop.passed) return 'skipped'
   return 'ahead'
 }
 

@@ -667,9 +667,11 @@ class RouteRequest(CamelModel):
     min_value: int = Field(300_000, ge=0)  # estimated payout after mapping, per body
     min_system_value: int = Field(0, ge=0)  # still to earn in a system: mapping + biology
     bio_min_value: int = Field(5_000_000, ge=0)  # biology per body, optimistic estimate
+    # A species that may grow on the body is worth at least this (base value; 0: any)
+    bio_min_species_value: int = Field(0, ge=0)
     bio_require_genuses: bool = False  # only bodies whose genera are known (DSS)
     include_populated: bool = True
-    skip_mapped: bool = True  # leave out systems where you have mapped every such body
+    skip_mapped: bool = True  # leave out systems you have finished or sampled species in
     refresh: bool = False  # ignore the cached Spansh data
 
 
@@ -729,6 +731,8 @@ class RouteStopView(CamelModel):
     visited: bool  # you have been in the system
     done: bool  # every body mapped (transit: arrived here or further on)
     skipped: bool
+    # Left unfinished on the way: you arrived at a later stop since the route was made (not transit)
+    passed: bool = False
     here: bool  # you are in this system now
     codex_new: float = 0.0  # codex routes: new entries expected here (none counted twice)
     neutron: bool = False  # transit routes: supercharge the FSD at this stop's neutron star

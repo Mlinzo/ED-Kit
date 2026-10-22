@@ -19,6 +19,7 @@ const LINE_SYSTEM_COUNTS = [10, 20, 30, 50, 100, 200] as const
 const DEVIATIONS = [10, 15, 20, 25, 30, 40, 50] as const
 const VALUE_PRESETS = [0, 300_000, 500_000, 750_000, 1_000_000] as const
 const BIO_VALUE_PRESETS = [0, 3_000_000, 5_000_000, 10_000_000, 20_000_000] as const
+const SPECIES_VALUE_PRESETS = [0, 2_000_000, 5_000_000, 10_000_000, 15_000_000] as const
 const SYSTEM_VALUE_PRESETS = [0, 2_000_000, 5_000_000, 10_000_000, 20_000_000] as const
 const KINDS: readonly BodyKind[] = ['elw', 'tww', 'thmc', 'ww', 'aw', 'trocky', 'bio']
 
@@ -347,6 +348,16 @@ export function RouteForm({
             presets={BIO_VALUE_PRESETS}
             value={req.bioMinValue}
             onChange={(v) => set('bioMinValue', v)}
+            disabled={false}
+          />
+        )}
+        {bio && (
+          <ThresholdField
+            label={t.route.bioMinSpeciesValue}
+            hint={t.route.bioMinSpeciesValueHint}
+            presets={SPECIES_VALUE_PRESETS}
+            value={req.bioMinSpeciesValue}
+            onChange={(v) => set('bioMinSpeciesValue', v)}
             disabled={false}
           />
         )}

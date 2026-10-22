@@ -13,6 +13,7 @@ export const DEFAULT_ROUTE: RouteRequest = {
   minValue: 300_000,
   minSystemValue: 0,
   bioMinValue: 5_000_000,
+  bioMinSpeciesValue: 0,
   bioRequireGenuses: false,
   includePopulated: true,
   skipMapped: true,
@@ -69,12 +70,12 @@ export function stopLeft(stop: RouteStopView): Left {
   return { min, max }
 }
 
-/** Still to earn along the route: every stop not skipped. */
+/** Still to earn along the route: every stop not skipped (or gone past). */
 export function routeLeft(route: RouteView): Left {
   let min = 0
   let max = 0
   for (const s of route.stops) {
-    if (s.skipped) continue
+    if (s.skipped || s.passed) continue
     const left = stopLeft(s)
     min += left.min
     max += left.max

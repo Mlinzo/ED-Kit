@@ -173,7 +173,7 @@ export function StopStatus({ stop, next }: { stop: RouteStopView; next: boolean 
         {t.route.status.done}
       </span>
     )
-  if (stop.skipped) return <span className="text-zinc-500">{t.route.status.skipped}</span>
+  if (stop.skipped || stop.passed) return <span className="text-zinc-500">{t.route.status.skipped}</span>
   if (stop.here) return <span className="font-medium text-emerald-300">{t.route.status.here}</span>
   if (next) return <span className="font-medium text-accent">{t.route.status.next}</span>
   if (stop.visited) return <span className="text-zinc-400">{t.route.status.visited}</span>

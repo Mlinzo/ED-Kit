@@ -206,6 +206,8 @@ export const en: Strings = {
     bioMinValue: 'Min. biology value per planet',
     bioMinValueHint:
       'Optimistic estimate from predicted species, excl. the first footfall bonus (×5).',
+    bioMinSpeciesValue: 'Min. value of one species',
+    bioMinSpeciesValueHint: 'Only planets where at least one species worth this much may grow (from predicted species, excl. the ×5 bonus).',
     bioRequireGenuses: 'Only planets with known genera',
     bioRequireGenusesHint: 'Genera are known once someone has mapped the planet (DSS), so the estimate is more accurate',
     bioSignals: (n: number) => `${n} ${plural(n, ['signal', 'signals'])}`,
@@ -214,7 +216,7 @@ export const en: Strings = {
     bioHint: 'Value is an estimate from predicted species (no first footfall bonus). Genera come from community DSS data.',
     onlyUnpopulated: 'Only unpopulated systems',
     onlyUnpopulatedHint: 'Slower search: near the bubble, colonisation has populated most of these systems',
-    skipMapped: 'Skip systems you have already finished (mapped and species analysed)',
+    skipMapped: 'Skip systems you have finished or sampled species in',
     build: 'Build route',
     building: 'Building route…',
     editRoute: 'Edit route',
