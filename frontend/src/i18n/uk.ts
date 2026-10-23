@@ -261,6 +261,7 @@ export const uk: Strings = {
     emptyHint: 'Збільште радіус, знизьте мінімальну цінність або додайте типи планет.',
     noRoute: 'Маршруту ще немає',
     next: 'Наступна ціль',
+    current: 'Поточна ціль',
     stopOf: (seq: number, total: number) => `${seq} із ${total}`,
     copy: 'Скопіювати назву',
     copied: 'Скопійовано',

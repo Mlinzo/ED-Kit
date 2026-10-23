@@ -123,7 +123,7 @@ function NextTarget({
     <section aria-labelledby="route-next" className="rounded-2xl bg-zinc-900/40 p-5 ring-1 ring-sky-500/25 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <Label as="h2" id="route-next">
-          {t.route.next} · <span className="normal-case">{t.route.stopOf(stop.seq, route.stops.length)}</span>
+          {stop.here ? t.route.current : t.route.next} · <span className="normal-case">{t.route.stopOf(stop.seq, route.stops.length)}</span>
         </Label>
         {inSpansh(stop) && (
           <a

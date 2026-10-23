@@ -258,6 +258,7 @@ export const en: Strings = {
     emptyHint: 'Increase the radius, lower the minimum value or add planet types.',
     noRoute: 'No route yet',
     next: 'Next target',
+    current: 'Current target',
     stopOf: (seq: number, total: number) => `${seq} of ${total}`,
     copy: 'Copy name',
     copied: 'Copied',
