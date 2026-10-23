@@ -50,6 +50,23 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Firsts route (2026-10-22): the route form's fourth goal, "Firsts", plans a route through
+  systems nobody has likely discovered yet, around a point or along a line. Spansh knows only
+  what somebody uploaded, so the stops are systems it knows only from other players' plotted
+  routes (no star, no body: 88 % first far out), and numbers missing in a boxel's numbering: a
+  generated name's id64 holds its boxel and its number there, numbered from 0 with no holes
+  (checked around Colonia: 448 known systems in 112 boxels, no hole), so if "Froalt MC-S
+  b31-49" is known, numbers 0 to 48 exist, and those in no database were never uploaded (96 %
+  first far out). The name is exact (the galaxy map finds it by its full name), the position
+  only the boxel's centre ("≈" before distances, the card says how far off it may be): one per
+  boxel, boxels up to 40 ly, none from a boxel with a catalogue star (near Sol they leave holes:
+  names that do not exist). Along a line the stops are a full tank's jump apart, so every jump
+  can land in a first. Each stop shows its chance (Spansh and EDSM asked again in the
+  background); once you have been there, whether your arrival scan was the first; the progress
+  card counts your firsts and those expected ahead. Near the bubble the route comes
+  out empty with a hint to start farther out: around the Pleiades and Beagle Point every boxel
+  read was complete. Measured live: 50 stops in 1.4-6 s far out, a 22,000 ly line in ~10 s
+  (Spansh reads the 3,000 known systems nearest to the line, so a long one can have long hops).
 - Minimum value of one species in routes (2026-10-22): besides the biology a planet is worth in
   total, the route form takes the least a single species there must be worth (base value, no
   ×5 bonus; 0, the default: any): a planet counts only if the dearest species that may grow on

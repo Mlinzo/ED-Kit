@@ -6,8 +6,8 @@ import { CopyButton } from '../../components/CopyButton'
 import { CreditRange } from '../../components/Credits'
 import { t } from '../../i18n'
 import { formatLy } from '../../lib/format'
-import { spanshUrl, type StopActions } from './helpers'
-import { BodyRow, CodexCount, IconButton, PopulatedBadge, StopStatus } from './parts'
+import { approxLy, inSpansh, spanshUrl, type StopActions } from './helpers'
+import { BodyRow, CodexCount, FirstsChance, IconButton, PopulatedBadge, StopStatus } from './parts'
 
 function Action({ onClick, children, danger = false }: { onClick: () => void; children: ReactNode; danger?: boolean }) {
   return (
@@ -39,6 +39,8 @@ export function StopCard({
   const fromYou = you && !stop.here ? Math.hypot(stop.x - you.x, stop.y - you.y, stop.z - you.z) : null
   const canMakeNext = !stop.done && !next && route.nextSeq !== null && stop.seq > route.nextSeq
   const transit = route.params?.goal === 'transit'
+  const firsts = route.params?.goal === 'firsts'
+  const approximate = stop.spreadLy > 0
   const last = stop.seq === route.stops.length
 
   // Focus moves into the card when it opens (a stop picked from the keyboard is announced and
@@ -78,14 +80,21 @@ export function StopCard({
       </div>
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-1 text-sm text-zinc-400">
         <span>
-          {t.route.map.hop(formatLy(stop.hopLy))}
+          {t.route.map.hop(approxLy(stop.hopLy, approximate))}
           {stop.jumps ? <span className="text-zinc-500"> · {t.route.jumps(stop.jumps)}</span> : null}
         </span>
-        {fromYou !== null && <span>{t.route.fromYou(formatLy(fromYou))}</span>}
+        {fromYou !== null && <span>{t.route.fromYou(approxLy(fromYou, approximate))}</span>}
         {!transit && <PopulatedBadge population={stop.population} />}
       </p>
 
-      {transit ? (
+      {firsts ? (
+        approximate &&
+        !stop.visited && (
+          <p className="mx-4 mt-2 text-xs text-zinc-500" title={t.route.firsts.searchHint}>
+            {t.route.firsts.approx(formatLy(stop.spreadLy))}
+          </p>
+        )
+      ) : transit ? (
         (stop.neutron || last) && (
           <p className="mx-4 mt-3 flex items-start gap-2 text-sm text-zinc-300">
             {stop.neutron ? (
@@ -107,6 +116,11 @@ export function StopCard({
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         {transit ? (
           <span className="text-sm text-zinc-400">{stop.jumps ? t.route.transit.jumpsTotal(stop.jumps) : ''}</span>
+        ) : firsts ? (
+          <span className="flex flex-col">
+            {stop.first === null && <span className="text-xs text-zinc-500">{t.route.firsts.likely}</span>}
+            <FirstsChance stop={stop} className="text-base font-semibold" />
+          </span>
         ) : route.params?.goal === 'codex' ? (
           <span className="flex flex-col">
             <CodexCount value={stop.codexNew} className="text-base font-semibold text-violet-200" />
@@ -132,6 +146,7 @@ export function StopCard({
             <X className="size-3.5" aria-hidden />
             {t.route.remove}
           </Action>
+          {inSpansh(stop) && (
           <a
             href={spanshUrl(stop.address)}
             target="_blank"
@@ -142,6 +157,7 @@ export function StopCard({
           >
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
+          )}
         </div>
       </div>
     </section>

@@ -155,12 +155,14 @@ export const en: Strings = {
     intro:
       'Systems where you can earn: high-value planets to map, and biology. Plot each stop separately in the galaxy map.',
     goal: 'Goal',
-    goals: { credits: 'Credits', codex: 'Codex', transit: 'Get there' },
+    goals: { credits: 'Credits', codex: 'Codex', transit: 'Get there', firsts: 'Firsts' },
     goalHint: {
       transit: 'A Spansh neutron route: the waypoints are neutron stars where the FSD is supercharged for a long jump.',
       credits: 'Mapping and exobiology: the systems that pay the most.',
       codex:
         'Bodies with biology where species — in their colours — are expected that your codex lacks for that region. Each entry counts once per route.',
+      firsts:
+        'Systems nobody has likely discovered yet: known only from other players’ plotted routes, or in no database at all. Far from the bubble most systems are firsts, near it almost none.',
     },
     codex: {
       expected: (n: string) => `≈${n} codex`,
@@ -170,6 +172,23 @@ export const en: Strings = {
       chance: (pct: string) => `chance ${pct}`,
       none: 'No new entries expected',
       creditsToo: 'and credits',
+    },
+    firsts: {
+      modeHint: {
+        riches: 'The nearest likely undiscovered systems, linked by a short path',
+        line: 'Likely undiscovered systems along the line, about one jump apart',
+      },
+      maxSystemsLineHint: 'Stops about one jump apart; with fewer stops they spread out to reach the destination',
+      likely: 'Likely undiscovered',
+      approx: (ly: string) => `Position known to within ${ly}: the name is exact, find it by name in the galaxy map`,
+      approxShort: (ly: string) => `±${ly}`,
+      searchHint: 'The galaxy map finds an undiscovered system by its full name; if it does not at first, search again.',
+      found: 'Your first discoveries',
+      left: 'Firsts expected ahead',
+      leftHint: 'The stops left, each counted by its chance of being undiscovered.',
+      expected: (n: string) => `≈${n}`,
+      emptyHint:
+        'Near the bubble almost every system has been discovered. Start farther out: thousands of light years from Sol most systems are still untouched.',
     },
     mode: 'Mode',
     modes: { riches: 'Around a system', line: 'Straight line' },

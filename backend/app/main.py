@@ -114,7 +114,9 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     )
     neutrons = neutron.NeutronPlanner(settings.db_path, lambda: service.invalidate({"route"}))
     checker = (
-        discovery.DiscoveryChecker(settings.db_path, lambda: service.invalidate({"navroute"}))
+        discovery.DiscoveryChecker(
+            settings.db_path, lambda: service.invalidate({"navroute", "route"})
+        )
         if settings.online
         else None
     )
@@ -222,7 +224,7 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     @app.get("/api/view/route", response_model=RouteView, response_model_by_alias=True)
     def view_route() -> RouteView:
         conn = read_conn()
-        return routes.route_view(conn, active_fid(conn), planner, neutrons, live_fuel())
+        return routes.route_view(conn, active_fid(conn), planner, neutrons, live_fuel(), checker)
 
     def plotted_view(conn: sqlite3.Connection) -> NavRouteView:
         return navroute.navroute_view(

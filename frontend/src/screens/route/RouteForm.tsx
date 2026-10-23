@@ -1,6 +1,6 @@
-// Route parameters: the goal (credits, codex, or just get there), mode, start / destination,
-// reach, what counts (mapping kinds and biology), minimum values.
-import { BookOpen, Coins, LoaderCircle, MoveRight, Navigation, Orbit, Route, Store } from 'lucide-react'
+// Route parameters: the goal (credits, codex, firsts, or just get there), mode, start /
+// destination, reach, what counts (mapping kinds and biology), minimum values.
+import { BookOpen, Coins, LoaderCircle, MoveRight, Navigation, Orbit, Route, Store, Telescope } from 'lucide-react'
 import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import type { BodyKind, RouteGoal, RouteMode, RoutePoint, RouteRequest } from '../../api/types'
@@ -25,7 +25,7 @@ const KINDS: readonly BodyKind[] = ['elw', 'tww', 'thmc', 'ww', 'aw', 'trocky', 
 
 
 /** The guide topic behind each route goal. */
-const GOAL_TOPIC = { credits: 'riches', codex: 'codex', transit: 'neutron' } as const satisfies Record<string, TopicId>
+const GOAL_TOPIC = { credits: 'riches', codex: 'codex', transit: 'neutron', firsts: 'firsts' } as const satisfies Record<string, TopicId>
 
 function Field({ label, hint, help, children }: { label: string; hint?: string; help?: TopicId; children: ReactNode }) {
   return (
@@ -106,7 +106,8 @@ function Toggle<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+    // Four goals do not fit a phone's row in every language: they wrap.
+    <div role="group" aria-label={label} className="inline-flex max-w-full flex-wrap rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
       {options.map(({ id, icon: Icon }) => (
         <button
           key={id}
@@ -117,7 +118,7 @@ function Toggle<T extends string>({
             value === id ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          {/* Phones: words only, so three choices fit in one row. */}
+          {/* Phones: words only, so more choices fit in a row. */}
           <Icon className="hidden size-4 sm:block" aria-hidden />
           {names[id]}
         </button>
@@ -212,10 +213,12 @@ export function RouteForm({
 
   const codex = req.goal === 'codex'
   const transit = req.goal === 'transit'
+  // Firsts: no bodies are known in such systems, so nothing to choose about them.
+  const firsts = req.goal === 'firsts'
   const bio = codex || req.bodyTypes.includes('bio')
   const carto = !codex && req.bodyTypes.some((k) => k !== 'bio')
   const needsDestination = (transit || req.mode === 'line') && !(req.destination ?? '').trim()
-  const valid = (transit || codex || req.bodyTypes.length > 0) && !needsDestination
+  const valid = (transit || codex || firsts || req.bodyTypes.length > 0) && !needsDestination
   const submit = (e: FormEvent) => {
     e.preventDefault()
     if (valid && !building && !disabled) onSubmit({ ...req, source: req.source.trim(), destination: req.destination?.trim() || null })
@@ -228,6 +231,7 @@ export function RouteForm({
   const goals: { id: RouteGoal; icon: typeof Orbit }[] = [
     { id: 'credits', icon: Coins },
     { id: 'codex', icon: BookOpen },
+    { id: 'firsts', icon: Telescope },
     { id: 'transit', icon: Navigation },
   ]
 
@@ -238,7 +242,7 @@ export function RouteForm({
           <Toggle value={req.goal} options={goals} label={t.route.goal} names={t.route.goals} onChange={(v) => set('goal', v)} />
         </Field>
         {!transit && (
-          <Field label={t.route.mode} hint={t.route.modeHint[req.mode]}>
+          <Field label={t.route.mode} hint={(firsts ? t.route.firsts.modeHint : t.route.modeHint)[req.mode]}>
             <Toggle value={req.mode} options={modes} label={t.route.mode} names={t.route.modes} onChange={(v) => set('mode', v)} />
           </Field>
         )}
@@ -295,7 +299,10 @@ export function RouteForm({
             <Choice value={req.deviationLy} options={DEVIATIONS} format={t.route.ly} onChange={(v) => set('deviationLy', v)} />
           </Field>
         )}
-        <Field label={t.route.maxSystems} hint={req.mode === 'line' ? t.route.maxSystemsLineHint : undefined}>
+        <Field
+          label={t.route.maxSystems}
+          hint={req.mode === 'line' ? (firsts ? t.route.firsts.maxSystemsLineHint : t.route.maxSystemsLineHint) : undefined}
+        >
           <Choice
             value={req.maxSystems}
             options={req.mode === 'line' ? LINE_SYSTEM_COUNTS : SYSTEM_COUNTS}
@@ -303,7 +310,7 @@ export function RouteForm({
             onChange={(v) => set('maxSystems', v)}
           />
         </Field>
-        {!codex && (
+        {!codex && !firsts && (
         <Field label={t.route.bodyTypes} hint={t.route.bodyTypesHint}>
           <div className="flex flex-wrap gap-1.5">
             {KINDS.map((kind) => {
@@ -329,7 +336,7 @@ export function RouteForm({
       </div>
       )}
 
-      {!codex && !transit && (
+      {!codex && !transit && !firsts && (
       <div className="mt-2 grid gap-x-8 lg:grid-cols-3">
         {carto && (
           <ThresholdField
@@ -372,7 +379,7 @@ export function RouteForm({
       </div>
       )}
 
-      {!transit && (
+      {!transit && !firsts && (
       <div className="mt-6 space-y-3">
         {bio && (
           <Check

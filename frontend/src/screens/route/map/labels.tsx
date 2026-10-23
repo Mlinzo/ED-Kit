@@ -11,9 +11,9 @@ import { Vector3 } from 'three'
 import type { RouteStopView } from '../../../api/types'
 import { CreditRange } from '../../../components/Credits'
 import { t } from '../../../i18n'
-import { formatLy } from '../../../lib/format'
+import { approxLy } from '../helpers'
 import { BodyChips } from '../kinds'
-import { CodexCount } from '../parts'
+import { CodexCount, FirstsChance } from '../parts'
 import { STATE_COLOR, YOU_COLOR } from './colors'
 import { placeLabels, type LabelBox, type MapStop, type RouteScene, type StopState, type Vec3 } from './geometry'
 import { usePick, type PickStore } from './store'
@@ -196,7 +196,7 @@ function HoverCard({ stop, view }: { stop: MapStop; view: RouteStopView }) {
           <span className="size-1.5 rounded-full" style={{ background: STATE_COLOR[stop.state] }} aria-hidden />
           {status}
         </span>
-        <span className="tabular-nums">{t.route.map.hop(formatLy(view.hopLy))}</span>
+        <span className="tabular-nums">{t.route.map.hop(approxLy(view.hopLy, view.spreadLy > 0))}</span>
       </div>
       {view.bodies.length > 0 ? (
         <>
@@ -210,6 +210,12 @@ function HoverCard({ stop, view }: { stop: MapStop; view: RouteStopView }) {
             {view.codexNew > 0 && <CodexCount value={view.codexNew} className="text-xs font-medium text-violet-200" />}
           </div>
         </>
+      ) : view.discovery || view.first !== null ? (
+        // A firsts stop: how likely nobody has been there, or whether you were first.
+        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-white/8 pt-2 text-xs">
+          <span className="text-zinc-400">{view.first === null ? t.route.firsts.likely : ''}</span>
+          <FirstsChance stop={view} className="text-sm font-semibold" />
+        </div>
       ) : (
         // A transit waypoint: the jumps there, and whether to supercharge.
         <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 border-t border-white/8 pt-2 text-xs">

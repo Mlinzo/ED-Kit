@@ -59,6 +59,9 @@ function stop(seq: number, x: number, y: number, z: number, extra: Partial<Route
     here: false,
     codexNew: 0,
     neutron: false,
+    discovery: null,
+    spreadLy: 0,
+    first: null,
     ...extra,
   }
 }
@@ -95,6 +98,8 @@ function route(stops: RouteStopView[], extra: Partial<RouteView> = {}): RouteVie
     neutron: null,
     codexLeft: 0,
     oneJumpFuelT: null,
+    firstsFound: 0,
+    firstsLeft: 0,
     ...extra,
   }
 }

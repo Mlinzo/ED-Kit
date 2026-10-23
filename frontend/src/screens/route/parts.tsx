@@ -7,6 +7,24 @@ import { t } from '../../i18n'
 import { formatLs, formatNumber } from '../../lib/format'
 import { carto } from './helpers'
 import { BodyChips } from './kinds'
+import { chanceTone, percent } from './plotted'
+
+/** Firsts routes: how likely nobody has discovered the stop yet, or once you have been there,
+ *  whether your scan of its star was the first. */
+export function FirstsChance({ stop, className = '' }: { stop: RouteStopView; className?: string }) {
+  if (stop.first !== null)
+    return <span className={`${stop.first ? 'text-amber-300' : 'text-zinc-500'} ${className}`}>{stop.first ? t.plotted.yourFirst : t.plotted.notFirst}</span>
+  const d = stop.discovery
+  if (!d || d.probability === null) return null
+  const tone = chanceTone(d.probability)
+  const style = tone === 'high' ? 'text-emerald-300' : tone === 'mid' ? 'text-emerald-200/80' : 'text-zinc-500'
+  const hint = d.reasons.map((r) => t.plotted.chanceHint[r] ?? r).join(' · ')
+  return (
+    <span className={`tabular-nums ${style} ${className}`} title={hint}>
+      {percent(d.probability)}
+    </span>
+  )
+}
 
 /** Codex routes: new codex entries expected (fractions are what is uncertain); `short`: the
  *  number alone, for narrow columns. */

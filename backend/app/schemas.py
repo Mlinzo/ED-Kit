@@ -641,10 +641,24 @@ class HistoryView(CamelModel):
     systems: list[HistoryEntry]  # most recently visited first
 
 
+# What the community databases know: its arrival star scanned | some bodies | only the system
+# (seen in somebody's plotted route) | nothing | not asked yet.
+DiscoveryState = Literal["scanned", "bodies", "seen", "unknown", "pending"]
+
+
+class DiscoveryChanceView(CamelModel):
+    probability: float | None  # that nobody has discovered it yet; None until checked
+    state: DiscoveryState
+    # visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area |
+    # inner_area
+    reasons: list[str]
+
+
 RouteMode = Literal["riches", "line"]  # around a start point | along a straight line
 # credits: mapping and biology payouts | codex: new codex entries (biology only)
 # | transit: just get to the destination (Spansh neutron route, its waypoints are the stops)
-RouteGoal = Literal["credits", "codex", "transit"]
+# | firsts: systems nobody has likely discovered yet (app.routefirsts)
+RouteGoal = Literal["credits", "codex", "transit", "firsts"]
 # elw | terraformable water world | terraformable high metal content | water world |
 # ammonia world | terraformable rocky body (app.routeplan.BODY_TYPES, priced by mapping) |
 # bio: landable bodies with biological signals (priced by their predicted species)
@@ -736,6 +750,13 @@ class RouteStopView(CamelModel):
     here: bool  # you are in this system now
     codex_new: float = 0.0  # codex routes: new entries expected here (none counted twice)
     neutron: bool = False  # transit routes: supercharge the FSD at this stop's neutron star
+    # Firsts routes: how likely nobody has discovered it yet (from what Spansh knew when the
+    # route was made), how far it may be from x, y, z on each axis (0: exact; a missing number
+    # in its boxel is placed at the boxel's centre), and your scan of its arrival star: your
+    # first discovery (or not; None without a scan).
+    discovery: DiscoveryChanceView | None = None
+    spread_ly: float = 0.0
+    first: bool | None = None
 
 
 class NeutronWaypointView(CamelModel):
@@ -799,6 +820,8 @@ class RouteView(CamelModel):
     codex_left: float = 0.0  # codex routes: new entries expected at the stops left
     # The next stop is beyond the range now but one jump away with at most this much fuel (t).
     one_jump_fuel_t: float | None = None
+    firsts_found: int = 0  # firsts routes: stops where your scan of the arrival star was a first
+    firsts_left: float = 0.0  # firsts routes: first discoveries expected at the stops left
 
 
 class NeutronRequest(CamelModel):
@@ -809,17 +832,6 @@ class NeutronRequest(CamelModel):
 
 # Arrival star of a system on the plotted route: fuel scoop, supercharge, danger.
 StarKind = Literal["scoopable", "neutron", "white_dwarf", "black_hole", "other"]
-# What the community databases know: its arrival star scanned | some bodies | only the system
-# (seen in somebody's plotted route) | nothing | not asked yet.
-DiscoveryState = Literal["scanned", "bodies", "seen", "unknown", "pending"]
-
-
-class DiscoveryChanceView(CamelModel):
-    probability: float | None  # that nobody has discovered it yet; None until checked
-    state: DiscoveryState
-    # visited | scanned | bodies_known | seen_in_routes | not_in_databases | busy_area |
-    # inner_area
-    reasons: list[str]
 
 
 class NavHopView(CamelModel):

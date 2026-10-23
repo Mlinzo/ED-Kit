@@ -105,12 +105,61 @@ function transitStops(req: RouteRequest, seed: number): RouteStopView[] {
       here: false,
       codexNew: 0,
       neutron: !last,
+      discovery: null,
+      spreadLy: 0,
+      first: null,
+    }
+  })
+}
+
+/** Firsts: likely undiscovered systems a jump or so apart, some seen only in plotted routes
+ *  (exact position), the rest missing numbers of their boxels (the boxel's centre). */
+function firstsStops(req: RouteRequest, seed: number): RouteStopView[] {
+  const random = rng(seed)
+  const count = req.mode === 'line' ? 24 : Math.min(req.maxSystems, 40)
+  let at: Xyz = [0, 0, 0]
+  return Array.from({ length: count }, (_, i) => {
+    const seen = random() < 0.5
+    const code = seen ? 'd' : (['a', 'b', 'c'] as const)[Math.floor(random() * 3)]
+    const spread = seen ? 0 : { a: 5, b: 10, c: 20 }[code as 'a' | 'b' | 'c']
+    const sector = SECTORS[Math.floor(random() * SECTORS.length)]
+    const letters = () => String.fromCharCode(65 + Math.floor(random() * 26))
+    const to = req.mode === 'line' ? placeStop(req, random, at, i, count) : placeStop({ ...req, radiusLy: 120 }, random, at, i, count)
+    const hop = dist(at, to)
+    at = to
+    const probability = seen ? 0.88 : 0.95
+    // The first two flown already: one your first discovery, one somebody's before you.
+    const flown = i < 2
+    return {
+      seq: i + 1,
+      address: String(7_000_000_000 + i * 131),
+      name: `${sector} ${letters()}${letters()}-${letters()} ${code}${1 + Math.floor(random() * 30)}-${Math.floor(random() * (seen ? 900 : 60))}`,
+      x: Math.round(to[0] * 100) / 100,
+      y: Math.round(to[1] * 100) / 100,
+      z: Math.round(to[2] * 100) / 100,
+      hopLy: Math.round(hop * 100) / 100,
+      jumps: Math.max(1, Math.ceil(hop / RANGE.full)),
+      population: null,
+      bodies: [],
+      value: 0,
+      valueMin: 0,
+      visited: flown,
+      done: flown,
+      skipped: false,
+      passed: false,
+      here: false,
+      codexNew: 0,
+      neutron: false,
+      discovery: flown ? null : { probability, state: seen ? 'seen' : 'unknown', reasons: [seen ? 'seen_in_routes' : 'not_in_databases'] },
+      spreadLy: spread,
+      first: flown ? i === 0 : null,
     }
   })
 }
 
 function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
   if (req.goal === 'transit') return transitStops(req, seed)
+  if (req.goal === 'firsts') return firstsStops(req, seed)
   const random = rng(seed)
   const count = req.mode === 'line' ? 40 : Math.min(req.maxSystems, 60)
   const codex = req.goal === 'codex'
@@ -191,6 +240,9 @@ function makeStops(req: RouteRequest, seed: number): RouteStopView[] {
       here: false,
       codexNew: bodies.reduce((n, b) => n + b.codex.reduce((m, c) => m + c.chance, 0), 0),
       neutron: false,
+      discovery: null,
+      spreadLy: 0,
+      first: null,
     })
   }
   return stops
@@ -358,6 +410,8 @@ export function createMockRoute(system: SystemView, emit: () => void) {
       neutron: transit ? null : neutron && { ...neutron, stale: neutron.destination !== next?.name },
       codexLeft: stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + s.codexNew, 0),
       oneJumpFuelT: null,
+      firstsFound: stops.filter((s) => s.first).length,
+      firstsLeft: stops.filter((s) => !s.done && !s.skipped).reduce((n, s) => n + (s.discovery?.probability ?? 0), 0),
     }
   }
 

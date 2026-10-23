@@ -143,7 +143,7 @@ def _empty(online: bool, fuel_view: FuelForecastView) -> NavRouteView:
     )
 
 
-def _arrival_stars(conn: sqlite3.Connection, addresses: list[int]) -> dict[int, bool | None]:
+def arrival_stars(conn: sqlite3.Connection, addresses: list[int]) -> dict[int, bool | None]:
     """Your scans of the systems' arrival stars: WasDiscovered (True: somebody was first)."""
     out: dict[int, bool | None] = {}
     for start in range(0, len(addresses), 900):  # SQLite parameter limit
@@ -298,7 +298,7 @@ def navroute_view(
         warnings.append("off_route")
 
     # Discovery: your own scans first, then the community databases (asked in the background).
-    yours = _arrival_stars(conn, [s.address for s in systems])
+    yours = arrival_stars(conn, [s.address for s in systems])
     known = cached(conn, (systems[i].address for i in ahead))
     if checker is not None:
         checker.request(

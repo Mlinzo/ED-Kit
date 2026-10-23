@@ -70,7 +70,7 @@ TWO_OPT_NEIGHBOURS = 10
 TWO_OPT_BUDGET_S = 0.25
 
 Mode = Literal["riches", "line"]
-Goal = Literal["credits", "codex"]
+Goal = Literal["credits", "codex", "firsts"]
 # Codex routes, in expected new entries: a body below this is left out, and so is a stop
 # whose bodies add less than MIN_CODEX_STOP to what the stops before it cover.
 MIN_CODEX_BODY = 0.25
@@ -138,6 +138,10 @@ class PlanStop:
     region: str | None = None  # codex region symbol (codex routes)
     jumps: int | None = None  # transit: jumps from the previous stop (Spansh)
     neutron: bool = False  # transit: supercharge the FSD at this stop's neutron star
+    # Firsts: what Spansh knows of the system, "seen" (only in plotted routes) or "unknown"
+    # (nothing: a missing number in its boxel, app.routefirsts)
+    discovery: str | None = None
+    spread_ly: float = 0.0  # firsts: how far the system may be from x, y, z on each axis
 
     @property
     def xyz(self) -> tuple[float, float, float]:
@@ -169,6 +173,7 @@ class PlanRequest:
     bio_min_value: int = 5_000_000  # biology per body (optimistic estimate); "bio" in types
     bio_min_species_value: int = 0  # a species that may grow on the body is worth at least this
     bio_require_genuses: bool = False  # only bodies whose genera are known (DSS)
+    jump_range_ly: float | None = None  # firsts along a line: a full tank's range
 
 
 class PlanError(Exception):
@@ -503,7 +508,7 @@ def _add_cover(
             covered[key] = 1.0 - (1.0 - covered.get(key, 0.0)) * (1.0 - e.weight)
 
 
-def _run(pool: ThreadPoolExecutor, tasks: list[Callable[[], Any]]) -> list[Any]:
+def run_parallel(pool: ThreadPoolExecutor, tasks: list[Callable[[], Any]]) -> list[Any]:
     """Runs the tasks in parallel; the first failure is raised as a PlanError."""
     futures = [pool.submit(task) for task in tasks]
     results = []
@@ -534,7 +539,7 @@ def _fetch_round(
     for start in range(0, len(ids), SYSTEMS_BATCH):
         batch = ids[start : start + SYSTEMS_BATCH]
         tasks.append(lambda b=batch: (b, collector.search.systems(b)))
-    for key, data in _run(pool, tasks):
+    for key, data in run_parallel(pool, tasks):
         if isinstance(key, _Group):
             collector.add_page(key, data)
         elif key == "permits":
@@ -544,7 +549,7 @@ def _fetch_round(
     collector.update_progress()
 
 
-def _point(raw: Any, fallback_name: str) -> Point | None:
+def reference_point(raw: Any, fallback_name: str) -> Point | None:
     if not isinstance(raw, dict):
         return None
     x, y, z = _num(raw, "x"), _num(raw, "y"), _num(raw, "z")
@@ -625,7 +630,7 @@ def _plan_riches(
             batch = [g for g in due for _ in range(min(per, g.pages_left(max_pages)))]
             _fetch_round(pool, collector, reference, batch)
     if source is None:
-        source = _point(collector.reference, req.source)
+        source = reference_point(collector.reference, req.source)
     if source is None:
         raise PlanError("unknown_system", req.source)
     edge = frontier()
@@ -633,8 +638,8 @@ def _plan_riches(
     complete = [s for s in valid if s.distance <= edge]
     if req.goal == "codex":
         complete = collector.cover(complete, len(complete))
-    stops = _order_open_path(source.xyz, complete[:wanted])
-    _hops(source.xyz, stops)
+    stops = order_open_path(source.xyz, complete[:wanted])
+    set_hops(source.xyz, stops)
     return Plan(source=source, destination=None, stops=stops, truncated=len(valid) > len(stops))
 
 
@@ -661,8 +666,8 @@ def _plan_line(
             _fetch_round(pool, collector, reference, [])
     ref = collector.reference
     pair = ref if isinstance(ref, list) and len(ref) == 2 else [None, None]
-    source = _point(pair[0], req.source)
-    destination = _point(pair[1], req.destination)
+    source = reference_point(pair[0], req.source)
+    destination = reference_point(pair[1], req.destination)
     if source is None or destination is None:
         raise PlanError("unknown_system")
     truncated = any((g.count or 0) > LINE_MAX_PAGES * PAGE_SIZE for g in groups)
@@ -684,11 +689,11 @@ def _plan_line(
         )
     along = sorted(valid, key=lambda s: (s.along, s.address))
     stops = _order_between(source.xyz, destination.xyz, along)
-    _hops(source.xyz, stops)
+    set_hops(source.xyz, stops)
     return Plan(source=source, destination=destination, stops=stops, truncated=truncated)
 
 
-def _hops(start: tuple[float, float, float], stops: list[PlanStop]) -> None:
+def set_hops(start: tuple[float, float, float], stops: list[PlanStop]) -> None:
     prev = start
     for s in stops:
         s.hop_ly = math.dist(prev, s.xyz)
@@ -698,7 +703,7 @@ def _hops(start: tuple[float, float, float], stops: list[PlanStop]) -> None:
 # --------------------------------------------------------------------------- ordering
 
 
-def _order_open_path(start: tuple[float, float, float], stops: list[PlanStop]) -> list[PlanStop]:
+def order_open_path(start: tuple[float, float, float], stops: list[PlanStop]) -> list[PlanStop]:
     """Short open path from `start` through every stop: nearest neighbour, then 2-opt."""
     if len(stops) <= 2:
         return sorted(stops, key=lambda s: math.dist(start, s.xyz))

@@ -67,7 +67,7 @@ export const guideEn: Strings['guide'] = {
         'The tag goes to whoever sells the data first, not whoever scanned first. If someone sells before you, or you die before selling, the tag is not yours.',
         'Around the bubble (populated space) and along popular routes almost everything has been discovered. Further from them, most systems have never been visited.',
       ],
-      inApp: 'For the route plotted in the game, the Route tab estimates which systems ahead are likely undiscovered; the System tab shows who discovered and mapped each body.',
+      inApp: 'The Route tab’s “Firsts” goal plans a route through systems nobody has likely discovered yet. For the route plotted in the game, the tab estimates which systems ahead are likely undiscovered; the System tab shows who discovered and mapped each body.',
     },
     valuable: {
       title: 'Valuable planets',

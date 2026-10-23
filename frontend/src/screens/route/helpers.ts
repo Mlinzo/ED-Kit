@@ -1,4 +1,5 @@
 import type { RouteBodyView, RouteRequest, RouteStopView, RouteView } from '../../api/types'
+import { formatLy } from '../../lib/format'
 
 /** The route form's starting values. */
 export const DEFAULT_ROUTE: RouteRequest = {
@@ -21,6 +22,15 @@ export const DEFAULT_ROUTE: RouteRequest = {
 }
 
 export const spanshUrl = (address: string) => `https://spansh.co.uk/system/${address}`
+
+/** Spansh has a page for the stop: not for a firsts stop missing from every database, until
+ *  you have been there. */
+export const inSpansh = (stop: RouteStopView) => stop.spreadLy === 0 || stop.visited
+
+/** A distance to or from a firsts stop placed at its boxel's centre: "≈" before it. */
+export function approxLy(ly: number, approximate: boolean): string {
+  return approximate ? `≈${formatLy(ly)}` : formatLy(ly)
+}
 
 /** Edits of the stored route (the list rows and the stop card on the map). */
 export interface StopActions {

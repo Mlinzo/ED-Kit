@@ -13,10 +13,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app import db, exobio, fuel, neutron, regionmap, routeplan
+from app import db, discovery, exobio, fuel, neutron, regionmap, routefirsts, routeplan
 from app.codex import CodexIndex, codex_index, codex_status
+from app.navroute import arrival_stars
 from app.routeplan import BodyProgress, Plan, PlanError, PlanRequest, PlanStop, Point
 from app.schemas import (
+    DiscoveryChanceView,
     RouteBodyView,
     RouteCodexView,
     RoutePoint,
@@ -80,7 +82,9 @@ def _progress(
     return {key: (key in mapped, species.get(key, 0)) for key in mapped | species.keys()}
 
 
-def _plan_request(req: RouteRequest, source: Point | None) -> PlanRequest:
+def _plan_request(
+    req: RouteRequest, source: Point | None, jump_range: float | None = None
+) -> PlanRequest:
     return PlanRequest(
         mode=req.mode,
         goal=req.goal,
@@ -97,7 +101,22 @@ def _plan_request(req: RouteRequest, source: Point | None) -> PlanRequest:
         bio_min_value=req.bio_min_value,
         bio_min_species_value=req.bio_min_species_value,
         bio_require_genuses=req.bio_require_genuses,
+        jump_range_ly=jump_range,
     )
+
+
+def _visited(conn: sqlite3.Connection, fid: str | None) -> set[int]:
+    """Every system you have been to (journal)."""
+    return {
+        r[0]
+        for r in conn.execute("SELECT DISTINCT system_address FROM visits WHERE fid = ?", (fid,))
+    }
+
+
+def _full_tank_range(conn: sqlite3.Connection, fid: str | None) -> float | None:
+    state = cmdr_state(conn, fid)
+    jump_range = state["jump_range"] if state else None
+    return fuel.full_tank_range(fuel.ship_fuel(conn, fid), jump_range) or jump_range
 
 
 TRANSIT_EFFICIENCY = 60  # Spansh's default: how far from the line a neutron star may be
@@ -186,10 +205,22 @@ def store(
             ),
         )
         conn.executemany(
-            "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly, jumps, neutron) "
-            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly, jumps, neutron, "
+            "discovery, spread_ly) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                (i, s.address, s.name, s.x, s.y, s.z, round(s.hop_ly, 2), s.jumps, int(s.neutron))
+                (
+                    i,
+                    s.address,
+                    s.name,
+                    s.x,
+                    s.y,
+                    s.z,
+                    round(s.hop_ly, 2),
+                    s.jumps,
+                    int(s.neutron),
+                    s.discovery,
+                    s.spread_ly,
+                )
                 for i, s in enumerate(plan.stops, start=1)
             ],
         )
@@ -279,6 +310,13 @@ class RoutePlanner:
                 raise PlanError("unknown_system")
             if req.goal == "transit":
                 plan = plan_transit(conn, fid, req, source, self.plotter)
+            elif req.goal == "firsts":
+                plan = routefirsts.plan(
+                    _plan_request(req, source, _full_tank_range(conn, fid)),
+                    search,
+                    _visited(conn, fid),
+                    source,
+                )
             else:
                 plan = routeplan.plan(
                     _plan_request(req, source),
@@ -297,7 +335,8 @@ class RoutePlanner:
                 search.requests,
             )
             self._finish(generation, None)
-            self._fill_population(conn, search, generation, [s.address for s in plan.stops])
+            if req.goal != "firsts":  # populated systems are not firsts: none is a stop
+                self._fill_population(conn, search, generation, [s.address for s in plan.stops])
         except PlanError as exc:
             self._finish(generation, (exc.code, exc.detail))
         except Exception:
@@ -361,13 +400,15 @@ def _rewrite_stops(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> None:
                 r["skipped"],
                 r["jumps"],
                 r["neutron"],
+                r["discovery"],
+                r["spread_ly"],
             )
         )
         prev = here
     conn.execute("DELETE FROM route_stops")
     conn.executemany(
         "INSERT INTO route_stops(seq, system_address, name, x, y, z, hop_ly, population, skipped, "
-        "jumps, neutron) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "jumps, neutron, discovery, spread_ly) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         stops,
     )
 
@@ -441,6 +482,7 @@ def route_view(
     planner: RoutePlanner,
     neutron_planner: neutron.NeutronPlanner | None = None,
     live_fuel: float | None = None,
+    checker: discovery.DiscoveryChecker | None = None,
 ) -> RouteView:
     state = cmdr_state(conn, fid)
     max_range = state["jump_range"] if state else None
@@ -559,6 +601,8 @@ def route_view(
 
     params = RouteRequest.model_validate_json(route["params"])
     transit = params.goal == "transit"
+    firsts = params.goal == "firsts"
+    rows = conn.execute("SELECT * FROM route_stops ORDER BY seq").fetchall()
     # The farthest stop you arrived at since the route was made. Transit: the waypoints up to it
     # are passed. Otherwise the stops before it you left unfinished were skipped: you went on.
     since = {
@@ -569,9 +613,16 @@ def route_view(
         )
     }
     passed_seq = 0
-    for s in conn.execute("SELECT seq, system_address FROM route_stops ORDER BY seq"):
+    for s in rows:
         if s["system_address"] in since:
             passed_seq = s["seq"]
+    # Firsts: what the databases know now of the stops ahead (asked in the background), and
+    # your scans of the arrival stars where you have been.
+    yours = arrival_stars(conn, [s["system_address"] for s in rows]) if firsts else {}
+    ahead = [(s["system_address"], s["name"]) for s in rows if s["system_address"] not in visited]
+    known = discovery.cached(conn, (a for a, _ in ahead)) if firsts else {}
+    if firsts and checker is not None:
+        checker.request(conn, ahead)
     codex_rows = (
         {
             (b["system_address"], b["body_id"]): json.loads(b["codex"] or "[]")
@@ -585,10 +636,15 @@ def route_view(
 
     stops: list[RouteStopView] = []
     coords: dict[int, tuple[float, float, float]] = {}
-    for s in conn.execute("SELECT * FROM route_stops ORDER BY seq"):
+    for s in rows:
         own = bodies.get(s["system_address"], [])
         here_now = here is not None and here[0] == s["system_address"]
-        done = s["seq"] <= passed_seq if transit else bool(own) and all(b.done for b in own)
+        if transit:
+            done = s["seq"] <= passed_seq
+        elif firsts:
+            done = s["system_address"] in visited
+        else:
+            done = bool(own) and all(b.done for b in own)
         codex_new = 0.0
         if params.goal == "codex":
             region = regionmap.region_symbol(regionmap.region_at(s["x"], s["z"]))
@@ -623,6 +679,13 @@ def route_view(
                 here=here_now,
                 codex_new=round(codex_new, 2),
                 neutron=bool(s["neutron"]),
+                discovery=_firsts_chance(s, known.get(s["system_address"]))
+                if firsts and not done
+                else None,
+                spread_ly=s["spread_ly"],
+                first=None
+                if s["system_address"] not in yours or yours[s["system_address"]] is None
+                else not yours[s["system_address"]],
             )
         )
 
@@ -672,7 +735,28 @@ def route_view(
             range_full,
         ),
         codex_left=round(sum(s.codex_new for s in stops if not s.done and not s.skipped), 2),
+        firsts_found=sum(1 for s in stops if s.first),
+        firsts_left=round(
+            sum(
+                s.discovery.probability or 0.0
+                for s in stops
+                if s.discovery and not (s.done or s.skipped or s.passed)
+            ),
+            2,
+        ),
     )
+
+
+def _firsts_chance(stop: sqlite3.Row, known: sqlite3.Row | None) -> DiscoveryChanceView:
+    """How likely nobody has discovered a firsts stop yet: from what the databases know now,
+    or until they are asked, from what Spansh knew when the route was made."""
+    xyz = (stop["x"], stop["y"], stop["z"])
+    if known is not None and (known["spansh"] is not None or known["edsm"] is not None):
+        c = discovery.chance(known["spansh"], known["edsm"], xyz)
+    else:
+        spansh = discovery.SPANSH_SYSTEM if stop["discovery"] == "seen" else discovery.SPANSH_NONE
+        c = discovery.chance(spansh, None, xyz)
+    return DiscoveryChanceView(probability=c.probability, state=c.state, reasons=list(c.reasons))
 
 
 def _codex_bodies(

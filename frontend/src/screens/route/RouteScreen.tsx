@@ -30,14 +30,14 @@ import { CreditRange, Credits } from '../../components/Credits'
 import { Segmented } from '../../components/Segmented'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { t } from '../../i18n'
-import { exactCredits, formatCredits, formatLs, formatLy, formatRelative, formatTons } from '../../lib/format'
+import { exactCredits, formatCredits, formatLs, formatLy, formatNumber, formatRelative, formatTons } from '../../lib/format'
 import { readStored, writeStored } from '../../lib/storage'
 import { eventFull } from '../../lib/when'
 import { BodyChips } from './kinds'
 import { RouteMap } from './map'
-import { carto, DEFAULT_ROUTE, routeLeft, spanshUrl, stopLeft, type StopActions } from './helpers'
+import { approxLy, carto, DEFAULT_ROUTE, inSpansh, routeLeft, spanshUrl, stopLeft, type StopActions } from './helpers'
 import { NeutronPlan } from './NeutronPlan'
-import { BodyRow, CodexCount, IconButton, PopulatedBadge, StopStatus } from './parts'
+import { BodyRow, CodexCount, FirstsChance, IconButton, PopulatedBadge, StopStatus } from './parts'
 import { PlottedRoute } from './PlottedRoute'
 import { RouteForm } from './RouteForm'
 import { StopCard } from './StopCard'
@@ -99,10 +99,11 @@ function NextTarget({
   onClearNeutron: () => void
 }) {
   const stop = route.stops.find((s) => s.seq === route.nextSeq)
+  const firsts = route.params?.goal === 'firsts'
   if (route.stops.length === 0) {
     return (
       <section className="rounded-2xl bg-zinc-900/40 ring-1 ring-zinc-800">
-        <EmptyState icon={<Route className="size-10" />} title={t.route.empty} hint={t.route.emptyHint} />
+        <EmptyState icon={<Route className="size-10" />} title={t.route.empty} hint={firsts ? t.route.firsts.emptyHint : t.route.emptyHint} />
       </section>
     )
   }
@@ -124,15 +125,17 @@ function NextTarget({
         <Label as="h2" id="route-next">
           {t.route.next} · <span className="normal-case">{t.route.stopOf(stop.seq, route.stops.length)}</span>
         </Label>
-        <a
-          href={spanshUrl(stop.address)}
-          target="_blank"
-          rel="noreferrer"
-          className="focus-ring inline-flex items-center gap-1 rounded-md text-xs text-zinc-500 hover:text-zinc-300"
-        >
-          {t.route.spansh}
-          <ExternalLink className="size-3.5" aria-hidden />
-        </a>
+        {inSpansh(stop) && (
+          <a
+            href={spanshUrl(stop.address)}
+            target="_blank"
+            rel="noreferrer"
+            className="focus-ring inline-flex items-center gap-1 rounded-md text-xs text-zinc-500 hover:text-zinc-300"
+          >
+            {t.route.spansh}
+            <ExternalLink className="size-3.5" aria-hidden />
+          </a>
+        )}
       </div>
       {/* Where to go and what it is worth, side by side: the two things to see at a glance. */}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
@@ -149,7 +152,7 @@ function NextTarget({
               </span>
             ) : route.distanceToNextLy !== null ? (
               <span>
-                {t.route.fromYou(formatLy(route.distanceToNextLy))}
+                {t.route.fromYou(approxLy(route.distanceToNextLy, stop.spreadLy > 0))}
                 {/* Transit: Spansh's count (with supercharges) is shown big instead of this estimate. */}
                 {route.jumpsToNext && !transit ? <span className="text-zinc-500"> · {t.route.jumps(route.jumpsToNext)}</span> : null}
               </span>
@@ -162,7 +165,15 @@ function NextTarget({
               <span>{t.route.then}:</span>
               <span className="min-w-0 font-medium break-words text-zinc-200 proportional-nums">{after.name}</span>
               <CopyButton text={after.name} />
-              <span className="text-zinc-500">{formatLy(Math.hypot(after.x - stop.x, after.y - stop.y, after.z - stop.z))}</span>
+              <span className="text-zinc-500">
+                {approxLy(Math.hypot(after.x - stop.x, after.y - stop.y, after.z - stop.z), after.spreadLy > 0 || stop.spreadLy > 0)}
+              </span>
+            </p>
+          )}
+          {/* A missing number in its boxel: the name is exact, the place only roughly known. */}
+          {firsts && stop.spreadLy > 0 && !stop.here && (
+            <p className="mt-1.5 max-w-prose text-xs text-zinc-500" title={t.route.firsts.searchHint}>
+              {t.route.firsts.approx(formatLy(stop.spreadLy))}
             </p>
           )}
           {route.oneJumpFuelT !== null && !stop.here && (
@@ -180,6 +191,11 @@ function NextTarget({
               <p className="mt-0.5 text-xs text-zinc-500">{t.route.transit.jumpsHere(stop.jumps)}</p>
             </div>
           ) : null
+        ) : firsts ? (
+          <div className="shrink-0 sm:text-right">
+            <p className="text-xs font-medium text-zinc-500">{t.route.firsts.likely}</p>
+            <FirstsChance stop={stop} className="mt-0.5 block text-2xl font-semibold tracking-tight sm:text-3xl" />
+          </div>
         ) : codex ? (
           <div className="shrink-0 sm:text-right">
             <p className="text-xs font-medium text-zinc-500">{t.route.codex.here}</p>
@@ -206,7 +222,7 @@ function NextTarget({
 
       {transit ? (
         <TransitNote stop={stop} last={stop.seq === route.stops.length} />
-      ) : (
+      ) : firsts ? null : (
         <>
           <ul className="mt-5 divide-y divide-zinc-800/60 rounded-xl bg-zinc-950/40 ring-1 ring-zinc-800/80">
             {stop.bodies.map((b) => (
@@ -237,6 +253,7 @@ function Progress({ route }: { route: RouteView }) {
   const pct = (n: number) => (total ? (n / total) * 100 : 0)
   const left = routeLeft(route)
   const transit = route.params?.goal === 'transit'
+  const firsts = route.params?.goal === 'firsts'
   const jumpsLeft = route.stops.filter((s) => !s.done && !s.skipped && !s.passed).reduce((n, s) => n + (s.jumps ?? 0), 0)
   // The range now (fuel and cargo aboard) first; the maximum and the full-tank one when they differ.
   const { jumpRangeNowLy: now, jumpRangeLy: max, jumpRangeFullLy: full } = route
@@ -265,7 +282,23 @@ function Progress({ route }: { route: RouteView }) {
             <dd className="mt-0.5 text-lg font-semibold text-zinc-100 tabular-nums">{jumpsLeft}</dd>
           </div>
         )}
-        {!transit && (
+        {firsts && (
+          <div>
+            <dt className="text-zinc-500">{t.route.firsts.found}</dt>
+            <dd className="mt-0.5 text-lg font-semibold text-amber-300 tabular-nums">{route.firstsFound}</dd>
+          </div>
+        )}
+        {firsts && (
+          <div>
+            <dt className="text-zinc-500" title={t.route.firsts.leftHint}>
+              {t.route.firsts.left}
+            </dt>
+            <dd className="mt-0.5 text-lg font-semibold text-emerald-300 tabular-nums">
+              {t.route.firsts.expected(formatNumber(route.firstsLeft, route.firstsLeft >= 10 ? 0 : 1))}
+            </dd>
+          </div>
+        )}
+        {!transit && !firsts && (
         <div>
           <dt className="text-zinc-500">{t.route.collected}</dt>
           <dd className="mt-0.5">
@@ -276,7 +309,7 @@ function Progress({ route }: { route: RouteView }) {
           </dd>
         </div>
         )}
-        {!transit && (
+        {!transit && !firsts && (
         <div>
           <dt className="text-zinc-500" title={t.route.routeLeftHint}>
             {t.route.routeLeft}
@@ -346,6 +379,7 @@ function StopRow({
   actions,
   codex = false,
   transit = false,
+  firsts = false,
 }: {
   stop: RouteStopView
   next: boolean
@@ -356,6 +390,8 @@ function StopRow({
   codex?: boolean
   /** A transit route: jumps instead of a value, neutron stars marked. */
   transit?: boolean
+  /** A firsts route: the chance nobody has been there instead of a value. */
+  firsts?: boolean
 }) {
   // Gone past it unfinished: skipped, though not by the button (so no "restore": fly back instead).
   const skipped = stop.skipped || stop.passed
@@ -367,7 +403,7 @@ function StopRow({
     >
       <span className="text-zinc-500 tabular-nums">{stop.seq}</span>
       <span className="hidden tabular-nums md:block">
-        {formatLy(stop.hopLy)}
+        {approxLy(stop.hopLy, stop.spreadLy > 0)}
         {stop.jumps ? <span className="block text-xs text-zinc-600">{t.route.jumps(stop.jumps)}</span> : null}
       </span>
       <span className="flex min-w-0 items-center gap-1.5">
@@ -408,6 +444,8 @@ function StopRow({
       <span className="text-right tabular-nums">
         {transit ? (
           <span className={dim ? '' : 'text-zinc-300'}>{stop.jumps ? t.route.transit.jumpsTotal(stop.jumps) : ''}</span>
+        ) : firsts ? (
+          <FirstsChance stop={stop} className={stop.first !== null ? 'text-xs' : dim ? 'text-zinc-500' : 'font-medium'} />
         ) : codex ? (
           <span title={`${exactCredits(stop.valueMin)} – ${exactCredits(stop.value)}`}>
             <CodexCount value={stop.codexNew} short className={dim ? '' : 'font-medium text-violet-200'} />
@@ -451,14 +489,15 @@ function StopRow({
 
 function StopList({ route, actions }: { route: RouteView; actions: StopActions }) {
   const th = 'text-[11px] font-medium tracking-wide text-zinc-500 uppercase'
+  const firsts = route.params?.goal === 'firsts'
   return (
     <section aria-label={t.route.title} className="rounded-2xl bg-zinc-900/30 ring-1 ring-zinc-800">
       <div aria-hidden className={`sticky top-14 z-10 grid ${GRID} gap-x-3 rounded-t-2xl border-b border-zinc-800 bg-zinc-950/90 px-4 py-2.5 backdrop-blur`}>
         <span className={th}>{t.route.colStop}</span>
         <span className={`${th} hidden md:block`}>{t.route.colHop}</span>
         <span className={th}>{t.route.colSystem}</span>
-        <span className={`${th} hidden xl:block`}>{t.route.colBodies}</span>
-        <span className={`${th} text-right`}>{t.route.colValue}</span>
+        <span className={`${th} hidden xl:block`}>{firsts ? '' : t.route.colBodies}</span>
+        <span className={`${th} text-right`}>{firsts ? t.plotted.col.chance : t.route.colValue}</span>
         <span className={`${th} hidden text-right md:block`}>{t.route.colStatus}</span>
       </div>
       <ol className="divide-y divide-zinc-800/50">
@@ -472,6 +511,7 @@ function StopList({ route, actions }: { route: RouteView; actions: StopActions }
             actions={actions}
             codex={route.params?.goal === 'codex'}
             transit={route.params?.goal === 'transit'}
+            firsts={firsts}
           />
         ))}
       </ol>

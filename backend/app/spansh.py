@@ -25,6 +25,8 @@ TIMEOUT_S = 15
 PAGE_SIZE = 500
 MAX_WINDOW = 10_000  # Spansh does not page past the first 10 000 results
 CACHE_MAX_AGE = timedelta(days=7)
+# Known systems around a place (firsts routes): what is undiscovered goes stale faster.
+NEAR_MAX_AGE = timedelta(days=1)
 CACHE_DROP_AFTER = timedelta(days=30)
 PERMITS_MAX_AGE = timedelta(days=30)  # the permit-locked systems hardly ever change
 
@@ -144,6 +146,9 @@ def _service_names(station: dict[str, Any]) -> list[str]:
     ]
 
 
+# System fields app.routefirsts reads (a system also carries its bodies: counted, then dropped).
+NEAR_FIELDS = ("id64", "name", "x", "y", "z", "distance", "population", "needs_permit")
+
 # Station fields app.selling reads (a station also carries its whole market: dropped).
 STATION_FIELDS = (
     "name",
@@ -187,6 +192,34 @@ class SpanshSearch:
                 if isinstance(r, dict)
             ],
         }
+
+    def systems_near(self, reference: Reference, max_distance: float, page: int) -> dict[str, Any]:
+        """One page of the systems Spansh knows, nearest to the reference first (to the line for
+        a route reference): {count, results, reference}, each system with what it knows of it
+        (`main_star`: its arrival star scanned, `bodies`: how many bodies)."""
+        data = _post(
+            SYSTEMS_SEARCH,
+            {
+                "filters": {"distance": {"min": "0", "max": str(max_distance)}},
+                "sort": [{"distance": {"direction": "asc"}}],
+                "size": PAGE_SIZE,
+                "page": page,
+                **reference,
+            },
+        )
+        results = []
+        for r in data.get("results") or []:
+            if not isinstance(r, dict) or "id64" not in r:
+                continue
+            bodies = [b for b in r.get("bodies") or [] if isinstance(b, dict)]
+            results.append(
+                {
+                    **{k: r.get(k) for k in NEAR_FIELDS},
+                    "main_star": any(b.get("is_main_star") for b in bodies),
+                    "bodies": len(bodies),
+                }
+            )
+        return {"count": data.get("count"), "reference": data.get("reference"), "results": results}
 
     def systems(self, ids: list[int]) -> dict[int, dict[str, Any]]:
         """Population and permit of systems by id64 (at most PAGE_SIZE per call)."""
@@ -259,23 +292,22 @@ class CachedSearch(SpanshSearch):
         if self.oldest is None or fetched_at < self.oldest:
             self.oldest = fetched_at
 
-    def _fresh(self, fetched_at: str) -> datetime | None:
+    def _fresh(self, fetched_at: str, max_age: timedelta = CACHE_MAX_AGE) -> datetime | None:
         when = datetime.fromisoformat(fetched_at)
-        return when if not self.refresh and _now() - when <= CACHE_MAX_AGE else None
+        return when if not self.refresh and _now() - when <= max_age else None
 
-    def bodies(self, filters: dict[str, Any], reference: Reference, page: int) -> dict[str, Any]:
-        key = json.dumps(
-            [PAGE_FORMAT, filters, reference, page], sort_keys=True, separators=(",", ":")
-        )
+    def _cached_page(self, key: str, max_age: timedelta) -> dict[str, Any] | None:
         with self._lock:
             row = self._conn.execute(
                 "SELECT fetched_at, data FROM spansh_pages WHERE key = ?", (key,)
             ).fetchone()
-            when = self._fresh(row["fetched_at"]) if row else None
-            if when is not None:
-                self._used(when)
-                return json.loads(row["data"])
-        data = super().bodies(filters, reference, page)
+            when = self._fresh(row["fetched_at"], max_age) if row else None
+            if when is None:
+                return None
+            self._used(when)
+            return json.loads(row["data"])
+
+    def _store_page(self, key: str, data: dict[str, Any]) -> None:
         now = _now()
         with self._lock:
             self.requests += 1
@@ -284,6 +316,26 @@ class CachedSearch(SpanshSearch):
                 "INSERT OR REPLACE INTO spansh_pages(key, fetched_at, data) VALUES(?, ?, ?)",
                 (key, now.isoformat(timespec="seconds"), json.dumps(data, separators=(",", ":"))),
             )
+
+    def systems_near(self, reference: Reference, max_distance: float, page: int) -> dict[str, Any]:
+        key = json.dumps(
+            ["near", reference, max_distance, page], sort_keys=True, separators=(",", ":")
+        )
+        data = self._cached_page(key, NEAR_MAX_AGE)
+        if data is None:
+            data = super().systems_near(reference, max_distance, page)
+            self._store_page(key, data)
+        return data
+
+    def bodies(self, filters: dict[str, Any], reference: Reference, page: int) -> dict[str, Any]:
+        key = json.dumps(
+            [PAGE_FORMAT, filters, reference, page], sort_keys=True, separators=(",", ":")
+        )
+        cached = self._cached_page(key, CACHE_MAX_AGE)
+        if cached is not None:
+            return cached
+        data = super().bodies(filters, reference, page)
+        self._store_page(key, data)
         return data
 
     def cached_systems(self, ids: list[int]) -> tuple[dict[int, dict[str, Any]], list[int]]:

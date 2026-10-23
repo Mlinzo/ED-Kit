@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RouteBodyView, RouteStopView, RouteView } from '../../api/types'
-import { routeLeft, stopLeft } from './helpers'
+import { approxLy, routeLeft, stopLeft } from './helpers'
 
 function body(extra: Partial<RouteBodyView>): RouteBodyView {
   return {
@@ -43,6 +43,9 @@ function stop(bodies: RouteBodyView[], extra: Partial<RouteStopView> = {}): Rout
     passed: false,
     here: false,
     codexNew: 0,
+    discovery: null,
+    spreadLy: 0,
+    first: null,
     neutron: false,
     ...extra,
   }
@@ -69,5 +72,12 @@ describe('what is left to earn', () => {
       ],
     } as RouteView
     expect(routeLeft(route)).toEqual({ min: 3_000_000, max: 7_000_000 })
+  })
+})
+
+describe('approxLy', () => {
+  it('marks a distance to a stop placed at its boxel centre', () => {
+    expect(approxLy(12.34, true).startsWith('≈')).toBe(true)
+    expect(approxLy(12.34, false).startsWith('≈')).toBe(false)
   })
 })

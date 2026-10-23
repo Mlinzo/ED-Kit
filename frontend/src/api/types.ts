@@ -714,8 +714,9 @@ export interface HistoryView {
 /** riches: around a start point; line: along a straight line between two systems. */
 export type RouteMode = 'riches' | 'line'
 /** credits: mapping and biology payouts; codex: new codex entries (biology only). */
-/** credits · codex · transit: just get there (a Spansh neutron route, its waypoints are the stops). */
-export type RouteGoal = 'credits' | 'codex' | 'transit'
+/** credits · codex · transit: just get there (a Spansh neutron route, its waypoints are the stops)
+ *  · firsts: systems nobody has likely discovered yet. */
+export type RouteGoal = 'credits' | 'codex' | 'transit' | 'firsts'
 /** Earth-like · terraformable water world · terraformable high metal content · water world ·
  *  ammonia world · terraformable rocky body (priced by mapping) · bio: landable bodies with
  *  biological signals (priced by their predicted species). */
@@ -823,6 +824,13 @@ export interface RouteStopView {
   codexNew: number
   /** Transit routes: supercharge the FSD at this stop's neutron star. */
   neutron: boolean
+  /** Firsts routes, a stop not visited yet: how likely nobody has discovered it. */
+  discovery: DiscoveryChanceView | null
+  /** Firsts routes: how far the system may be from x, y, z on each axis (0: exact; a missing
+   *  number in its boxel is placed at the boxel's centre). */
+  spreadLy: number
+  /** Firsts routes: your scan of its arrival star was a first discovery (or not); null without one. */
+  first: boolean | null
 }
 
 /** unknown_system | no_destination | spansh_unavailable | no_route | no_jump_range | internal */
@@ -871,6 +879,10 @@ export interface RouteView {
   codexLeft: number
   /** The next stop is beyond the range now but one jump away with at most this much fuel (t). */
   oneJumpFuelT: number | null
+  /** Firsts routes: stops where your scan of the arrival star was a first discovery. */
+  firstsFound: number
+  /** Firsts routes: first discoveries expected at the stops left. */
+  firstsLeft: number
 }
 
 export interface NeutronWaypointView {
