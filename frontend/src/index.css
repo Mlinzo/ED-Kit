@@ -64,6 +64,10 @@ body {
 [data-snapshot] :is(.overflow-auto, .overflow-x-auto, .overflow-y-auto) {
   overflow: hidden !important;
 }
+/* Nor a row of boxes on one line on the page (markSingleRows): it would drop its last box. */
+[data-snapshot] [data-snapshot-row] {
+  flex-wrap: nowrap !important;
+}
 
 /* Visible keyboard focus everywhere, invisible for mouse/touch. */
 @utility focus-ring {

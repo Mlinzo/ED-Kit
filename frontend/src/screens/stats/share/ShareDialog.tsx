@@ -56,6 +56,27 @@ function markSingleLines(root: HTMLElement): HTMLElement[] {
 }
 
 /**
+ * Marks the wrapping flex rows whose items sit on one line on the page: the copy keeps them on
+ * one line too. A row is as wide as its items on the page, and a hair less in the copy (wider
+ * text, or its size rounded the other way): the Deaths card's totals then put "spent on rebuys"
+ * on a line of its own, over the table below.
+ */
+function markSingleRows(root: HTMLElement): HTMLElement[] {
+  const rows: HTMLElement[] = []
+  for (const el of root.querySelectorAll<HTMLElement>('*')) {
+    const style = getComputedStyle(el)
+    if (!style.display.endsWith('flex') || style.flexWrap === 'nowrap' || style.flexDirection.startsWith('column')) continue
+    const items = [...el.children].map((c) => c.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0)
+    // One line: the items share a band across (an item shorter than the others still crosses it).
+    if (items.length > 1 && Math.max(...items.map((r) => r.top)) < Math.min(...items.map((r) => r.bottom))) {
+      el.setAttribute('data-snapshot-row', '')
+      rows.push(el)
+    }
+  }
+  return rows
+}
+
+/**
  * The tab with a margin of page around it, twice as sharp as the screen when it fits. What stays
  * out is hidden on the page for the moment (index.css): the copy takes sizes as laid out, so
  * leaving nodes out of it would not close the gaps.
@@ -64,6 +85,7 @@ async function capture(node: HTMLElement, showName: boolean): Promise<Blob> {
   node.setAttribute('data-snapshot', showName ? '' : 'no-name')
   // After the controls are hidden: lines are measured as the picture lays them out.
   const lines = markSingleLines(node)
+  const rows = markSingleRows(node)
   try {
     const pad = node.offsetWidth < 640 ? 12 : 24
     const width = node.offsetWidth + pad * 2
@@ -80,6 +102,7 @@ async function capture(node: HTMLElement, showName: boolean): Promise<Blob> {
   } finally {
     node.removeAttribute('data-snapshot')
     for (const el of lines) el.removeAttribute('data-snapshot-line')
+    for (const el of rows) el.removeAttribute('data-snapshot-row')
   }
 }
 
