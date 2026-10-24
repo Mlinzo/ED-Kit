@@ -132,8 +132,21 @@ const dist = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0
 const EPS = 1e-6
 const TIMES = [EPOCH_MS, EPOCH_MS + 0.37 * DAY * 1_000, EPOCH_MS + 41 * DAY * 1_000, EPOCH_MS + 3_000 * DAY * 1_000]
 
+/**
+ * What breaks the layout invariants, collected in plain code and asserted once by `check`: an
+ * `expect` per pair made a 120-body system take ~0.2 s and the CI runner timed the test out.
+ * The comparisons are written so that NaN counts as broken, as `expect` would have it.
+ */
+type Broken = string[]
+const atLeast = (bad: Broken, what: string, value: number, min: number) => {
+  if (!(value >= min)) bad.push(`${what}: ${value} < ${min}`)
+}
+const atMost = (bad: Broken, what: string, value: number, max: number) => {
+  if (!(value <= max)) bad.push(`${what}: ${value} > ${max}`)
+}
+
 /** The invariants every layout must satisfy, at several moments in time. */
-function expectNoOverlap(layout: SystemLayout) {
+function overlaps(layout: SystemLayout, bad: Broken) {
   for (const t of TIMES) {
     const pos = worldPositions(layout, t)
     for (const n of layout.nodes.values()) {
@@ -143,17 +156,17 @@ function expectNoOverlap(layout: SystemLayout) {
         for (let j = i + 1; j < n.children.length; j++) {
           const a = n.children[i]
           const b = n.children[j]
-          expect(dist(pos.get(a.id)!, pos.get(b.id)!)).toBeGreaterThanOrEqual(a.extent + b.extent - EPS)
+          atLeast(bad, `siblings ${a.id}, ${b.id} at ${t}`, dist(pos.get(a.id)!, pos.get(b.id)!), a.extent + b.extent - EPS)
           // Orbiting siblings sit on disjoint annuli: true at any angle, not just now.
           if (a.role === 'orbit' && b.role === 'orbit') {
-            expect(Math.abs(a.orbitRadius - b.orbitRadius)).toBeGreaterThanOrEqual(a.extent + b.extent - EPS)
+            atLeast(bad, `annuli ${a.id}, ${b.id}`, Math.abs(a.orbitRadius - b.orbitRadius), a.extent + b.extent - EPS)
           }
         }
         // A child's disc stays inside its parent's disc and clear of the parent's body.
         const c = n.children[i]
         const d = dist(p, pos.get(c.id)!)
-        expect(d + c.extent).toBeLessThanOrEqual(n.extent + EPS)
-        if (n.size > 0) expect(d - c.extent).toBeGreaterThanOrEqual(n.clearance - EPS)
+        atMost(bad, `${c.id} inside ${n.id} at ${t}`, d + c.extent, n.extent + EPS)
+        if (n.size > 0) atLeast(bad, `${c.id} clear of ${n.id} at ${t}`, d - c.extent, n.clearance - EPS)
       }
     }
     // Roots side by side.
@@ -161,19 +174,19 @@ function expectNoOverlap(layout: SystemLayout) {
       for (let j = i + 1; j < layout.roots.length; j++) {
         const a = layout.roots[i]
         const b = layout.roots[j]
-        expect(dist(pos.get(a.id)!, pos.get(b.id)!)).toBeGreaterThanOrEqual(a.extent + b.extent - EPS)
+        atLeast(bad, `roots ${a.id}, ${b.id} at ${t}`, dist(pos.get(a.id)!, pos.get(b.id)!), a.extent + b.extent - EPS)
       }
     }
     // Every body sphere is inside the layout radius.
     for (const n of layout.nodes.values()) {
       const [x, z] = pos.get(n.id)!
-      expect(Math.hypot(x, z) + n.size).toBeLessThanOrEqual(layout.radius + EPS)
+      atMost(bad, `${n.id} inside the radius at ${t}`, Math.hypot(x, z) + n.size, layout.radius + EPS)
     }
   }
 }
 
 /** All body spheres pairwise disjoint (follows from the disc invariants; checked directly too). */
-function expectBodiesApart(layout: SystemLayout) {
+function bodiesTouching(layout: SystemLayout, bad: Broken) {
   for (const t of TIMES) {
     const pos = worldPositions(layout, t)
     const list = [...layout.nodes.values()].filter((n) => n.size > 0)
@@ -181,15 +194,18 @@ function expectBodiesApart(layout: SystemLayout) {
       for (let j = i + 1; j < list.length; j++) {
         const a = list[i]
         const b = list[j]
-        expect(dist(pos.get(a.id)!, pos.get(b.id)!)).toBeGreaterThan(a.size + b.size)
+        const d = dist(pos.get(a.id)!, pos.get(b.id)!)
+        if (!(d > a.size + b.size)) bad.push(`bodies ${a.id}, ${b.id} at ${t}: ${d} <= ${a.size + b.size}`)
       }
     }
   }
 }
 
 function check(layout: SystemLayout) {
-  expectNoOverlap(layout)
-  expectBodiesApart(layout)
+  const bad: Broken = []
+  overlaps(layout, bad)
+  bodiesTouching(layout, bad)
+  expect(bad.slice(0, 10)).toEqual([])
 }
 
 describe('layoutSystem', () => {
