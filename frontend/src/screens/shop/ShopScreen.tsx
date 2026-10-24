@@ -386,6 +386,10 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
         order={order}
         onOrder={changeOrder}
         yours={settled ? (data?.rank ?? null) : null}
+        onHangar={(name) => {
+          const module = catalog.modules.find((m) => m.name === name)
+          if (module) choose(variantFor(module).symbol)
+        }}
       />
     )
   } else if (catalog && chosen?.kind === 'module') {

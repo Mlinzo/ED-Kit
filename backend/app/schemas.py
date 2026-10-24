@@ -307,6 +307,7 @@ class ShopShipView(CamelModel):
     stats: ShopShipStats | None = None
     rank: ShopRankNeed | None = None  # the navy rank needed to buy it
     unsold: bool = False  # no station sells it yet (a new ship, for ARX first)
+    hangars: list[str] | None = None  # a ship-launched vessel: the modules that carry it
 
 
 class ShopVariantView(CamelModel):

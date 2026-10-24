@@ -2,11 +2,13 @@
 
 Ships and modules come from EDCD FDevIDs (`shipyard.csv`, `outfitting.csv`), the tables EDMC
 and Spansh name them by. Left out: suits and on-foot gear, ship armour (each ship's own, sold
-wherever the ship is serviced), and anything Spansh has at no station at all (Guardian modules,
-removed scanners...): asked one by one, a minute or so. The starter kit's `_free` copies
-of modules are left out too. A module is listed under the name
-Spansh uses (they differ for one fighter hangar), with its variants (class, rating, mount,
-missile guidance) by journal symbol.
+wherever the ship is serviced), and modules Spansh has at no station at all (Guardian modules,
+removed scanners...): asked one by one, a minute or so. A ship no station sells is kept,
+marked `unsold`: a new ship comes out for ARX first (a gone one is `removed` in FDevIDs).
+Ship-launched vessels (`LAUNCHED`) are added by hand while no source lists them. The starter
+kit's `_free` copies of modules are left out too. A module is listed under the name Spansh uses
+(they differ for one fighter hangar), with its variants (class, rating, mount, missile
+guidance) by journal symbol.
 
 Prices and characteristics come from EDSY's data (https://edsy.org/eddb.js; EDSY by taleden,
 CC BY-NC 4.0; the game data in it is Frontier's): a ship's base price, speeds, shields, armour,
@@ -43,6 +45,12 @@ CATEGORIES = {
 # Big stations whose outfitting gives Spansh's module names (Sol and Colonia areas).
 NAME_SAMPLES = ("Sol", "Colonia")
 STARPORTS = ["Coriolis Starport", "Orbis Starport", "Ocellus Starport"]
+# Ship-launched vessels: carried by a hangar module, not bought at a shipyard. The Nomad
+# (Operations update, 2026-06-30, ARX early access) is in neither FDevIDs nor EDSY and its
+# journal symbol is not published: a symbol of our own, dropped once a source lists the name.
+LAUNCHED = [
+    {"symbol": "nomad", "name": "Nomad", "hangars": ["Vessel Hangar", "Mk II Vessel Hangar"]},
+]
 TECH_BROKER = (
     "GUARDIAN",
     "METAHULL",
@@ -173,8 +181,7 @@ def build() -> dict[str, Any]:
         for r in _get("shipyard.csv")
         if r["entitlement"] != "removed"
     ]
-    # Ships newer than FDevIDs (EDSY lists them first): kept even when no station sells them yet
-    # (a new ship comes out for ARX first), marked `unsold`.
+    # Ships newer than FDevIDs (EDSY lists them first).
     listed = {s["symbol"] for s in ships}
     newer = [
         {"symbol": symbol, "name": e["name"], "stats": ship_stats(e, hangar)}
@@ -216,13 +223,18 @@ def build() -> dict[str, Any]:
         ship_sold = list(pool.map(lambda s: sold("ships", s["name"]), ships))
         module_sold = list(pool.map(lambda n: sold("modules", n), modules))
     for s, ok in zip(ships, ship_sold, strict=True):
-        if s in newer and not ok:
+        if not ok:
             s["unsold"] = True
-    ship_sold = [ok or s in newer for s, ok in zip(ships, ship_sold, strict=True)]
-    dropped = [s["name"] for s, ok in zip(ships, ship_sold, strict=True) if not ok]
-    dropped += [n for n, ok in zip(modules, module_sold, strict=True) if not ok]
+    dropped = [n for n, ok in zip(modules, module_sold, strict=True) if not ok]
     order = {"core": 0, "optional": 1, "hardpoint": 2, "utility": 3}
     kept = [m for m, ok in zip(modules.values(), module_sold, strict=True) if ok]
+    ship_names = {s["name"].lower() for s in ships}
+    sold_modules = {m["name"] for m in kept}
+    ships += [
+        v | {"hangars": [h for h in v["hangars"] if h in sold_modules], "unsold": True}
+        for v in LAUNCHED
+        if v["name"].lower() not in ship_names
+    ]
     for m in kept:
         m["variants"].sort(
             key=lambda v: (v["class"], v["rating"], v["mount"] or "", v["guidance"] or "")
@@ -233,9 +245,7 @@ def build() -> dict[str, Any]:
             f"CC BY-NC 4.0); {datetime.now(UTC):%Y-%m-%d}"
         ),
         "dropped": sorted(dropped),
-        "ships": sorted(
-            (s for s, ok in zip(ships, ship_sold, strict=True) if ok), key=lambda s: s["name"]
-        ),
+        "ships": sorted(ships, key=lambda s: s["name"]),
         "modules": sorted(kept, key=lambda m: (order[m["category"]], m["name"])),
     }
 
@@ -250,6 +260,7 @@ def main() -> None:
     print(
         f"{OUT}: {len(data['ships'])} ships, {len(data['modules'])} modules ({variants} variants)"
     )
+    print("unsold:", ", ".join(s["name"] for s in data["ships"] if s.get("unsold")) or "none")
     print("dropped:", ", ".join(data["dropped"]))
 
 

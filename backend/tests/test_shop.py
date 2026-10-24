@@ -75,6 +75,26 @@ def test_catalog_items_and_labels() -> None:
     }
 
 
+def test_arx_ships_and_the_nomad_are_in_the_catalog() -> None:
+    ships = {s.symbol: s for s in shop.catalog_view().ships}
+    nomad = ships["nomad"]  # a ship-launched vessel: no source lists it yet
+    assert nomad.unsold and nomad.hangars == ["Vessel Hangar", "Mk II Vessel Hangar"]
+    modules = {m.name for m in shop.catalog_view().modules}
+    assert set(nomad.hangars) <= modules
+    assert not ships["anaconda"].unsold and ships["anaconda"].hangars is None
+
+
+def test_module_search_asks_for_priced_modules_under_old_names_too() -> None:
+    hangar = find("int_fighterbay_size6_class1")
+    fsd = find(FSD_5A)
+    assert hangar is not None and fsd is not None
+    [asked] = shop._filters(hangar)["modules"]
+    assert asked["name"]["value"] == ["Vessel Hangar", "Fighter Hangar"]
+    assert asked["price"] == shop.FOR_CREDITS  # free ARX copies are listed at no price
+    [asked] = shop._filters(fsd)["modules"]
+    assert asked["name"]["value"] == ["Frame Shift Drive"] and asked["price"] == shop.FOR_CREDITS
+
+
 def test_offer_needs_the_exact_item() -> None:
     mc = find(MC_GIMBAL)
     assert mc is not None

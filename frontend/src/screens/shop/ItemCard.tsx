@@ -115,6 +115,7 @@ export function ShipCard({
   order,
   onOrder,
   yours,
+  onHangar,
 }: {
   ship: ShopShipView
   position: string
@@ -123,6 +124,8 @@ export function ShipCard({
   onOrder: (order: ShipOrder) => void
   /** Your rank against the one it needs (from the shop view), when known. */
   yours: ShopRankView | null
+  /** Open a hangar module's card (a ship-launched vessel's carriers). */
+  onHangar: (name: string) => void
 }) {
   const c = t.shop.card
   const sketch = SKETCHES[ship.symbol]
@@ -174,6 +177,23 @@ export function ShipCard({
         )}
         <div className="min-w-0 space-y-4">
           {ship.unsold && <p className="rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{c.unsold}</p>}
+          {ship.hangars && ship.hangars.length > 0 && (
+            <div className="rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">
+              <p>{c.launched}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {ship.hangars.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => onHangar(name)}
+                    className="focus-ring inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium text-zinc-200 ring-1 ring-zinc-700 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {ship.rank && <RankNote need={ship.rank.need} navy={ship.rank.navy} yours={yours} />}
           {st && (
             <Figures

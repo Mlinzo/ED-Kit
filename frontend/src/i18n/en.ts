@@ -832,6 +832,7 @@ export const en: Strings = {
       gameNote: 'Outlines traced from the game’s ship schematics',
       noSketch: 'No blueprint yet',
       unsold: 'No station sells it for credits yet: new ships come out for ARX first',
+      launched: 'Launched from a carrying ship, out of a hangar:',
       prev: 'Previous',
       next: 'Next',
       order: 'Order',

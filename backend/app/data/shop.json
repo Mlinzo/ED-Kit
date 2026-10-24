@@ -1,5 +1,5 @@
 {
- "source": "EDCD FDevIDs (https://raw.githubusercontent.com/EDCD/FDevIDs/master/), Spansh station search, EDSY (https://edsy.org/eddb.js, taleden, CC BY-NC 4.0); 2026-10-21",
+ "source": "EDCD FDevIDs (https://raw.githubusercontent.com/EDCD/FDevIDs/master/), Spansh station search, EDSY (https://edsy.org/eddb.js, taleden, CC BY-NC 4.0); 2026-10-24",
  "dropped": [],
  "ships": [
   {
@@ -1627,6 +1627,15 @@
     "utility": 4,
     "fighter_bay": false
    }
+  },
+  {
+   "symbol": "nomad",
+   "name": "Nomad",
+   "hangars": [
+    "Vessel Hangar",
+    "Mk II Vessel Hangar"
+   ],
+   "unsold": true
   },
   {
    "symbol": "orca",

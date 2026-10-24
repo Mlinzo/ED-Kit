@@ -50,6 +50,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- ARX ships and the Nomad in the Shop (2026-10-24): every ship no station sells for credits
+  stays in the catalog with a note that new ships come out for ARX first (the Anaconda Mk II and
+  the Nomad now). The Nomad, a ship-launched vessel in no data source, is added by hand; its card
+  opens the Vessel Hangar and Mk II Vessel Hangar that carry it. Module searches ask Spansh only
+  for priced modules (the free copies an ARX purchase adds crowded the answer: 7 of 40 stations
+  found for a 6D Vessel Hangar sold the real one) and under the old name of a renamed module
+  (Fighter Hangar).
 - Places you cannot dock at (2026-10-24), in the Shop and "Where to sell": a Powerplay
   Stronghold Carrier is listed only to the pledges of its Power (it sells nearly every module,
   so it led most searches, but turns everybody else away and fires at a rival's pledges); your

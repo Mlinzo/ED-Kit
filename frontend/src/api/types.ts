@@ -410,6 +410,8 @@ export interface ShopShipView {
   rank: { navy: 'empire' | 'federation'; need: string } | null
   /** No station sells it yet (a new ship comes out for ARX first). */
   unsold?: boolean
+  /** A ship-launched vessel (the Nomad): the hangar modules that carry it, by name. */
+  hangars?: string[] | null
 }
 
 export interface ShopVariantView {

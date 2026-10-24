@@ -7,8 +7,12 @@ is shown: it can be months old. Stations and fleet carriers are asked apart, as 
 data (app.selling: carriers move and their owner decides who may dock, so they are shown only
 on request, the nearest one named when it is nearer than every station). Spansh's module filter
 knows the name, class and rating but ignores the mount, so each station is checked for the
-exact item (its journal symbol) here. Before anything is chosen, the tab lists the stations
-with a shipyard or outfitting, with how many ships and modules Spansh knows they sell. An
+exact item (its journal symbol) here. Only modules with a price are asked for: the free copies
+an ARX purchase adds are listed too, at no price, and crowded the answer (near the Pleiades 33
+of the 40 stations found for a 6D Vessel Hangar had only those); and a renamed module under its
+old name as well (`OLD_NAMES`), as Spansh keeps the name each report came with. Before anything
+is chosen, the tab lists the stations with a shipyard or outfitting, with how many ships and
+modules Spansh knows they sell. An
 answer is kept in memory and reused for an hour while you stay within 20 ly of where it was
 asked.
 
@@ -77,6 +81,9 @@ KEEP_ANSWERS = 50
 PLACES = 10
 STATIONS_PER_PLACE = 3
 SHOP_SERVICES = ["Shipyard", "Outfitting"]  # Spansh's names; several values: either
+# Modules renamed in the game: Spansh has each station under the name of its latest report.
+OLD_NAMES = {"Vessel Hangar": ["Fighter Hangar"]}  # Operations update, 2026-06-30
+FOR_CREDITS = {"value": [1, 10**10], "comparison": "<=>"}  # a module's price at a station
 
 Navy = Literal["empire", "federation"]
 # The navy rank a ship needs (Elite Dangerous Wiki, Empire/Ranks and Federation/Ranks, checked
@@ -193,6 +200,7 @@ def catalog_view() -> ShopCatalogView:
                 stats=ShopShipStats(**s["stats"]) if "stats" in s else None,
                 rank=_rank_need(s["symbol"]),
                 unsold=s.get("unsold", False),
+                hangars=s.get("hangars"),
             )
             for s in data["ships"]
         ],
@@ -239,9 +247,10 @@ def _filters(item: Item) -> dict[str, Any]:
     return {
         "modules": [
             {
-                "name": {"value": [item.name]},
+                "name": {"value": [item.name, *OLD_NAMES.get(item.name, [])]},
                 "class": {"value": [str(item.size)]},
                 "rating": {"value": [item.rating]},
+                "price": FOR_CREDITS,
             }
         ]
     }
