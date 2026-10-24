@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
-from app import db
+from app import db, views
 from app.codex import codex_index, codex_status, colour_status, predicted_status
+from app.exobio.engine import parent_star_class
 from app.exobio.variants import colour_of, variants
-from app.models import BodyFacts, SystemFacts
+from app.models import BodyFacts, G, SystemFacts
 
 ALEOIDA = "$Codex_Ent_Aleoids_01_Name;"  # colour by star
 CUCUMISIS = "$Codex_Ent_Stratum_06_Name;"  # colour by star, Y dwarfs included in the table
+IGNIS = "$Codex_Ent_Tussocks_03_Name;"  # colour by star
 VESICULA = "$Codex_Ent_Bacterial_05_Name;"  # by a group-A material
 SETISIS = "$Codex_Ent_Fungoids_02_Name;"  # by a group-B material
 LEGACY = "$Codex_Ent_Sphere_Name;"  # no colours
@@ -77,6 +80,45 @@ def test_a_y_dwarf_does_not_colour_its_moons() -> None:
     assert variants(CUCUMISIS, *dwarf_moon("L", "F"))[0].colour == "Turquoise"  # type: ignore[index]
 
 
+def hip_16401(a: str = "F", b: str = "K") -> tuple[BodyFacts, SystemFacts]:
+    """HIP 16401 AB 1 b: a moon in a pair (Null 15) of planet 12, which orbits the AB barycentre
+    (Null 1) of an F and a K star; C orbits the system's barycentre (Null 0)."""
+    system = SystemFacts(address=1, name="HIP 16401", region=INNER)
+    for body_id, letter, star_type, mass, up in (
+        (2, "A", a, 1.238281, [("Null", 1), ("Null", 0)]),
+        (3, "B", b, 0.503906, [("Null", 1), ("Null", 0)]),
+        (4, "C", "K", 0.597656, [("Null", 0)]),
+    ):
+        system.bodies[body_id] = BodyFacts(
+            system_address=1,
+            body_id=body_id,
+            name=f"HIP 16401 {letter}",
+            kind="star",
+            star_type=star_type,
+            stellar_mass=mass,
+            parents=up,
+        )
+    moon = BodyFacts(
+        system_address=1,
+        body_id=16,
+        name="HIP 16401 AB 1 b",
+        kind="planet",
+        parents=[("Null", 15), ("Planet", 12), ("Null", 1), ("Null", 0)],
+    )
+    system.bodies[16] = moon
+    return moon, system
+
+
+def test_a_barycentre_of_stars_colours_by_its_heaviest_star() -> None:
+    # The game logged Tussock Ignis - Yellow (F) there: A, not B (K) nor C.
+    found = variants(IGNIS, *hip_16401())
+    assert found is not None and [v.colour for v in found] == ["Yellow"]
+    assert variants(IGNIS, *hip_16401(a="M"))[0].symbol.endswith("_M_Name;")  # type: ignore[index]
+    moon, system = hip_16401()
+    del system.bodies[2], system.bodies[3]  # neither A nor B scanned: unknown, not C
+    assert parent_star_class(moon, system) is None and variants(IGNIS, moon, system) is None
+
+
 def test_colour_by_material() -> None:
     found = variants(VESICULA, *body(iron=20.0, tellurium=0.9, cadmium=1.2))
     assert found is not None and [(v.colour, v.weight) for v in found] == [("Red", 1.0)]
@@ -130,6 +172,37 @@ def test_codex_by_colour(conn: sqlite3.Connection) -> None:
     # Tin logged, molybdenum not: half a new entry.
     tin_or_mo = variants(SETISIS, *body(tin=1.1, molybdenum=1.2))
     assert predicted_status(index, SETISIS, tin_or_mo, INNER) == ("new_colour", 0.5)
+
+
+def test_one_of_two_candidates_is_only_maybe_new(conn: sqlite3.Connection) -> None:
+    # HIP 16401 AB 1 d: DSS found a Tussock, and both Ignis and Pennatis fit there. Only one of
+    # them grows on the body, so a logged Ignis leaves Pennatis a "maybe".
+    moon, system = hip_16401()
+    moon = replace(
+        moon,
+        planet_class="Rocky body",
+        atmosphere_type="CarbonDioxide",
+        atmosphere_composition={"CarbonDioxide": 100.0},
+        volcanism="",
+        surface_gravity=0.0616 * G,
+        surface_temperature=163.5,
+        surface_pressure=0.007 * 101_325,
+        landable=True,
+    )
+    system.bodies[moon.body_id] = moon
+    tussock = {"$Codex_Ent_Tussocks_Genus_Name;"}
+    found, _, _, new, maybe = views._build_species(moon, system, tussock, [], 1, {})
+    assert [(v.species, v.colour) for v in found] == [
+        ("Tussock Ignis", "Yellow"),
+        ("Tussock Pennatis", "Yellow"),
+    ]
+    assert (new, maybe) == (1, 0)  # either one is a new entry
+    log(conn, "$Codex_Ent_Tussocks_03_F_Name;", IGNIS, INNER, "2026-10-24T15:58:39Z")
+    found, _, _, new, maybe = views._build_species(
+        moon, system, tussock, [], 1, codex_index(conn, "F1")
+    )
+    assert [v.codex for v in found] == ["logged", "new"]
+    assert (new, maybe) == (0, 1)
 
 
 def test_colour_status_of_a_sample(conn: sqlite3.Connection) -> None:

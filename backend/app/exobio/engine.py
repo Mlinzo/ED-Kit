@@ -20,6 +20,7 @@ Units: gravity is compared in g (`BodyFacts.gravity_g`), pressure in atmospheres
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -167,13 +168,37 @@ def volcanism_text(body: BodyFacts) -> str | None:
     return "" if v in ("", "none", "no volcanism") else v
 
 
-def parent_star_class(body: BodyFacts, system: SystemFacts) -> str | None:
-    """Class of the nearest star in the body's `Parents` chain, None if not known."""
+def parent_stars(body: BodyFacts, system: SystemFacts) -> Iterator[BodyFacts | None]:
+    """The stars up the body's `Parents` chain, nearest first; None for a star not scanned.
+
+    A barycentre of stars stands for its heaviest star (the letters go by mass: A of "AB").
+    The colours of other players' species on 25 bodies orbiting a barycentre of two star
+    classes, in 10 systems (Canonn, 2026-10-25), all followed that star, never the other one.
+    Only the stars the body's name puts it around count ("AB 1 b": A and B), so a barycentre
+    whose stars are not scanned yet gives nothing rather than a star further up. A barycentre
+    without a known star under it (two moons) is passed over.
+    """
+    prefix = f"{system.name} "
+    named = re.match(r"([A-Z]+) ", body.name.removeprefix(prefix))
+    letters = set(named[1]) if system.name and body.name.startswith(prefix) and named else None
     for kind, body_id in body.parents:
         if kind == "Star":
-            star = system.bodies.get(body_id)
-            return star_class(star.star_type) if star is not None else None
-    return None
+            yield system.bodies.get(body_id)
+        elif kind == "Null":
+            under = [
+                s
+                for s in system.stars()
+                if ("Null", body_id) in s.parents
+                and (letters is None or s.name.removeprefix(prefix) in letters)
+            ]
+            if under:
+                yield min(under, key=lambda s: (-(s.stellar_mass or 0.0), s.name))
+
+
+def parent_star_class(body: BodyFacts, system: SystemFacts) -> str | None:
+    """Class of the nearest star in the body's `Parents` chain, None if not known."""
+    star = next(parent_stars(body, system), None)
+    return star_class(star.star_type) if star is not None else None
 
 
 def primary_star_class(system: SystemFacts) -> str | None:

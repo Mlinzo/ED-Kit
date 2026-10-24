@@ -50,6 +50,12 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- One of several species (2026-10-25): when DSS confirms a genus and the rules leave several of
+  its species, the species list shows them as one row, "Tussock — one of two species", with each
+  candidate under it; one bio signal is one genus, so only one of them grows there. Such a genus
+  counts as "maybe new" to the codex unless every candidate is new. Colours on bodies orbiting a
+  barycentre of stars ("AB 1 d") come from its heaviest star, A (25 of 25 species checked on
+  Canonn, 10 systems), instead of being unknown.
 - ARX ships and the Nomad in the Shop (2026-10-24): every ship no station sells for credits
   stays in the catalog with a note that new ships come out for ARX first (the Anaconda Mk II and
   the Nomad now). The Nomad, a ship-launched vessel in no data source, is added by hand; its card

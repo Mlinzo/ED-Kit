@@ -8,7 +8,7 @@ import { BookCheck, BookPlus, type LucideIcon } from 'lucide-react'
 import type { BodyView, CodexStatus } from '../api/types'
 import { HelpTip } from '../guide/HelpTip'
 import { t } from '../i18n'
-import { bodyCodex, codexLabel, codexNewStatus, codexTitle } from './codex'
+import { bodyCodex, codexLabel, codexNewStatus, codexTitle, type Tentative } from './codex'
 
 const STRONG =
   'bg-fuchsia-600 text-white ring-1 ring-inset ring-fuchsia-300/45 shadow-[0_0_14px_-3px_var(--color-fuchsia-500)]'
@@ -28,18 +28,18 @@ const CHIP: Record<ChipSize, { box: string; icon: string }> = {
 /**
  * One species: "Новое в кодексе" (strong), "Новое для региона" / "Новый цвет" (outlined),
  * "В кодексе" (quiet).
- * tentative (an uncertain prediction, no DSS yet): a new entry is faint and dashed, like the
- * body's "возможно новое" mark.
+ * tentative (the species may not be there: no DSS yet, or one of several of its genus): a new
+ * entry is faint and dashed, like the body's "возможно новое" mark.
  */
 export function CodexBadge({
   status,
   size = 'xs',
-  tentative = false,
+  tentative,
   className = '',
 }: {
   status: CodexStatus
   size?: ChipSize
-  tentative?: boolean
+  tentative?: Tentative
   className?: string
 }) {
   const Icon = ICONS[status] ?? BookCheck

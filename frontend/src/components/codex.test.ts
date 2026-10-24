@@ -24,9 +24,14 @@ describe('species codex marks', () => {
     expect(codexTitle('logged')).toContain(t.codex.note)
   })
   it('says when a new species is only predicted here', () => {
-    expect(codexTitle('new', true)).toContain(t.codex.tentativeHint)
+    expect(codexTitle('new', 'genus')).toContain(t.codex.tentativeHint)
     expect(codexTitle('new')).not.toContain(t.codex.tentativeHint)
-    expect(codexTitle('logged', true)).not.toContain(t.codex.tentativeHint)
+    expect(codexTitle('logged', 'genus')).not.toContain(t.codex.tentativeHint)
+  })
+  it('says when a new species is one of several of a sure genus', () => {
+    expect(codexTitle('new', 'species')).toContain(t.codex.candidateHint)
+    expect(codexTitle('new', 'species')).not.toContain(t.codex.tentativeHint)
+    expect(codexTitle('logged', 'species')).not.toContain(t.codex.candidateHint)
   })
   it('treats new for the region as a new entry', () => {
     expect(codexNewStatus('new')).toBe(true)

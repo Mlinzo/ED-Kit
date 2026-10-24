@@ -25,12 +25,17 @@ export function codexLabel(status: CodexStatus): string {
 }
 
 /**
- * Tooltip of a species mark: what it means, and that the codex is per region.
- * tentative: the species is only an uncertain prediction on this body.
+ * Why a predicted species may not be there: its genus is only predicted (no DSS yet), or the genus
+ * is sure and the species is one of several.
  */
-export function codexTitle(status: CodexStatus, tentative = false): string {
+export type Tentative = 'genus' | 'species'
+
+/** Tooltip of a species mark: what it means, and that the codex is per region. */
+export function codexTitle(status: CodexStatus, tentative?: Tentative): string {
   const lines = [codexLabel(status), HINTS[status] ?? HINTS.logged]
-  if (tentative && codexNewStatus(status)) lines.push(t.codex.tentativeHint)
+  if (tentative && codexNewStatus(status)) {
+    lines.push(tentative === 'genus' ? t.codex.tentativeHint : t.codex.candidateHint)
+  }
   lines.push(t.codex.note)
   return lines.join('\n')
 }

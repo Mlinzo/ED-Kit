@@ -52,7 +52,7 @@ NavRoute.json ──poll──► PlottedRoute (memory only) ──► SSE "inva
 | `app/main.py` | FastAPI app: REST views, SSE stream, static frontend; CLI (`run`), exe niceties (opens the browser, a second start just opens the page). Listens on all interfaces by default (`--local`: loopback only) and logs the phone address; `_from_this_pc` tells the PC (loopback or one of its own addresses) from other devices |
 | `app/models.py` | Domain dataclasses (`BodyFacts`, `SystemFacts`, `Species`, ...) |
 | `app/schemas.py` | Pydantic view models (camelCase JSON) |
-| `app/exobio/` | Species catalog (values, colony ranges) and prediction rules; `deduced_genera`: the genera surely there before DSS (as many possible as there are signals; measured on Spansh, numbers in its docstring); `variants.py`: the codex colour of a species on a body (the parent star's class for 64 species, a material for 26; group-B materials can tie, then every one present is a candidate), data in `app/data/codex_variants.json` |
+| `app/exobio/` | Species catalog (values, colony ranges) and prediction rules; `deduced_genera`: the genera surely there before DSS (as many possible as there are signals; measured on Spansh, numbers in its docstring); `variants.py`: the codex colour of a species on a body (the parent star's class for 64 species, a barycentre of stars counting as its heaviest star; a material for 26; group-B materials can tie, then every one present is a candidate), data in `app/data/codex_variants.json` |
 | `app/values.py` | Cartographic value estimates (FSS / DSS) |
 
 Rules:

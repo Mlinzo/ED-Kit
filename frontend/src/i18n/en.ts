@@ -688,7 +688,7 @@ export const en: Strings = {
     predicted: 'Predicted',
     samples: (n: number) => `${n} / 3`,
     colonyRange: 'Colony range',
-    candidates: (n: number) => `one of ${n} candidates`,
+    oneOf: (n: number) => `one of ${['two', 'three', 'four'][n - 2] ?? n} species`,
     candidatesHint: (genus: string) =>
       `One bio signal is one genus: only one of these ${genus} species grows on the planet, so only one becomes a new Codex entry.`,
     bonusLikely: 'bonus likely',
@@ -718,10 +718,11 @@ export const en: Strings = {
     bodyNew: (n: number) => `New to Codex: ${n} ${plural(n, ['species', 'species'])}`,
     bodyMaybe: (n: number) => `Maybe new: ${n} ${plural(n, ['species', 'species'])}`,
     alsoMaybe: (n: number) => `${n} more — maybe`,
-    bodyNewHint: 'Species found, or their genus is certain (confirmed by DSS or deduced), but missing from your Codex for this region (or not in this colour).',
-    bodyMaybeHint: 'Prediction not confirmed by DSS: if these species are here, they are new to your Codex.',
+    bodyNewHint: 'Species found, or their genus is certain (confirmed by DSS or deduced) and any species it may be here is new: missing from your Codex for this region (or not in this colour).',
+    bodyMaybeHint: 'Prediction: the genus is not confirmed by DSS, or it may be one of several species here. If it is these, they are new to your Codex.',
     dssHint: 'A DSS scan will confirm the genera.',
     tentativeHint: 'Only predicted here so far: a DSS scan will confirm the genus.',
+    candidateHint: 'The genus is certainly here, but the species is one of several: the first sample will tell which.',
     allLogged: 'All species here are already in your Codex',
   },
 

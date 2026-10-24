@@ -23,7 +23,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.exobio.engine import primary_star_class, star_class
+from app.exobio.engine import parent_stars, primary_star_class, star_class
 from app.models import BodyFacts, SystemFacts
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "codex_variants.json"
@@ -56,16 +56,13 @@ def colour_star_class(body: BodyFacts, system: SystemFacts) -> str | None:
     """Class of the star that colours the body's life: the nearest parent star, but past Y
     dwarfs; with only Y dwarfs above the body, the system's main star. None when a star on the
     way is not known."""
-    for kind, body_id in body.parents:
-        if kind != "Star":
-            continue
-        star = system.bodies.get(body_id)
+    seen = False
+    for star in parent_stars(body, system):
+        seen = True
         cls = star_class(star.star_type) if star is not None else None
         if cls != "Y":
             return cls
-    if any(kind == "Star" for kind, _ in body.parents):
-        return primary_star_class(system)
-    return None
+    return primary_star_class(system) if seen else None
 
 
 def variants(species: str, body: BodyFacts, system: SystemFacts) -> list[Variant] | None:

@@ -209,9 +209,16 @@ def _build_species(
     confirmed = sum(confirmed_values)
     order = {"sampling": 0, "analysed": 1, "predicted": 2}
     views.sort(key=lambda v: (order[v.status], not v.certain, -v.value))
-    # Count genera, not candidate species: one bio signal is one genus on the body.
-    certain_new = {v.genus for v in views if v.codex != "logged" and v.certain}
-    maybe_new = {v.genus for v in views if v.codex != "logged" and not v.certain} - certain_new
+    # Count genera, not candidate species: one bio signal is one genus on the body. A sure genus
+    # is surely new only when none of its candidates is in the codex already.
+    by_genus: dict[str, list[SpeciesView]] = {}
+    for v in views:
+        by_genus.setdefault(v.genus, []).append(v)
+    certain_new = {
+        g for g, vs in by_genus.items() if all(v.certain and v.codex != "logged" for v in vs)
+    }
+    maybe_new = {g for g, vs in by_genus.items() if any(v.codex != "logged" for v in vs)}
+    maybe_new -= certain_new
     open_slots = max(max(bio_signals, len(genuses)) - len(certain_new), 0)
     codex_new = len(certain_new)
     codex_maybe = min(len(maybe_new), open_slots)
