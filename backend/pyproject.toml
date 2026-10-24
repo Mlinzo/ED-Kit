@@ -1,6 +1,6 @@
 [project]
 name = "ed-explorer-kit"
-version = "0.2.0"
+version = "0.2.1"
 description = "Local backend for ED Explorer Kit: journal reader, SQLite store, live API"
 license = "MIT"
 requires-python = ">=3.12"
