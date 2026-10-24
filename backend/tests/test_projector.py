@@ -268,6 +268,53 @@ def test_sale_and_death(conn: sqlite3.Connection, proj: Projector) -> None:
     assert views.session_view(conn, "F1").unsold_carto_bodies == 1  # re-scanned after death
 
 
+def load_game(ts: str, **extra: object) -> dict:
+    return {"timestamp": ts, "event": "LoadGame", "FID": "F1", "Commander": "TEST", **extra}
+
+
+def resurrect(ts: str) -> dict:
+    return {"timestamp": ts, "event": "Resurrect", "Option": "rebuy", "Cost": 1789012}
+
+
+def test_death_known_only_from_start_dead(conn: sqlite3.Connection, proj: Projector) -> None:
+    # The user's journal, 2026-10-23: the ship was destroyed while they sat in the SRV, the game
+    # restarted, and no Died was written: only LoadGame "StartDead" and then Resurrect.
+    feed(conn, proj, [CMDR, jump(), scan_planet()])
+    feed(
+        conn,
+        proj,
+        [
+            {"timestamp": "2026-10-15T20:40:00Z", "event": "Embark", "SRV": True},
+            load_game("2026-10-15T21:00:00Z", StartDead=True, Odyssey=True),
+            resurrect("2026-10-15T21:00:30Z"),
+        ],
+    )
+    assert views.session_view(conn, "F1").unsold_carto_bodies == 0
+    from app import stats
+
+    [death] = stats.stats_view(conn, "F1").death_history
+    assert death.context == "srv" and death.lost_carto_bodies == 1
+    assert death.rebuy_option == "rebuy"
+
+
+def test_restart_on_rebuy_screen_is_one_death(conn: sqlite3.Connection, proj: Projector) -> None:
+    feed(conn, proj, [CMDR, jump(), scan_planet()])
+    feed(
+        conn,
+        proj,
+        [
+            {"timestamp": "2026-10-15T21:00:00Z", "event": "Died", "KillerName": "Jed Telford"},
+            load_game("2026-10-15T21:02:00Z", StartDead=True),
+            resurrect("2026-10-15T21:02:10Z"),
+            load_game("2026-10-15T22:00:00Z"),
+        ],
+    )
+    from app import stats
+
+    [death] = stats.stats_view(conn, "F1").death_history
+    assert death.lost_carto_bodies == 1 and death.rebuy_option == "rebuy"
+
+
 def test_carto_sale_marks_system_sold(conn: sqlite3.Connection, proj: Projector) -> None:
     feed(conn, proj, [CMDR, jump(), scan_planet()])
     feed(

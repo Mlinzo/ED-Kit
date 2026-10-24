@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 16
+VERSION = 17
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -189,6 +189,11 @@ class Projector:
     def _load_game(self, ev: dict[str, Any], event_id: int) -> frozenset[str]:
         topics = self._commander(ev, event_id)
         if self.fid:
+            # Dead at load with no Died written (seen 2026-10-23: the ship destroyed while the
+            # commander sat in the SRV, then the game restarted): the data is gone all the same.
+            # After a Died the game can also restart on the rebuy screen: that death is counted.
+            if ev.get("StartDead") and not self._death_pending():
+                self._died(ev, event_id)
             # On the game menu the commander is not "on foot" anywhere.
             self._update_state(odyssey=1 if ev.get("Odyssey") else 0, on_foot=0, in_srv=0)
         return topics
@@ -801,6 +806,13 @@ class Projector:
             (ev.get("Option"), ev.get("Cost"), self.fid),
         )
         return frozenset({"session"})
+
+    def _death_pending(self) -> bool:
+        """The last death has no Resurrect yet."""
+        row = self.conn.execute(
+            "SELECT rebuy_option FROM deaths WHERE fid = ? ORDER BY id DESC LIMIT 1", (self.fid,)
+        ).fetchone()
+        return row is not None and row["rebuy_option"] is None
 
     def _died(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         if not self.fid:
