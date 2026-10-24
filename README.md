@@ -18,8 +18,24 @@ shows everything in your browser.
 - **Stats**: all-time numbers and records, shared as one picture (with or without your commander name).
 
 <p>
+  <img src="docs/screenshot-surface.png" width="49%" alt="The Surface tab: the sampling radar with the samples taken, the colony range and the distance still to go, other species on the body">
+  <img src="docs/screenshot-route.png" width="49%" alt="The Route tab: the route plotted in the game with systems likely nobody has discovered yet, the current stop with its bodies worth a visit, and the progress">
+</p>
+<p>
+  <img src="docs/screenshot-session.png" width="49%" alt="The Session tab: unsold data at risk, split into exobiology and mapping, and what happened since the last sale">
+  <img src="docs/screenshot-shop.png" width="49%" alt="The Shop tab: the Diamondback Explorer with its blueprint sketch, base price, performance and slots">
+</p>
+<p>
   <img src="docs/screenshot-galaxy.gif" width="49%" alt="The Galaxy tab turning slowly around your travels: the path with earnings and deaths, other players right now (EDDN) as violet dots, engineers as orange rings">
   <img src="docs/screenshot-stats.png" width="49%" alt="The Stats tab: all-time earnings split into mapping and exobiology, travel numbers and daily activity">
+</p>
+
+The same page on your phone, over Wi-Fi:
+
+<p>
+  <img src="docs/screenshot-phone-system.png" width="32%" alt="The System tab on a phone: the next route stop, the system's values and the orbit map">
+  <img src="docs/screenshot-phone-surface.png" width="32%" alt="The sampling radar on a phone: the distance to the nearest sample and where to go">
+  <img src="docs/screenshot-phone-stats.png" width="32%" alt="The Stats tab on a phone: all-time earnings and travel numbers">
 </p>
 
 The interface is in English, Ukrainian or Russian; switch it in Settings.
