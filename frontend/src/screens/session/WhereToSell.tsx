@@ -51,6 +51,11 @@ function Station({ station, carrying, now }: { station: SellStationView; carryin
         hint={s.genomicsHint}
         tone="bg-emerald-500/10 text-emerald-300 ring-emerald-400/25"
       />
+      {station.permit && (
+        <span title={t.shop.permitHint} className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-200 ring-1 ring-amber-400/25 ring-inset">
+          {t.shop.permit}
+        </span>
+      )}
       {station.access && (
         <span className={`text-xs ${station.access === 'all' ? 'text-zinc-400' : 'text-amber-200/70'}`}>{s.access[station.access]}</span>
       )}

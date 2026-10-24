@@ -239,6 +239,7 @@ class SellStationView(CamelModel):
     seen_at: str | None  # a carrier: when it was last reported there (ISO)
     docked: bool  # you docked here
     access: str | None  # a carrier: all (open to everybody, per Spansh) | unknown
+    permit: bool  # the system needs a permit
 
 
 class SellPlaceView(CamelModel):

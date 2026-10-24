@@ -330,6 +330,8 @@ export interface SellStationView {
   docked: boolean
   /** A carrier: open to all (per Spansh), or not known. Closed ones are never listed. */
   access: 'all' | 'unknown' | null
+  /** The system needs a permit. */
+  permit: boolean
 }
 
 export interface SellPlaceView {

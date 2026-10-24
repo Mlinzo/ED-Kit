@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -116,6 +117,45 @@ def test_carriers_hidden_by_default_with_a_hint() -> None:
     # a carrier closed to the public is no hint either
     _, nearer = pick([carrier("Closed", "A", 1.0, access="restricted")], (0, 0, 0), "M", NOW)
     assert nearer is None
+
+
+def test_stronghold_carriers_only_for_their_power() -> None:
+    sc = replace(station("Stronghold Carrier", "Maia", 1.0), owner="Li Yong-Rui")
+    stations = [sc, station("Port", "Far", 50.0)]
+    for pledged, nearest in (
+        (None, "Port"),
+        ("Aisling Duval", "Port"),  # a rival's pledge: turned away and fired at
+        ("Li Yong-Rui", "Stronghold Carrier"),
+    ):
+        places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, pledged=pledged)
+        assert places[0][1][0].name == nearest
+    assert not selling.may_dock("Stronghold Carrier", None, "Li Yong-Rui")  # owner unknown
+    assert selling.may_dock("Port", "Some Faction", None)
+
+
+def test_megaships_not_heard_of_for_a_year_are_gone() -> None:
+    stations = [
+        station("Rescue Ship", "Old", 1.0, kind="megaship", seen=NOW - timedelta(days=900)),
+        station("The Penitent", "Live", 2.0, kind="megaship", seen=NOW - timedelta(days=180)),
+        station("Port", "Far", 50.0),  # a station: its date does not matter
+    ]
+    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW)
+    assert [p[1][0].name for p in places] == ["The Penitent", "Port"]
+
+
+def test_pledged_power(conn: sqlite3.Connection, proj: Projector) -> None:
+    def ev(event: str, **fields: str) -> dict:
+        return {"timestamp": "2026-10-15T20:00:00Z", "event": event, **fields}
+
+    assert selling.pledged_power(conn) is None
+    feed(conn, proj, [ev("Powerplay", Power="Aisling Duval"), ev("LoadGame")])
+    assert selling.pledged_power(conn) == "Aisling Duval"  # not every login repeats it
+    feed(conn, proj, [ev("PowerplayDefect", FromPower="Aisling Duval", ToPower="Li Yong-Rui")])
+    assert selling.pledged_power(conn) == "Li Yong-Rui"
+    feed(conn, proj, [ev("PowerplayLeave", Power="Li Yong-Rui")])
+    assert selling.pledged_power(conn) is None
+    feed(conn, proj, [ev("PowerplayJoin", Power="Zemina Torval")])
+    assert selling.pledged_power(conn) == "Zemina Torval"
 
 
 def test_pick_keeps_the_nearest_of_each_kind() -> None:
@@ -300,15 +340,22 @@ def test_finder_searches_once_and_the_view_lists_it(
     path = tmp_path / "test.db"
     fake = FakeSpansh()
     changed = threading.Event()
-    finder = selling.SellFinder(path, changed.set, find=fake)
+    hub = raw_station("Hub", 0.0)["system_id64"]
+    finder = selling.SellFinder(path, changed.set, find=fake, permits=lambda: {hub})
 
     first = selling.sell_view(conn, "F1", views.cmdr_state(conn, "F1"), finder)
     assert first.state in ("pending", "ready")
     assert changed.wait(5)
+    for _ in range(50):  # the permit list comes after the search
+        if finder.permit_locked():
+            break
+        changed.wait(0.1)
+        changed.clear()
     sell = selling.sell_view(conn, "F1", views.cmdr_state(conn, "F1"), finder)
     assert sell.state == "ready" and sell.searched_at
     assert [p.system_name for p in sell.places] == ["Hub System"]
     assert sell.places[0].distance_ly == 30.0
+    assert sell.places[0].stations[0].permit
     assert sell.nearer_carrier is not None and sell.nearer_carrier.name == "FC"
     assert sell.nearer_carrier.distance_ly == 5.0
 
@@ -369,7 +416,11 @@ def test_the_view_lists_the_next_jump_first(
 
     changed = threading.Event()
     finder = selling.SellFinder(
-        tmp_path / "test.db", changed.set, find=FakeSpansh(), find_system=find_system
+        tmp_path / "test.db",
+        changed.set,
+        find=FakeSpansh(),
+        find_system=find_system,
+        permits=lambda: set(),
     )
     state = views.cmdr_state(conn, "F1")
     selling.sell_view(conn, "F1", state, finder, plotted=route)

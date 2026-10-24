@@ -120,6 +120,16 @@ def test_pick_groups_systems_and_hides_carriers() -> None:
     assert places[1][1][1]["name"] == "Port" and nearer is None
 
 
+def test_pick_drops_megaships_gone_for_a_year() -> None:
+    offers = [
+        raw("Crucible BJ13", "HIP 17497", 1, kind="Mega ship", seen=NOW - timedelta(days=1000)),
+        raw("The Penitent", "HR-W", 2, kind="Mega ship", seen=NOW - timedelta(days=100)),
+        raw("Port", "Sol", 3, seen=NOW - timedelta(days=1000)),  # a station stays
+    ]
+    places, _ = pick(offers, (0, 0, 0), None, NOW)
+    assert [shown[0]["name"] for _, shown, _ in places] == ["The Penitent", "Port"]
+
+
 def test_pick_keeps_three_stations_a_system() -> None:
     offers = [raw(f"S{i}", "One", 5, ls=i) for i in range(5)]
     [(_, shown, more)] = pick(offers, (0, 0, 0), None, NOW)[0]
@@ -181,6 +191,24 @@ def test_shop_view(conn: sqlite3.Connection, proj: Projector) -> None:
     nearby = shop.shop_view(conn, state(), finder, None)
     assert nearby.item is None and len(nearby.places) == 3
     assert nearby.places[0].stations[0].module_count == 1
+
+
+def test_stronghold_carrier_only_for_its_power(conn: sqlite3.Connection, proj: Projector) -> None:
+    feed(conn, proj, [CMDR, jump()])
+    sc = raw("Stronghold Carrier", "Maia", 5, kind="Planetary Outpost", modules=[module(FSD_5A)])
+    sc |= {"controlling_minor_faction": "Li Yong-Rui", "system_controlling_power": "Li Yong-Rui"}
+    finder = FakeFinder([sc, raw("Port", "Sol", 40, modules=[module(FSD_5A)])])
+
+    def nearest() -> str:
+        view = shop.shop_view(conn, views.cmdr_state(conn, "F1"), finder, FSD_5A)
+        return view.places[0].stations[0].name
+
+    assert nearest() == "Port"  # not pledged
+    pledge = {"timestamp": "2026-10-15T20:20:00Z", "event": "Powerplay", "Power": "Aisling Duval"}
+    feed(conn, proj, [pledge])
+    assert nearest() == "Port"  # a rival Power's carrier
+    feed(conn, proj, [pledge | {"event": "PowerplayDefect", "ToPower": "Li Yong-Rui"}])
+    assert nearest() == "Stronghold Carrier"
 
 
 def test_rank_and_unlock(conn: sqlite3.Connection, proj: Projector) -> None:

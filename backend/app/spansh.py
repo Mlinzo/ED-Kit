@@ -165,6 +165,8 @@ STATION_FIELDS = (
     "large_pads",
     "updated_at",
     "carrier_docking_access",  # All | Squadron | Friends | Squadron Friends | None; often missing
+    "controlling_minor_faction",  # a Stronghold Carrier's is named after its Power
+    "system_controlling_power",
 )
 
 

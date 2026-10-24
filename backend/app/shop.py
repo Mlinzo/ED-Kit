@@ -15,7 +15,10 @@ asked.
 What else stands in the way is told, not filtered: the navy rank a ship needs (from the
 journal's Rank and Promotion events), a module unlocked first (Powerplay, a technology broker:
 stations list it only to commanders who have it), a system that needs a permit (Spansh's list,
-kept by the route planner). Places where your ship cannot land are left out (app.ships).
+kept by the route planner). Places where your ship cannot land are left out (app.ships), and
+so are the Stronghold Carriers of a Power you are not pledged to (app.selling.may_dock): they
+sell nearly every module, but turn you away; and megaships not heard of for a year, likely
+gone (app.selling.gone): near the Pleiades half of Spansh's megaships are such.
 
 The catalog (app/data/shop.json) is built by tools/shop_catalog.py from EDCD FDevIDs.
 """
@@ -50,14 +53,18 @@ from app.schemas import (
     ShopView,
 )
 from app.selling import (
-    CARRIER_SEEN_WITHIN,
     CARRIER_TYPES,
     STATION_TYPES,
     access_of,
     fits,
+    gone,
     jumps_to,
     kind_of,
+    may_dock,
+    owner_of,
     parse_time,
+    permit_locked,
+    pledged_power,
 )
 from app.ships import Pad, pad_size, ship_name
 
@@ -295,14 +302,6 @@ def search(item: Item | None, coords: Vec) -> list[dict[str, Any]]:
     return [o for part in parts for raw in part if (o := keep(raw)) is not None]
 
 
-def _permit_locked(db_path: Path) -> set[int]:
-    cached = spansh.CachedSearch(db_path)
-    try:
-        return cached.permit_locked()
-    finally:
-        cached.close()
-
-
 class ShopFinder:
     """Spansh's answers per item, kept in memory (see the module docstring); thread-safe, one
     search per item at a time."""
@@ -314,7 +313,7 @@ class ShopFinder:
         permits: Callable[[], set[int]] | None = None,
     ) -> None:
         self._find = find
-        self._permits = permits or (lambda: _permit_locked(db_path) if db_path else set())
+        self._permits = permits or (lambda: permit_locked(db_path) if db_path else set())
         self._lock = threading.Lock()
         self._item_locks: dict[str, threading.Lock] = {}
         self._answers: dict[str, tuple[datetime, Vec, list[dict[str, Any]]]] = {}
@@ -371,21 +370,26 @@ def pick(
     now: datetime,
     carriers: bool = False,
     limit: int = PLACES,
+    pledged: str | None = None,
 ) -> tuple[list[Place], tuple[float, dict[str, Any]] | None]:
     """The nearest systems selling it (stations where your ship can land, the best first), and
     (carriers hidden) the nearest carrier when it is nearer than all of them. Carriers closed
-    to the public or not seen for 30 days are never used."""
+    to the public or not seen for 30 days are never used, nor megaships not heard of for a year,
+    nor the Stronghold Carriers of a Power other than the one you are `pledged` to."""
     usable: list[tuple[float, dict[str, Any]]] = []
     hidden: list[tuple[float, dict[str, Any]]] = []
     for o in offers:
         position = _position(o)
         if position is None or not o.get("name") or not fits(_pads(o), pad):
             continue
+        kind = kind_of(o.get("type"))
+        if not may_dock(str(o["name"]), owner_of(o), pledged):
+            continue
+        if gone(kind, parse_time(o.get("updated_at")), now):
+            continue
         distance = math.dist(here, position)
-        if kind_of(o.get("type")) == "carrier":
-            seen = parse_time(o.get("updated_at"))
-            stale = seen is None or now - seen > CARRIER_SEEN_WITHIN
-            if access_of(o.get("carrier_docking_access")) == "restricted" or stale:
+        if kind == "carrier":
+            if access_of(o.get("carrier_docking_access")) == "restricted":
                 continue
             if not carriers:
                 hidden.append((distance, o))
@@ -513,7 +517,9 @@ def shop_view(
     except spansh.SpanshError:
         return view.model_copy(update={"state": "failed"})
 
-    places, nearer = pick(found, here, pad, datetime.now(UTC), carriers)
+    places, nearer = pick(
+        found, here, pad, datetime.now(UTC), carriers, pledged=pledged_power(conn)
+    )
     permits = finder.permit_locked() if places else set()
     return view.model_copy(
         update={

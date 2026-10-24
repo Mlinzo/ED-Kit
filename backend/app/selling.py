@@ -16,7 +16,16 @@ decides who may dock. Spansh knows the docking access of about two in three carr
 closed to the public (squadron, friends, nobody) are always left out, the rest are marked open
 or unknown; the owner can still close it any time. When carriers are hidden, the nearest one
 nearer than every station is named as a hint. Each place is checked against the landing pad
-your ship needs (app.ships).
+your ship needs (app.ships), and a Powerplay Stronghold Carrier is kept only when you are
+pledged to its Power: it turns everybody else away and fires at the pledges of a rival Power
+(Frontier's Powerplay 2.0 notes). Spansh lists one as a planetary outpost named "Stronghold
+Carrier", its faction named after the Power; your pledge is the journal's latest Powerplay event.
+
+Megaships not heard of for a year are left out: Spansh still has the rescue and military ships
+of the Thargoid war, gone for years (none of six such in systems the journal saw the signals of
+was there). In 2026-10 the live ones were at most half a year old, the gone ones over two years.
+A system that needs a permit is marked (Spansh's list, fetched once after the first search):
+which permits you hold the journal does not tell.
 
 The next jump of the route plotted in the game is asked about on its own (its stations, kept 6 h
 in memory) and, when it has somewhere to sell, listed first: it is on the way, wherever the
@@ -67,8 +76,12 @@ RETRY_FAILED_AFTER = timedelta(minutes=10)
 REUSE_WITHIN_LY = 20.0
 REUSE_SHARE = 0.1  # of the distance to the nearest station found
 CARRIER_SEEN_WITHIN = timedelta(days=30)
+MEGASHIP_SEEN_WITHIN = timedelta(days=365)
 PLACES = 5
 SYSTEM_SIZE = 5  # per service, around the next jump: its own stations come first
+STRONGHOLD_CARRIER = "stronghold carrier"
+# The journal's pledge events; "Powerplay" is written at most logins of a pledged commander.
+PLEDGE_EVENTS = ("Powerplay", "PowerplayJoin", "PowerplayDefect", "PowerplayLeave")
 
 Kind = Literal["starport", "outpost", "planetary", "settlement", "megaship", "carrier", "other"]
 # Who may dock at a carrier: everybody, not the public (squadron, friends, nobody), or not known.
@@ -121,6 +134,7 @@ class Station:
     seen_at: datetime | None  # when Spansh last had it there (a carrier), or you docked
     docked: bool = False  # you docked here
     access: Access | None = None  # carriers only
+    owner: str | None = None  # the controlling faction: a Stronghold Carrier's is its Power
 
 
 def kind_of(station_type: str | None) -> Kind:
@@ -133,6 +147,54 @@ def fits(pads: tuple[int, int, int] | None, pad: Pad | None) -> bool:
         return True
     small, medium, large = pads
     return {"S": small + medium + large, "M": medium + large, "L": large}[pad] > 0
+
+
+def gone(kind: Kind, seen: datetime | None, now: datetime) -> bool:
+    """Whether a place that moves or goes away is likely not there: a carrier not seen for 30
+    days, a megaship for a year (unknown: gone)."""
+    within = {"carrier": CARRIER_SEEN_WITHIN, "megaship": MEGASHIP_SEEN_WITHIN}.get(kind)
+    return within is not None and (seen is None or now - seen > within)
+
+
+def owner_of(raw: dict[str, Any]) -> str | None:
+    owner = raw.get("controlling_minor_faction") or raw.get("system_controlling_power")
+    return str(owner) if owner else None
+
+
+def may_dock(name: str, owner: str | None, pledged: str | None) -> bool:
+    """Whether you may dock: a Stronghold Carrier takes only the pledges of its Power (its owner;
+    unknown: not yours), any other station everybody."""
+    if name.strip().lower() != STRONGHOLD_CARRIER:
+        return True
+    if not owner or not pledged:
+        return False
+    return owner.strip().lower() == pledged.strip().lower()
+
+
+def pledged_power(conn: sqlite3.Connection) -> str | None:
+    """The Power you are pledged to, from the latest pledge event (None: never, or you left)."""
+    row = conn.execute(
+        f"SELECT raw FROM events WHERE event IN ({', '.join('?' * len(PLEDGE_EVENTS))}) "
+        "ORDER BY id DESC LIMIT 1",
+        PLEDGE_EVENTS,
+    ).fetchone()
+    if row is None:
+        return None
+    ev = json.loads(row[0])
+    if ev.get("event") == "PowerplayLeave":
+        return None
+    power = ev.get("ToPower") if ev.get("event") == "PowerplayDefect" else ev.get("Power")
+    return str(power) if power else None
+
+
+def permit_locked(db_path: Path) -> set[int]:
+    """Systems that need a permit (Spansh's list, kept in the database); raises
+    spansh.SpanshError."""
+    cached = spansh.CachedSearch(db_path)
+    try:
+        return cached.permit_locked()
+    finally:
+        cached.close()
 
 
 def parse_time(value: Any) -> datetime | None:
@@ -175,6 +237,7 @@ def from_spansh(raw: dict[str, Any]) -> Station | None:
         pads=(pads[0], pads[1], pads[2]) if any(pads) else None,
         seen_at=parse_time(raw.get("updated_at")),
         access=access_of(raw.get("carrier_docking_access")) if kind == "carrier" else None,
+        owner=owner_of(raw),
     )
 
 
@@ -249,6 +312,7 @@ def pick(
     limit: int = PLACES,
     carriers: bool = False,
     first: int | None = None,
+    pledged: str | None = None,
 ) -> tuple[list[Place], tuple[float, Station] | None]:
     """The nearest systems where you can sell, and (carriers hidden) the nearest carrier when it
     is nearer than all of them.
@@ -256,16 +320,19 @@ def pick(
     In each system the best station that buys both kinds of data, else the best for each kind.
     The `limit` nearest systems, plus the nearest for each kind when they are farther. The system
     `first` (the next jump), when you can sell there, leads the list (after the one you are in).
-    Carriers closed to the public or not seen for 30 days are never used.
+    Carriers closed to the public or not seen for 30 days are never used, nor megaships not
+    heard of for a year, nor the Stronghold Carriers of a Power other than the one you are
+    `pledged` to.
     """
     usable: list[Station] = []
     hidden: list[Station] = []
     for s in stations:
         if not (s.cartographics or s.genomics) or not fits(s.pads, pad):
             continue
+        if not may_dock(s.name, s.owner, pledged) or gone(s.kind, s.seen_at, now):
+            continue
         if s.kind == "carrier":
-            stale = s.seen_at is None or now - s.seen_at > CARRIER_SEEN_WITHIN
-            if s.access == "restricted" or stale:
+            if s.access == "restricted":
                 continue
             if not carriers:
                 hidden.append(s)
@@ -388,11 +455,14 @@ class SellFinder:
         on_change: Callable[[], None],
         find: Callable[[Vec], list[dict[str, Any]]] = search,
         find_system: Callable[[PlottedSystem], list[dict[str, Any]]] = search_system,
+        permits: Callable[[], set[int]] | None = None,
     ) -> None:
         self.db_path = db_path
         self.on_change = on_change
         self.find = find
         self.find_system = find_system
+        self._permits = permits or (lambda: permit_locked(db_path))
+        self._permit_ids: set[int] | None = None
         self._queue: queue.Queue[Vec | PlottedSystem] = queue.Queue()
         self._lock = threading.Lock()
         self._busy = False
@@ -437,6 +507,23 @@ class SellFinder:
             known = self._systems.get(address)
         return (known[1] or []) if known is not None else []
 
+    def permit_locked(self) -> set[int]:
+        """Systems that need a permit (empty until fetched, or when Spansh cannot be asked)."""
+        with self._lock:
+            return self._permit_ids or set()
+
+    def _load_permits(self) -> None:
+        try:
+            ids = self._permits()
+        except spansh.SpanshError:
+            return  # asked again after the next search
+        except Exception:  # noqa: BLE001 - never kill the worker
+            log.exception("permit list failed")
+            return
+        with self._lock:
+            self._permit_ids = ids
+        self.on_change()
+
     def _run(self) -> None:
         while True:
             job = self._queue.get()
@@ -454,6 +541,8 @@ class SellFinder:
                     else:
                         self._busy = False
                 self.on_change()
+            if self._permit_ids is None:  # after the first search: its places show first
+                self._load_permits()
 
     def _search_system(self, system: PlottedSystem) -> None:
         found: list[dict[str, Any]] | None
@@ -548,15 +637,24 @@ def sell_view(
         found += [s for s in map(from_spansh, finder.system_stations(upcoming.address)) if s]
 
     stations = merge(found, journal_stations(conn, fid))
+    permits = finder.permit_locked() if finder is not None else set()
     first = upcoming.address if upcoming is not None else None
-    picked, nearer = pick(stations, here, pad, datetime.now(UTC), carriers=carriers, first=first)
+    picked, nearer = pick(
+        stations,
+        here,
+        pad,
+        datetime.now(UTC),
+        carriers=carriers,
+        first=first,
+        pledged=pledged_power(conn),
+    )
     places = [
         SellPlaceView(
             system_name=show[0].system_name,
             system_address=str(show[0].system_address) if show[0].system_address else None,
             distance_ly=round(distance, 1),
             jumps=jumps_to(distance, jump_range),
-            stations=[_station_view(s) for s in show],
+            stations=[_station_view(s, permits) for s in show],
             more=more,
             next_jump=first is not None and show[0].system_address == first,
         )
@@ -581,7 +679,7 @@ def jumps_to(distance: float, jump_range: float | None) -> int | None:
     return max(1, math.ceil(distance / jump_range)) if distance >= 0.5 else 0
 
 
-def _station_view(s: Station) -> SellStationView:
+def _station_view(s: Station, permits: set[int]) -> SellStationView:
     return SellStationView(
         name=s.name,
         kind=s.kind,
@@ -595,4 +693,5 @@ def _station_view(s: Station) -> SellStationView:
         ),
         docked=s.docked,
         access=s.access if s.access != "restricted" else None,
+        permit=s.system_address in permits,
     )

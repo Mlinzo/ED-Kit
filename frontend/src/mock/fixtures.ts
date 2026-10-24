@@ -771,7 +771,7 @@ export function buildSell(carriers: boolean, now = Date.now()): SellView {
         distanceLy: 2_204.5,
         jumps: 31,
         stations: [
-          { name: 'Gagarin Gate', kind: 'starport', distLs: 518, cartographics: true, genomics: true, seenAt: null, docked: true, access: null },
+          { name: 'Gagarin Gate', kind: 'starport', distLs: 518, cartographics: true, genomics: true, seenAt: null, docked: true, access: null, permit: false },
         ],
         more: 3,
         nextJump: false,
@@ -782,8 +782,8 @@ export function buildSell(carriers: boolean, now = Date.now()): SellView {
         distanceLy: 2_231.9,
         jumps: 32,
         stations: [
-          { name: 'Ohm City', kind: 'outpost', distLs: 2_480, cartographics: true, genomics: false, seenAt: null, docked: false, access: null },
-          { name: 'Lee Biological Hub', kind: 'settlement', distLs: 2_513, cartographics: false, genomics: true, seenAt: null, docked: false, access: null },
+          { name: 'Ohm City', kind: 'outpost', distLs: 2_480, cartographics: true, genomics: false, seenAt: null, docked: false, access: null, permit: false },
+          { name: 'Lee Biological Hub', kind: 'settlement', distLs: 2_513, cartographics: false, genomics: true, seenAt: null, docked: false, access: null, permit: false },
         ],
         more: 1,
         nextJump: false,
@@ -794,7 +794,7 @@ export function buildSell(carriers: boolean, now = Date.now()): SellView {
         distanceLy: 2_243.1,
         jumps: 32,
         stations: [
-          { name: 'Jaques Station', kind: 'starport', distLs: 1_530, cartographics: true, genomics: true, seenAt: null, docked: true, access: null },
+          { name: 'Jaques Station', kind: 'starport', distLs: 1_530, cartographics: true, genomics: true, seenAt: null, docked: true, access: null, permit: false },
         ],
         more: 11,
         nextJump: false,
@@ -812,7 +812,7 @@ function carrierPlaces(daysAgo: (d: number) => string): SellView['places'] {
       distanceLy: 386.4,
       jumps: 6,
       stations: [
-        { name: 'K7Q-2VZ', kind: 'carrier', distLs: 12, cartographics: true, genomics: true, seenAt: daysAgo(3), docked: false, access: 'all' },
+        { name: 'K7Q-2VZ', kind: 'carrier', distLs: 12, cartographics: true, genomics: true, seenAt: daysAgo(3), docked: false, access: 'all', permit: false },
       ],
       more: 0,
       nextJump: false,
@@ -823,7 +823,7 @@ function carrierPlaces(daysAgo: (d: number) => string): SellView['places'] {
       distanceLy: 912.8,
       jumps: 13,
       stations: [
-        { name: 'X2F-81B', kind: 'carrier', distLs: 0, cartographics: true, genomics: false, seenAt: daysAgo(21), docked: false, access: 'unknown' },
+        { name: 'X2F-81B', kind: 'carrier', distLs: 0, cartographics: true, genomics: false, seenAt: daysAgo(21), docked: false, access: 'unknown', permit: false },
       ],
       more: 0,
       nextJump: false,

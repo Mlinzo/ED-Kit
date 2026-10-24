@@ -50,6 +50,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Places you cannot dock at (2026-10-24), in the Shop and "Where to sell": a Powerplay
+  Stronghold Carrier is listed only to the pledges of its Power (it sells nearly every module,
+  so it led most searches, but turns everybody else away and fires at a rival's pledges); your
+  pledge comes from the journal's latest Powerplay event. Megaships Spansh has not heard of for a
+  year are left out: the rescue and military ships of the Thargoid war are gone but still in its
+  data (half the megaships near the Pleiades). "Where to sell" marks permit-locked systems as the
+  Shop does.
 - Firsts route (2026-10-22): the route form's fourth goal, "Firsts", plans a route through
   systems nobody has likely discovered yet, around a point or along a line. Spansh knows only
   what somebody uploaded, so the stops are systems it knows only from other players' plotted
