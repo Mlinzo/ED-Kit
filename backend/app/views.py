@@ -612,6 +612,8 @@ def system_view(
         is_current=is_current,
         current_system=current,
         current_body_id=state["body_id"] if is_current else None,
+        ship_body_id=state["ship_body_id"] if is_current else None,
+        ship_near=bool(state["ship_near"]) if is_current else False,
         visits=visits["n"],
         first_visit_at=visits["first_at"],
         last_visit_at=visits["last_at"],

@@ -4,8 +4,8 @@ import { memo, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'r
 import { AdditiveBlending, Vector3, type Camera, type Group, type Mesh, type Sprite } from 'three'
 import type { Line2 } from 'three-stdlib'
 import { targetOf } from '../lib/routeTarget'
-import { useMap } from './context'
-import { CURRENT, HOVERED, SELECTED, useNodeFlags } from './interaction'
+import { useMap, type MapRegistry } from './context'
+import { CURRENT, HOVERED, LEFT, SELECTED, TARGET, useNodeFlags } from './interaction'
 import { labelPriority, wantsLabel } from './labels'
 import { hasVisibleOrbit, localPosition, type MapNode } from './layout'
 import { MapLabel } from './MapLabel'
@@ -141,11 +141,14 @@ function BodyNode({ node }: { node: MapNode }) {
   const selected = (flags & SELECTED) !== 0
   const hovered = (flags & HOVERED) !== 0
   const current = (flags & CURRENT) !== 0
+  const left = (flags & LEFT) !== 0
+  const gameTarget = (flags & TARGET) !== 0
+  const ship = current || left || gameTarget
   // Stars are never dimmed: they are the landmarks (and the light).
-  const dim = body.kind === 'planet' && node.interest === 'low' && !selected && !hovered && !current
+  const dim = body.kind === 'planet' && node.interest === 'low' && !selected && !hovered && !ship
   const routeTarget = targetOf(routeTargets, body.bodyId)
-  const showLabel = wantsLabel(node) || selected || hovered || current || routeTarget !== null
-  const priority = labelPriority(node, { hovered, selected, current })
+  const showLabel = wantsLabel(node) || selected || hovered || ship || routeTarget !== null
+  const priority = labelPriority(node, { hovered, selected, current: ship })
 
   return (
     <>
@@ -165,6 +168,7 @@ function BodyNode({ node }: { node: MapNode }) {
         <Halo node={node} color={bodyColor(body.visual, body.kind)} />
       )}
       {current && <HereMarker node={node} />}
+      {left && <LastSeenMarker node={node} />}
       <HitArea node={node} selectable />
       {showLabel && (
         <Html
@@ -177,6 +181,8 @@ function BodyNode({ node }: { node: MapNode }) {
             card={hovered}
             selected={selected}
             current={current}
+            left={left}
+            gameTarget={gameTarget}
             routeTarget={routeTarget}
             priority={priority}
             registry={registry}
@@ -241,6 +247,38 @@ function HereMarker({ node }: { node: MapNode }) {
   )
 }
 
+/** Radius of the "you are here" rings at rest: around the body, at least 12 px on screen. */
+function hereRadius(node: MapNode, g: Group, state: { camera: Camera; size: { height: number } }, registry: MapRegistry) {
+  const world = registry.sizer.worldOf(node.id)
+  const body = registry.sizer.bodyOf(node.id)
+  return Math.max(node.size * body * 1.5, (pixelScale(g, state) * 12) / world)
+}
+
+/** The last known place (you flew off from here): one still, dashed, faint ring. */
+function LastSeenMarker({ node }: { node: MapNode }) {
+  const { registry } = useMap()
+  const group = useRef<Group>(null)
+  useFrame((state) => {
+    const g = group.current
+    if (g) g.scale.setScalar(hereRadius(node, g, state, registry) * 1.5)
+  })
+  return (
+    <group ref={group}>
+      <Line
+        points={CIRCLE}
+        color={ACCENT}
+        lineWidth={1.4}
+        dashed
+        dashSize={0.16}
+        gapSize={0.12}
+        transparent
+        opacity={0.55}
+        depthWrite={false}
+      />
+    </group>
+  )
+}
+
 function PulseRing({ node, phase }: { node: MapNode; phase: number }) {
   const { reducedMotion, registry } = useMap()
   const group = useRef<Group>(null)
@@ -249,9 +287,7 @@ function PulseRing({ node, phase }: { node: MapNode; phase: number }) {
     const g = group.current
     const l = line.current
     if (!g || !l) return
-    const world = registry.sizer.worldOf(node.id)
-    const body = registry.sizer.bodyOf(node.id)
-    const r0 = Math.max(node.size * body * 1.5, (pixelScale(g, state) * 12) / world)
+    const r0 = hereRadius(node, g, state, registry)
     const t = reducedMotion ? 0.15 + phase * 0.9 : (state.clock.elapsedTime / 2.4 + phase) % 1
     g.scale.setScalar(r0 * (1 + t * 1.6))
     const material = l.material as { opacity: number }

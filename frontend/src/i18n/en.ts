@@ -616,6 +616,8 @@ export const en: Strings = {
     hintMouse: 'Drag to rotate · scroll to zoom · right-drag to pan',
     hintTouch: 'Drag to rotate · pinch to zoom',
     bodiesCount: (n: number) => `${n} ${plural(n, ['body', 'bodies'])}`,
+    lastSeen: 'Last known position',
+    gameTarget: 'Target in the game',
   },
 
   badges: {

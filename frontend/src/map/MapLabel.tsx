@@ -1,4 +1,4 @@
-import { CircleCheck, MapPin, Route } from 'lucide-react'
+import { CircleCheck, Crosshair, MapPin, Route } from 'lucide-react'
 import { useCallback } from 'react'
 import { BodyProgress } from '../components/BodyProgress'
 import { CodexLine, CodexMark } from '../components/CodexBadge'
@@ -26,6 +26,8 @@ export function MapLabel({
   card,
   selected,
   current,
+  left = false,
+  gameTarget = false,
   routeTarget = null,
   priority,
   registry,
@@ -35,6 +37,10 @@ export function MapLabel({
   card: boolean
   selected: boolean
   current: boolean
+  /** The ship was last here and flew off (the last known place). */
+  left?: boolean
+  /** Targeted in the game. */
+  gameTarget?: boolean
   /** The stored route counts on this body. */
   routeTarget?: RouteTarget | null
   priority: number
@@ -76,7 +82,7 @@ export function MapLabel({
       className="absolute top-0 left-0 [transform:translate(var(--tx,-50%),var(--ty,-100%))] opacity-100 transition-[opacity,visibility] duration-200 motion-reduce:transition-none data-[hidden=true]:invisible data-[hidden=true]:opacity-0"
     >
       {card ? (
-        <Card node={node} current={current} routeTarget={routeTarget} />
+        <Card node={node} current={current} left={left} gameTarget={gameTarget} routeTarget={routeTarget} />
       ) : (
         <button
           type="button"
@@ -91,10 +97,17 @@ export function MapLabel({
         >
           {current ? (
             <MapPin className="size-3.5 shrink-0 text-accent" strokeWidth={2.5} aria-label={t.system.youAreHere} />
+          ) : left ? (
+            <MapPin className="size-3.5 shrink-0 text-zinc-500" strokeWidth={2.5} aria-label={t.map.lastSeen} />
           ) : (
             <span className="size-1.5 shrink-0 rounded-full" style={{ background: dot }} aria-hidden />
           )}
           <span className="proportional-nums">{name}</span>
+          {gameTarget && (
+            <Crosshair className="size-3.5 shrink-0 text-accent" strokeWidth={2.5} aria-label={t.map.gameTarget}>
+              <title>{t.map.gameTarget}</title>
+            </Crosshair>
+          )}
           {routeTarget && (
             <Route
               className={`size-3.5 shrink-0 ${routeTarget === 'done' ? 'text-zinc-500' : 'text-accent'}`}
@@ -127,7 +140,19 @@ function hasChips(node: MapNode): boolean {
   return b.signals.bio > 0 || (b.kind === 'planet' && (b.mappedByMe || b.worthMapping))
 }
 
-function Card({ node, current, routeTarget }: { node: MapNode; current: boolean; routeTarget: RouteTarget | null }) {
+function Card({
+  node,
+  current,
+  left,
+  gameTarget,
+  routeTarget,
+}: {
+  node: MapNode
+  current: boolean
+  left: boolean
+  gameTarget: boolean
+  routeTarget: RouteTarget | null
+}) {
   const body = node.body
   if (!body) {
     return (
@@ -159,12 +184,24 @@ function Card({ node, current, routeTarget }: { node: MapNode; current: boolean;
           <span className="min-w-0">{marker.title}</span>
         </p>
       )}
-      {(current || routeTarget) && (
+      {(current || left || gameTarget || routeTarget) && (
         <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs font-medium text-accent">
           {current && (
             <span className="inline-flex items-center gap-1">
               <MapPin className="size-3.5" aria-hidden />
               {t.system.youAreHere}
+            </span>
+          )}
+          {left && (
+            <span className="inline-flex items-center gap-1 text-zinc-400">
+              <MapPin className="size-3.5" aria-hidden />
+              {t.map.lastSeen}
+            </span>
+          )}
+          {gameTarget && (
+            <span className="inline-flex items-center gap-1">
+              <Crosshair className="size-3.5" aria-hidden />
+              {t.map.gameTarget}
             </span>
           )}
           {routeTarget && (

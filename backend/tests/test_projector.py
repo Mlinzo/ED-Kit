@@ -268,6 +268,32 @@ def test_sale_and_death(conn: sqlite3.Connection, proj: Projector) -> None:
     assert views.session_view(conn, "F1").unsold_carto_bodies == 1  # re-scanned after death
 
 
+def test_ship_on_the_map(conn: sqlite3.Connection, proj: Projector) -> None:
+    def ship() -> tuple[int | None, bool]:
+        view = views.system_view(conn, "F1")
+        return view.ship_body_id, view.ship_near
+
+    def at(event: str, ts: str, **extra: object) -> dict:
+        return {"timestamp": f"2026-10-15T{ts}Z", "event": event, "SystemAddress": SA, **extra}
+
+    feed(
+        conn,
+        proj,
+        [CMDR, {**jump(), "Body": "Col 285 Sector TT-H c10-4", "BodyID": 0, "BodyType": "Star"}],
+    )
+    assert ship() == (0, True)  # FSDJump names the arrival star
+    feed(conn, proj, [at("ApproachBody", "20:20:00", Body="x", BodyID=24)])
+    assert ship() == (24, True)
+    feed(conn, proj, [at("LeaveBody", "20:25:00", Body="x", BodyID=24)])
+    assert ship() == (24, False)  # flown off: the last known place
+    feed(conn, proj, [at("SupercruiseExit", "20:30:00", Body="x", BodyID=1, BodyType="Star")])
+    assert ship() == (1, True)
+    feed(conn, proj, [at("SupercruiseExit", "20:31:00", Body="y", BodyID=40, BodyType="Station")])
+    assert ship() == (1, True)  # a station is not on the map
+    feed(conn, proj, [at("SupercruiseExit", "20:40:00", Body="x AB", BodyID=0, BodyType="Null")])
+    assert ship() == (1, False)  # a barycentre: away from the bodies
+
+
 def load_game(ts: str, **extra: object) -> dict:
     return {"timestamp": ts, "event": "LoadGame", "FID": "F1", "Commander": "TEST", **extra}
 

@@ -141,6 +141,8 @@ export function buildPastSystem(current: SystemView, history: HistoryView, addre
     name: entry.name,
     isCurrent: false,
     currentBodyId: null,
+    shipBodyId: null,
+    shipNear: false,
     visits: entry.visits,
     firstVisitAt: entry.firstVisitAt,
     lastVisitAt: entry.lastVisitAt,

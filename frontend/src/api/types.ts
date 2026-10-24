@@ -199,6 +199,10 @@ export interface SystemView {
   currentSystem: SystemRef | null
   /** Body the commander is near/on (current system only). */
   currentBodyId: number | null
+  /** The ship on the map (current system only): the body the game last put you at… */
+  shipBodyId: number | null
+  /** … and whether you are still there (false once you flew off: the last known place). */
+  shipNear: boolean
   visits: number
   firstVisitAt: string | null
   lastVisitAt: string | null
@@ -520,6 +524,10 @@ export interface LiveStatus {
   bodyName: string | null
   /** Tons in the main tank (in the ship only). */
   fuelMain: number | null
+  /** What is targeted in the game: the system address and the BodyID there (a station or a
+   * signal has an id that is no body). */
+  destinationSystem: string | null
+  destinationBody: number | null
 }
 
 export interface IngestState {

@@ -13,7 +13,7 @@ import {
   SearchX,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useIngest, useView } from '../../api/hooks'
+import { useIngest, useLiveStatusSelector, useView } from '../../api/hooks'
 import type { SystemRef, SystemView } from '../../api/types'
 import { Credits } from '../../components/Credits'
 import { Note } from '../../components/Note'
@@ -367,6 +367,11 @@ export function SystemScreen({
   const bodies = useMemo(() => (data ? sortBodies(data.bodies, sort) : []), [data, sort])
   const selected = bodies.find((b) => b.id64 === selectedId) ?? null
   const currentBodyId = data?.currentBodyId ?? null
+  // The body targeted in the game while you fly in supercruise here: the map draws your course.
+  const here = data?.isCurrent && ingest?.gameRunning !== false ? data.address : null
+  const gameTargetId = useLiveStatusSelector((s) =>
+    here !== null && s?.supercruise && s.destinationSystem === here ? s.destinationBody : null,
+  )
   // The stored route: this system's stop has its bodies marked (in the list and on the map).
   const stop = routeStop(route, data?.address ?? null)
   // Stable while nothing changes (the route refetches on every journal event).
@@ -494,6 +499,7 @@ export function SystemScreen({
               selectedId={isDesktop ? (detail?.id64 ?? null) : selectedId}
               onSelect={select}
               routeTargets={routeTargets}
+              gameTargetId={gameTargetId}
               onShowList={() => changeView('list')}
               className={
                 data.isCurrent && !strip

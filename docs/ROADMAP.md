@@ -50,6 +50,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Your ship on the system map (2026-10-25): the map marks the body the game last put you at
+  (the arrival star after a jump, a planet you approach, drop at or land on) with pulsing rings,
+  and with a still dashed ring, "Last known position", once you fly off. In supercruise a dashed
+  line runs from there to the body targeted in the game ("Target in the game"). The game reports
+  no position between bodies, so the ship does not move along the line.
 - One of several species (2026-10-25): when DSS confirms a genus and the rules leave several of
   its species, the species list shows them as one row, "Tussock — one of two species", with each
   candidate under it; one bio signal is one genus, so only one of them grows there. Such a genus

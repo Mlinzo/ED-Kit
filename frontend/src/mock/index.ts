@@ -34,6 +34,8 @@ function emptySystem(system: SystemView): SystemView {
     allBodiesFound: false,
     isCurrent: false,
     currentBodyId: null,
+    shipBodyId: null,
+    shipNear: false,
     visits: 0,
     firstVisitAt: null,
     lastVisitAt: null,
@@ -83,6 +85,8 @@ function simulatedStatus(seconds: number): LiveStatus {
     planetRadiusM: PLANET_RADIUS_M,
     bodyName: SURFACE_BODY_NAME,
     fuelMain: null,
+    destinationSystem: null,
+    destinationBody: null,
   }
 }
 

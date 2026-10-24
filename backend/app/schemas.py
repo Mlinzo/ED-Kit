@@ -192,6 +192,10 @@ class SystemView(CamelModel):
     is_current: bool  # the commander is in this system now (else: a system from the history)
     current_system: SystemRef | None  # where the commander is now
     current_body_id: int | None  # body the commander is near/on (current system only)
+    # The ship on the map (current system only): the body the game last put you at, and whether
+    # you are still there (false once you flew off: the last known place).
+    ship_body_id: int | None = None
+    ship_near: bool = False
     visits: int  # arrivals in this system
     first_visit_at: str | None
     last_visit_at: str | None
@@ -463,6 +467,10 @@ class LiveStatus(CamelModel):
     planet_radius_m: float | None = None
     body_name: str | None = None
     fuel_main: float | None = None  # t in the main tank (in the ship only)
+    # What is targeted in the game (Destination): a system address (a string, like everywhere in
+    # the API) and the BodyID there (a station or a signal has an id that is no body).
+    destination_system: str | None = None
+    destination_body: int | None = None
 
 
 class IngestState(CamelModel):

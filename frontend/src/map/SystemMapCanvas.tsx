@@ -8,6 +8,7 @@ import type { BodyView, SystemView } from '../api/types'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { t } from '../i18n'
 import { CameraRig } from './CameraRig'
+import { CourseLine } from './CourseLine'
 import { MapContext, useMap, type CameraApi, type MapContextValue, type MapRegistry } from './context'
 import { InteractionStore } from './interaction'
 import { cullLabels } from './labels'
@@ -25,6 +26,8 @@ export interface SystemMapProps {
   onSelect: (id64: string) => void
   /** Body id -> done, for the bodies the stored route counts on. */
   routeTargets?: ReadonlyMap<number, boolean>
+  /** Body id targeted in the game while you fly in supercruise here (Status.json Destination). */
+  gameTargetId?: number | null
   className?: string
 }
 
@@ -145,12 +148,20 @@ const Scene = memo(function Scene({ systemKey }: { systemKey: string }) {
       {layout.roots.map((r) => (
         <NodeTree key={r.id} node={r} />
       ))}
+      <CourseLine />
       <CameraRig systemKey={systemKey} />
     </>
   )
 })
 
-export default function SystemMapCanvas({ system, selectedId, onSelect, routeTargets = NO_TARGETS, className = '' }: SystemMapProps) {
+export default function SystemMapCanvas({
+  system,
+  selectedId,
+  onSelect,
+  routeTargets = NO_TARGETS,
+  gameTargetId = null,
+  className = '',
+}: SystemMapProps) {
   const { layout, startedAt } = useLayout(system)
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const coarse = useMediaQuery('(pointer: coarse)')
@@ -173,10 +184,16 @@ export default function SystemMapCanvas({ system, selectedId, onSelect, routeTar
     for (const n of layout.nodes.values()) if (n.body?.id64 === selectedId) return n.id
     return null
   }, [layout, selectedId])
-  const currentId = system.currentBodyId != null && layout.nodes.get(system.currentBodyId)?.body ? system.currentBodyId : null
+  // The ship: at a body (the arrival star after a jump, a planet on approach or landing), or the
+  // last body it was at; the game gives no position in between.
+  const onMap = (id: number | null) => (id !== null && layout.nodes.get(id)?.body ? id : null)
+  const shipId = onMap(system.shipBodyId)
+  const currentId = system.shipNear ? shipId : null
+  const leftId = system.shipNear ? null : shipId
+  const targetId = onMap(gameTargetId)
   useLayoutEffect(() => {
-    interaction.set({ selectedId: selectedNodeId, currentId })
-  }, [interaction, selectedNodeId, currentId])
+    interaction.set({ selectedId: selectedNodeId, currentId, leftId, targetId })
+  }, [interaction, selectedNodeId, currentId, leftId, targetId])
   // A body that disappears from the layout cannot stay hovered.
   useLayoutEffect(() => {
     const h = interaction.get().hoveredId

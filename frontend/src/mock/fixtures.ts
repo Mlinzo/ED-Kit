@@ -667,6 +667,8 @@ export function buildSystem(): SystemView {
     isCurrent: true,
     currentSystem: { address: ADDRESS.toString(), name: SYSTEM_NAME },
     currentBodyId: SURFACE_BODY_ID,
+    shipBodyId: SURFACE_BODY_ID,
+    shipNear: true,
     visits: 1,
     firstVisitAt: '2026-10-16T19:40:12Z',
     lastVisitAt: '2026-10-16T19:40:12Z',

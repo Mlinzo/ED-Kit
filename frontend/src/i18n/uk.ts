@@ -620,6 +620,8 @@ export const uk: Strings = {
     hintMouse: 'Перетягування — обертати · коліщатко — масштаб · права кнопка — зсув',
     hintTouch: 'Один палець — обертати · два — масштаб',
     bodiesCount: (n: number) => `${n} ${plural(n, ['тіло', 'тіла', 'тіл'])}`,
+    lastSeen: 'Останнє відоме місце',
+    gameTarget: 'Ціль у грі',
   },
 
   badges: {

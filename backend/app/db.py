@@ -225,6 +225,10 @@ CREATE TABLE IF NOT EXISTS cmdr_state(
   body_name TEXT,
   on_foot INTEGER NOT NULL DEFAULT 0,
   in_srv INTEGER NOT NULL DEFAULT 0,
+  -- The ship on the system map: the body the game last put you at in this system (arrival star,
+  -- approach, drop, touchdown) and whether you are still there (0 after LeaveBody).
+  ship_body_id INTEGER,
+  ship_near INTEGER NOT NULL DEFAULT 0,
   odyssey INTEGER NOT NULL DEFAULT 1,
   jump_range REAL,  -- MaxJumpRange of the current ship (Loadout), ly
   ship_type TEXT,  -- Loadout.Ship, lower case (app.ships: the pad it needs)

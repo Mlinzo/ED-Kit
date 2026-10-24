@@ -20,9 +20,13 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 17
+VERSION = 18
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
+
+# BodyType values that name a body of the system map. A drop at a station or a ring follows an
+# ApproachBody of its planet; "Null" is a barycentre (seen: "Sharur AB", BodyID 0).
+MAP_BODY_TYPES = frozenset({"Star", "Planet"})
 
 # Events never stored or projected (noise, or private chat).
 SKIP_EVENTS = frozenset(
@@ -90,6 +94,7 @@ class Projector:
             "ApproachBody": self._approach_body,
             "Touchdown": self._approach_body,
             "LeaveBody": self._leave_body,
+            "SupercruiseExit": self._supercruise_exit,
             "Disembark": self._disembark,
             "Embark": self._embark,
             "LaunchSRV": self._launch_srv,
@@ -257,12 +262,19 @@ class Projector:
         if address is None:
             return frozenset()
         on_planet = ev.get("BodyType") == "Planet"
+        state = self._state()
+        moved = state is None or state["system_address"] != address
         self._arrive(address, ev.get("timestamp"), "location")
-        self._update_state(
-            system_address=address,
-            body_id=ev.get("BodyID") if on_planet else None,
-            body_name=ev.get("Body") if on_planet else None,
-        )
+        values: dict[str, Any] = {
+            "system_address": address,
+            "body_id": ev.get("BodyID") if on_planet else None,
+            "body_name": ev.get("Body") if on_planet else None,
+        }
+        if ev.get("BodyType") in MAP_BODY_TYPES and ev.get("BodyID") is not None:
+            values.update(ship_body_id=ev["BodyID"], ship_near=1)
+        elif moved:
+            values.update(ship_body_id=None, ship_near=0)
+        self._update_state(**values)
         if ev.get("Docked") and ev.get("StationName"):
             self._record_dock(ev, address)
         return ALL_TOPICS
@@ -305,7 +317,15 @@ class Projector:
             return frozenset()
         how = "carrier" if ev.get("event") == "CarrierJump" else "jump"
         self._arrive(address, ev.get("timestamp"), how)
-        self._update_state(system_address=address, body_id=None, body_name=None)
+        # FSDJump names the arrival star.
+        arrival = ev.get("BodyID") if ev.get("BodyType") in MAP_BODY_TYPES else None
+        self._update_state(
+            system_address=address,
+            body_id=None,
+            body_name=None,
+            ship_body_id=arrival,
+            ship_near=int(arrival is not None),
+        )
         if self.fid and ev.get("event") == "FSDJump":
             self.conn.execute(
                 "INSERT INTO jumps(fid, ts, system_address, distance_ly) VALUES(?, ?, ?, ?)",
@@ -347,12 +367,26 @@ class Projector:
     def _approach_body(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         if ev.get("BodyID") is None:
             return frozenset()
-        self._update_state(body_id=ev.get("BodyID"), body_name=ev.get("Body"))
+        self._update_state(
+            body_id=ev.get("BodyID"),
+            body_name=ev.get("Body"),
+            ship_body_id=ev["BodyID"],
+            ship_near=1,
+        )
         return frozenset({"system", "surface"})
 
     def _leave_body(self, ev: dict[str, Any], _: int) -> frozenset[str]:
-        self._update_state(body_id=None, body_name=None)
+        self._update_state(body_id=None, body_name=None, ship_near=0)
         return frozenset({"system", "surface"})
+
+    def _supercruise_exit(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        if ev.get("BodyType") in MAP_BODY_TYPES and ev.get("BodyID") is not None:
+            self._update_state(ship_body_id=ev["BodyID"], ship_near=1)
+        elif ev.get("BodyType") == "Null":
+            self._update_state(ship_near=0)
+        else:
+            return frozenset()
+        return frozenset({"system"})
 
     def _disembark(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         self._update_state(on_foot=1, in_srv=0)
@@ -840,6 +874,8 @@ class Projector:
                 "WHERE fid = ? AND carto = 'unsold'",
                 (self.fid,),
             )
-        self._update_state(on_foot=0, in_srv=0, body_id=None, body_name=None)
+        self._update_state(
+            on_foot=0, in_srv=0, body_id=None, body_name=None, ship_body_id=None, ship_near=0
+        )
         log.info("death at %s: unsold data marked lost (on_foot=%s)", ts, on_foot)
         return ALL_TOPICS
