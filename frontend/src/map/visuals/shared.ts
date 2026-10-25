@@ -27,6 +27,8 @@ export const SPHERE = new SphereGeometry(1, 64, 40)
 export const SPHERE_MID = new SphereGeometry(1, 32, 20)
 /** For the outer atmosphere halo and black hole cores (nothing close underneath). */
 export const SPHERE_LOW = new SphereGeometry(1, 40, 26)
+/** A planet seen up close (the Surface globe): a smooth outline when it fills the screen. */
+export const SPHERE_FINE = new SphereGeometry(1, 160, 100)
 export const QUAD = new PlaneGeometry(2, 2)
 
 const ringGeos = new Map<string, RingGeometry>()

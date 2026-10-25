@@ -241,9 +241,62 @@ export interface ActiveScanView {
   colour: string | null
 }
 
+/** A place on the planet globe. Where it comes from goes with the kind: sample = recorded by the
+ *  app from Status.json when you took it; codex, landing, settlement = your journal. */
+export interface GlobeMark {
+  kind: 'sample' | 'codex' | 'landing' | 'settlement'
+  lat: number
+  lon: number
+  /** Species ("Stratum Tectonicas"), codex entry or settlement name; '' for a landing. */
+  name: string
+  /** Sample: the variant colour ("Teal"). */
+  colour: string | null
+  /** Sample number 1..3. */
+  n: number | null
+  status: 'sampling' | 'abandoned' | 'analysed' | null
+  /** The landing, codex entry, approach, or when sampling began (ISO). */
+  at: string | null
+}
+
+/** Your ship on this planet, from the journal (Touchdown / Liftoff). */
+export interface GlobeShip {
+  /** landed where it touched down; recalled: it landed by itself to pick you up; dismissed: sent
+   *  away while you stay on the surface (no position). */
+  state: 'landed' | 'recalled' | 'dismissed'
+  lat: number | null
+  lon: number | null
+  at: string
+}
+
+/** Other players' finds on this planet (Canonn): one entry per find, its points. */
+export interface CommunityFinds {
+  /** "Osseus Discus - Blue", as Canonn names it (English). */
+  name: string
+  /** Canonn's category: Biology, Geology, Guardian, Thargoid, ... */
+  category: string
+  /** [lat, lon] */
+  points: [number, number][]
+  /** You sampled this species here (any colour). */
+  yours: boolean
+}
+
+export interface GlobeView {
+  bodyName: string
+  radiusM: number
+  marks: GlobeMark[]
+  ship: GlobeShip | null
+  /** ok: from the cache (maybe none); loading: asked; failed: Canonn did not answer; off: offline. */
+  communityState: 'ok' | 'loading' | 'failed' | 'off'
+  /** When Canonn was asked (ISO). */
+  communityAt: string | null
+  community: CommunityFinds[]
+}
+
 export interface SurfaceView {
   body: BodyView | null
   activeScan: ActiveScanView | null
+  /** A landable planet with a known radius. */
+  globe: GlobeView | null
 }
 
 /** A first entry in your codex (the game's IsNewEntry). */

@@ -1,8 +1,10 @@
-import { CircleCheck, LocateOff, MoveUpRight, Radar as RadarIcon } from 'lucide-react'
+import { CircleCheck, Globe, LocateOff, MoveUpRight, Radar as RadarIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useLiveStatus, useView } from '../../api/hooks'
 import type { ActiveScanView, BodyView, LiveStatus } from '../../api/types'
 import { CodexBadge } from '../../components/CodexBadge'
 import { SampleDots } from '../../components/SampleDots'
+import { Segmented } from '../../components/Segmented'
 import { SpeciesList, SpeciesValue } from '../../components/SpeciesList'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
 import { HelpTip } from '../../guide/HelpTip'
@@ -10,7 +12,10 @@ import { t } from '../../i18n'
 import { bodyLabel } from '../../lib/body'
 import { formatDegrees, formatMeters, formatNumber } from '../../lib/format'
 import { localOffset } from '../../lib/geo'
+import { PlanetGlobe } from './globe/PlanetGlobe'
 import { Radar, type RadarPoint } from './Radar'
+
+type SurfaceMode = 'radar' | 'planet'
 
 interface Geometry {
   points: RadarPoint[]
@@ -172,11 +177,40 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
 export function SurfaceScreen() {
   const { data, error, refetch } = useView('surface')
   const status = useLiveStatus()
+  // The radar while you sample; the planet is one tap away (and alone when you do not sample).
+  const [mode, setMode] = useState<SurfaceMode>('radar')
 
   if (!data) return <ViewFallback error={error} onRetry={refetch} />
 
-  const { body, activeScan } = data
+  const { body, activeScan, globe } = data
   const others = body?.species.filter((s) => s.species !== activeScan?.species) ?? []
+
+  if (!activeScan && body && globe) {
+    return (
+      <div className="grid gap-6 lg:grid-cols-2 lg:gap-x-10">
+        <section aria-labelledby="surface-title" className="space-y-5 lg:col-start-2 lg:row-start-1">
+          <div>
+            <Label>{bodyLabel(body)}</Label>
+            <h1 id="surface-title" className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
+              {t.surface.noScan}
+            </h1>
+            <p className="mt-2 text-sm text-zinc-500">{t.surface.noScanHint}</p>
+          </div>
+          {body.species.length > 0 && (
+            <div>
+              <Label as="h2">{t.surface.bodySpecies}</Label>
+              <div className="mt-1">
+                <SpeciesList species={body.species} />
+              </div>
+            </div>
+          )}
+        </section>
+        <section className="lg:col-start-1 lg:row-start-1">
+          <PlanetGlobe globe={globe} body={body} status={status} />
+        </section>
+      </div>
+    )
+  }
 
   if (!activeScan) {
     return (
@@ -228,23 +262,40 @@ export function SurfaceScreen() {
         <SampleState scan={activeScan} position={position} />
       </section>
 
-      {/* Radar (desktop: left, spans both rows) */}
+      {/* Radar or planet (desktop: left, spans both rows) */}
       <section className="lg:col-start-1 lg:row-span-2 lg:row-start-1">
-        <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-9rem))]">
-          {geometry ? (
-            <Radar
-              points={geometry.points}
-              rangeM={activeScan.colonyRangeM}
-              heading={status?.heading ?? null}
-              canSample={geometry.canSample}
-              label={radarLabel}
+        {globe && body && (
+          <div className="mb-4 flex justify-center">
+            <Segmented
+              label={t.globe.view}
+              value={mode}
+              options={[
+                { id: 'radar', label: t.globe.radar, icon: RadarIcon },
+                { id: 'planet', label: t.globe.planet, icon: Globe },
+              ]}
+              onChange={setMode}
             />
-          ) : (
-            <div className="flex h-full items-center justify-center rounded-full bg-zinc-900/40 ring-1 ring-zinc-800">
-              <LocateOff className="size-10 text-zinc-700" aria-hidden />
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+        {mode === 'planet' && globe && body ? (
+          <PlanetGlobe globe={globe} body={body} status={status} />
+        ) : (
+          <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-9rem))]">
+            {geometry ? (
+              <Radar
+                points={geometry.points}
+                rangeM={activeScan.colonyRangeM}
+                heading={status?.heading ?? null}
+                canSample={geometry.canSample}
+                label={radarLabel}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-full bg-zinc-900/40 ring-1 ring-zinc-800">
+                <LocateOff className="size-10 text-zinc-700" aria-hidden />
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Other species on this body */}

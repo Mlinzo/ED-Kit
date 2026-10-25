@@ -168,7 +168,13 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     @app.get("/api/view/surface", response_model=SurfaceView, response_model_by_alias=True)
     def view_surface() -> SurfaceView:
         conn = read_conn()
-        return views.surface_view(conn, active_fid(conn), service.live)
+        return views.surface_view(
+            conn,
+            active_fid(conn),
+            service.live,
+            online=service.canonn is not None,
+            want_finds=service.want_surface_finds,
+        )
 
     @app.get("/api/view/session", response_model=SessionView, response_model_by_alias=True)
     def view_session() -> SessionView:

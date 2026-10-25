@@ -759,6 +759,61 @@ export const en: Strings = {
     west: 'W',
   },
 
+  globe: {
+    label: (body: string) => `Globe of ${body}`,
+    view: 'View',
+    radar: 'Radar',
+    planet: 'Planet',
+    loading: 'Loading globe…',
+    unavailable: '3D globe unavailable',
+    unavailableHint: 'Your browser does not support WebGL.',
+    hintMouse: 'Drag to turn · scroll to zoom · click a mark for details',
+    hintTouch: 'One finger turns · two zoom · tap a mark for details',
+    toYou: 'Turn to you',
+    unreal: 'The surface is drawn by the app: the game does not share the planet’s terrain.',
+    layers: 'On the globe',
+    layer: {
+      you: 'You',
+      ship: 'Your ship',
+      samples: 'Your samples',
+      codex: 'Your codex finds',
+      landings: 'Landings',
+      settlements: 'Settlements',
+      community: 'Other players’ finds',
+    },
+    from: {
+      live: 'the game, now (Status.json)',
+      journal: 'your journal',
+      recorded: 'recorded by the app as you sampled',
+      community: 'Canonn — community data',
+    },
+    ship: {
+      landed: 'landed here',
+      recalled: 'came for you and landed here',
+      dismissed: 'dismissed to orbit',
+    },
+    sample: (n: number) => `sample ${n}`,
+    status: { sampling: 'sampling', abandoned: 'left unfinished', analysed: 'analysed' },
+    landing: 'Landing',
+    fromYou: (distance: string, heading: string) => `${distance} from you · heading ${heading}`,
+    noYou: 'Distance and heading appear when you are on or above this planet.',
+    nearby: (n: number) => `${n} more here`,
+    close: 'Close',
+    community: {
+      loading: 'Asking Canonn…',
+      failed: 'Canonn did not answer — the app will ask again later.',
+      off: 'Offline mode: community data is off.',
+      none: 'Canonn knows no finds on this planet.',
+      summary: (finds: number, points: number) =>
+        `${finds} ${plural(finds, ['find', 'finds'])}, ${points} ${plural(points, ['point', 'points'])}`,
+      points: (n: number) => `${n} ${plural(n, ['point', 'points'])}`,
+      yours: 'you have it',
+      filter: 'Show only this find',
+      showAll: 'Show all',
+      hint: 'Only players who run the Canonn plugin for EDMC send their finds here.',
+    },
+  },
+
   // The Shop tab: ShopView, and the catalog of ships and modules (/api/shop/catalog).
 
   shop: {

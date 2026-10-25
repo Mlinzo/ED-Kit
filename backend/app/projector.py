@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 18
+VERSION = 19
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -92,7 +92,9 @@ class Projector:
             "SAAScanComplete": self._mapped,
             "CodexEntry": self._codex,
             "ApproachBody": self._approach_body,
-            "Touchdown": self._approach_body,
+            "Touchdown": self._touchdown,
+            "Liftoff": self._liftoff,
+            "ApproachSettlement": self._settlement,
             "LeaveBody": self._leave_body,
             "SupercruiseExit": self._supercruise_exit,
             "Disembark": self._disembark,
@@ -375,6 +377,40 @@ class Projector:
         )
         return frozenset({"system", "surface"})
 
+    def _touchdown(self, ev: dict[str, Any], event_id: int) -> frozenset[str]:
+        self._mark(ev, "touchdown")
+        return self._approach_body(ev, event_id)
+
+    def _liftoff(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        return frozenset({"surface"}) if self._mark(ev, "liftoff") else frozenset()
+
+    def _settlement(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        name = ev.get("Name_Localised") or ev.get("Name")
+        return frozenset({"surface"}) if self._mark(ev, "settlement", name) else frozenset()
+
+    def _mark(self, ev: dict[str, Any], kind: str, name: Any = None) -> bool:
+        """A place on a planet surface (the planet globe); False when the event has none."""
+        address, body_id = ev.get("SystemAddress"), ev.get("BodyID")
+        lat, lon = _number(ev.get("Latitude")), _number(ev.get("Longitude"))
+        if not self.fid or address is None or body_id is None or lat is None or lon is None:
+            return False
+        self.conn.execute(
+            "INSERT INTO surface_marks(fid, ts, kind, system_address, body_id, lat, lon, name, "
+            "player) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                self.fid,
+                ev.get("timestamp"),
+                kind,
+                address,
+                body_id,
+                lat,
+                lon,
+                str(name) if name else None,
+                int(bool(ev.get("PlayerControlled", True))),
+            ),
+        )
+        return True
+
     def _leave_body(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         self._update_state(body_id=None, body_name=None, ship_near=0)
         return frozenset({"system", "surface"})
@@ -553,7 +589,7 @@ class Projector:
         species = exobio.get_species(str(name))
         self.conn.execute(
             "INSERT INTO codex_entries(fid, ts, entry_id, name, species, category, region, "
-            "system_address, body_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "system_address, body_id, title, lat, lon) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 self.fid,
                 ev.get("timestamp"),
@@ -564,6 +600,9 @@ class Projector:
                 region,
                 address,
                 ev.get("BodyID"),
+                ev.get("Name_Localised"),
+                _number(ev.get("Latitude")),
+                _number(ev.get("Longitude")),
             ),
         )
         return frozenset({"system", "surface"})

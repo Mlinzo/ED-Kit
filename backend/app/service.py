@@ -13,7 +13,7 @@ from pathlib import Path
 from queue import Empty, SimpleQueue
 from typing import Any
 
-from app import db, enrich, game, projector, usersettings
+from app import canonn, db, enrich, game, projector, usersettings
 from app.config import Settings
 from app.journal import (
     JournalDirectory,
@@ -106,6 +106,8 @@ class IngestService(threading.Thread):
         self.enricher = enrich.Enricher() if settings.online else None
         self._enrich_checked: int | None = None  # last system looked up
         self._enrich_wanted: SimpleQueue[int] = SimpleQueue()  # opened in the UI
+        self.canonn = canonn.Fetcher() if settings.online else None
+        self._finds_wanted: SimpleQueue[tuple[int, str]] = SimpleQueue()  # planet globes shown
         self.navroute = NavRouteReader(settings.journal_dir / "NavRoute.json")
         self._last_event: str | None = None  # the latest journal event (game running fallback)
         self.ready = threading.Event()
@@ -190,6 +192,7 @@ class IngestService(threading.Thread):
             if files:
                 self._ingest_file(conn, files[-1])
             self._enrich(conn)
+            self._surface_finds(conn)
             self._halt.wait(self.settings.poll_interval)
         conn.close()
 
@@ -357,6 +360,33 @@ class IngestService(threading.Thread):
         if enrich.needs_fetch(conn, address):
             self.enricher.request(address)
 
+    def _surface_finds(self, conn: Any) -> None:
+        """Store Canonn's answers; ask for the systems the globe waits for."""
+        if self.canonn is None:
+            return
+        for lookup in self.canonn.drain():
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                canonn.store(conn, lookup)
+                conn.execute("COMMIT")
+            except Exception:
+                conn.execute("ROLLBACK")
+                log.exception("failed to store canonn finds for %s", lookup.address)
+                continue
+            log.info(
+                "canonn: %s points for %s",
+                "no" if lookup.points is None else len(lookup.points),
+                lookup.address,
+            )
+            self._invalidate({"surface"})
+        while True:
+            try:
+                address, name = self._finds_wanted.get_nowait()
+            except Empty:
+                break
+            if canonn.needs_fetch(conn, address):
+                self.canonn.request(address, name)
+
     # ------------------------------------------------------------------ live status
 
     def _watch_game(self) -> None:
@@ -406,6 +436,11 @@ class IngestService(threading.Thread):
         """Look up community data for a system opened by address (any thread)."""
         if self.enricher is not None:
             self._enrich_wanted.put(address)
+
+    def want_surface_finds(self, address: int, name: str) -> None:
+        """Look up other players' finds of a system whose planet the globe shows (any thread)."""
+        if self.canonn is not None:
+            self._finds_wanted.put((address, name))
 
     def invalidate(self, topics: set[str]) -> None:
         """Ask every browser to refetch these views (callable from any thread)."""

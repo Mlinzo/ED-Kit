@@ -30,7 +30,7 @@ def test_views_without_journals(tmp_path: Path) -> None:
         session = client.get("/api/view/session").json()
         assert session["atRiskValue"] == 0
         surface = client.get("/api/view/surface").json()
-        assert surface == {"body": None, "activeScan": None}
+        assert surface == {"body": None, "activeScan": None, "globe": None}
         ingest = client.get("/api/ingest").json()
         assert ingest["journalDirFound"] is False
 

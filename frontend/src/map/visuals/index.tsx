@@ -5,6 +5,8 @@
 //     the origin: planet sphere / star with glow / rings / atmosphere rim, spinning by itself.
 //   Lighting: the map keeps a fixed pool of PointLights (decay 0) on its main stars plus a faint
 //   ambient light, so planet materials are lit by standard three.js lights (no hard-coded light dir).
+//   <PlanetSurface visual seed />  — the planet alone and still at unit radius, north up (+y): the
+//     Surface globe draws its marks on it.
 //   bodyColor(visual, kind) in ./colors — representative CSS colour (labels, dots, fallbacks).
 //
 // Tuned for the default R3F canvas (ACES filmic tone mapping, sRGB output) with star
@@ -17,6 +19,8 @@ import type {} from '@react-three/fiber' // registers <mesh/> etc. in JSX
 import type { BodyVisual } from '../../api/types'
 import { hashString } from './palette'
 import { Planet } from './Planet'
+
+export { PlanetSurface } from './Planet'
 import { Star } from './Star'
 
 export interface BodyMeshProps {

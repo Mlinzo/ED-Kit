@@ -14,6 +14,7 @@ import { planetRecipe } from './recipe'
 import { Reticle } from './Reticle'
 import {
   SPHERE,
+  SPHERE_FINE,
   SPHERE_LOW,
   SPHERE_MID,
   createRingTexture,
@@ -136,6 +137,44 @@ export function Planet({ visual, radius, seed, dim, selected, hovered, priority 
         )}
       </group>
       <Reticle size={1.3} selected={selected} hovered={hovered} />
+    </group>
+  )
+}
+
+/**
+ * The same planet alone and still, for a close look (the Surface globe): unit radius, north up
+ * (+y), no spin, tilt, rings, clouds (they would hide what is on the ground) or reticle.
+ */
+export function PlanetSurface({ visual, seed }: { visual: BodyVisual; seed: number }) {
+  const vkey = JSON.stringify(visual)
+  const recipe = useMemo(() => planetRecipe(JSON.parse(vkey) as BodyVisual, seed), [vkey, seed])
+  const dimU = useEasedUniform(0)
+  const surfaceSpec = useMemo(() => bakeSpec(recipe.surface.program, recipe.surface.params), [recipe])
+  const surface = useBake(surfaceSpec, 1)!
+  const surfaceMat = useDisposable(
+    useMemo(() => createSurfaceMaterial({ map: surface.texture, recipe, dim: dimU, ring: null }), [surface, recipe, dimU]),
+  )
+  const atmo = useMemo(
+    () => (recipe.atmosphere ? createAtmosphereMaterials(recipe.atmosphere, dimU) : null),
+    [recipe, dimU],
+  )
+  useDisposable(atmo?.inner)
+  useDisposable(atmo?.outer)
+
+  const rootRef = useRef<Group>(null)
+  const [baked, setBaked] = useState<BakeEntry | null>(null)
+  useEffect(() => surface.onReady(() => setBaked(surface)), [surface])
+  const compiled = useCompiled(rootRef, surfaceMat)
+
+  return (
+    <group ref={rootRef} visible={compiled && baked === surface}>
+      <mesh geometry={SPHERE_FINE} material={surfaceMat} />
+      {atmo && (
+        <>
+          <mesh geometry={SPHERE_FINE} material={atmo.inner} scale={1.012} raycast={noRaycast} />
+          <mesh geometry={SPHERE_LOW} material={atmo.outer} scale={recipe.atmosphere!.scale} raycast={noRaycast} />
+        </>
+      )}
     </group>
   )
 }

@@ -11,6 +11,8 @@ import type {
   BarycentreView,
   BodyView,
   BodyVisual,
+  GlobeMark,
+  GlobeView,
   Interest,
   OrbitView,
   ParentRef,
@@ -687,10 +689,53 @@ export function buildSystem(): SystemView {
   }
 }
 
+/** Off the sample site by whole degrees (Canonn finds far away, an older landing). */
+const away = (dLat: number, dLon: number): LatLon => ({ lat: SITE_ORIGIN.lat + dLat, lon: SITE_ORIGIN.lon + dLon })
+const near = (east: number, north: number): LatLon => offsetLatLon(SITE_ORIGIN, east, north, PLANET_RADIUS_M)
+
+function buildGlobe(): GlobeView {
+  const sample = (name: string, colour: string, n: number, status: GlobeMark['status'], at: string, p: LatLon): GlobeMark => ({
+    kind: 'sample',
+    ...p,
+    name,
+    colour,
+    n,
+    status,
+    at,
+  })
+  const marks: GlobeMark[] = [
+    ...SAMPLE_OFFSETS.map((o, i) => sample('Stratum Tectonicas', 'Teal', i + 1, 'sampling', '2026-10-16T20:05:31Z', near(o.east, o.north))),
+    sample('Bacterium Aurasus', 'Teal', 1, 'analysed', '2026-10-16T19:51:02Z', near(-1_400, 900)),
+    sample('Bacterium Aurasus', 'Teal', 2, 'analysed', '2026-10-16T19:51:02Z', near(-1_950, 1_380)),
+    sample('Bacterium Aurasus', 'Teal', 3, 'analysed', '2026-10-16T19:51:02Z', near(-2_300, 640)),
+    { kind: 'codex', ...away(-2.1, 3.4), name: 'Carbon Dioxide Fumarole', colour: null, n: null, status: null, at: '2026-10-16T19:43:10Z' },
+    { kind: 'landing', ...away(-2.05, 3.3), name: '', colour: null, n: null, status: null, at: '2026-10-16T19:42:18Z' },
+    { kind: 'landing', ...near(-160, -90), name: '', colour: null, n: null, status: null, at: '2026-10-16T19:48:40Z' },
+  ]
+  const spread = (centre: LatLon, n: number): [number, number][] =>
+    Array.from({ length: n }, (_, i) => [centre.lat + Math.sin(i * 2.4) * 0.35, centre.lon + Math.cos(i * 2.4) * 0.5])
+  return {
+    bodyName: SURFACE_BODY_NAME,
+    radiusM: PLANET_RADIUS_M,
+    marks,
+    ship: { state: 'landed', ...near(-160, -90), at: '2026-10-16T19:48:40Z' },
+    communityState: 'ok',
+    communityAt: '2026-10-16T19:40:30Z',
+    community: [
+      { name: 'Concha Renibus - Red', category: 'Biology', points: spread(away(5.6, -8.2), 9), yours: false },
+      { name: 'Stratum Tectonicas - Teal', category: 'Biology', points: spread(away(0.3, 0.6), 6), yours: true },
+      { name: 'Bacterium Aurasus - Teal', category: 'Biology', points: spread(away(-11.5, 21), 4), yours: true },
+      { name: 'Concha Labiata - Green', category: 'Biology', points: spread(away(-31, 64), 3), yours: false },
+      { name: 'Carbon Dioxide Fumarole', category: 'Geology', points: spread(away(-2.3, 3.1), 2), yours: false },
+    ],
+  }
+}
+
 export function buildSurface(system: SystemView): SurfaceView {
   const surfaceBody = system.bodies.find((b) => b.bodyId === SURFACE_BODY_ID) ?? null
   return {
     body: surfaceBody,
+    globe: buildGlobe(),
     activeScan: {
       genus: 'Stratum',
       species: 'Stratum Tectonicas',

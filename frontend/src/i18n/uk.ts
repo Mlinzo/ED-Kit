@@ -763,6 +763,61 @@ export const uk: Strings = {
     west: 'Зх',
   },
 
+  globe: {
+    label: (body: string) => `Глобус: ${body}`,
+    view: 'Вигляд',
+    radar: 'Радар',
+    planet: 'Планета',
+    loading: 'Завантаження глобуса…',
+    unavailable: '3D-глобус недоступний',
+    unavailableHint: 'Браузер не підтримує WebGL.',
+    hintMouse: 'Перетягування — обертати · коліщатко — масштаб · клік по мітці — подробиці',
+    hintTouch: 'Один палець — обертати · два — масштаб · дотик до мітки — подробиці',
+    toYou: 'Повернути до вас',
+    unreal: 'Поверхню намалював застосунок: рельєфу планети гра не повідомляє.',
+    layers: 'На глобусі',
+    layer: {
+      you: 'Ви',
+      ship: 'Ваш корабель',
+      samples: 'Ваші зразки',
+      codex: 'Ваші знахідки кодексу',
+      landings: 'Посадки',
+      settlements: 'Поселення',
+      community: 'Знахідки інших гравців',
+    },
+    from: {
+      live: 'гра, зараз (Status.json)',
+      journal: 'ваш журнал',
+      recorded: 'записав застосунок під час збору',
+      community: 'Canonn — дані інших гравців',
+    },
+    ship: {
+      landed: 'сів тут',
+      recalled: 'прилетів по вас і сів тут',
+      dismissed: 'відкликаний на орбіту',
+    },
+    sample: (n: number) => `зразок ${n}`,
+    status: { sampling: 'триває збір', abandoned: 'покинутий недозібраним', analysed: 'проаналізований' },
+    landing: 'Посадка',
+    fromYou: (distance: string, heading: string) => `${distance} від вас · курс ${heading}`,
+    noYou: 'Відстань і курс з’являться, коли ви будете на цій планеті або над нею.',
+    nearby: (n: number) => `Поруч ще ${n}`,
+    close: 'Закрити',
+    community: {
+      loading: 'Питаємо Canonn…',
+      failed: 'Canonn не відповів — застосунок спитає ще раз пізніше.',
+      off: 'Офлайн-режим: дані інших гравців вимкнено.',
+      none: 'Canonn не знає знахідок на цій планеті.',
+      summary: (finds: number, points: number) =>
+        `${finds} ${plural(finds, ['знахідка', 'знахідки', 'знахідок'])}, ${points} ${plural(points, ['точка', 'точки', 'точок'])}`,
+      points: (n: number) => `${n} ${plural(n, ['точка', 'точки', 'точок'])}`,
+      yours: 'є у вас',
+      filter: 'Показати лише цю знахідку',
+      showAll: 'Показати всі',
+      hint: 'Сюди потрапляють знахідки лише тих, хто грає з плагіном Canonn для EDMC.',
+    },
+  },
+
   // Вкладка «Магазин»: ShopView і каталог кораблів і модулів (/api/shop/catalog).
 
   shop: {

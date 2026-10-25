@@ -50,6 +50,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Planet globe on the Surface tab (2026-10-25): a 3D globe of the planet you are at, with your
+  samples (where the app recorded them), your codex finds, landings and settlements (from the
+  journal, so old journals count too), your ship (landed, recalled or dismissed), you with your
+  heading, and other players' finds from Canonn (on 34 of 34 planets the user landed on near the
+  Pleiades: 1–194 points each). Every layer says where its data comes from; a tap on a mark gives
+  distance and heading from you. The surface is drawn by the app (the game shares no terrain).
+  While you sample, a Radar | Planet switch. The system map opens zoomed to the planet you are on.
 - Your ship on the system map (2026-10-25): the map marks the body the game last put you at
   (the arrival star after a jump, a planet you approach, drop at or land on) with pulsing rings,
   and with a still dashed ring, "Last known position", once you fly off. In supercruise a dashed

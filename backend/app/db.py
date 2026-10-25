@@ -77,6 +77,15 @@ CREATE TABLE IF NOT EXISTS ext_barycentres(
   PRIMARY KEY(system_address, body_id)
 ) STRICT;
 
+-- Other players' finds on planet surfaces (Canonn), cached per system (app.canonn).
+-- points: JSON [{"body", "name", "category", "lat", "lon"}]; ok = 0: the lookup failed.
+CREATE TABLE IF NOT EXISTS ext_surface(
+  system_address INTEGER PRIMARY KEY,
+  fetched_at TEXT NOT NULL,
+  ok INTEGER NOT NULL,
+  points TEXT NOT NULL
+) STRICT;
+
 -- Spansh searches of the route planner (app.spansh.CachedSearch): body pages by request,
 -- permit-locked systems (when fetched: meta spansh_permits_at), systems by id64.
 CREATE TABLE IF NOT EXISTS spansh_pages(
@@ -206,6 +215,7 @@ PROJECTION_TABLES = (
     "visits",
     "deaths",
     "codex_entries",
+    "surface_marks",
     "fuel_jumps",
     "engineers",
 )
@@ -400,9 +410,29 @@ CREATE TABLE IF NOT EXISTS codex_entries(
   category TEXT,
   region TEXT,
   system_address INTEGER,
-  body_id INTEGER
+  body_id INTEGER,
+  title TEXT,  -- Name_Localised, in the game's language
+  lat REAL,  -- where you were, on a planet surface
+  lon REAL
 ) STRICT;
 CREATE INDEX IF NOT EXISTS codex_by_species ON codex_entries(fid, species);
+
+-- Places on planet surfaces from the journal. kind: touchdown | liftoff (your ship; player = 0
+-- when it landed or flew off on its own: recalled or dismissed) | settlement (ApproachSettlement).
+CREATE TABLE IF NOT EXISTS surface_marks(
+  id INTEGER PRIMARY KEY,
+  fid TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  system_address INTEGER NOT NULL,
+  body_id INTEGER NOT NULL,
+  lat REAL NOT NULL,
+  lon REAL NOT NULL,
+  name TEXT,
+  player INTEGER NOT NULL DEFAULT 1
+) STRICT;
+CREATE INDEX IF NOT EXISTS surface_marks_by_body ON surface_marks(fid, system_address, body_id);
+CREATE INDEX IF NOT EXISTS surface_marks_by_ship ON surface_marks(fid, kind, id);
 
 -- Your standing with each engineer (EngineerProgress): progress is the journal's Known /
 -- Invited / Acquainted / Unlocked / Barred; rank 1..5 once unlocked.

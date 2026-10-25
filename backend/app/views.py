@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from app import exobio, notes, usersettings
 from app.codex import CodexIndex, codex_index, colour_status, predicted_status
 from app.exobio.variants import colour_of, variants
 from app.facts import body_id64, facts_from_json, load_community_system, load_system
+from app.globe import globe_view
 from app.models import BodyFacts, SystemFacts
 from app.schemas import (
     ActiveScanView,
@@ -17,6 +18,7 @@ from app.schemas import (
     BodyView,
     BodyVisual,
     CommunityLookup,
+    GlobeView,
     HighlightSettings,
     Interest,
     LiveStatus,
@@ -630,9 +632,18 @@ def system_view(
     )
 
 
-def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | None) -> SurfaceView:
+def surface_view(
+    conn: sqlite3.Connection,
+    fid: str | None,
+    live: LiveStatus | None,
+    *,
+    online: bool = False,
+    want_finds: Callable[[int, str], None] | None = None,
+) -> SurfaceView:
+    """The body you sample on (or are at), its globe and the sampling run in progress.
+    `want_finds(address, system name)` is called when the globe waits for Canonn's points."""
     state = cmdr_state(conn, fid)
-    if state is None:
+    if state is None or fid is None:
         return SurfaceView(body=None, active_scan=None)
 
     active = conn.execute(
@@ -652,6 +663,7 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
         body_id = row["body_id"] if row else None
 
     body: BodyView | None = None
+    globe: GlobeView | None = None
     multiplier = 1
     region: str | None = None
     codex = codex_index(conn, fid)
@@ -665,6 +677,11 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
                 conn, system, facts, fid, bool(state["odyssey"]), codex, usersettings.load(conn)
             )
             multiplier = _bonus_multiplier(facts, system)
+            globe = globe_view(
+                conn, fid, system, facts, live, state["system_address"], online=online
+            )
+            if globe is not None and globe.community_state == "loading" and want_finds:
+                want_finds(system.address, system.name)
 
     active_view: ActiveScanView | None = None
     if active is not None:
@@ -693,7 +710,7 @@ def surface_view(conn: sqlite3.Connection, fid: str | None, live: LiveStatus | N
             points=points,
             colour=colour_of(active["variant"]),
         )
-    return SurfaceView(body=body, active_scan=active_view)
+    return SurfaceView(body=body, active_scan=active_view, globe=globe)
 
 
 def session_view(conn: sqlite3.Connection, fid: str | None) -> SessionView:

@@ -228,9 +228,54 @@ class ActiveScanView(CamelModel):
     colour: str | None = None  # "Teal": the journal names the variant
 
 
+class GlobeMark(CamelModel):
+    """A place on the planet globe. Where it comes from goes with the kind: sample = recorded by
+    the app from Status.json when you took it; codex, landing, settlement = your journal."""
+
+    kind: Literal["sample", "codex", "landing", "settlement"]
+    lat: float
+    lon: float
+    name: str  # species ("Stratum Tectonicas"), codex entry or settlement name
+    colour: str | None = None  # sample: the variant colour ("Teal")
+    n: int | None = None  # sample number 1..3
+    status: str | None = None  # sample: sampling | abandoned (left before the third) | analysed
+    at: str | None = None  # ISO time: the landing, codex entry, approach, or when sampling began
+
+
+class GlobeShip(CamelModel):
+    """Your ship on this planet, from the journal (Touchdown / Liftoff)."""
+
+    # landed: where it touched down (recalled: it landed by itself to pick you up);
+    # dismissed: sent away while you stay on the surface.
+    state: Literal["landed", "recalled", "dismissed"]
+    lat: float | None
+    lon: float | None
+    at: str
+
+
+class CommunityFinds(CamelModel):
+    """Other players' finds on this planet (Canonn): one entry per find, its points."""
+
+    name: str  # "Osseus Discus - Blue", as Canonn names it (English)
+    category: str  # Canonn's hud_category: Biology, Geology, Guardian, Thargoid, ...
+    points: list[tuple[float, float]]  # (lat, lon)
+    yours: bool  # you sampled this species here (any colour)
+
+
+class GlobeView(CamelModel):
+    body_name: str
+    radius_m: float
+    marks: list[GlobeMark]
+    ship: GlobeShip | None
+    community_state: Literal["ok", "loading", "failed", "off"]  # app.canonn.State
+    community_at: str | None  # when Canonn was asked (ISO)
+    community: list[CommunityFinds]
+
+
 class SurfaceView(CamelModel):
     body: BodyView | None
     active_scan: ActiveScanView | None
+    globe: GlobeView | None = None  # a landable planet with a known radius
 
 
 class SellStationView(CamelModel):

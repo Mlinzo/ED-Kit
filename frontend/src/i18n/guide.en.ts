@@ -175,13 +175,14 @@ export const guideEn: Strings['guide'] = {
       inApp: 'The Route tab plots neutron routes with Spansh (Goal: Get there) and ticks off the waypoints as you jump.',
     },
     community: {
-      title: 'Spansh, EDSM and EDDN',
+      title: 'Spansh, EDSM, EDDN and Canonn',
       short: 'Community databases built from what players’ tools upload: other players’ scans, marked in violet here.',
       body: [
         'Tools like EDMC and EDDiscovery read the game journal and send scans to EDDN, a shared data stream. Spansh and EDSM collect it into searchable databases of systems, bodies and stations.',
         'They only know what players with such tools uploaded: a system missing from them may have been visited by someone without the tools. The data can be out of date, too.',
+        'Canonn is a research group of players. Its EDMC plugin sends players’ finds (samples, codex entries) with their coordinates on the planet.',
       ],
-      inApp: 'This app reads the game journal on your computer and sends it nowhere. It asks Spansh and EDSM about bodies, routes and stations, and marks their data in violet. Started with --offline, it works without them.',
+      inApp: 'This app reads the game journal on your computer and sends it nowhere. It asks Spansh and EDSM about bodies, routes and stations, and Canonn about other players’ finds on the planet the globe shows; their data is marked in violet. Started with --offline, it works without them.',
     },
   },
 }
