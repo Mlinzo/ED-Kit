@@ -21,6 +21,19 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   stays 0.1.0: nobody outside has seen it. Make the repository public before announcing it (the
   post links to `releases/latest`).
 
+### Bookmarks
+- Make bookmarks (asked 2026-10-26). Settle the scope first: places on a planet's surface (mark
+  where you stand from Status.json, give it a name, see it on the globe; private, as the Discord
+  player who mines asked for his spots) and/or systems and bodies.
+
+### Your path on the globe: check the recording
+- Check how the path is built (`app/track.py`: a point every 5 m on foot, 20 m in the SRV, 50 m
+  in the ship below 5 km; stretches; the globe gets new points every 5 s) and whether it fills the
+  database. Measured 2026-10-26: 110 bytes a point with its index, so about 0.4 MB an hour on foot,
+  0.5 MB in the SRV, up to 1.6 MB in low flight (the 0.25 s status poll caps it at 4 points a
+  second). Not yet seen on real play. If it grows too much: thin old stretches (Douglas–Peucker),
+  keep the latest visits per body, and count the table in the database size check.
+
 ## Deferred
 - Rank progress (Explorer, Exobiologist).
 - Ship condition: module wear, AFMU ammo, FSD damage from neutron boosts.
