@@ -598,6 +598,30 @@ export interface IngestState {
   journalDirDefault: string
   /** The game is running (process list, else the journal); null: unknown. */
   gameRunning: boolean | null
+  /** Where data.db is. */
+  dataDir: string
+  /** The standard folder (%LOCALAPPDATA%\EDExplorerKit). */
+  dataDirDefault: string
+  /** Set at launch (--data-dir / EDEK_DATA_DIR): the app cannot change it. */
+  dataDirFixed: boolean
+  /** Chosen in the settings: the database moves there at the next start. */
+  dataDirPending: string | null
+  /** data.db and its write-ahead log, bytes. */
+  dbBytes: number
+  /** The journal files of the folder read, bytes. */
+  journalBytes: number
+  /** Free space on the data folder's drive, bytes. */
+  freeBytes: number | null
+  /** The journal read waits: space = the database would not fit on its drive; large = it would
+   *  grow past largeDbBytes in the standard folder until "keep it here". */
+  hold: 'space' | 'large' | null
+  /** How much the database would grow by reading what waits, bytes. */
+  holdBytes: number
+  /** "Keep it here" was chosen for a big database. */
+  bigDataOk: boolean
+  largeDbBytes: number
+  /** Below this much free space on the database's drive the app warns. */
+  lowFreeBytes: number
 }
 
 /** GET /api/network: where a phone opens the page. */

@@ -27,6 +27,7 @@ from starlette.types import Scope
 
 from app import (
     __version__,
+    datadir,
     db,
     discovery,
     eddn,
@@ -47,6 +48,7 @@ from app import (
 )
 from app.config import Settings, parse_dir
 from app.schemas import (
+    DataDirRequest,
     GalaxyView,
     HighlightSettings,
     HistoryView,
@@ -426,6 +428,51 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         service.set_journal_dir(chosen or settings.journal_dir)
         return service.ingest
 
+    @app.put("/api/data-dir", response_model=IngestState, response_model_by_alias=True)
+    def put_data_dir(body: DataDirRequest, request: Request) -> IngestState:
+        """Moves the database to another folder at the next start (no path: back to the
+        standard one). 409 when the folder was set at launch, 403 from another device, 422 with
+        the reason when the folder will not do (app.datadir.Problem)."""
+        if settings.data_dir_fixed:
+            raise HTTPException(409, "fixed")
+        if not _from_this_pc(request):
+            raise HTTPException(403, "this_pc_only")
+        text = body.path if body.path and body.path.strip() else str(settings.data_home)
+        target, problem = datadir.plan_move(settings.data_home, settings.data_dir, text)
+        if problem == "same":
+            datadir.cancel_move(settings.data_home, settings.data_dir)
+        elif problem:
+            raise HTTPException(422, problem)
+        service.set_data_pending(target)
+        return service.ingest
+
+    @app.post("/api/ingest/keep-here", response_model=IngestState, response_model_by_alias=True)
+    def keep_big_data(request: Request) -> IngestState:
+        """\"Keep it here\": a big database may fill the standard folder (a read waiting for
+        that goes on). 409 while the read waits for room on the drive instead."""
+        if not _from_this_pc(request):
+            raise HTTPException(403, "this_pc_only")
+        if service.ingest.hold == "space":
+            raise HTTPException(409, "no_space")
+        conn = db.connect(settings.db_path)
+        try:
+            db.set_meta(conn, datadir.BIG_DATA_OK, "1")
+        finally:
+            conn.close()
+        service.keep_big_data()
+        return service.ingest
+
+    @app.delete("/api/data-dir/move", response_model=IngestState, response_model_by_alias=True)
+    def cancel_data_move(request: Request) -> IngestState:
+        """The database stays where it is."""
+        if settings.data_dir_fixed:
+            raise HTTPException(409, "fixed")
+        if not _from_this_pc(request):
+            raise HTTPException(403, "this_pc_only")
+        datadir.cancel_move(settings.data_home, settings.data_dir)
+        service.set_data_pending(None)
+        return service.ingest
+
     @app.get("/api/stream")
     async def stream() -> StreamingResponse:
         queue = bus.subscribe()
@@ -576,6 +623,7 @@ def run() -> None:
         settings.journal_dir_fixed = True
     if args.data_dir:
         settings.data_dir = Path(args.data_dir)
+        settings.data_dir_fixed = True
 
     url = f"http://127.0.0.1:{settings.port}"
     open_browser = frozen and not args.no_browser
@@ -584,6 +632,9 @@ def run() -> None:
         webbrowser.open(url)
         return
 
+    if not settings.data_dir_fixed:
+        # A folder chosen in the app; the database moves there now if the move waits.
+        settings.data_dir = datadir.resolve(settings.data_home)
     log.info("database:    %s", settings.db_path)
     log.info("open:        %s", url)
     log.info("community:   %s", "Spansh/EDSM lookups on" if settings.online else "offline")

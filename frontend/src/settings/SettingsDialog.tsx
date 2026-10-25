@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { SUPPORT_URL } from '../components/SupportLink'
 import { lang, LANGS, setLang, t } from '../i18n'
 import { SettingsContext, useSettings, type SettingsFocus } from './context'
+import { DataFolder } from './DataFolder'
 import { JournalFolder } from './JournalFolder'
 import { PhoneAccess } from './PhoneAccess'
 import { useNetwork } from './useNetwork'
@@ -52,7 +53,7 @@ function SettingsDialog({ focus, onClose }: { focus: SettingsFocus | null; onClo
   }, [onClose])
 
   useEffect(() => {
-    // The journal folder focuses its own field.
+    // The journal and data folders focus their own field.
     if (focus === null) panel.current?.focus()
   }, [focus])
 
@@ -109,7 +110,10 @@ function SettingsDialog({ focus, onClose }: { focus: SettingsFocus | null; onClo
         {/* On the phone itself there is nothing to open. */}
         {network?.thisPc && <PhoneAccess network={network} autoFocus={focus === 'phone'} />}
 
-        <JournalFolder autoFocus={focus === 'journal'} thisPc={network?.thisPc ?? true} />
+        {/* null until /api/network answers: the phone section above then grows, and the folders
+            scroll to their field again. */}
+        <JournalFolder autoFocus={focus === 'journal'} thisPc={network ? network.thisPc : null} />
+        <DataFolder autoFocus={focus === 'data'} thisPc={network ? network.thisPc : null} />
 
         {SUPPORT_URL && (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-5">

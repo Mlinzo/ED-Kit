@@ -529,10 +529,29 @@ class IngestState(CamelModel):
     journal_dir_fixed: bool = False  # set at launch (--journal-dir / EDEK_JOURNAL_DIR)
     journal_dir_default: str = ""  # the folder read unless another is chosen in the app
     game_running: bool | None = None  # process list, else the journal (None: unknown)
+    # Where data.db is (app.datadir), and its size against the journals it copies.
+    data_dir: str = ""
+    data_dir_default: str = ""  # the standard folder (%LOCALAPPDATA%\EDExplorerKit)
+    data_dir_fixed: bool = False  # set at launch (--data-dir / EDEK_DATA_DIR)
+    data_dir_pending: str | None = None  # chosen in the app: the database moves at next start
+    db_bytes: int = 0  # data.db and its write-ahead log
+    journal_bytes: int = 0  # the journal files of the folder read
+    free_bytes: int | None = None  # free space on the data folder's drive
+    # The journal read waits (app.service): space = the database would not fit on its drive;
+    # large = it would grow past large_db_bytes in the standard folder (until "keep it here").
+    hold: Literal["space", "large"] | None = None
+    hold_bytes: int = 0  # how much the database would grow by reading what waits
+    big_data_ok: bool = False  # "keep it here" was chosen for a big database
+    large_db_bytes: int = 500_000_000  # app.datadir.LARGE_DB_BYTES
+    low_free_bytes: int = 1_000_000_000  # app.datadir.LOW_FREE_BYTES
 
 
 class JournalDirRequest(CamelModel):
     path: str | None = None  # None or empty: the standard folder
+
+
+class DataDirRequest(CamelModel):
+    path: str | None = None  # None or empty: back to the standard folder
 
 
 class NetworkInfo(CamelModel):

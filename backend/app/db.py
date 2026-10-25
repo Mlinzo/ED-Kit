@@ -13,7 +13,9 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 
+# auto_vacuum first: it only takes on a new file, before WAL mode writes its header.
 PRAGMAS = """
+PRAGMA auto_vacuum=INCREMENTAL;
 PRAGMA journal_mode=WAL;
 PRAGMA synchronous=NORMAL;
 PRAGMA foreign_keys=ON;
@@ -86,12 +88,13 @@ CREATE TABLE IF NOT EXISTS ext_surface(
   points TEXT NOT NULL
 ) STRICT;
 
--- Spansh searches of the route planner (app.spansh.CachedSearch): body pages by request,
--- permit-locked systems (when fetched: meta spansh_permits_at), systems by id64.
+-- Spansh searches of the route planner (app.spansh.CachedSearch): body pages by request
+-- (data: zlib-compressed JSON, about 7 times smaller), permit-locked systems (when fetched:
+-- meta spansh_permits_at), systems by id64.
 CREATE TABLE IF NOT EXISTS spansh_pages(
   key TEXT PRIMARY KEY,
   fetched_at TEXT NOT NULL,
-  data TEXT NOT NULL
+  data BLOB NOT NULL
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS spansh_permits(
@@ -529,9 +532,17 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
+def _drop_old_caches(conn: sqlite3.Connection) -> None:
+    """Caches whose format changed are dropped (they fill again as they are used)."""
+    columns = {row[1]: row[2] for row in conn.execute("PRAGMA table_info(spansh_pages)")}
+    if columns.get("data") == "TEXT":  # plain JSON until 2026-10-25
+        conn.execute("DROP TABLE spansh_pages")
+
+
 def init_schema(conn: sqlite3.Connection) -> None:
     from app import notes, usersettings
 
+    _drop_old_caches(conn)
     conn.executescript(BASE_SCHEMA)
     _add_missing_columns(conn)
     conn.executescript(usersettings.SCHEMA)
@@ -539,6 +550,22 @@ def init_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(PROJECTION_SCHEMA)
     if get_meta(conn, "schema_version") is None:
         set_meta(conn, "schema_version", SCHEMA_VERSION)
+
+
+def compact(conn: sqlite3.Connection) -> None:
+    """Gives the pages freed by dropped cache entries back to the disk (the file never shrinks
+    by itself). A database made before 2026-10-25 is rewritten once (VACUUM) to switch incremental
+    auto-vacuum on. Call it with no other connection writing (the ingest thread, at start)."""
+    if conn.execute("PRAGMA auto_vacuum").fetchone()[0] != 2:
+        # The rewrite goes through a temporary file, not memory (temp_store=MEMORY otherwise).
+        conn.execute("PRAGMA temp_store=FILE")
+        conn.execute("PRAGMA auto_vacuum=INCREMENTAL")
+        conn.execute("VACUUM")
+        conn.execute("PRAGMA temp_store=MEMORY")
+    else:
+        # Each step of the pragma frees one page: read it to the end.
+        conn.execute("PRAGMA incremental_vacuum").fetchall()
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchall()
 
 
 def reset_projections(conn: sqlite3.Connection) -> None:

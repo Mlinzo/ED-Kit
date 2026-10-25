@@ -43,7 +43,7 @@ function FolderState({ ingest }: { ingest: IngestState }) {
  * read another one. A folder set at launch (--journal-dir) is only shown, and so is the folder on a
  * phone: it is changed on the PC.
  */
-export function JournalFolder({ autoFocus, thisPc }: { autoFocus: boolean; thisPc: boolean }) {
+export function JournalFolder({ autoFocus, thisPc }: { autoFocus: boolean; thisPc: boolean | null }) {
   const ingest = useIngest()
   const { mock } = useStream()
   const [path, setPath] = useState('')
@@ -55,11 +55,12 @@ export function JournalFolder({ autoFocus, thisPc }: { autoFocus: boolean; thisP
   const input = useRef<HTMLInputElement>(null)
   const s = t.settings.journal
 
+  // Again once thisPc is known: the phone section above may have pushed this one down.
   useEffect(() => {
     if (!autoFocus) return
     section.current?.scrollIntoView({ block: 'nearest' })
-    input.current?.focus()
-  }, [autoFocus])
+    input.current?.focus({ preventScroll: true })
+  }, [autoFocus, thisPc])
 
   if (!ingest) return null
 
@@ -90,7 +91,7 @@ export function JournalFolder({ autoFocus, thisPc }: { autoFocus: boolean; thisP
         <p className="mt-2 text-xs text-zinc-500">{s.fixed}</p>
       ) : mock ? (
         <p className="mt-2 text-xs text-zinc-500">{s.demo}</p>
-      ) : !thisPc ? (
+      ) : thisPc === false ? (
         <p className="mt-2 text-xs text-zinc-500">{s.otherDevice}</p>
       ) : (
         <form onSubmit={submit} className="mt-3">

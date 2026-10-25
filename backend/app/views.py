@@ -6,7 +6,7 @@ import json
 import sqlite3
 from collections.abc import Callable, Iterable
 
-from app import exobio, notes, usersettings
+from app import enrich, exobio, notes, usersettings
 from app.codex import CodexIndex, codex_index, colour_status, predicted_status
 from app.exobio.variants import colour_of, variants
 from app.facts import body_id64, facts_from_json, load_community_system, load_system
@@ -544,7 +544,7 @@ def _empty_system(current: SystemRef | None = None) -> SystemView:
 def _lookup(conn: sqlite3.Connection, address: int, online: bool) -> CommunityLookup | None:
     """Where the community data of a system you have not been to stands (None: it is in)."""
     row = conn.execute("SELECT ok FROM ext_systems WHERE address = ?", (address,)).fetchone()
-    if row is None:
+    if row is None or enrich.bodies_dropped(conn, address):  # dropped: asked again on opening
         return "pending" if online else "offline"
     return None if row["ok"] else "missing"
 

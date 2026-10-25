@@ -10,6 +10,7 @@ import json
 import threading
 import urllib.error
 import urllib.request
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -307,7 +308,7 @@ class CachedSearch(SpanshSearch):
             if when is None:
                 return None
             self._used(when)
-            return json.loads(row["data"])
+            return json.loads(zlib.decompress(row["data"]))
 
     def _store_page(self, key: str, data: dict[str, Any]) -> None:
         now = _now()
@@ -316,7 +317,11 @@ class CachedSearch(SpanshSearch):
             self._used(now)
             self._conn.execute(
                 "INSERT OR REPLACE INTO spansh_pages(key, fetched_at, data) VALUES(?, ?, ?)",
-                (key, now.isoformat(timespec="seconds"), json.dumps(data, separators=(",", ":"))),
+                (
+                    key,
+                    now.isoformat(timespec="seconds"),
+                    zlib.compress(json.dumps(data, separators=(",", ":")).encode("utf-8"), 6),
+                ),
             )
 
     def systems_near(self, reference: Reference, max_distance: float, page: int) -> dict[str, Any]:

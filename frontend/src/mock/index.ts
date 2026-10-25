@@ -119,6 +119,18 @@ export function createMockTransport(): Transport {
     journalDirFixed: false,
     journalDirDefault: 'C:\\Users\\Commander\\Saved Games\\Frontier Developments\\Elite Dangerous',
     gameRunning: true,
+    dataDir: 'C:\\Users\\Commander\\AppData\\Local\\EDExplorerKit',
+    dataDirDefault: 'C:\\Users\\Commander\\AppData\\Local\\EDExplorerKit',
+    dataDirFixed: false,
+    dataDirPending: null,
+    dbBytes: 38_000_000,
+    journalBytes: 8_700_000,
+    freeBytes: 120_000_000_000,
+    hold: null,
+    holdBytes: 0,
+    bigDataOk: false,
+    largeDbBytes: 500_000_000,
+    lowFreeBytes: 1_000_000_000,
   }
 
   const routes: Record<string, (query: URLSearchParams) => unknown> = {

@@ -39,6 +39,9 @@ USER_AGENT = f"EDExplorerKit/{__version__} (local explorer companion)"
 TIMEOUT_S = 20
 FRESH_FOR = timedelta(hours=24)
 RETRY_FAILED_AFTER = timedelta(hours=1)
+# Bodies of systems not looked up for this long are dropped (they are fetched again when the
+# system is opened); the system's name and position stay.
+DROP_BODIES_AFTER = timedelta(days=30)
 
 AU_M = 149_597_870_700.0
 DAY_S = 86_400.0
@@ -394,6 +397,34 @@ def needs_fetch(conn: sqlite3.Connection, address: int, now: datetime | None = N
     now = now or datetime.now(UTC)
     fetched = datetime.fromisoformat(row["fetched_at"])
     return now - fetched > (FRESH_FOR if row["ok"] else RETRY_FAILED_AFTER)
+
+
+def prune(conn: sqlite3.Connection, keep: int | None, now: datetime | None = None) -> int:
+    """Drops the community bodies of systems not looked up for DROP_BODIES_AFTER, except
+    `keep` (the current system); returns how many systems lost them."""
+    limit = ((now or datetime.now(UTC)) - DROP_BODIES_AFTER).isoformat(timespec="seconds")
+    stale = [
+        row["address"]
+        for row in conn.execute(
+            "SELECT address FROM ext_systems WHERE fetched_at < ? AND address IS NOT ? "
+            "AND EXISTS (SELECT 1 FROM ext_bodies b WHERE b.system_address = address)",
+            (limit, keep),
+        )
+    ]
+    for address in stale:
+        conn.execute("DELETE FROM ext_bodies WHERE system_address = ?", (address,))
+        conn.execute("DELETE FROM ext_barycentres WHERE system_address = ?", (address,))
+    return len(stale)
+
+
+def bodies_dropped(conn: sqlite3.Connection, address: int) -> bool:
+    """The lookup found bodies (ok), but prune() has dropped them since."""
+    row = conn.execute(
+        "SELECT ok, EXISTS (SELECT 1 FROM ext_bodies WHERE system_address = ?) AS kept "
+        "FROM ext_systems WHERE address = ?",
+        (address, address),
+    ).fetchone()
+    return row is not None and bool(row["ok"]) and not row["kept"]
 
 
 def store(conn: sqlite3.Connection, system: ExternalSystem) -> None:

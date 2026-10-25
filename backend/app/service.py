@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import sqlite3
 import threading
 import time
 from datetime import UTC, datetime
@@ -13,7 +14,7 @@ from pathlib import Path
 from queue import Empty, SimpleQueue
 from typing import Any
 
-from app import canonn, db, enrich, game, projector, usersettings
+from app import canonn, datadir, db, enrich, game, projector, usersettings
 from app.config import Settings
 from app.journal import (
     JournalDirectory,
@@ -32,6 +33,8 @@ log = logging.getLogger(__name__)
 BATCH_LINES = 2000
 LIVE_EVENT_MAX_AGE_S = 120  # newer events may use the current Status.json position
 GAME_CHECK_S = 5.0  # how often the process list is read
+SIZES_EVERY_S = 30.0  # how often the database and journal sizes are measured
+SIZE_STEP = 1_000_000  # a change this big (bytes) is pushed to the browsers
 FUEL_STEP_T = 0.5  # a fuel change this big (scooping, jumping): new forecast and jump range
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
 DERIVED_TOPICS = frozenset(
@@ -39,6 +42,10 @@ DERIVED_TOPICS = frozenset(
 )
 # Not from the journal: they never make the journal-derived views stale.
 OWN_TOPICS = frozenset({"surface", "live"})
+
+
+def _str(path: Path | None) -> str | None:
+    return None if path is None else str(path)
 
 
 def _parse_ts(ts: str | None) -> datetime | None:
@@ -102,7 +109,17 @@ class IngestService(threading.Thread):
             journal_files=count_journals(settings.journal_dir),
             journal_dir_fixed=settings.journal_dir_fixed,
             journal_dir_default=str(settings.journal_dir),
+            data_dir=str(settings.data_dir),
+            data_dir_default=str(settings.data_home),
+            data_dir_fixed=settings.data_dir_fixed,
+            data_dir_pending=None
+            if settings.data_dir_fixed
+            else _str(datadir.pending_move(settings.data_home)),
+            large_db_bytes=datadir.LARGE_DB_BYTES,
+            low_free_bytes=datadir.LOW_FREE_BYTES,
         )
+        self._sizes_at = 0.0  # monotonic time of the last size check
+        self._recheck = threading.Event()  # the API changed something a held read waits on
         self.enricher = enrich.Enricher() if settings.online else None
         self._enrich_checked: int | None = None  # last system looked up
         self._enrich_wanted: SimpleQueue[int] = SimpleQueue()  # opened in the UI
@@ -127,6 +144,73 @@ class IngestService(threading.Thread):
         self._show_dir(path)
         self._dir_requests.put(path)
         self.bus.publish("ingest", self.ingest)
+
+    def set_data_pending(self, path: Path | None) -> None:
+        """The folder the database moves to at the next start (from the API), or None."""
+        self.ingest.data_dir_pending = _str(path)
+        self.bus.publish("ingest", self.ingest)
+
+    def keep_big_data(self) -> None:
+        """\"Keep it here\" (from the API, already stored in meta): a held read goes on."""
+        self.ingest.big_data_ok = True
+        self._recheck.set()
+        self.bus.publish("ingest", self.ingest)
+
+    def _hold_reason(self, conn: Any, files: list[JournalFile]) -> str | None:
+        """Whether reading `files` must wait: the database would not fit on its drive, or would
+        grow big in the standard folder before the user said where to keep it."""
+        unread = 0
+        for file in files:
+            with contextlib.suppress(OSError):
+                unread += max(0, file.path.stat().st_size - file.byte_offset)
+        growth = int(unread * datadir.DB_PER_JOURNAL_BYTE)
+        self.ingest.hold_bytes = growth
+        free = datadir.free_bytes(self.settings.data_dir)
+        if free is not None and growth + datadir.SPARE_BYTES > free:
+            return "space"
+        if (
+            growth >= datadir.LARGE_DB_BYTES
+            and not self.settings.data_dir_fixed
+            and self.settings.data_dir == self.settings.data_home
+            and db.get_meta(conn, datadir.BIG_DATA_OK) != "1"
+        ):
+            return "large"
+        return None
+
+    def _held(self, conn: Any, files: list[JournalFile]) -> bool:
+        """Checks the hold before a read (again while it waits), publishing any change."""
+        reason = self._hold_reason(conn, files)
+        if reason != self.ingest.hold:
+            if reason:
+                log.info(
+                    "journal read waits: %s (%.0f MB to read)", reason, self.ingest.hold_bytes / 1e6
+                )
+                self.ingest.backfill_done = False
+            self.ingest.hold = reason  # type: ignore[assignment]
+            self._measure(publish=False)
+            self.bus.publish("ingest", self.ingest)
+        return reason is not None
+
+    def _measure(self, publish: bool = True) -> None:
+        """Database and journal sizes, and the free space where the database is."""
+        self._sizes_at = time.monotonic()
+        db_size = datadir.db_bytes(self.settings.data_dir)
+        journal_size = datadir.journal_bytes(self.journal_dir)
+        free = datadir.free_bytes(self.settings.data_dir)
+        i = self.ingest
+        free_moved = (free is None) != (i.free_bytes is None) or (
+            free is not None
+            and i.free_bytes is not None
+            and abs(free - i.free_bytes) >= 100 * SIZE_STEP
+        )
+        changed = (
+            abs(db_size - i.db_bytes) >= SIZE_STEP
+            or abs(journal_size - i.journal_bytes) >= SIZE_STEP
+            or free_moved
+        )
+        i.db_bytes, i.journal_bytes, i.free_bytes = db_size, journal_size, free
+        if changed and publish:
+            self.bus.publish("ingest", self.ingest)
 
     def _show_dir(self, path: Path) -> None:
         self.journal_dir = path
@@ -153,6 +237,8 @@ class IngestService(threading.Thread):
         log.info("journal dir: %s", self.journal_dir)
         if self._rebuild or db.get_meta(conn, "projector_version") != str(projector.VERSION):
             self._replay(conn)
+        self._tidy(conn)
+        self._measure(publish=False)
         self.projector = Projector(conn, position=self._position_for)
         self.ingest.events = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
         last = conn.execute("SELECT event FROM events ORDER BY id DESC LIMIT 1").fetchone()
@@ -164,7 +250,11 @@ class IngestService(threading.Thread):
         status_reader = StatusReader(self.journal_dir / "Status.json")
 
         files = directory.discover()
-        self._backfill(conn, files)
+        self.ingest.big_data_ok = db.get_meta(conn, datadir.BIG_DATA_OK) == "1"
+        # The first read of a folder waits while the database would not fit or grow big.
+        waiting = self._held(conn, files)
+        if not waiting:
+            self._backfill(conn, files)
         last_rescan = time.monotonic()
 
         if self.navroute.poll():
@@ -174,12 +264,24 @@ class IngestService(threading.Thread):
             if switched:
                 directory, status_reader = switched
                 files = directory.discover()
-                self._backfill(conn, files)
+                waiting = self._held(conn, files)
+                if not waiting:
+                    self._backfill(conn, files)
                 last_rescan = time.monotonic()
+            if waiting and (
+                self._recheck.is_set()
+                or time.monotonic() - last_rescan >= self.settings.rescan_interval
+            ):
+                self._recheck.clear()
+                last_rescan = time.monotonic()
+                files = directory.discover()
+                waiting = self._held(conn, files)
+                if not waiting:
+                    self._backfill(conn, files)
             self._poll_status(status_reader)
             if self.navroute.poll():
                 self._invalidate({"navroute", "galaxy", "sell"})
-            if time.monotonic() - last_rescan >= self.settings.rescan_interval:
+            if not waiting and time.monotonic() - last_rescan >= self.settings.rescan_interval:
                 files = directory.discover()
                 last_rescan = time.monotonic()
                 found = (self.journal_dir.is_dir(), len(files))
@@ -189,12 +291,39 @@ class IngestService(threading.Thread):
                 # Drain older files first (a new session file may have just appeared).
                 for file in files[:-1]:
                     self._ingest_file(conn, file)
-            if files:
+            if files and not waiting:
                 self._ingest_file(conn, files[-1])
+            if time.monotonic() - self._sizes_at >= SIZES_EVERY_S:
+                self._measure()
             self._enrich(conn)
             self._surface_finds(conn)
             self._halt.wait(self.settings.poll_interval)
         conn.close()
+
+    def _tidy(self, conn: Any) -> None:
+        """At start, before anything else opens the database: drop community bodies not looked
+        up for a month and give the freed pages back to the disk."""
+        try:
+            fid = db.get_meta(conn, "active_fid")
+            row = conn.execute(
+                "SELECT system_address FROM cmdr_state WHERE fid = ?", (fid,)
+            ).fetchone()
+            conn.execute("BEGIN IMMEDIATE")
+            dropped = enrich.prune(conn, row["system_address"] if row else None)
+            conn.execute("COMMIT")
+            before = datadir.db_bytes(self.settings.data_dir)
+            db.compact(conn)
+            after = datadir.db_bytes(self.settings.data_dir)
+            log.info(
+                "tidy: community bodies of %d systems dropped, database %.1f -> %.1f MB",
+                dropped,
+                before / 1e6,
+                after / 1e6,
+            )
+        except sqlite3.Error:
+            if conn.in_transaction:
+                conn.execute("ROLLBACK")
+            log.exception("tidying the database failed")
 
     def _switch_dir(self, conn: Any) -> tuple[JournalDirectory, StatusReader] | None:
         """Readers for the folder last asked for, if the API asked for one."""
@@ -249,6 +378,7 @@ class IngestService(threading.Thread):
             self.ingest.files_done += 1
             self.bus.publish("ingest", self.ingest)
         self.ingest.backfill_done = True
+        self._measure(publish=False)
         log.info(
             "backfill: %d files, %d events in %.1fs",
             len(files),

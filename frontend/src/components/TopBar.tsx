@@ -1,11 +1,15 @@
-import { FlaskConical, FolderOpen, FolderX, Wallet, X } from 'lucide-react'
+import { FlaskConical, FolderInput, FolderOpen, FolderX, HardDrive, Wallet, X } from 'lucide-react'
+import { useState } from 'react'
 import { useIngest, useStream, useView } from '../api/hooks'
 import type { IngestState, SessionView } from '../api/types'
 import { t } from '../i18n'
 import { GuideButton } from '../guide/HelpTip'
 import { formatCredits, formatNumber } from '../lib/format'
+import { readStoredText, writeStored } from '../lib/storage'
 import { useSettings } from '../settings/context'
+import { dataNotice, formatBytes, LOW_DISMISS_KEY } from '../settings/dataSize'
 import { SettingsButton } from '../settings/SettingsDialog'
+import { useNetwork } from '../settings/useNetwork'
 import { ConnectionIndicator } from './ConnectionIndicator'
 import { Credits } from './Credits'
 import { SupportLink } from './SupportLink'
@@ -98,6 +102,116 @@ function JournalProblem({ ingest }: { ingest: IngestState }) {
   )
 }
 
+function readLowDismissed(): number | null {
+  const n = Number(readStoredText(LOW_DISMISS_KEY))
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
+/**
+ * Room for the database: the journal read waits (no room on the drive, or a big database about to
+ * fill the standard folder: the backend holds it until the user decides), the drive runs low, or
+ * the database has grown big. "Keep it here" is stored by the backend; a waiting read is shown on
+ * every device, the rest only on the PC, where the folder can be changed.
+ */
+function RoomStrip() {
+  const ingest = useIngest()
+  const network = useNetwork()
+  const { mock } = useStream()
+  const { open } = useSettings()
+  const [lowDismissed, setLowDismissed] = useState(readLowDismissed)
+  const [busy, setBusy] = useState(false)
+  const notice = ingest ? dataNotice(ingest, lowDismissed) : null
+  const thisPc = network?.thisPc ?? false
+  if (!ingest || !notice || mock || (notice.kind !== 'hold' && !thisPc)) return null
+
+  const s = t.ingest.room
+  const free = ingest.freeBytes !== null ? formatBytes(ingest.freeBytes) : t.common.unknown
+  const pending = ingest.dataDirPending
+  let title: string
+  let hint: string | null = s.moveHint
+  if (notice.kind === 'hold' && pending) {
+    title = s.pending(pending)
+    hint = null
+  } else if (notice.kind === 'hold' && notice.reason === 'space') {
+    title = s.holdSpace(formatBytes(notice.bytes), free)
+    hint = ingest.dataDirFixed ? s.holdSpaceFixed : s.holdSpaceHint
+  } else if (notice.kind === 'hold') {
+    title = s.holdLarge(formatBytes(notice.bytes))
+    hint = s.holdLargeHint(free)
+  } else if (notice.kind === 'low') {
+    title = s.low(formatBytes(notice.free))
+  } else {
+    title = s.big(formatBytes(notice.bytes))
+  }
+  const urgent = notice.kind === 'low' || (notice.kind === 'hold' && notice.reason === 'space')
+  const canChoose = thisPc && !ingest.dataDirFixed && !pending
+  const canKeep = thisPc && !pending && (notice.kind === 'big' || (notice.kind === 'hold' && notice.reason === 'large'))
+
+  const keep = async () => {
+    setBusy(true)
+    try {
+      await fetch('/api/ingest/keep-here', { method: 'POST' }) // the new state comes through the stream
+    } finally {
+      setBusy(false)
+    }
+  }
+  const hide = () => {
+    if (notice.kind !== 'low') return
+    writeStored(LOW_DISMISS_KEY, String(notice.free))
+    setLowDismissed(notice.free)
+  }
+
+  const tone = urgent
+    ? { box: 'border-amber-500/20 bg-amber-500/10 text-amber-200', icon: 'text-amber-300', sub: 'text-amber-200/80', path: 'text-amber-100/70', button: 'bg-amber-400/15 text-amber-100 ring-amber-400/30 hover:bg-amber-400/25', quiet: 'text-amber-200 hover:bg-amber-400/10' }
+    : { box: 'border-sky-500/20 bg-sky-500/[0.07] text-sky-100', icon: 'text-sky-300', sub: 'text-sky-200/80', path: 'text-sky-100/70', button: 'bg-sky-400/15 text-sky-100 ring-sky-400/30 hover:bg-sky-400/25', quiet: 'text-sky-200 hover:bg-sky-400/10' }
+  return (
+    <div role={notice.kind === 'hold' ? 'alert' : 'status'} className={`border-t text-sm ${tone.box}`}>
+      <div className="mx-auto flex max-w-[1600px] min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 lg:px-6">
+        <HardDrive className={`size-4 shrink-0 ${tone.icon}`} aria-hidden />
+        <div className="min-w-0 flex-1 basis-60">
+          <p className="break-words">
+            <span className="font-medium">{title}</span>
+            {hint && <span className={tone.sub}> · {hint}</span>}
+            {!thisPc && <span className={tone.sub}> · {s.otherDevice}</span>}
+          </p>
+          <code className={`block truncate font-mono text-xs ${tone.path}`} title={ingest.dataDir}>
+            {ingest.dataDir}
+          </code>
+        </div>
+        {(canChoose || canKeep || notice.kind === 'low') && (
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {canKeep && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void keep()}
+                className={`focus-ring inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium disabled:opacity-40 ${tone.quiet}`}
+              >
+                {s.keep}
+              </button>
+            )}
+            {notice.kind === 'low' && (
+              <button type="button" onClick={hide} className={`focus-ring inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium ${tone.quiet}`}>
+                {s.hide}
+              </button>
+            )}
+            {canChoose && (
+              <button
+                type="button"
+                onClick={() => open('data')}
+                className={`focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium ring-1 ring-inset ${tone.button}`}
+              >
+                <FolderInput className="size-4" aria-hidden />
+                {s.choose}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function IngestStrip() {
   const ingest = useIngest()
   if (!ingest) return null
@@ -105,7 +219,8 @@ function IngestStrip() {
   if (!ingest.journalDirFound || (ingest.backfillDone && ingest.journalFiles === 0)) {
     return <JournalProblem ingest={ingest} />
   }
-  if (ingest.backfillDone) return null
+  // A waiting read is told by the room strip.
+  if (ingest.backfillDone || ingest.hold) return null
 
   const total = Math.max(1, ingest.filesTotal)
   const pct = Math.min(100, Math.round((ingest.filesDone / total) * 100))
@@ -160,6 +275,7 @@ export function TopBar({ tab, onTab, surfaceLive }: { tab: Tab; onTab: (t: Tab) 
         </div>
       </div>
       <IngestStrip />
+      <RoomStrip />
     </header>
   )
 }

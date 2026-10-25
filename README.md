@@ -119,7 +119,7 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 | `--offline` | No requests to Spansh/EDSM and no EDDN (route planning and live players are then off) |
 | `--port 8765` | Use another port |
 | `--journal-dir PATH` | Journal folder, if not in the standard place (or choose it in Settings; set here, Settings cannot change it) |
-| `--data-dir PATH` | Where `data.db` is stored |
+| `--data-dir PATH` | Where `data.db` is stored (or move it in Settings; set here, Settings cannot change it) |
 | `--rebuild` | Rebuild the database from the stored journal events |
 | `--no-browser` | Don't open the browser on start (the exe opens it by default) |
 
@@ -127,8 +127,8 @@ Pass them to the exe (`EDExplorerKit.exe --offline`, or in a shortcut's target) 
 
 - The app reads the game journal (`Saved Games\Frontier Developments\Elite Dangerous`) and never writes to it.
 - Devices on your network (your phone) can open the page; the journal folder can only be changed on the PC itself. `--local` keeps the page to this PC.
-- The database lives in `%LOCALAPPDATA%\EDExplorerKit\data.db`. Deleting it is safe while the journals are there: it is rebuilt from them on the next start. It also stores the journal events themselves, so after losing the journals (reinstall, new PC) your history survives only in this file. Keep a copy.
-- Only these requests go online: community data for the current system, route search, neutron routes, checks of the plotted route's systems, stations near you (where to sell, the Shop) (Spansh and EDSM). While the "players now" layer of the galaxy map is on, the app also listens to the [EDDN](https://github.com/EDCD/EDDN) relay: it only receives (about 20 KiB/s at busy times, the whole feed) and sends nothing; it hangs up a couple of minutes after the layer is closed. `--offline` turns them all off.
+- The database lives in `%LOCALAPPDATA%\EDExplorerKit\data.db` unless you move it (Settings → Data folder; it moves the next time the app starts). It takes a little more room than your journals. Before it reads a long journal history the app checks the drive: when the database would not fit, or would grow past 500 MB, the read waits until you choose where to keep it. Deleting it is safe while the journals are there: it is rebuilt from them on the next start. It also stores the journal events themselves, so after losing the journals (reinstall, new PC) your history survives only in this file. Keep a copy.
+- Only these requests go online: community data for the current system, route search, neutron routes, checks of the plotted route's systems, stations near you (where to sell, the Shop) (Spansh and EDSM), and other players' finds on the planet the Surface globe shows (Canonn). While the "players now" layer of the galaxy map is on, the app also listens to the [EDDN](https://github.com/EDCD/EDDN) relay: it only receives (about 20 KiB/s at busy times, the whole feed) and sends nothing; it hangs up a couple of minutes after the layer is closed. `--offline` turns them all off.
 
 ## Development
 

@@ -58,12 +58,15 @@ def parse_dir(text: str) -> Path:
     return Path(os.path.expanduser(os.path.expandvars(cleaned)))
 
 
-def default_data_dir() -> Path:
-    env = os.environ.get("EDEK_DATA_DIR")
-    if env:
-        return Path(env)
+def standard_data_dir() -> Path:
+    """%LOCALAPPDATA%\EDExplorerKit: the database unless moved, and where the move is noted."""
     base = os.environ.get("LOCALAPPDATA")
     return (Path(base) if base else Path.home() / ".local" / "share") / APP_DIR_NAME
+
+
+def default_data_dir() -> Path:
+    env = os.environ.get("EDEK_DATA_DIR")
+    return Path(env) if env else standard_data_dir()
 
 
 def default_static_dir() -> Path | None:
@@ -83,6 +86,10 @@ class Settings:
         default_factory=lambda: bool(os.environ.get("EDEK_JOURNAL_DIR"))
     )
     data_dir: Path = field(default_factory=default_data_dir)
+    # Set at launch (--data-dir or EDEK_DATA_DIR): the folder chosen in the app is ignored.
+    data_dir_fixed: bool = field(default_factory=lambda: bool(os.environ.get("EDEK_DATA_DIR")))
+    # Where a folder chosen in the app is noted (app.datadir); never moves.
+    data_home: Path = field(default_factory=standard_data_dir)
     static_dir: Path | None = field(default_factory=default_static_dir)
     port: int = 8765
     lan: bool = True  # phones on the same network can open the page (off: --local)

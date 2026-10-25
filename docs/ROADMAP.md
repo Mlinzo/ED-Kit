@@ -13,22 +13,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
-### Database size
-- Measured 2026-10-25: `data.db` (in `%LOCALAPPDATA%`, the system drive) was 38 MB plus a 4.6 MB
-  WAL after two weeks of play (8.7 MB of journals; 0.11 MB of journal per hour played). 60 % of it
-  is the route planner's Spansh cache (`spansh_pages`, raw JSON; pages older than 30 days are
-  dropped, but the file never shrinks without a VACUUM), 9 MB the copy of the journal (`events`,
-  about 1.05 times the journals), 3.3 MB the community bodies (`ext_bodies`, about 20 KB per system
-  you were in with the app running, never dropped).
-- A long history (the journals copied 20 times: 169 MB, 278k events, about 1500 hours of play) gave
-  a 200 MB database, read from scratch in 7.8 s, projections rebuilt in 3.6 s, every view answering
-  in 0.23 s or less. Speed is fine; the size grows with the journals (5000 hours: about 650 MB).
-- Options, not decided: compress the Spansh pages (6.7 times smaller) and VACUUM after dropping old
-  ones; drop community bodies not looked at for 30 days (they are fetched again when opened); keep
-  fewer journal events (`StoredModules` alone is 29 % of the raw lines; zlib per row gives only
-  2.3 times); let the data folder move off the system drive (Settings, like the journal folder;
-  `--data-dir` already does it at launch).
-
 ### Release
 - Delete the `v0.1.0` release (2026-10-17; the repository is private for now) with its tag, and
   release again once the app is in decent shape (decided 2026-10-19). On 2026-10-20 origin had no
@@ -66,6 +50,17 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Database size (2026-10-25). Measured: two weeks of play gave 38 MB (60 % the route planner's
+  Spansh cache, 9 MB the journal copy, 3.3 MB community bodies); the journals copied 20 times
+  (169 MB, about 1500 hours) gave 200 MB, read in 7.8 s, projections rebuilt in 3.6 s, views in
+  0.23 s or less: the database grows with the journals (0.11 MB per hour played; 5000 hours:
+  about 650 MB). Now Spansh pages are stored compressed (6.7 times smaller), community bodies not
+  looked up for 30 days are dropped, and freed pages go back to the disk at every start (old
+  databases are rewritten once). The database can move to another folder in Settings (at the next
+  start, copied and checked). Before reading journals the app weighs what the database will take
+  against the free space on its drive, and against 500 MB in the standard folder: the read waits
+  until the user chooses a folder (or "keep it here"); later it warns below 1 GB free and once the
+  database passes 500 MB.
 - Planet globe on the Surface tab (2026-10-25): a 3D globe of the planet you are at, with your
   samples (where the app recorded them), your codex finds, landings and settlements (from the
   journal, so old journals count too), your ship (landed, recalled or dismissed), you with your
@@ -326,6 +321,9 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   Names from the game stay in English. Russian stays as the third language (decided 2026-10-19).
 
 ## Open questions
+- Keeping fewer journal events in the database (2026-10-25): `StoredModules` alone is 29 % of the
+  copied lines and the app reads none of them; zlib per row gives only 2.3 times. Left as is so
+  that later features can use the whole history; the journals stay on disk too.
 - A separate interface for miners (a Discord player's request, 2026-10-17): places in the galaxy,
   places on planets, refinery output in tonnes per hour. The journal has it (`ProspectedAsteroid`,
   `AsteroidCracked`, `MiningRefined`). First find out which tools he uses.
