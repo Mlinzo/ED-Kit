@@ -372,6 +372,12 @@ export function SystemScreen({
   const gameTargetId = useLiveStatusSelector((s) =>
     here !== null && s?.supercruise && s.destinationSystem === here ? s.destinationBody : null,
   )
+  // The planet you are on (landed, in the SRV or on foot; after the game closes, the one you left
+  // it on): the map opens zoomed to it.
+  const landedName = useLiveStatusSelector((s) =>
+    data?.isCurrent && s?.hasLatLong && (s.landed || s.inSrv || s.onFoot) ? s.bodyName : null,
+  )
+  const landedBodyId = data?.bodies.find((b) => b.kind === 'planet' && b.name === landedName)?.bodyId ?? null
   // The stored route: this system's stop has its bodies marked (in the list and on the map).
   const stop = routeStop(route, data?.address ?? null)
   // Stable while nothing changes (the route refetches on every journal event).
@@ -500,6 +506,7 @@ export function SystemScreen({
               onSelect={select}
               routeTargets={routeTargets}
               gameTargetId={gameTargetId}
+              landedBodyId={landedBodyId}
               onShowList={() => changeView('list')}
               className={
                 data.isCurrent && !strip

@@ -27,7 +27,7 @@ const followPos = new Vector3()
  * Orbit controls with damping and limits, auto-fit to the system and smooth flights to a body.
  * Exposes fit() / focus() through the map context.
  */
-export function CameraRig({ systemKey }: { systemKey: string }) {
+export function CameraRig({ systemKey, landedId }: { systemKey: string; landedId: number | null }) {
   const { layout, registry, registerCamera, startedAt, reducedMotion } = useMap()
   const controls = useRef<OrbitControlsImpl>(null)
   const camera = useThree((s) => s.camera)
@@ -112,17 +112,20 @@ export function CameraRig({ systemKey }: { systemKey: string }) {
   }, [api, registerCamera])
 
   // Fit when a new system is shown (jump the first time, fly afterwards), and keep fitting while
-  // it fills in (FSS scan, resize) until the user takes the camera.
+  // it fills in (FSS scan, resize) until the user takes the camera. Landed on a planet: fly from
+  // the whole system down to it (focus hands the camera to the user: no refits after it).
   useEffect(() => {
     if (fitted.current !== systemKey) {
       const first = fitted.current === null
       fitted.current = systemKey
       userMoved.current = false
       api.fit(!first)
+      if (landedId !== null) api.focus(landedId)
     } else if (!userMoved.current) {
-      api.fit(true)
+      if (landedId !== null) api.focus(landedId)
+      else api.fit(true)
     }
-  }, [api, systemKey, layout])
+  }, [api, systemKey, layout, landedId])
 
   useFrame((state, dt) => {
     const c = controls.current

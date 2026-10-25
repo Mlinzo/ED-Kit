@@ -28,6 +28,8 @@ export interface SystemMapProps {
   routeTargets?: ReadonlyMap<number, boolean>
   /** Body id targeted in the game while you fly in supercruise here (Status.json Destination). */
   gameTargetId?: number | null
+  /** Body id of the planet you are on now: the map opens zoomed to it. */
+  landedBodyId?: number | null
   className?: string
 }
 
@@ -78,7 +80,7 @@ function onCreated(state: RootState) {
 }
 
 /** Memoized: re-renders only when the layout (context) or the system changes. */
-const Scene = memo(function Scene({ systemKey }: { systemKey: string }) {
+const Scene = memo(function Scene({ systemKey, landedId }: { systemKey: string; landedId: number | null }) {
   const { layout, registry, reducedMotion, startedAt, interaction } = useMap()
   const size = useThree((s) => s.size)
   const sinceCull = useRef(LABEL_INTERVAL)
@@ -149,7 +151,7 @@ const Scene = memo(function Scene({ systemKey }: { systemKey: string }) {
         <NodeTree key={r.id} node={r} />
       ))}
       <CourseLine />
-      <CameraRig systemKey={systemKey} />
+      <CameraRig systemKey={systemKey} landedId={landedId} />
     </>
   )
 })
@@ -160,6 +162,7 @@ export default function SystemMapCanvas({
   onSelect,
   routeTargets = NO_TARGETS,
   gameTargetId = null,
+  landedBodyId = null,
   className = '',
 }: SystemMapProps) {
   const { layout, startedAt } = useLayout(system)
@@ -191,6 +194,7 @@ export default function SystemMapCanvas({
   const currentId = system.shipNear ? shipId : null
   const leftId = system.shipNear ? null : shipId
   const targetId = onMap(gameTargetId)
+  const landedId = onMap(landedBodyId)
   useLayoutEffect(() => {
     interaction.set({ selectedId: selectedNodeId, currentId, leftId, targetId })
   }, [interaction, selectedNodeId, currentId, leftId, targetId])
@@ -257,7 +261,7 @@ export default function SystemMapCanvas({
           style={{ position: 'absolute', inset: 0 }}
         >
           <MapContext value={value}>
-            <Scene systemKey={systemKey} />
+            <Scene systemKey={systemKey} landedId={landedId} />
           </MapContext>
         </Canvas>
         <div ref={labelLayer} className="pointer-events-none absolute inset-0 overflow-hidden" />
