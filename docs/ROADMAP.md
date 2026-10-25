@@ -34,6 +34,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   second). Not yet seen on real play. If it grows too much: thin old stretches (Douglas–Peucker),
   keep the latest visits per body, and count the table in the database size check.
 
+### Species prediction: check for a missed pattern
+- HIP 19036 (2026-10-25): on both 3 a and 3 b the Bacterium card said "one of two species", and
+  both turned out Green: Bacterium Tela - Green on 3 a (variant `_Tungsten_`, colour from a
+  material) and Bacterium Cerbrus - Green on 3 b (variant `_K_`, colour from the star class).
+  Check whether something in the body data tells the two candidates apart (and the colour), so the
+  prediction could name one species instead of two. The journal for that evening has the scans.
+
 ## Deferred
 - Rank progress (Explorer, Exobiologist).
 - Ship condition: module wear, AFMU ammo, FSD damage from neutron boosts.
