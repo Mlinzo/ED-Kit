@@ -644,6 +644,7 @@ export const uk: Strings = {
   badges: {
     bio: 'Біо',
     geo: 'Гео',
+    mining: 'Видобуток',
     terraformable: 'Можна тераформувати',
     landable: 'Можна сісти',
     firstDiscovery: 'Перше відкриття',
@@ -672,6 +673,7 @@ export const uk: Strings = {
     signals: 'Сигнали',
     signalBio: 'Біо',
     signalGeo: 'Гео',
+    signalMining: 'Місця видобутку',
     signalHuman: 'Люди',
     signalOther: 'Інше',
     discovery: 'Відкриття',
@@ -1090,6 +1092,7 @@ export const uk: Strings = {
     first_discovery: 'Перше відкриття',
     landable_atmo: 'Посадка в атмосфері',
     geo: 'Геосигнали',
+    mining: 'Місця видобутку',
     rings: 'Кільця',
   },
 

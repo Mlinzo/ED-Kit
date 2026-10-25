@@ -54,6 +54,7 @@ class SignalsView(CamelModel):
     bio: int = 0
     geo: int = 0
     human: int = 0
+    mining: int = 0  # Planetary Mining Location
     other: int = 0
 
 

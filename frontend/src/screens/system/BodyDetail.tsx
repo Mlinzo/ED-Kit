@@ -245,6 +245,7 @@ export function BodyDetail({
   const isPlanet = body.kind === 'planet'
   const otherSignals = [
     { label: t.body.signalGeo, n: body.signals.geo },
+    { label: t.body.signalMining, n: body.signals.mining },
     { label: t.body.signalHuman, n: body.signals.human },
     { label: t.body.signalOther, n: body.signals.other },
   ].filter((s) => s.n > 0)

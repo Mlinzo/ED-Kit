@@ -399,6 +399,8 @@ def _interest(
         reasons.append("landable_atmo")
     if signals.geo > 0:
         reasons.append("geo")
+    if signals.mining > 0:
+        reasons.append("mining")
     if facts.has_rings:
         reasons.append("rings")
 

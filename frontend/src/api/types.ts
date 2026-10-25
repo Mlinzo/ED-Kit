@@ -39,6 +39,8 @@ export interface SignalsView {
   bio: number
   geo: number
   human: number
+  /** Planetary Mining Location: spots to mine on the surface (no coordinates). */
+  mining: number
   other: number
 }
 

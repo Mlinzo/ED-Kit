@@ -158,6 +158,7 @@ function deriveInterest(b: Omit<BodyView, 'interest' | 'reasons' | 'done'>): {
   if (b.wasDiscovered === false) reasons.push('first_discovery')
   if (b.landable && b.atmosphere) reasons.push('landable_atmo')
   if (b.signals.geo > 0) reasons.push('geo')
+  if (b.signals.mining > 0) reasons.push('mining')
   if (b.visual.rings.length > 0) reasons.push('rings')
   const done = tasks.length > 0 && tasks.every(Boolean)
   const notable = reasons.some((r) => r === 'first_discovery' || r === 'landable_atmo')
@@ -169,7 +170,7 @@ function deriveInterest(b: Omit<BodyView, 'interest' | 'reasons' | 'done'>): {
 /** Fills defaults and derives bio range / total / interest the way the backend does (roughly). */
 function body(input: BodyInput): BodyView {
   const { vis, ...rest } = input
-  const signals = { bio: 0, geo: 0, human: 0, other: 0, ...input.signals }
+  const signals = { bio: 0, geo: 0, human: 0, mining: 0, other: 0, ...input.signals }
   const species = input.species ?? []
   const fixed = species.filter((s) => s.status !== 'predicted').map((s) => s.bonusValue)
   const open = Math.max(0, signals.bio - fixed.length)
@@ -342,7 +343,7 @@ function buildBodies(): BodyView[] {
       radiusKm: PLANET_RADIUS_M / 1_000,
       mappedByMe: true,
       wasMapped: false,
-      signals: { bio: 3, geo: 0, human: 0, other: 0 },
+      signals: { bio: 3, geo: 0, human: 0, mining: 0, other: 0 },
       genuses: ['Bacterium', 'Concha', 'Stratum'],
       // Codex: Tectonicas is new to you, Renibus only new for this region, Labiata a new colour.
       species: [
@@ -370,7 +371,7 @@ function buildBodies(): BodyView[] {
       gravityG: 0.06,
       temperatureK: 142,
       radiusKm: 480,
-      signals: { bio: 0, geo: 2, human: 0, other: 0 },
+      signals: { bio: 0, geo: 2, human: 0, mining: 0, other: 0 },
       fssValue: 1_240,
       dssValue: 5_890,
       vis: { massEm: 0.004, composition: ROCKY, tidalLock: true },
@@ -425,7 +426,7 @@ function buildBodies(): BodyView[] {
       temperatureK: 88,
       radiusKm: 690,
       // Your auto-scan on approach has no signal counts: they come from Spansh.
-      signals: { bio: 1, geo: 3, human: 0, other: 0 },
+      signals: { bio: 1, geo: 3, human: 0, mining: 12, other: 0 },
       signalsSource: 'spansh',
       species: [
         // No DSS yet, but only a Bacterium can grow here and there is one signal: the genus is
@@ -450,7 +451,7 @@ function buildBodies(): BodyView[] {
       gravityG: 0.09,
       temperatureK: 71,
       radiusKm: 1_380,
-      signals: { bio: 1, geo: 0, human: 0, other: 0 },
+      signals: { bio: 1, geo: 0, human: 0, mining: 0, other: 0 },
       species: [
         // No DSS yet, two genera possible for one signal: uncertain, one would be new (codexMaybe 1).
         sp('Bacterium', 'Bacterium Informem', 8_418_000, 500, 'predicted', { codex: 'new' }),
@@ -526,7 +527,7 @@ function buildBodies(): BodyView[] {
       temperatureK: 196,
       radiusKm: 2_100,
       mappedByMe: true,
-      signals: { bio: 2, geo: 0, human: 0, other: 0 },
+      signals: { bio: 2, geo: 0, human: 0, mining: 0, other: 0 },
       genuses: ['Bacterium', 'Stratum'],
       species: [
         sp('Stratum', 'Stratum Paleas', 1_362_000, 500, 'analysed'),
@@ -550,7 +551,7 @@ function buildBodies(): BodyView[] {
       temperatureK: 171,
       radiusKm: 1_800,
       mappedByMe: true,
-      signals: { bio: 1, geo: 0, human: 0, other: 0 },
+      signals: { bio: 1, geo: 0, human: 0, mining: 0, other: 0 },
       genuses: ['Bacterium'],
       species: [sp('Bacterium', 'Bacterium Cerbrus', 1_689_800, 500, 'analysed')],
       fssValue: 1_330,
@@ -573,7 +574,7 @@ function buildBodies(): BodyView[] {
       // Known from Spansh: the body, its bio signals and the genera another commander's DSS found.
       source: 'spansh',
       sourceAt: '2026-10-11T16:05:48Z',
-      signals: { bio: 2, geo: 0, human: 0, other: 0 },
+      signals: { bio: 2, geo: 0, human: 0, mining: 0, other: 0 },
       genuses: ['Electricae', 'Fonticulua'],
       species: [
         sp('Electricae', 'Electricae Pluma', 6_284_600, 1_000, 'predicted', { certain: true, codex: 'new' }),

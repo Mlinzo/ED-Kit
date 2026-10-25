@@ -50,6 +50,10 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Mining locations (2026-10-26): the FSS's "Planetary Mining Location" signals (the most common
+  signal in the user's journals: 477 against 143 biological) have their own count instead of
+  "other": a "Mining N" badge in the body list, a row under the body's signals and a reason chip;
+  Spansh's counts too. Where on the surface the game does not say (no coordinates).
 - Database size (2026-10-25). Measured: two weeks of play gave 38 MB (60 % the route planner's
   Spansh cache, 9 MB the journal copy, 3.3 MB community bodies); the journals copied 20 times
   (169 MB, about 1500 hours) gave 200 MB, read in 7.8 s, projections rebuilt in 3.6 s, views in

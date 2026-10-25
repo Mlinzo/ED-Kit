@@ -103,6 +103,8 @@ SIGNAL_KINDS = {
     "$SAA_SignalType_Biological;": "bio",
     "$SAA_SignalType_Geological;": "geo",
     "$SAA_SignalType_Human;": "human",
+    # Planetary Mining Location (the FSS, Spansh): spots to mine on the surface; no coordinates.
+    "$PlanetaryMiningLocation_Name;": "mining",
 }
 
 RING_CLASSES = {

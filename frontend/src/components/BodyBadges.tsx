@@ -8,6 +8,7 @@ import {
   MapPinCheck,
   Mountain,
   Orbit,
+  Pickaxe,
   PlaneLanding,
   Route,
   Sparkles,
@@ -46,6 +47,8 @@ function badgesFor(body: BodyView, omitProgress: boolean, routeTarget: RouteTarg
     out.push({ key: 'bio', icon: Leaf, label: t.badges.bio, count: body.signals.bio, tone: 'value' })
   if (body.signals.geo > 0)
     out.push({ key: 'geo', icon: Mountain, label: t.badges.geo, count: body.signals.geo, tone: 'neutral' })
+  if (body.signals.mining > 0)
+    out.push({ key: 'mining', icon: Pickaxe, label: t.badges.mining, count: body.signals.mining, tone: 'neutral' })
   if (body.wasDiscovered === false)
     out.push({ key: 'first', icon: Sparkles, label: t.badges.firstDiscovery, tone: 'accent' })
   if (body.worthMapping && !body.mappedByMe && !omitProgress)
@@ -121,6 +124,7 @@ const REASONS: Record<string, { icon: LucideIcon; tone: Tone }> = {
   rare_star: { icon: Star, tone: 'accent' },
   landable_atmo: { icon: CloudSun, tone: 'neutral' },
   geo: { icon: Mountain, tone: 'neutral' },
+  mining: { icon: Pickaxe, tone: 'neutral' },
   rings: { icon: Orbit, tone: 'neutral' },
 }
 

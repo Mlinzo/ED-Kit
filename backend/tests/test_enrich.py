@@ -54,7 +54,7 @@ def test_spansh_conversion_units() -> None:
     assert f.semi_major_axis_m == pytest.approx(0.135486636764023 * enrich.AU_M)
     assert f.parents == [("Star", 4), ("Null", 0)]
     assert f.composition["Ice"] == pytest.approx(0.474729)
-    assert planet.signals == {"other": 20, "bio": 3}
+    assert planet.signals == {"mining": 20, "bio": 3}  # Planetary Mining Location
     assert set(planet.genuses) == {
         "$Codex_Ent_Fungoids_Genus_Name;",
         "$Codex_Ent_Bacterial_Genus_Name;",

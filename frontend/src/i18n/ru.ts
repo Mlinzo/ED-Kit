@@ -645,6 +645,7 @@ export const ru = {
   badges: {
     bio: 'Био',
     geo: 'Гео',
+    mining: 'Добыча',
     terraformable: 'Терраформируемая',
     landable: 'Можно сесть',
     firstDiscovery: 'Первооткрытие',
@@ -673,6 +674,7 @@ export const ru = {
     signals: 'Сигналы',
     signalBio: 'Био',
     signalGeo: 'Гео',
+    signalMining: 'Места добычи',
     signalHuman: 'Люди',
     signalOther: 'Прочее',
     discovery: 'Открытие',
@@ -1089,6 +1091,7 @@ export const ru = {
     first_discovery: 'Первооткрытие',
     landable_atmo: 'Посадка в атмосфере',
     geo: 'Геосигналы',
+    mining: 'Места добычи',
     rings: 'Кольца',
   },
 

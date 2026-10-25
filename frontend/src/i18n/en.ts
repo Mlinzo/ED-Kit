@@ -640,6 +640,7 @@ export const en: Strings = {
   badges: {
     bio: 'Bio',
     geo: 'Geo',
+    mining: 'Mining',
     terraformable: 'Terraformable',
     landable: 'Landable',
     firstDiscovery: 'First discovery',
@@ -668,6 +669,7 @@ export const en: Strings = {
     signals: 'Signals',
     signalBio: 'Bio',
     signalGeo: 'Geo',
+    signalMining: 'Mining locations',
     signalHuman: 'Human',
     signalOther: 'Other',
     discovery: 'Discovery',
@@ -1087,6 +1089,7 @@ export const en: Strings = {
     first_discovery: 'First discovery',
     landable_atmo: 'Atmospheric landing',
     geo: 'Geo signals',
+    mining: 'Mining locations',
     rings: 'Rings',
   },
 

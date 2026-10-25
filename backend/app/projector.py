@@ -20,7 +20,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 19
+VERSION = 20
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -37,6 +37,8 @@ SIGNAL_KINDS = {
     "$SAA_SignalType_Biological;": "bio",
     "$SAA_SignalType_Geological;": "geo",
     "$SAA_SignalType_Human;": "human",
+    # Planetary Mining Location (the FSS, Spansh): spots to mine on the surface; no coordinates.
+    "$PlanetaryMiningLocation_Name;": "mining",
 }
 
 # (event timestamp) -> (lat, lon) of the commander when the event happened, if known live.

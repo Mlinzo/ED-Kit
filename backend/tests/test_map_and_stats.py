@@ -182,7 +182,10 @@ def test_interest_and_done(conn: sqlite3.Connection, proj: Projector) -> None:
             "SystemAddress": SA,
             "BodyID": 7,
             "BodyName": "x",
-            "Signals": [{"Type": "$SAA_SignalType_Geological;", "Count": 2}],
+            "Signals": [
+                {"Type": "$SAA_SignalType_Geological;", "Count": 2},
+                {"Type": "$PlanetaryMiningLocation_Name;", "Count": 19},
+            ],
         },
     )
     bodies = {b.body_id: b for b in views.system_view(conn, "F1").bodies}
@@ -190,6 +193,9 @@ def test_interest_and_done(conn: sqlite3.Connection, proj: Projector) -> None:
     assert bodies[6].interest == "low" and not bodies[6].done
     # Geological signals alone are not worth a label (materials, no exploration value).
     assert bodies[7].interest == "low" and "geo" in bodies[7].reasons
+    # Mining locations: their own count and reason, not "other"; no label either.
+    assert (bodies[7].signals.mining, bodies[7].signals.other) == (19, 0)
+    assert "mining" in bodies[7].reasons
     assert bodies[1].interest in ("medium", "high")  # stars are never dimmed
 
     organic = {
