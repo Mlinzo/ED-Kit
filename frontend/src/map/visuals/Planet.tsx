@@ -9,6 +9,7 @@ import {
   createCloudMaterial,
   createRingMaterial,
   createSurfaceMaterial,
+  SurfaceDetail,
 } from './planetMaterials'
 import { planetRecipe } from './recipe'
 import { Reticle } from './Reticle'
@@ -141,18 +142,31 @@ export function Planet({ visual, radius, seed, dim, selected, hovered, priority 
   )
 }
 
+// The globe fills a screen, so its map is baked 16 times larger than a system map planet's.
+const GLOBE_W = 2048
+const GLOBE_H = 1024
+
 /**
  * The same planet alone and still, for a close look (the Surface globe): unit radius, north up
- * (+y), no spin, tilt, rings, clouds (they would hide what is on the ground) or reticle.
+ * (+y), no spin, tilt, rings, clouds (they would hide what is on the ground) or reticle. A sharper
+ * map, and made-up detail under the camera once you look closer than the map goes (SurfaceDetail).
  */
 export function PlanetSurface({ visual, seed }: { visual: BodyVisual; seed: number }) {
   const vkey = JSON.stringify(visual)
   const recipe = useMemo(() => planetRecipe(JSON.parse(vkey) as BodyVisual, seed), [vkey, seed])
   const dimU = useEasedUniform(0)
-  const surfaceSpec = useMemo(() => bakeSpec(recipe.surface.program, recipe.surface.params), [recipe])
+  const surfaceSpec = useMemo(
+    () => bakeSpec(recipe.surface.program, recipe.surface.params, GLOBE_W, GLOBE_H),
+    [recipe],
+  )
   const surface = useBake(surfaceSpec, 1)!
+  const detail = useMemo(() => new SurfaceDetail(), [])
+  useFrame(({ camera }) => detail.follow(camera.position))
   const surfaceMat = useDisposable(
-    useMemo(() => createSurfaceMaterial({ map: surface.texture, recipe, dim: dimU, ring: null }), [surface, recipe, dimU]),
+    useMemo(
+      () => createSurfaceMaterial({ map: surface.texture, recipe, dim: dimU, ring: null, detail }),
+      [surface, recipe, dimU, detail],
+    ),
   )
   const atmo = useMemo(
     () => (recipe.atmosphere ? createAtmosphereMaterials(recipe.atmosphere, dimU) : null),

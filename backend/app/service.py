@@ -14,7 +14,7 @@ from pathlib import Path
 from queue import Empty, SimpleQueue
 from typing import Any
 
-from app import canonn, datadir, db, enrich, game, projector, usersettings
+from app import canonn, datadir, db, enrich, game, projector, track, usersettings
 from app.config import Settings
 from app.journal import (
     JournalDirectory,
@@ -36,6 +36,7 @@ GAME_CHECK_S = 5.0  # how often the process list is read
 SIZES_EVERY_S = 30.0  # how often the database and journal sizes are measured
 SIZE_STEP = 1_000_000  # a change this big (bytes) is pushed to the browsers
 FUEL_STEP_T = 0.5  # a fuel change this big (scooping, jumping): new forecast and jump range
+TRACK_SHOW_S = 5.0  # the globe gets the path you go along at most this often
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
 DERIVED_TOPICS = frozenset(
     {"stats", "history", "sessions", "route", "navroute", "galaxy", "sell", "shop"}
@@ -119,6 +120,8 @@ class IngestService(threading.Thread):
             low_free_bytes=datadir.LOW_FREE_BYTES,
         )
         self._sizes_at = 0.0  # monotonic time of the last size check
+        self._track = track.Recorder()
+        self._track_shown = 0.0  # monotonic time the globe last got new path points
         self._recheck = threading.Event()  # the API changed something a held read waits on
         self.enricher = enrich.Enricher() if settings.online else None
         self._enrich_checked: int | None = None  # last system looked up
@@ -278,7 +281,7 @@ class IngestService(threading.Thread):
                 waiting = self._held(conn, files)
                 if not waiting:
                     self._backfill(conn, files)
-            self._poll_status(status_reader)
+            self._poll_status(conn, status_reader)
             if self.navroute.poll():
                 self._invalidate({"navroute", "galaxy", "sell"})
             if not waiting and time.monotonic() - last_rescan >= self.settings.rescan_interval:
@@ -528,13 +531,20 @@ class IngestService(threading.Thread):
                 self.bus.publish("ingest", self.ingest)
             self._halt.wait(GAME_CHECK_S)
 
-    def _poll_status(self, reader: StatusReader) -> None:
+    def _poll_status(self, conn: Any, reader: StatusReader) -> None:
         status = reader.poll()
         if status is None:
             return
         previous = self.live
         self.live = status
         self.bus.publish("status", status)
+        if self.ingest.backfill_done:
+            recorded = self._track.add(conn, self.projector.fid, status)
+            if recorded == "new" or (
+                recorded == "more" and time.monotonic() - self._track_shown >= TRACK_SHOW_S
+            ):
+                self._track_shown = time.monotonic()
+                self._invalidate({"surface"})
         if (
             previous.has_lat_long != status.has_lat_long
             or previous.body_name != status.body_name

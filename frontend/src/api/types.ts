@@ -285,6 +285,8 @@ export interface GlobeView {
   radiusM: number
   marks: GlobeMark[]
   ship: GlobeShip | null
+  /** Your path here, recorded by the app while it runs: stretches of [lat, lon], oldest first. */
+  track: [number, number][][]
   /** ok: from the cache (maybe none); loading: asked; failed: Canonn did not answer; off: offline. */
   communityState: 'ok' | 'loading' | 'failed' | 'off'
   /** When Canonn was asked (ISO). */

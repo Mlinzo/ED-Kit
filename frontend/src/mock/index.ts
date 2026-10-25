@@ -3,7 +3,7 @@
 // plus a short journal backfill so the progress bar shows.
 
 import { createLiveTransport, type StreamHandlers, type Transport } from '../api/transport'
-import type { IngestState, LiveStatus, NoteRequest, SystemView, Topic } from '../api/types'
+import type { IngestState, LiveStatus, NoteRequest, SurfaceView, SystemView, Topic } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
   buildSell,
@@ -50,6 +50,8 @@ function emptySystem(system: SystemView): SystemView {
 const STATUS_INTERVAL_MS = 250
 const INGEST_INTERVAL_MS = 300
 const LAP_SECONDS = 90
+const TRACK_SECONDS = 45 // the drive behind you on the globe
+const TRACK_EVERY_MS = 5_000 // as often as the app sends new path points
 /** Elliptical drive around the two sample sites (metres, rotated by ROTATION). */
 const PATH = { east: 25, north: 10, a: 900, b: 560, rotation: (20 * Math.PI) / 180 }
 
@@ -60,6 +62,19 @@ function positionAt(seconds: number): { east: number; north: number } {
   const cos = Math.cos(PATH.rotation)
   const sin = Math.sin(PATH.rotation)
   return { east: PATH.east + x * cos - y * sin, north: PATH.north + x * sin + y * cos }
+}
+
+/** The surface view with the last TRACK_SECONDS of the drive as your path (a point per 0.5 s). */
+function withTrack(surface: SurfaceView, seconds: number): SurfaceView {
+  if (!surface.globe) return surface
+  const from = Math.max(0, seconds - TRACK_SECONDS)
+  const stretch: [number, number][] = []
+  for (let s = from; s <= seconds; s += 0.5) {
+    const p = positionAt(s)
+    const { lat, lon } = offsetLatLon(SITE_ORIGIN, p.east, p.north, PLANET_RADIUS_M)
+    stretch.push([lat, lon])
+  }
+  return { ...surface, globe: { ...surface.globe, track: [stretch] } }
 }
 
 function simulatedStatus(seconds: number): LiveStatus {
@@ -139,7 +154,7 @@ export function createMockTransport(): Transport {
       if (address === null) return system
       return buildPastSystem(system, history, address) ?? { ...emptySystem(system), currentSystem: system.currentSystem }
     },
-    '/api/view/surface': () => surface,
+    '/api/view/surface': () => withTrack(surface, elapsed()),
     '/api/view/session': () => session,
     '/api/view/sessions': () => sessions,
     '/api/view/sell': (query) => buildSell(query.get('carriers') === 'true'),
@@ -194,6 +209,8 @@ export function createMockTransport(): Transport {
         handlers.onEvent({ type: 'status', data: simulatedStatus(elapsed()) })
       }, STATUS_INTERVAL_MS)
 
+      const trackTimer = setInterval(() => notify?.(['surface']), TRACK_EVERY_MS)
+
       const ingestTimer = setInterval(() => {
         if (ingest.backfillDone) return
         const filesDone = ingest.filesDone + 1
@@ -212,6 +229,7 @@ export function createMockTransport(): Transport {
       return () => {
         timers.forEach(clearTimeout)
         clearInterval(statusTimer)
+        clearInterval(trackTimer)
         clearInterval(ingestTimer)
       }
     },

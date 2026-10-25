@@ -68,6 +68,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   Pleiades: 1–194 points each). Every layer says where its data comes from; a tap on a mark gives
   distance and heading from you. The surface is drawn by the app (the game shares no terrain).
   While you sample, a Radar | Planet switch. The system map opens zoomed to the planet you are on.
+  Zoom goes down to 500 m over the ground (samples a few hundred metres apart stand apart), with
+  made-up surface detail close up; on the ground the globe opens (or turns, as you land) about
+  4 km over you. Your path is drawn as you go: the app records it from Status.json while it runs
+  (the journal keeps none). On another body than the run in progress, the tab shows the body you
+  are at.
 - Your ship on the system map (2026-10-25): the map marks the body the game last put you at
   (the arrival star after a jump, a planet you approach, drop at or land on) with pulsing rings,
   and with a still dashed ring, "Last known position", once you fly off. In supercruise a dashed

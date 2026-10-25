@@ -793,6 +793,7 @@ export const en: Strings = {
       you: 'You',
       ship: 'Your ship',
       samples: 'Your samples',
+      track: 'Your path',
       codex: 'Your codex finds',
       landings: 'Landings',
       settlements: 'Settlements',
@@ -802,6 +803,7 @@ export const en: Strings = {
       live: 'the game, now (Status.json)',
       journal: 'your journal',
       recorded: 'recorded by the app as you sampled',
+      tracked: 'recorded by the app while it runs',
       community: 'Canonn — community data',
     },
     ship: {

@@ -632,6 +632,16 @@ def system_view(
     )
 
 
+def _body_id_named(
+    conn: sqlite3.Connection, system_address: int, name: str, default: int | None
+) -> int | None:
+    row = conn.execute(
+        "SELECT body_id FROM bodies WHERE system_address = ? AND name = ?",
+        (system_address, name),
+    ).fetchone()
+    return row["body_id"] if row else default
+
+
 def surface_view(
     conn: sqlite3.Connection,
     fid: str | None,
@@ -640,7 +650,8 @@ def surface_view(
     online: bool = False,
     want_finds: Callable[[int, str], None] | None = None,
 ) -> SurfaceView:
-    """The body you sample on (or are at), its globe and the sampling run in progress.
+    """The body you sample on, its globe and the sampling run in progress; the body you are at
+    instead (no run) when Status.json puts you near another one, or when nothing is sampled.
     `want_finds(address, system name)` is called when the globe waits for Canonn's points."""
     state = cmdr_state(conn, fid)
     if state is None or fid is None:
@@ -653,14 +664,21 @@ def surface_view(
     ).fetchone()
 
     system_address, body_id = state["system_address"], state["body_id"]
+    here = live.body_name if live is not None and live.has_lat_long else None
+    if active is not None and here:
+        scan_body = conn.execute(
+            "SELECT name FROM bodies WHERE system_address = ? AND body_id = ?",
+            (active["system_address"], active["body_id"]),
+        ).fetchone()
+        if scan_body is not None and scan_body["name"] != here:
+            # At another body: that one is shown; the run is back when you return to its body.
+            active = None
+            if system_address is not None:
+                body_id = _body_id_named(conn, system_address, here, body_id)
     if active is not None:
         system_address, body_id = active["system_address"], active["body_id"]
     elif body_id is None and live is not None and live.body_name and system_address is not None:
-        row = conn.execute(
-            "SELECT body_id FROM bodies WHERE system_address = ? AND name = ?",
-            (system_address, live.body_name),
-        ).fetchone()
-        body_id = row["body_id"] if row else None
+        body_id = _body_id_named(conn, system_address, live.body_name, None)
 
     body: BodyView | None = None
     globe: GlobeView | None = None

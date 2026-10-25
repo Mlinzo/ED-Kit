@@ -12,11 +12,12 @@ import {
   ShaderMaterial,
   UniformsLib,
   UniformsUtils,
+  Vector3,
   type IUniform,
   type Texture,
   type WebGLProgramParametersWithUniforms,
 } from 'three'
-import { DIM_GLSL } from './glsl'
+import { DIM_GLSL, NOISE_GLSL } from './glsl'
 import { LAVA_LEVEL, type PlanetRecipe } from './recipe'
 import { ADDITIVE } from './shared'
 
@@ -52,6 +53,27 @@ vec3 edkDimBody(vec3 c, vec3 mean, float dim) {
 varying vec3 vEdkEast;
 varying vec3 vEdkNorth;
 varying vec3 vEdkObj;
+#endif
+#ifdef EDK_DETAIL
+${NOISE_GLSL}
+uniform ivec3 uDetailCell[EDK_DETAIL_N];
+uniform vec3 uDetailFrac[EDK_DETAIL_N];
+varying vec3 vEdkLocal;
+// edkNoise at p plus whole lattice cells: p stays small, so precision holds far from the origin.
+float edkNoiseCell(vec3 p, ivec3 cell) {
+  vec3 i = floor(p);
+  vec3 f = p - i;
+  vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  ivec3 c = ivec3(i) + cell + 1048576;
+  float acc = 0.0;
+  for (int k = EDK_ZERO; k < 8; k++) {
+    ivec3 o = ivec3(k & 1, (k >> 1) & 1, (k >> 2) & 1);
+    vec3 w = mix(1.0 - u, u, vec3(o));
+    vec3 g = vec3(edkPcg3d(uvec3(c + o))) * (1.0 / 4294967295.0);
+    acc += dot(g * 2.0 - 1.0, f - vec3(o)) * w.x * w.y * w.z;
+  }
+  return 1.6 * acc;
+}
 #endif
 #ifdef EDK_RING_SHADOW
 uniform sampler2D uRingTex;
@@ -106,11 +128,18 @@ varying float vEdkScale;
 varying vec3 vEdkEast;
 varying vec3 vEdkNorth;
 varying vec3 vEdkObj;
+#endif
+#ifdef EDK_DETAIL
+uniform vec3 uDetailOrigin;
+varying vec3 vEdkLocal;
 #endif`,
     )
     .replace(
       '#include <project_vertex>',
       /* glsl */ `#include <project_vertex>
+#ifdef EDK_DETAIL
+vEdkLocal = position - uDetailOrigin;
+#endif
 #ifdef EDK_RING_SHADOW
 vEdkCenter = (modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 vEdkRingN = normalize((modelViewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
@@ -138,6 +167,24 @@ edkH = sampledDiffuseColor.a;
 diffuseColor.a = 1.0;
 edkMean = textureLod(map, vec2(0.5), 16.0).rgb; // 1x1 mip level: the body's mean albedo
 #endif
+#ifdef EDK_DETAIL
+// Octaves between ~3 px and ~800 px on screen: grain here, small relief (edkDetailH) below.
+float edkDetailH = 0.0;
+{
+  float fp = max(length(fwidth(vEdkLocal)), 1e-12);
+  float grain = 0.0;
+  for (int k = EDK_ZERO; k < EDK_DETAIL_N; k++) {
+    float f = EDK_DETAIL_F0 * exp2(float(k));
+    float px = 1.0 / (f * fp);
+    float w = smoothstep(2.0, 5.0, px) * (1.0 - smoothstep(400.0, 1200.0, px));
+    if (w <= 0.0) continue;
+    float n = edkNoiseCell(vEdkLocal * f + uDetailFrac[k], uDetailCell[k]);
+    grain += n * w;
+    edkDetailH += n * w / f;
+  }
+  diffuseColor.rgb *= 1.0 + EDK_DETAIL_GRAIN * grain;
+}
+#endif
 diffuseColor.rgb = edkDimBody(diffuseColor.rgb, edkMean, uDim);`,
     )
     .replace(
@@ -156,6 +203,18 @@ diffuseColor.rgb = edkDimBody(diffuseColor.rgb, edkMean, uDim);`,
   float sE = (hE - hW) / (2.0 * ts.x * 6.2831853 * cosLat);
   float sN = (hN - hS) / (2.0 * ts.y * 3.1415927);
   normal = normalize(normal - uRelief * (sE * normalize(vEdkEast) + sN * normalize(vEdkNorth)));
+}
+#endif
+#ifdef EDK_DETAIL
+{
+  // Bump from the detail height's screen derivatives (Mikkelsen), unnormalised: a slope per radius.
+  vec2 dH = vec2(dFdx(edkDetailH), dFdy(edkDetailH)) * EDK_DETAIL_BUMP;
+  vec3 sx = dFdx(-vViewPosition);
+  vec3 sy = dFdy(-vViewPosition);
+  vec3 r1 = cross(sy, normal);
+  vec3 r2 = cross(normal, sx);
+  float det = dot(sx, r1) * faceDirection;
+  normal = normalize(abs(det) * normal - sign(det) * (dH.x * r1 + dH.y * r2));
 }
 #endif`,
     )
@@ -189,14 +248,47 @@ totalEmissiveRadiance *= 1.0 - 0.95 * smoothstep( 0.0, 0.45, edkLit );
     )
 }
 
+const DETAIL_OCTAVES = 20 // from 1/64 of the radius down to metres on the largest planets
+const DETAIL_F0 = 64
+
+/**
+ * Close-up detail for the planet globe: grain and small relief made up from noise, finer octaves
+ * fading in as you come closer (the baked map runs out of texels far above the ground). The noise
+ * is taken around a floating origin under the camera, its whole lattice cells passed as integers,
+ * so float precision holds down to metres on a unit sphere and the pattern stays put as it moves.
+ */
+export class SurfaceDetail {
+  readonly origin = { value: new Vector3() }
+  readonly cells = { value: new Int32Array(DETAIL_OCTAVES * 3) }
+  readonly fracs = { value: new Float32Array(DETAIL_OCTAVES * 3) }
+
+  /** Puts the origin under a camera at `eye` (the planet's object space). */
+  follow(eye: Vector3) {
+    const len = eye.length() || 1
+    // As the GPU gets it (float32): the cells below are counted from exactly this point.
+    const o = [Math.fround(eye.x / len), Math.fround(eye.y / len), Math.fround(eye.z / len)]
+    this.origin.value.set(o[0], o[1], o[2])
+    for (let k = 0; k < DETAIL_OCTAVES; k++) {
+      const f = DETAIL_F0 * 2 ** k
+      for (let i = 0; i < 3; i++) {
+        const x = o[i] * f
+        const cell = Math.floor(x)
+        this.cells.value[k * 3 + i] = cell
+        this.fracs.value[k * 3 + i] = x - cell
+      }
+    }
+  }
+}
+
 export interface SurfaceOptions {
   map: Texture
   recipe: PlanetRecipe
   dim: Uniform<number>
   ring: { texture: Texture; inner: number; outer: number } | null
+  detail?: SurfaceDetail
 }
 
-export function createSurfaceMaterial({ map, recipe, dim, ring }: SurfaceOptions): MeshStandardMaterial {
+export function createSurfaceMaterial({ map, recipe, dim, ring, detail }: SurfaceOptions): MeshStandardMaterial {
   const mt = recipe.material
   const m = new MeshStandardMaterial({
     map,
@@ -225,6 +317,16 @@ export function createSurfaceMaterial({ map, recipe, dim, ring }: SurfaceOptions
     uRingTex: { value: ring?.texture ?? null },
     uRingInner: { value: ring?.inner ?? 1 },
     uRingOuter: { value: ring?.outer ?? 2 },
+  }
+  if (detail) {
+    Object.assign(defines, {
+      EDK_DETAIL: '',
+      EDK_DETAIL_N: String(DETAIL_OCTAVES),
+      EDK_DETAIL_F0: DETAIL_F0.toFixed(1),
+      EDK_DETAIL_GRAIN: '0.07',
+      EDK_DETAIL_BUMP: '0.12',
+    })
+    Object.assign(extra, { uDetailOrigin: detail.origin, uDetailCell: detail.cells, uDetailFrac: detail.fracs })
   }
   m.onBeforeCompile = (shader) => patchSurface(shader, extra)
   m.customProgramCacheKey = () => 'edk-surface-v3'

@@ -12,9 +12,24 @@ import { formatDegrees, formatMeters } from '../../../lib/format'
 import { bearingDeg, haversineM, type LatLon } from '../../../lib/geo'
 import { writeStored, readStoredText } from '../../../lib/storage'
 import { GlobeMap } from '.'
-import { LAYERS, LAYER_STYLE, SHIP_COLOR, YOU_COLOR, globePoints, layerCounts, sourceLabel, type GlobePoint, type LayerId } from './layers'
+import type { GlobeFocus } from './GlobeCanvas'
+import {
+  LAYERS,
+  LAYER_STYLE,
+  SHIP_COLOR,
+  YOU_COLOR,
+  globePoints,
+  layerCounts,
+  pathLengthM,
+  pathLines,
+  sourceLabel,
+  type GlobePoint,
+  type LayerId,
+} from './layers'
 
 const HIDDEN_KEY = 'edk.globe.hidden'
+/** On the ground the globe comes down this high over you: ~2.5 km around you in view. */
+const GROUND_HEIGHT_M = 4_000
 
 function readHidden(): Set<LayerId> {
   const stored = readStoredText(HIDDEN_KEY)?.split(',') ?? []
@@ -178,7 +193,10 @@ function Legend({
                 <Dot color={on ? style.color : 'transparent'} className="mt-1 size-2.5" />
                 <span className="min-w-0 flex-1 text-sm">
                   <span className="block font-medium text-zinc-100">
-                    {t.globe.layer[layer]} <span className="font-normal text-zinc-400 tabular-nums">· {counts[layer]}</span>
+                    {t.globe.layer[layer]}{' '}
+                    <span className="font-normal text-zinc-400 tabular-nums">
+                      · {layer === 'track' ? formatMeters(pathLengthM(globe)) : counts[layer]}
+                    </span>
                   </span>
                   <span className={`block text-xs ${style.source === 'community' ? 'text-violet-300' : 'text-zinc-500'}`}>
                     {sourceLabel(style.source)}
@@ -277,9 +295,24 @@ export function PlanetGlobe({ globe, body, status }: { globe: GlobeView; body: B
   const [hidden, setHidden] = useState(readHidden)
   const [find, setFind] = useState<string | null>(null)
   const [picked, setPicked] = useState<string[]>([])
-  const [focus, setFocus] = useState<LatLon>(() => firstLook(globe, here))
+  // Landed, on foot or in the SRV here: the globe looks at you from close by, at once or as you land.
+  const grounded = here !== null && Boolean(status?.landed || status?.onFoot || status?.inSrv)
+  const [focus, setFocus] = useState<GlobeFocus>(() =>
+    grounded ? { ...firstLook(globe, here), heightM: GROUND_HEIGHT_M } : firstLook(globe, here),
+  )
+  const [wasGrounded, setWasGrounded] = useState(grounded)
+  if (grounded !== wasGrounded) {
+    setWasGrounded(grounded)
+    if (grounded && here) setFocus({ lat: here.lat, lon: here.lon, heightM: GROUND_HEIGHT_M })
+  }
 
   const all = useMemo(() => globePoints(globe, find), [globe, find])
+  const hereLat = here?.lat
+  const hereLon = here?.lon
+  const path = useMemo(() => {
+    if (hidden.has('track')) return []
+    return pathLines(globe, hereLat !== undefined && hereLon !== undefined ? { lat: hereLat, lon: hereLon } : null)
+  }, [globe, hidden, hereLat, hereLon])
   const shown = useMemo(() => all.filter((p) => p.layer === 'ship' || !hidden.has(p.layer)), [all, hidden])
   const pickedPoints = picked.map((id) => shown.find((p) => p.id === id)).filter((p): p is GlobePoint => Boolean(p))
   const selected = pickedPoints[0] ?? null
@@ -320,7 +353,9 @@ export function PlanetGlobe({ globe, body, status }: { globe: GlobeView; body: B
             className="h-full w-full"
             visual={body.visual}
             seed={body.bodyId}
+            radiusM={globe.radiusM}
             points={shown}
+            path={path}
             here={here}
             selected={selected}
             onPick={setPicked}

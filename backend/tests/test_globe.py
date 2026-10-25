@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from app import canonn, db, views
+from app import canonn, db, track, views
 from app.globe import ship_here
 from app.projector import Projector
+from app.schemas import LiveStatus
 
 SA = 1183632560866
 SYSTEM = "Col 285 Sector TT-H c10-4"
@@ -136,6 +137,17 @@ def globe(conn: sqlite3.Connection, **kwargs: object):
     view = views.surface_view(conn, "F1", None, **kwargs)  # type: ignore[arg-type]
     assert view.globe is not None
     return view.globe
+
+
+def test_globe_path(conn: sqlite3.Connection, proj: Projector) -> None:
+    feed(conn, proj, [*arrive(), touchdown(10, 1.0, 2.0)])
+    rec = track.Recorder()
+    for lat in (1.0, 1.001, 1.002):  # ~35 m apart on this planet
+        live = LiveStatus(
+            has_lat_long=True, lat=lat, lon=2.0, body_name=BODY, planet_radius_m=2e6, on_foot=True
+        )
+        rec.add(conn, "F1", live)
+    assert globe(conn).track == [[(1.0, 2.0), (1.001, 2.0), (1.002, 2.0)]]
 
 
 def test_globe_places(conn: sqlite3.Connection, proj: Projector) -> None:

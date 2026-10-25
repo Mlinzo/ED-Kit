@@ -719,6 +719,7 @@ function buildGlobe(): GlobeView {
     radiusM: PLANET_RADIUS_M,
     marks,
     ship: { state: 'landed', ...near(-160, -90), at: '2026-10-16T19:48:40Z' },
+    track: [], // the transport draws the drive in (mock/index.ts)
     communityState: 'ok',
     communityAt: '2026-10-16T19:40:30Z',
     community: [

@@ -267,6 +267,8 @@ class GlobeView(CamelModel):
     radius_m: float
     marks: list[GlobeMark]
     ship: GlobeShip | None
+    # Your path here, recorded by the app while it runs (app.track): stretches of (lat, lon).
+    track: list[list[tuple[float, float]]] = []
     community_state: Literal["ok", "loading", "failed", "off"]  # app.canonn.State
     community_at: str | None  # when Canonn was asked (ISO)
     community: list[CommunityFinds]

@@ -199,6 +199,19 @@ CREATE TABLE IF NOT EXISTS sample_positions(
   lat REAL NOT NULL,
   lon REAL NOT NULL
 ) STRICT;
+
+-- Your path on planet surfaces (app.track): Status.json positions while the app runs, in
+-- stretches (seg). The journal keeps no path, so this too is no projection.
+CREATE TABLE IF NOT EXISTS surface_track(
+  id INTEGER PRIMARY KEY,
+  fid TEXT NOT NULL,
+  body_name TEXT NOT NULL,
+  seg INTEGER NOT NULL,
+  ts TEXT NOT NULL,
+  lat REAL NOT NULL,
+  lon REAL NOT NULL
+) STRICT;
+CREATE INDEX IF NOT EXISTS surface_track_body ON surface_track(fid, body_name, id);
 """
 
 PROJECTION_TABLES = (

@@ -8,6 +8,7 @@ import pytest
 
 from app import db, views
 from app.projector import Projector
+from app.schemas import LiveStatus
 
 SA = 1183632560866
 CMDR = {"event": "Commander", "FID": "F1", "Name": "TEST", "timestamp": "2026-10-15T20:00:00Z"}
@@ -126,6 +127,26 @@ def test_sampling_flow(conn: sqlite3.Connection, proj: Projector) -> None:
     session = views.session_view(conn, "F1")
     assert session.unsold_bio_count == 1
     assert session.jumps == 1 and session.distance_ly == 42.5
+
+
+def test_surface_shows_the_body_you_are_at(conn: sqlite3.Connection, proj: Projector) -> None:
+    # A run left unfinished on A 24; Status.json puts you on A 25 of the same system.
+    feed(conn, proj, [CMDR, jump(), scan_planet(), scan_planet(25)])
+    feed(conn, proj, [organic("Log", "2026-10-15T20:48:52Z")])
+
+    def at(name: str, near: bool = True) -> views.SurfaceView:
+        live = LiveStatus(has_lat_long=near, lat=1.0 if near else None, lon=2.0 if near else None)
+        return views.surface_view(conn, "F1", live.model_copy(update={"body_name": name}))
+
+    there = at("Col 285 Sector TT-H c10-4 A 25")
+    assert there.active_scan is None
+    assert there.body is not None and there.body.body_id == 25
+    assert there.globe is not None and there.globe.body_name == "Col 285 Sector TT-H c10-4 A 25"
+
+    back = at("Col 285 Sector TT-H c10-4 A 24")
+    assert back.active_scan is not None and back.body is not None and back.body.body_id == 24
+    # Not near any surface (no latitude): the run stays on screen.
+    assert at("Col 285 Sector TT-H c10-4 A 25", near=False).active_scan is not None
 
 
 def test_new_species_abandons_unfinished(conn: sqlite3.Connection, proj: Projector) -> None:

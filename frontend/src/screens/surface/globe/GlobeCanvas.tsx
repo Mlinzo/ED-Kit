@@ -4,7 +4,15 @@
 import { Line, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber'
 import { Navigation2, Rocket } from 'lucide-react'
-import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type RefObject,
+  type WheelEvent as ReactWheelEvent,
+} from 'react'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -13,6 +21,7 @@ import {
   Spherical,
   Vector3,
   type Camera,
+  type Group,
   type PerspectiveCamera,
 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -23,29 +32,45 @@ import { PlanetSurface } from '../../../map/visuals'
 import { facesCamera, gridLine, greatCircle, headingVector, pickNear, toVector, viewAngles, type ScreenPoint, type Vec3 } from './geometry'
 import { LAYER_STYLE, SHIP_COLOR, YOU_COLOR, type GlobePoint, type LayerStyle } from './layers'
 
+/** Where the view turns to, and how high over the ground it comes down to (if given). */
+export type GlobeFocus = LatLon & { heightM?: number }
+
 export interface GlobeCanvasProps {
   visual: BodyVisual
   /** As on the system map (the body id), so the planet looks the same there. */
   seed: number
+  /** The planet's radius: the closest look is MIN_HEIGHT_M over its ground. */
+  radiusM: number
   /** The marks to draw (hidden layers already left out). */
   points: readonly GlobePoint[]
+  /** Your path as lines (empty when hidden). */
+  path: readonly (readonly LatLon[])[]
   here: (LatLon & { heading: number | null }) | null
   selected: GlobePoint | null
   /** Ids of the marks under a click or tap, nearest first ([] on empty ground). */
   onPick: (ids: string[]) => void
-  /** The view turns to this point whenever a new object is passed. */
-  focus: LatLon
+  /** The view turns (and comes down) to this whenever a new object is passed. */
+  focus: GlobeFocus
   label: string
   className?: string
 }
 
-// Heights above the unit sphere: grid, marks, the line to a mark (none sink into the facets).
+// The grid floats over the unit sphere (the planet's facets lie inside it) and hides when you look
+// closer than GRID_MIN_HEIGHT; marks and the line to a mark ride lower the lower you are (markLift).
 const R_GRID = 1.0015
-const R_MARK = 1.004
-const R_LINE = 1.003
+const GRID_MIN_HEIGHT = 0.005
 const START_DISTANCE = 3.7 // the whole globe fits the fov with a margin
-const MIN_DISTANCE = 1.12
 const MAX_DISTANCE = 6
+/** The closest look: from this height over the ground the view is ~300 m across (fov 35°). */
+const MIN_HEIGHT_M = 500
+/** Per wheel px: one notch (100 px) takes the camera ~28 % higher or lower. */
+const WHEEL_ZOOM = 0.0025
+
+/** How far marks sit over the unit sphere for a camera `d` from the centre: 0.4 % of the radius
+ * from afar, a twentieth of the camera's height close up (so never past the camera). */
+function markLift(d: number): number {
+  return Math.min(0.004, (d - 1) * 0.05)
+}
 
 const spherical = new Spherical()
 const projected = new Vector3()
@@ -67,8 +92,8 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
   gl_PointSize = uSize * uDpr;
-  vec3 toCamera = normalize(cameraPosition - position);
-  vFade = smoothstep(0.02, 0.22, dot(normalize(position), toCamera));
+  vec3 world = (modelMatrix * vec4(position, 1.0)).xyz;
+  vFade = smoothstep(0.02, 0.22, dot(normalize(world), normalize(cameraPosition - world)));
 }`
 
 const MARK_FRAG = /* glsl */ `
@@ -108,9 +133,10 @@ function markMaterial(color: string, size: number, dpr: number, ring = false): S
   })
 }
 
+/** On the unit sphere: `Lifted` raises them. */
 function pointsGeometry(points: readonly LatLon[]): BufferGeometry {
   const positions = new Float32Array(points.length * 3)
-  points.forEach((p, i) => positions.set(toVector(p, R_MARK), i * 3))
+  points.forEach((p, i) => positions.set(toVector(p), i * 3))
   const g = new BufferGeometry()
   g.setAttribute('position', new BufferAttribute(positions, 3))
   return g
@@ -134,8 +160,19 @@ function SelectionRing({ point }: { point: LatLon }) {
   return <points geometry={geometry} material={material} renderOrder={11} frustumCulled={false} />
 }
 
-/** Parallels and meridians every 30°, the equator brighter. */
+/** Marks and the line to a mark, raised over the ground as high as the camera allows (markLift). */
+function Lifted({ children }: { children: ReactNode }) {
+  const group = useRef<Group>(null)
+  useFrame(({ camera }) => group.current?.scale.setScalar(1 + markLift(camera.position.length())))
+  return <group ref={group}>{children}</group>
+}
+
+/** Parallels and meridians every 30°, the equator brighter; hidden close to the ground. */
 function Grid() {
+  const group = useRef<Group>(null)
+  useFrame(({ camera }) => {
+    if (group.current) group.current.visible = camera.position.length() - 1 > GRID_MIN_HEIGHT
+  })
   const [lines, equator] = useMemo(() => {
     const segments = (polylines: Vec3[][]) => {
       const out: number[] = []
@@ -157,14 +194,14 @@ function Grid() {
     [lines, equator],
   )
   return (
-    <>
+    <group ref={group}>
       <lineSegments geometry={lines} renderOrder={2}>
         <lineBasicMaterial color="#ffffff" transparent opacity={0.09} depthWrite={false} />
       </lineSegments>
       <lineSegments geometry={equator} renderOrder={2}>
         <lineBasicMaterial color="#ffffff" transparent opacity={0.2} depthWrite={false} />
       </lineSegments>
-    </>
+    </group>
   )
 }
 
@@ -190,14 +227,16 @@ function place(el: HTMLElement | null, mark: (LatLon & { heading?: number | null
     el.style.opacity = '0'
     return
   }
-  const v = toVector(mark, R_MARK)
+  const dist = camera.position.length()
+  const v = toVector(mark, 1 + markLift(dist))
   const visible = facesCamera(v, camera.position.toArray() as Vec3)
   projected.set(...v).project(camera)
   const x = ((projected.x + 1) / 2) * w
   const y = ((1 - projected.y) / 2) * h
   if (mark.heading !== null && mark.heading !== undefined) {
     const d = headingVector(mark, mark.heading)
-    ahead.set(v[0] + d[0] * 0.01, v[1] + d[1] * 0.01, v[2] + d[2] * 0.01).project(camera)
+    const s = Math.min(0.01, (dist - 1) * 0.1) // a step along the heading, inside the view
+    ahead.set(v[0] + d[0] * s, v[1] + d[1] * s, v[2] + d[2] * s).project(camera)
     const angle = Math.atan2(((ahead.x - projected.x) * w) / 2, ((ahead.y - projected.y) * h) / 2)
     el.style.setProperty('--heading', `${(angle * 180) / Math.PI}deg`)
   }
@@ -219,50 +258,102 @@ function Trackers({
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => invalidate(), [here, ship, invalidate])
   useFrame(({ camera, size }) => {
+    camera.updateMatrixWorld() // CameraRig moved it this frame, before the render does this
     place(youRef.current, here, camera, size.width, size.height)
     place(shipRef.current, ship, camera, size.width, size.height)
   })
   return null
 }
 
-/** Orbit controls around the planet; slower to turn the closer you look; flights to `focus`. */
-function CameraRig({ focus, reducedMotion }: { focus: LatLon; reducedMotion: boolean }) {
+/**
+ * Orbit controls around the planet; slower to turn the closer you look; flights to `focus`. Zoom
+ * goes by the height over the ground (`zoomRef`: a factor the wheel and pinch gather between frames),
+ * so it slows near the ground instead of stopping far above it; OrbitControls' own dolly is off
+ * (zoomSpeed 0) but it still keeps the page from scrolling under the wheel.
+ */
+function CameraRig({
+  focus,
+  reducedMotion,
+  radiusM,
+  zoomRef,
+}: {
+  focus: GlobeFocus
+  reducedMotion: boolean
+  radiusM: number
+  zoomRef: RefObject<number>
+}) {
+  const minDistance = 1 + MIN_HEIGHT_M / radiusM
   const controls = useRef<OrbitControlsImpl>(null)
-  const camera = useThree((s) => s.camera)
+  const camera = useThree((s) => s.camera) as PerspectiveCamera
   const invalidate = useThree((s) => s.invalidate)
   const flight = useRef<{ phi: number; theta: number } | null>(null)
+  const height = useRef<number | null>(null) // the height the camera eases to
+  const drawn = useRef(new Vector3()) // where the last frame had the camera
   const placed = useRef(false)
 
   useEffect(() => {
     const goal = viewAngles(focus)
+    const down = focus.heightM === undefined ? null : Math.min(MAX_DISTANCE - 1, Math.max(minDistance - 1, focus.heightM / radiusM))
     if (!placed.current || reducedMotion) {
       // The first view (and every one with reduced motion) jumps there.
       placed.current = true
-      spherical.set(camera.position.length() || START_DISTANCE, goal.phi, goal.theta)
+      spherical.set(down !== null ? 1 + down : camera.position.length() || START_DISTANCE, goal.phi, goal.theta)
       camera.position.setFromSpherical(spherical)
       camera.lookAt(0, 0, 0)
       controls.current?.update()
     } else {
       flight.current = goal
+      if (down !== null) height.current = down
     }
     invalidate()
-  }, [focus, camera, invalidate, reducedMotion])
+  }, [focus, camera, invalidate, reducedMotion, minDistance, radiusM])
 
   useFrame((state, dt) => {
+    const now = camera.position.length() - 1
     const c = controls.current
-    if (c) c.rotateSpeed = Math.min(0.6, Math.max(0.04, (camera.position.length() - 1) * 0.45))
+    // About 2.5 times the ground under the finger, whatever the height (0.1 h would keep pace).
+    if (c) c.rotateSpeed = Math.min(0.6, now * 0.25)
+    if (zoomRef.current !== 1) {
+      const want = (height.current ?? now) * zoomRef.current
+      height.current = Math.min(MAX_DISTANCE - 1, Math.max(minDistance - 1, want))
+      zoomRef.current = 1
+    }
     const f = flight.current
-    if (!f) return
-    state.invalidate()
-    const k = 1 - Math.exp(-Math.min(dt, 0.1) * 5)
-    spherical.setFromVector3(camera.position)
-    const dTheta = Math.atan2(Math.sin(f.theta - spherical.theta), Math.cos(f.theta - spherical.theta))
-    const dPhi = f.phi - spherical.phi
-    spherical.phi += dPhi * k
-    spherical.theta += dTheta * k
-    camera.position.setFromSpherical(spherical)
-    camera.lookAt(0, 0, 0)
-    if (Math.abs(dPhi) < 1e-3 && Math.abs(dTheta) < 1e-3) flight.current = null
+    if (f) {
+      state.invalidate()
+      const k = 1 - Math.exp(-Math.min(dt, 0.1) * 5)
+      spherical.setFromVector3(camera.position)
+      const dTheta = Math.atan2(Math.sin(f.theta - spherical.theta), Math.cos(f.theta - spherical.theta))
+      const dPhi = f.phi - spherical.phi
+      // Landed when off by a pixel or so at any height (sin phi: theta steps shrink at the poles).
+      const close = 0.002 * Math.min(1, now)
+      const done = Math.abs(dPhi) < close && Math.abs(dTheta * Math.sin(spherical.phi)) < close
+      spherical.phi = done ? f.phi : spherical.phi + dPhi * k
+      spherical.theta = done ? spherical.theta + dTheta : spherical.theta + dTheta * k
+      camera.position.setFromSpherical(spherical)
+      camera.lookAt(0, 0, 0)
+      if (done) flight.current = null
+    }
+    const h = height.current
+    if (h !== null) {
+      state.invalidate()
+      const step = Math.log(h / now)
+      const done = Math.abs(step) < 1e-3
+      camera.position.setLength(1 + (done ? h : now * Math.exp(step * (1 - Math.exp(-Math.min(dt, 0.1) * 14)))))
+      if (done) height.current = null
+    }
+    // The near plane follows the camera down, so the ground under it is never cut away.
+    const cam = state.camera as PerspectiveCamera
+    const near = Math.min(0.01, (cam.position.length() - 1) * 0.5)
+    if (Math.abs(cam.near - near) > near * 0.01) {
+      cam.near = near
+      cam.updateProjectionMatrix()
+    }
+    // OrbitControls asks for a frame only once the camera moved 1e-3 radii (more than the whole
+    // view close up): while it still glides by over a tenth of a pixel, the next frame comes here.
+    const glide = (cam.position.length() - 1) * 1e-4
+    if (cam.position.distanceToSquared(drawn.current) > glide * glide) state.invalidate()
+    drawn.current.copy(cam.position)
   })
 
   return (
@@ -272,8 +363,8 @@ function CameraRig({ focus, reducedMotion }: { focus: LatLon; reducedMotion: boo
       enablePan={false}
       enableDamping
       dampingFactor={0.1}
-      zoomSpeed={0.8}
-      minDistance={MIN_DISTANCE}
+      zoomSpeed={0}
+      minDistance={minDistance}
       maxDistance={MAX_DISTANCE}
       onStart={() => {
         flight.current = null
@@ -284,14 +375,31 @@ function CameraRig({ focus, reducedMotion }: { focus: LatLon; reducedMotion: boo
 
 const DRAG_PX = 6
 
-export default function GlobeCanvas({ visual, seed, points, here, selected, onPick, focus, label, className = '' }: GlobeCanvasProps) {
+export default function GlobeCanvas({
+  visual,
+  seed,
+  radiusM,
+  points,
+  path,
+  here,
+  selected,
+  onPick,
+  focus,
+  label,
+  className = '',
+}: GlobeCanvasProps) {
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const coarse = useMediaQuery('(pointer: coarse)')
   const eventSource = useRef<HTMLDivElement>(null)
   const youRef = useRef<HTMLDivElement>(null)
   const shipRef = useRef<HTMLDivElement>(null)
   const camera = useRef<PerspectiveCamera | null>(null)
+  const invalidate = useRef<(() => void) | null>(null)
   const down = useRef<{ x: number; y: number } | null>(null)
+  const zoom = useRef(1)
+  const touches = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<number | null>(null) // the distance between the two fingers
+  const twoFingers = useRef(false) // in this gesture: it picks nothing
 
   const layers = useMemo(() => {
     const by = new Map<keyof typeof LAYER_STYLE, GlobePoint[]>()
@@ -301,28 +409,80 @@ export default function GlobeCanvas({ visual, seed, points, here, selected, onPi
   const shipPoint = points.find((p) => p.layer === 'ship') ?? null
   const ship = useMemo(() => (shipPoint ? { lat: shipPoint.lat, lon: shipPoint.lon } : null), [shipPoint])
   const line = useMemo(
-    () => (here && selected ? greatCircle(here, selected, R_LINE) : null),
+    // Fine steps: the chords stay over the ground however low the marks ride.
+    () => (here && selected ? greatCircle(here, selected, 1, 0.2) : null),
     [here, selected],
   )
 
+  // Pairs of ends, every stretch in one draw; points metres apart: straight chords hug the ground.
+  const pathPairs = useMemo(() => {
+    const out: Vec3[] = []
+    for (const line of path) for (let i = 1; i < line.length; i++) out.push(toVector(line[i - 1]), toVector(line[i]))
+    return out
+  }, [path])
+
   const onCreated = (state: RootState) => {
     camera.current = state.camera as PerspectiveCamera
+    invalidate.current = state.invalidate
   }
 
+  const zoomBy = (factor: number) => {
+    zoom.current *= factor
+    invalidate.current?.()
+  }
+  const spread = () => {
+    const [a, b] = [...touches.current.values()]
+    return Math.hypot(a.x - b.x, a.y - b.y)
+  }
+  const release = (e: ReactPointerEvent) => {
+    touches.current.delete(e.pointerId)
+    pinch.current = touches.current.size === 2 ? spread() : null
+  }
+
+  const onWheel = (e: ReactWheelEvent) => {
+    const px = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 800 : 1)
+    zoomBy(Math.exp(Math.max(-300, Math.min(300, px)) * WHEEL_ZOOM))
+  }
   const onPointerDown = (e: ReactPointerEvent) => {
     down.current = { x: e.clientX, y: e.clientY }
+    if (e.pointerType !== 'touch') return
+    touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (touches.current.size === 2) {
+      pinch.current = spread()
+      twoFingers.current = true
+    }
+  }
+  const onPointerMove = (e: ReactPointerEvent) => {
+    // A drag turns the camera here, between frames: draw it (OrbitControls may not ask, see CameraRig).
+    if (down.current || touches.current.size > 0) invalidate.current?.()
+    if (!touches.current.has(e.pointerId)) return
+    touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const before = pinch.current
+    if (touches.current.size !== 2 || !before) return
+    const now = spread()
+    if (now > 0) zoomBy(before / now)
+    pinch.current = now
+  }
+  const onPointerCancel = (e: ReactPointerEvent) => {
+    release(e)
+    down.current = null
+    if (touches.current.size === 0) twoFingers.current = false
   }
   const onPointerUp = (e: ReactPointerEvent) => {
+    release(e)
+    const pinched = twoFingers.current
+    if (touches.current.size === 0) twoFingers.current = false
     const start = down.current
     down.current = null
     const cam = camera.current
     const el = eventSource.current
-    if (!start || !cam || !el || Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_PX) return
+    if (pinched || !start || !cam || !el || Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_PX) return
     const r = el.getBoundingClientRect()
     const eye = cam.position.toArray() as Vec3
+    const lifted = 1 + markLift(cam.position.length())
     const screen: ScreenPoint[] = []
     for (const p of points) {
-      const v = toVector(p, R_MARK)
+      const v = toVector(p, lifted)
       if (!facesCamera(v, eye)) continue
       projected.set(...v).project(cam)
       screen.push({ id: p.id, x: ((projected.x + 1) / 2) * r.width, y: ((1 - projected.y) / 2) * r.height })
@@ -337,7 +497,15 @@ export default function GlobeCanvas({ visual, seed, points, here, selected, onPi
       role="group"
       aria-label={label}
     >
-      <div ref={eventSource} className="absolute inset-0" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+      <div
+        ref={eventSource}
+        className="absolute inset-0"
+        onWheel={onWheel}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
         <Canvas
           dpr={[1, 2]}
           frameloop="demand"
@@ -347,18 +515,33 @@ export default function GlobeCanvas({ visual, seed, points, here, selected, onPi
           onCreated={onCreated}
           style={{ position: 'absolute', inset: 0 }}
         >
+          {/* First: the camera moves before anything that follows it reads where it is. */}
+          <CameraRig focus={focus} reducedMotion={reducedMotion} radiusM={radiusM} zoomRef={zoom} />
           <Lights />
           <PlanetSurface visual={visual} seed={seed} />
           <Grid />
-          {layers.map(([layer, pts]) => (
-            <MarkLayer key={layer} points={pts} style={LAYER_STYLE[layer]} />
-          ))}
-          {selected && <SelectionRing point={selected} />}
-          {line && (
-            <Line points={line} color={YOU_COLOR} lineWidth={2} transparent opacity={0.85} depthWrite={false} renderOrder={9} />
-          )}
+          <Lifted>
+            {pathPairs.length > 0 && (
+              <Line
+                points={pathPairs}
+                segments
+                color={LAYER_STYLE.track.color}
+                lineWidth={LAYER_STYLE.track.size}
+                transparent
+                opacity={0.9}
+                depthWrite={false}
+                renderOrder={8}
+              />
+            )}
+            {layers.map(([layer, pts]) => (
+              <MarkLayer key={layer} points={pts} style={LAYER_STYLE[layer]} />
+            ))}
+            {selected && <SelectionRing point={selected} />}
+            {line && (
+              <Line points={line} color={YOU_COLOR} lineWidth={2} transparent opacity={0.85} depthWrite={false} renderOrder={9} />
+            )}
+          </Lifted>
           <Trackers here={here} ship={ship} youRef={youRef} shipRef={shipRef} />
-          <CameraRig focus={focus} reducedMotion={reducedMotion} />
         </Canvas>
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div ref={shipRef} className="absolute top-0 left-0 opacity-0" style={{ willChange: 'transform' }}>

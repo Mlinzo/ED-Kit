@@ -797,6 +797,7 @@ export const ru = {
       you: 'Вы',
       ship: 'Ваш корабль',
       samples: 'Ваши образцы',
+      track: 'Ваш путь',
       codex: 'Ваши находки кодекса',
       landings: 'Посадки',
       settlements: 'Поселения',
@@ -806,6 +807,7 @@ export const ru = {
       live: 'игра, сейчас (Status.json)',
       journal: 'ваш журнал',
       recorded: 'записаны приложением при сборе',
+      tracked: 'записан приложением, пока оно открыто',
       community: 'Canonn — данные других игроков',
     },
     ship: {

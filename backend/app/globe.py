@@ -5,7 +5,8 @@ Where each place comes from:
   (`sample_positions`); samples taken while it was closed have none;
 - codex finds, landings, settlements: the journal (CodexEntry, Touchdown / Liftoff,
   ApproachSettlement carry Latitude / Longitude), so old journals count too;
-- other players' finds: Canonn (app.canonn), looked up when the globe is shown.
+- other players' finds: Canonn (app.canonn), looked up when the globe is shown;
+- your path: Status.json positions recorded by the app while it runs (app.track).
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from __future__ import annotations
 import sqlite3
 from collections import defaultdict
 
-from app import canonn, exobio
+from app import canonn, exobio, track
 from app.exobio.variants import colour_of
 from app.models import BodyFacts, SystemFacts
 from app.schemas import CommunityFinds, GlobeMark, GlobeShip, GlobeView, LiveStatus
@@ -191,6 +192,7 @@ def globe_view(
         radius_m=radius,
         marks=marks,
         ship=ship_here(conn, fid, address, body_id, current_system),
+        track=track.stretches(conn, fid, facts.name),
         community_state=state,
         community_at=at,
         community=finds,

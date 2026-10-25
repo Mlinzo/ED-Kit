@@ -797,6 +797,7 @@ export const uk: Strings = {
       you: 'Ви',
       ship: 'Ваш корабель',
       samples: 'Ваші зразки',
+      track: 'Ваш шлях',
       codex: 'Ваші знахідки кодексу',
       landings: 'Посадки',
       settlements: 'Поселення',
@@ -806,6 +807,7 @@ export const uk: Strings = {
       live: 'гра, зараз (Status.json)',
       journal: 'ваш журнал',
       recorded: 'записав застосунок під час збору',
+      tracked: 'записав застосунок, поки він відкритий',
       community: 'Canonn — дані інших гравців',
     },
     ship: {
