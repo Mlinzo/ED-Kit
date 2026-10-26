@@ -3,7 +3,7 @@
 Where each place comes from:
 - samples: your position from Status.json at each ScanOrganic, recorded by the app while it runs
   (`sample_positions`); samples taken while it was closed have none;
-- codex finds, landings, settlements: the journal (CodexEntry, Touchdown / Liftoff,
+- codex finds, landings and take-offs, settlements: the journal (CodexEntry, Touchdown / Liftoff,
   ApproachSettlement carry Latitude / Longitude), so old journals count too;
 - other players' finds: Canonn (app.canonn), looked up when the globe is shown;
 - your path: Status.json positions recorded by the app while it runs (app.track).
@@ -88,18 +88,21 @@ def _codex(
 
 
 def _places(conn: sqlite3.Connection, fid: str, address: int, body_id: int) -> list[GlobeMark]:
-    """Every touchdown of your ship here, and each settlement once (the latest approach)."""
+    """Every landing and take-off of yours here (not the ship's own when recalled or dismissed),
+    and each settlement once (the latest approach)."""
     marks: list[GlobeMark] = []
     settlements: dict[str, GlobeMark] = {}
     rows = conn.execute(
-        "SELECT ts, kind, lat, lon, name FROM surface_marks WHERE fid = ? AND system_address = ? "
-        "AND body_id = ? AND kind IN ('touchdown', 'settlement') ORDER BY id",
+        "SELECT ts, kind, lat, lon, name, player FROM surface_marks WHERE fid = ? "
+        "AND system_address = ? AND body_id = ? ORDER BY id",
         (fid, address, body_id),
     )
     for r in rows:
-        if r["kind"] == "touchdown":
-            marks.append(GlobeMark(kind="landing", lat=r["lat"], lon=r["lon"], name="", at=r["ts"]))
-        else:
+        if r["kind"] in ("touchdown", "liftoff"):
+            if r["player"]:
+                kind = "landing" if r["kind"] == "touchdown" else "takeoff"
+                marks.append(GlobeMark(kind=kind, lat=r["lat"], lon=r["lon"], name="", at=r["ts"]))
+        elif r["kind"] == "settlement":
             name = r["name"] or ""
             settlements[name] = GlobeMark(
                 kind="settlement", lat=r["lat"], lon=r["lon"], name=name, at=r["ts"]

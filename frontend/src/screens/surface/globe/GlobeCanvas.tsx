@@ -1,5 +1,6 @@
 // The planet globe (lazy chunk: three.js, react-three-fiber, drei). Marks are WebGL points, one
-// draw per layer; you, your ship and your bookmarks are HTML icons kept over their spot every frame.
+// draw per layer; you, your ship, your landings and take-offs and your bookmarks are HTML icons
+// kept over their spot every frame.
 
 import { Line, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber'
@@ -30,8 +31,20 @@ import { CATEGORY_STYLE } from '../../../components/bookmarks'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
 import type { LatLon } from '../../../lib/geo'
 import { PlanetSurface } from '../../../map/visuals'
-import { facesCamera, gridLine, greatCircle, headingVector, pickNear, toLatLon, toVector, viewAngles, type ScreenPoint, type Vec3 } from './geometry'
-import { LAYER_STYLE, SHIP_COLOR, YOU_COLOR, type GlobePoint, type LayerStyle } from './layers'
+import {
+  facesCamera,
+  gridLine,
+  greatCircle,
+  headingVector,
+  pickNear,
+  sideBySide,
+  toLatLon,
+  toVector,
+  viewAngles,
+  type ScreenPoint,
+  type Vec3,
+} from './geometry'
+import { LAYER_ICON, LAYER_STYLE, SHIP_COLOR, YOU_COLOR, type GlobePoint, type LayerStyle } from './layers'
 
 /** Where the view turns to, and how high over the ground it comes down to (if given). */
 export type GlobeFocus = LatLon & { heightM?: number }
@@ -68,6 +81,12 @@ const MAX_DISTANCE = 6
 const MIN_HEIGHT_M = 500
 /** Per wheel px: one notch (100 px) takes the camera ~28 % higher or lower. */
 const WHEEL_ZOOM = 0.0025
+/** Landing, take-off and ship icons this close stand side by side (you land and fly off from one
+ * spot: under a metre apart in the journal), this far apart on screen. */
+const SAME_SPOT_M = 10
+const ICON_STEP_PX = 28
+/** In a row of icons on one spot: by time, the landing before the take-off, the ship last. */
+const ROW_RANK: Partial<Record<GlobePoint['layer'], number>> = { landings: 0, takeoffs: 1, ship: 2 }
 
 /** How far marks sit over the unit sphere for a camera `d` from the centre: 0.4 % of the radius
  * from afar, a twentieth of the camera's height close up (so never past the camera). */
@@ -426,13 +445,24 @@ export default function GlobeCanvas({
 
   const layers = useMemo(() => {
     const by = new Map<keyof typeof LAYER_STYLE, GlobePoint[]>()
-    // Your ship and your bookmarks are icons over the globe, not WebGL points.
-    for (const p of points) if (p.layer !== 'ship' && p.layer !== 'bookmarks') by.set(p.layer, [...(by.get(p.layer) ?? []), p])
+    // Your ship, landings, take-offs and bookmarks are icons over the globe, not WebGL points.
+    for (const p of points) {
+      if (p.layer !== 'ship' && p.layer !== 'bookmarks' && !LAYER_ICON[p.layer]) by.set(p.layer, [...(by.get(p.layer) ?? []), p])
+    }
     return [...by.entries()]
   }, [points])
   const pins = useMemo(() => points.filter((p) => p.layer === 'bookmarks'), [points])
+  const icons = useMemo(() => points.filter((p) => LAYER_ICON[p.layer]), [points])
+  const tracked = useMemo(() => [...icons, ...pins], [icons, pins])
   const shipPoint = points.find((p) => p.layer === 'ship') ?? null
   const ship = useMemo(() => (shipPoint ? { lat: shipPoint.lat, lon: shipPoint.lon } : null), [shipPoint])
+  const offsets = useMemo(() => {
+    const row = [...icons, ...(shipPoint ? [shipPoint] : [])]
+    row.sort((a, b) => (a.at ?? '').localeCompare(b.at ?? '') || (ROW_RANK[a.layer] ?? 0) - (ROW_RANK[b.layer] ?? 0))
+    return sideBySide(row, radiusM, SAME_SPOT_M, ICON_STEP_PX)
+  }, [icons, shipPoint, radiusM])
+  // An icon moved aside shows it is chosen itself: the ring would circle the spot between icons.
+  const ringed = selected && !offsets.has(selected.id) ? selected : null
   const line = useMemo(
     // Fine steps: the chords stay over the ground however low the marks ride.
     () => (here && selected ? greatCircle(here, selected, 1, 0.2) : null),
@@ -510,7 +540,7 @@ export default function GlobeCanvas({
       const v = toVector(p, lifted)
       if (!facesCamera(v, eye)) continue
       projected.set(...v).project(cam)
-      screen.push({ id: p.id, x: ((projected.x + 1) / 2) * r.width, y: ((1 - projected.y) / 2) * r.height })
+      screen.push({ id: p.id, x: ((projected.x + 1) / 2) * r.width + (offsets.get(p.id) ?? 0), y: ((1 - projected.y) / 2) * r.height })
     }
     const picked = pickNear(screen, e.clientX - r.left, e.clientY - r.top, coarse ? 22 : 14)
     onPick(picked)
@@ -563,14 +593,39 @@ export default function GlobeCanvas({
             {layers.map(([layer, pts]) => (
               <MarkLayer key={layer} points={pts} style={LAYER_STYLE[layer]} />
             ))}
-            {selected && <SelectionRing point={selected} />}
+            {ringed && <SelectionRing point={ringed} />}
             {line && (
               <Line points={line} color={YOU_COLOR} lineWidth={2} transparent opacity={0.85} depthWrite={false} renderOrder={9} />
             )}
           </Lifted>
-          <Trackers here={here} ship={ship} pins={pins} youRef={youRef} shipRef={shipRef} pinRefs={pinRefs} />
+          <Trackers here={here} ship={ship} pins={tracked} youRef={youRef} shipRef={shipRef} pinRefs={pinRefs} />
         </Canvas>
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {icons.map((p) => {
+            const Icon = LAYER_ICON[p.layer]
+            if (!Icon) return null
+            const chosen = p.id === selected?.id && offsets.has(p.id)
+            return (
+              <div
+                key={p.id}
+                ref={(el) => {
+                  if (el) pinRefs.current.set(p.id, el)
+                  else pinRefs.current.delete(p.id)
+                }}
+                className="absolute top-0 left-0 opacity-0"
+                style={{ willChange: 'transform' }}
+              >
+                <span
+                  className={`flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-950/85 ${
+                    chosen ? 'ring-2 ring-zinc-50' : 'ring-1 ring-zinc-400/60'
+                  }`}
+                  style={{ color: LAYER_STYLE[p.layer].color, marginLeft: offsets.get(p.id) ?? 0 }}
+                >
+                  <Icon className="size-3.5" strokeWidth={2.25} aria-hidden />
+                </span>
+              </div>
+            )
+          })}
           {pins.map((p) => {
             const style = CATEGORY_STYLE[p.bookmark?.category ?? 'other']
             const Icon = style.icon
@@ -595,8 +650,10 @@ export default function GlobeCanvas({
           })}
           <div ref={shipRef} className="absolute top-0 left-0 opacity-0" style={{ willChange: 'transform' }}>
             <span
-              className="flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-950/80 ring-1 ring-zinc-400/60"
-              style={{ color: SHIP_COLOR }}
+              className={`flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-950/80 ${
+                selected?.id === 'ship' && offsets.has('ship') ? 'ring-2 ring-zinc-50' : 'ring-1 ring-zinc-400/60'
+              }`}
+              style={{ color: SHIP_COLOR, marginLeft: offsets.get('ship') ?? 0 }}
             >
               <Rocket className="size-4" strokeWidth={2.25} aria-hidden />
             </span>

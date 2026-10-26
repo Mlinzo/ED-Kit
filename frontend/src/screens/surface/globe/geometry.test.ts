@@ -1,7 +1,7 @@
 import { Spherical, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { bearingDeg } from '../../../lib/geo'
-import { facesCamera, greatCircle, headingVector, pickNear, toLatLon, toVector, viewAngles, type Vec3 } from './geometry'
+import { facesCamera, greatCircle, headingVector, pickNear, sideBySide, toLatLon, toVector, viewAngles, type Vec3 } from './geometry'
 
 const close = (a: readonly number[], b: readonly number[]) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 9))
 
@@ -70,5 +70,22 @@ describe('globe geometry', () => {
     ]
     expect(pickNear(pts, 13, 10, 8)).toEqual(['b', 'a'])
     expect(pickNear(pts, 100, 100, 8)).toEqual([])
+  })
+
+  it('stands icons on one spot side by side', () => {
+    const r = 1_000_000 // 1 m ≈ 5.7e-5°
+    const pts = [
+      { id: 'landed', lat: 10, lon: 20 },
+      { id: 'away', lat: 10.01, lon: 20 }, // ~175 m off
+      { id: 'flew off', lat: 10.00001, lon: 20 }, // ~0.2 m off
+      { id: 'ship', lat: 10, lon: 20 },
+    ]
+    const out = sideBySide(pts, r, 10, 28)
+    expect([...out.entries()]).toEqual([
+      ['landed', -28],
+      ['flew off', 0],
+      ['ship', 28],
+    ])
+    expect(sideBySide(pts.slice(0, 2), r, 10, 28).size).toBe(0)
   })
 })

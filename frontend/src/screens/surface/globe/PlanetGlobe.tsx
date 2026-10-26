@@ -18,6 +18,7 @@ import { GlobeMap } from '.'
 import type { GlobeFocus } from './GlobeCanvas'
 import {
   LAYERS,
+  LAYER_ICON,
   LAYER_STYLE,
   SHIP_COLOR,
   YOU_COLOR,
@@ -60,6 +61,15 @@ function firstLook(globe: GlobeView, here: Here | null): LatLon {
 
 function Dot({ color, className = 'size-2.5' }: { color: string; className?: string }) {
   return <span className={`inline-block shrink-0 rounded-full ring-1 ring-black/40 ${className}`} style={{ background: color }} aria-hidden />
+}
+
+/** A layer's sign: its icon where the globe draws one (`icon` classes; negative margins keep the
+ * text where a dot's would be), else a dot of its colour. */
+function Swatch({ layer, off = false, dot, icon }: { layer: GlobePoint['layer']; off?: boolean; dot: string; icon: string }) {
+  const Icon = LAYER_ICON[layer]
+  const color = LAYER_STYLE[layer].color
+  if (!Icon) return <Dot color={off ? 'transparent' : color} className={dot} />
+  return <Icon className={`shrink-0 ${off ? 'text-zinc-600' : ''} ${icon}`} style={off ? undefined : { color }} strokeWidth={2.25} aria-hidden />
 }
 
 function coords(p: LatLon): string {
@@ -175,7 +185,7 @@ function MarkCard({
   return (
     <div className="rounded-2xl bg-zinc-900/60 p-4 ring-1 ring-zinc-800" aria-live="polite">
       <div className="flex items-start gap-3">
-        <Dot color={style.color} className="mt-1.5 size-3" />
+        <Swatch layer={point.layer} dot="mt-1.5 size-3" icon="-mx-0.5 mt-1 size-4" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold break-words text-zinc-50">{point.title}</p>
           {point.detail && <p className="mt-0.5 text-sm text-zinc-400">{point.detail}</p>}
@@ -210,7 +220,7 @@ function MarkCard({
                   onClick={() => onChoose(o)}
                   className="focus-ring flex min-h-9 items-center gap-1.5 rounded-lg bg-zinc-800/70 px-2.5 py-1 text-left text-xs text-zinc-200 hover:bg-zinc-700"
                 >
-                  <Dot color={LAYER_STYLE[o.layer].color} className="size-2" />
+                  <Swatch layer={o.layer} dot="size-2" icon="-mx-[3px] size-3.5" />
                   <span className="break-words">{o.title}</span>
                 </button>
               </li>
@@ -273,7 +283,7 @@ function Legend({
                   on ? 'bg-zinc-900/60 ring-zinc-700 hover:bg-zinc-800/70' : 'bg-transparent ring-zinc-800 opacity-60 hover:opacity-90'
                 }`}
               >
-                <Dot color={on ? style.color : 'transparent'} className="mt-1 size-2.5" />
+                <Swatch layer={layer} off={!on} dot="mt-1 size-2.5" icon="-mx-[3px] mt-0.5 size-4" />
                 <span className="min-w-0 flex-1 text-sm">
                   <span className="block font-medium text-zinc-100">
                     {t.globe.layer[layer]}{' '}

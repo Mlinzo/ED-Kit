@@ -118,10 +118,10 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   until the user chooses a folder (or "keep it here"); later it warns below 1 GB free and once the
   database passes 500 MB.
 - Planet globe on the Surface tab (2026-10-25): a 3D globe of the planet you are at, with your
-  samples (where the app recorded them), your codex finds, landings and settlements (from the
-  journal, so old journals count too), your ship (landed, recalled or dismissed), you with your
-  heading, and other players' finds from Canonn (on 34 of 34 planets the user landed on near the
-  Pleiades: 1–194 points each). Every layer says where its data comes from; a tap on a mark gives
+  samples (where the app recorded them), your codex finds, landings and take-offs (plane icons,
+  side by side when on one spot) and settlements (from the journal, so old journals count too),
+  your ship (landed, recalled or dismissed), you with your heading, and other players' finds from
+  Canonn (on 34 of 34 planets the user landed on near the Pleiades: 1–194 points each). Every layer says where its data comes from; a tap on a mark gives
   distance and heading from you. The surface is drawn by the app (the game shares no terrain).
   While you sample, a Radar | Planet switch. The system map opens zoomed to the planet you are on.
   Zoom goes down to 500 m over the ground (samples a few hundred metres apart stand apart), with

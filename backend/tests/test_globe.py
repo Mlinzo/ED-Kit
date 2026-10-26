@@ -91,7 +91,7 @@ def touchdown(minute: int, lat: float, lon: float, player: bool = True) -> dict:
     )
 
 
-def liftoff(minute: int, player: bool = True) -> dict:
+def liftoff(minute: int, player: bool = True, lat: float = 10.0, lon: float = 20.0) -> dict:
     return at(
         "Liftoff",
         minute,
@@ -99,8 +99,8 @@ def liftoff(minute: int, player: bool = True) -> dict:
         BodyID=24,
         PlayerControlled=player,
         OnPlanet=True,
-        Latitude=10.0,
-        Longitude=20.0,
+        Latitude=lat,
+        Longitude=lon,
     )
 
 
@@ -197,9 +197,11 @@ def test_ship_follows_touchdown_and_liftoff(conn: sqlite3.Connection, proj: Proj
     feed(conn, proj, [touchdown(30, 2.0, 3.0, player=False)])
     ship = globe(conn).ship
     assert ship is not None and (ship.state, ship.lat, ship.lon) == ("recalled", 2.0, 3.0)
-    assert len([m for m in globe(conn).marks if m.kind == "landing"]) == 2
-    feed(conn, proj, [liftoff(40)])
+    feed(conn, proj, [liftoff(40, lat=2.0, lon=3.0)])
     assert globe(conn).ship is None  # you flew off in it
+    # Where you landed and where you flew off; the ship's own landing and lift-off are left out.
+    marks = [(m.kind, m.lat, m.lon) for m in globe(conn).marks]
+    assert marks == [("landing", 1.0, 1.0), ("takeoff", 2.0, 3.0)]
 
 
 def test_no_ship_after_death(conn: sqlite3.Connection, proj: Projector) -> None:

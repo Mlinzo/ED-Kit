@@ -722,6 +722,7 @@ function buildGlobe(): GlobeView {
     sample('Bacterium Aurasus', 'Teal', 3, 'analysed', '2026-10-16T19:51:02Z', near(-2_300, 640)),
     { kind: 'codex', ...away(-2.1, 3.4), name: 'Carbon Dioxide Fumarole', colour: null, n: null, status: null, at: '2026-10-16T19:43:10Z' },
     { kind: 'landing', ...away(-2.05, 3.3), name: '', colour: null, n: null, status: null, at: '2026-10-16T19:42:18Z' },
+    { kind: 'takeoff', ...away(-2.05, 3.3), name: '', colour: null, n: null, status: null, at: '2026-10-16T19:46:05Z' },
     { kind: 'landing', ...near(-160, -90), name: '', colour: null, n: null, status: null, at: '2026-10-16T19:48:40Z' },
   ]
   const spread = (centre: LatLon, n: number): [number, number][] =>

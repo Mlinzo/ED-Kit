@@ -1,14 +1,15 @@
 // What the planet globe shows, layer by layer: the colour of each layer and where its data comes
 // from (said next to it in the legend and on every mark's card).
 
+import { PlaneLanding, PlaneTakeoff, type LucideIcon } from 'lucide-react'
 import type { BookmarkView, GlobeMark, GlobeView } from '../../../api/types'
 import { bookmarkName } from '../../../components/bookmarks'
 import { t } from '../../../i18n'
 import { haversineM, type LatLon } from '../../../lib/geo'
 
 /** Layers you can hide; your ship is shown whenever it is on the planet, you whenever you are. */
-export type LayerId = 'bookmarks' | 'samples' | 'track' | 'codex' | 'landings' | 'settlements' | 'community'
-export const LAYERS: readonly LayerId[] = ['bookmarks', 'samples', 'track', 'codex', 'landings', 'settlements', 'community']
+export type LayerId = 'bookmarks' | 'samples' | 'track' | 'codex' | 'landings' | 'takeoffs' | 'settlements' | 'community'
+export const LAYERS: readonly LayerId[] = ['bookmarks', 'samples', 'track', 'codex', 'landings', 'takeoffs', 'settlements', 'community']
 
 export type SourceId = 'live' | 'journal' | 'recorded' | 'tracked' | 'community' | 'yours'
 
@@ -30,11 +31,15 @@ export const LAYER_STYLE: Record<LayerId | 'ship', LayerStyle> = {
   samples: { color: '#34d399', size: 10, source: 'recorded' }, // emerald-400: value
   track: { color: '#7dd3fc', size: 2.5, source: 'tracked' }, // sky-300: you, lighter
   codex: { color: '#fde68a', size: 10, source: 'journal' }, // amber-200
-  landings: { color: '#a1a1aa', size: 8, source: 'journal' }, // zinc-400
+  landings: { color: '#d4d4d8', size: 0, source: 'journal' }, // zinc-300, near the ship's; drawn as icons
+  takeoffs: { color: '#d4d4d8', size: 0, source: 'journal' },
   settlements: { color: '#fdba74', size: 11, source: 'journal' }, // orange-300
   community: { color: '#a78bfa', size: 8, source: 'community' }, // violet-400: community data
   ship: { color: SHIP_COLOR, size: 0, source: 'journal' },
 }
+
+/** Layers drawn as icons over the globe (as in the legend and on cards) instead of dots. */
+export const LAYER_ICON: Partial<Record<LayerId | 'ship', LucideIcon>> = { landings: PlaneLanding, takeoffs: PlaneTakeoff }
 
 export interface GlobePoint {
   id: string
@@ -52,8 +57,12 @@ export interface GlobePoint {
   bookmark?: BookmarkView
 }
 
-function markLayer(kind: GlobeMark['kind']): LayerId {
-  return kind === 'sample' ? 'samples' : kind === 'landing' ? 'landings' : kind === 'settlement' ? 'settlements' : 'codex'
+const MARK_LAYER: Record<GlobeMark['kind'], LayerId> = {
+  sample: 'samples',
+  codex: 'codex',
+  landing: 'landings',
+  takeoff: 'takeoffs',
+  settlement: 'settlements',
 }
 
 /** Ids from content, not order: a refetch keeps the selection on the same mark. */
@@ -62,7 +71,7 @@ function markId(m: GlobeMark): string {
 }
 
 function markPoint(m: GlobeMark): GlobePoint {
-  const layer = markLayer(m.kind)
+  const layer = MARK_LAYER[m.kind]
   const id = markId(m)
   if (m.kind === 'sample') {
     const parts = [m.n !== null ? t.globe.sample(m.n) : null, m.status ? t.globe.status[m.status] : null]
@@ -76,7 +85,8 @@ function markPoint(m: GlobeMark): GlobePoint {
       at: m.at,
     }
   }
-  const title = m.kind === 'landing' ? t.globe.landing : m.colour ? `${m.name} · ${m.colour}` : m.name
+  const title =
+    m.kind === 'landing' ? t.globe.landing : m.kind === 'takeoff' ? t.globe.takeoff : m.colour ? `${m.name} · ${m.colour}` : m.name
   return { id, layer, lat: m.lat, lon: m.lon, title, detail: null, at: m.at }
 }
 
@@ -119,8 +129,17 @@ export function globePoints(globe: GlobeView, find: string | null = null): Globe
 
 /** How many marks each layer has (the legend counts; the path: its points). */
 export function layerCounts(globe: GlobeView): Record<LayerId, number> {
-  const counts: Record<LayerId, number> = { bookmarks: globe.places.length, samples: 0, track: 0, codex: 0, landings: 0, settlements: 0, community: 0 }
-  for (const m of globe.marks) counts[markLayer(m.kind)] += 1
+  const counts: Record<LayerId, number> = {
+    bookmarks: globe.places.length,
+    samples: 0,
+    track: 0,
+    codex: 0,
+    landings: 0,
+    takeoffs: 0,
+    settlements: 0,
+    community: 0,
+  }
+  for (const m of globe.marks) counts[MARK_LAYER[m.kind]] += 1
   for (const s of globe.track) counts.track += s.length
   for (const f of globe.community) counts.community += f.points.length
   return counts

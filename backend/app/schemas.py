@@ -261,16 +261,18 @@ class ActiveScanView(CamelModel):
 
 class GlobeMark(CamelModel):
     """A place on the planet globe. Where it comes from goes with the kind: sample = recorded by
-    the app from Status.json when you took it; codex, landing, settlement = your journal."""
+    the app from Status.json when you took it; codex, landing, takeoff, settlement = your
+    journal."""
 
-    kind: Literal["sample", "codex", "landing", "settlement"]
+    kind: Literal["sample", "codex", "landing", "takeoff", "settlement"]
     lat: float
     lon: float
     name: str  # species ("Stratum Tectonicas"), codex entry or settlement name
     colour: str | None = None  # sample: the variant colour ("Teal")
     n: int | None = None  # sample number 1..3
     status: str | None = None  # sample: sampling | abandoned (left before the third) | analysed
-    at: str | None = None  # ISO time: the landing, codex entry, approach, or when sampling began
+    # ISO time: the landing, take-off, codex entry, approach, or when sampling began
+    at: str | None = None
 
 
 class GlobeShip(CamelModel):

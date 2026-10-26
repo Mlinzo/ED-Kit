@@ -329,19 +329,19 @@ export interface ActiveScanView {
 }
 
 /** A place on the planet globe. Where it comes from goes with the kind: sample = recorded by the
- *  app from Status.json when you took it; codex, landing, settlement = your journal. */
+ *  app from Status.json when you took it; codex, landing, takeoff, settlement = your journal. */
 export interface GlobeMark {
-  kind: 'sample' | 'codex' | 'landing' | 'settlement'
+  kind: 'sample' | 'codex' | 'landing' | 'takeoff' | 'settlement'
   lat: number
   lon: number
-  /** Species ("Stratum Tectonicas"), codex entry or settlement name; '' for a landing. */
+  /** Species ("Stratum Tectonicas"), codex entry or settlement name; '' for a landing or take-off. */
   name: string
   /** Sample: the variant colour ("Teal"). */
   colour: string | null
   /** Sample number 1..3. */
   n: number | null
   status: 'sampling' | 'abandoned' | 'analysed' | null
-  /** The landing, codex entry, approach, or when sampling began (ISO). */
+  /** The landing, take-off, codex entry, approach, or when sampling began (ISO). */
   at: string | null
 }
 

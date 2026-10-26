@@ -1,7 +1,7 @@
 // Planet globe geometry: game coordinates (latitude / longitude in degrees) on a unit sphere with
 // north up (+y). Seen from outside, longitude grows to the right (east), as on a map.
 
-import type { LatLon } from '../../../lib/geo'
+import { haversineM, type LatLon } from '../../../lib/geo'
 
 const RAD = Math.PI / 180
 
@@ -81,6 +81,27 @@ export function pickNear(points: readonly ScreenPoint[], x: number, y: number, r
     .filter((p) => p.d <= radius)
     .sort((a, b) => a.d - b.d)
     .map((p) => p.id)
+}
+
+/**
+ * Icons on one spot (within `sameM` metres of the first of them) stand in a row instead of on top
+ * of each other, in the order given: the screen x offset of each one in a row, px.
+ */
+export function sideBySide(
+  points: readonly (LatLon & { id: string })[],
+  radiusM: number,
+  sameM: number,
+  stepPx: number,
+): Map<string, number> {
+  const rows: (LatLon & { id: string })[][] = []
+  for (const p of points) {
+    const row = rows.find((r) => haversineM(r[0], p, radiusM) <= sameM)
+    if (row) row.push(p)
+    else rows.push([p])
+  }
+  const out = new Map<string, number>()
+  for (const row of rows) if (row.length > 1) row.forEach((p, i) => out.set(p.id, (i - (row.length - 1) / 2) * stepPx))
+  return out
 }
 
 /** Whether a unit-sphere point faces a camera at `camera` (outside the sphere): before the horizon. */
