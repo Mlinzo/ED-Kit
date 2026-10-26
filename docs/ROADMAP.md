@@ -90,7 +90,8 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   name the species: it comes true about as often as it says (shown 40–50 %: right 45 % of the
   time; 80–90 %: 94 %), better than equal shares overall and for Bacterium most of all; for
   Clypeus, Stratum and Concha, where the atmosphere does not tell the species apart, it stays
-  close to even.
+  close to even. Codex routes weigh the candidates the same way since 2026-10-26 (they shared a
+  genus equally before).
 - Mining locations (2026-10-26): the FSS's "Planetary Mining Location" signals (the most common
   signal in the user's journals: 477 against 143 biological) have their own count instead of
   "other": a "Mining N" badge in the body list, a row under the body's signals and a reason chip;

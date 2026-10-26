@@ -11,8 +11,9 @@ For codex routes the same predictions become codex entries (a species' colour va
 the parent star or the body's materials) with the chance of each being there: a genus
 confirmed by DSS counts fully, and so do the genera that can grow there when they are as
 many as the signals (`exobio.deduced_genera`); one only predicted counts at half weight,
-shared among the signals left; the candidate species of a genus share it equally, and so
-do the candidate colours of a species.
+shared among the signals left; the candidate species of a genus share it by how often other
+players found each (`exobio.odds`, as on the System tab; equally when Canonn has no reports of
+one), and the candidate colours of a species share it equally.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ from typing import Any
 
 from app import enrich, exobio
 from app.exobio import catalog
+from app.exobio.odds import chances
 from app.exobio.variants import Variant, variants
 from app.models import BodyFacts, G, Prediction, SystemFacts
 
@@ -217,11 +219,13 @@ def codex_chances(
     out: list[CodexChance] = []
     for genus, preds in by_genus.items():
         genus_weight = 1.0 if genus in genuses else UNCONFIRMED_GENUS * share
+        odds = chances([p.species.species for p in preds], body) if len(preds) > 1 else None
         for p in preds:
             symbol = p.species.species
             found = variants(symbol, body, system) or [Variant(symbol, None, 1.0)]
+            part = odds[symbol] if odds else 1 / len(preds)
             for v in found:
-                weight = genus_weight / len(preds) * v.weight
+                weight = genus_weight * part * v.weight
                 if weight > 0:
                     out.append(CodexChance(v.symbol, symbol, v.colour, weight))
     return tuple(out)

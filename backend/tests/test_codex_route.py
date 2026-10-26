@@ -7,6 +7,7 @@ import pytest
 
 from app import db, routebio, routeplan, routes
 from app.codex import codex_index
+from app.exobio.odds import chances
 from app.projector import Projector
 from app.routebio import CodexChance
 from app.routeplan import PlanBody, PlanRequest, PlanStop
@@ -68,6 +69,29 @@ def test_entries_of_a_body() -> None:
     assert guess is not None
     # Genera only predicted: at half weight, for the two signals.
     assert sum(e.weight for e in guess.entries) == pytest.approx(1.0)
+
+
+def test_candidate_species_weigh_by_their_odds() -> None:
+    # Thin water: several Bacterium species may grow there, found unequally often.
+    raw = {
+        **bio_body(5, 9, (0, 0, 0), ("Bacterial",), signals=1),
+        "atmosphere": "Thin Water",
+        "atmosphere_composition": [{"name": "Water", "share": 100.0}],
+        "surface_temperature": 190.0,
+        "surface_pressure": 0.06,
+        "gravity": 0.2,
+    }
+    est = routebio.estimate(raw)
+    assert est is not None
+    by_species: dict[str, float] = {}
+    for e in est.entries:
+        by_species[e.species] = by_species.get(e.species, 0.0) + e.weight
+    assert len(by_species) > 1 and sum(by_species.values()) == pytest.approx(1.0)
+    # As on the System tab (app.exobio.odds), not equal shares.
+    converted = routebio.facts_from_search(raw)
+    assert converted is not None
+    assert by_species == pytest.approx(chances(list(by_species), converted[0]) or {})
+    assert len({round(w, 3) for w in by_species.values()}) > 1
 
 
 def test_deduced_genus_counts_fully() -> None:
