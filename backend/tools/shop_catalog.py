@@ -1,4 +1,4 @@
-"""Builds app/data/shop.json: the ships and modules the Shop tab can look for.
+"""Builds app/data/shop.json: the ships, modules and commodities the Shop tab can look for.
 
 Ships and modules come from EDCD FDevIDs (`shipyard.csv`, `outfitting.csv`), the tables EDMC
 and Spansh name them by. Left out: suits and on-foot gear, ship armour (each ship's own, sold
@@ -16,7 +16,11 @@ hull mass, hardness, mass lock, crew seats, slots and whether a fighter hangar f
 price, mass, power draw, integrity and the figures of its kind (`STAT_KEYS`). EDSY's file is
 JavaScript: Node reads it.
 
-    uv run python tools/shop_catalog.py
+Commodities come from FDevIDs too (`commodity.csv`, `rare_commodity.csv`, the names Spansh's
+markets use), kept when Spansh has a market with some in stock: mission and salvage cargo is
+never sold. `--commodities` rebuilds only them, keeping the ships and modules as they are.
+
+    uv run python tools/shop_catalog.py [--commodities]
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ import csv
 import io
 import json
 import subprocess
+import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -151,6 +156,33 @@ def spansh_names() -> dict[str, str]:
     return names
 
 
+IN_STOCK = {"value": [1, 10**9], "comparison": "<=>"}
+
+
+def commodities() -> list[dict[str, Any]]:
+    """The commodities some market has in stock, by category then name; rare ones marked."""
+    rows = [(r, False) for r in _get("commodity.csv")]
+    rows += [(r, True) for r in _get("rare_commodity.csv")]
+
+    def in_stock(name: str) -> bool:
+        found = _search({"market": [{"name": name, "supply": IN_STOCK}]})
+        return int(found.get("count") or 0) > 0
+
+    with ThreadPoolExecutor(4) as pool:
+        sold = list(pool.map(lambda row: in_stock(row[0]["name"]), rows))
+    kept = [
+        {"symbol": r["symbol"].lower(), "name": r["name"], "category": r["category"]}
+        | ({"rare": True} if rare else {})
+        for (r, rare), ok in zip(rows, sold, strict=True)
+        if ok
+    ]
+    # The rare ones by name: the app lists them apart, whatever their category.
+    return sorted(
+        kept,
+        key=lambda c: (c.get("rare", False), "" if c.get("rare") else c["category"], c["name"]),
+    )
+
+
 def unlock_of(entitlement: str) -> str | None:
     if entitlement.startswith("ELITE_SPECIFIC_V_POWER"):
         return "powerplay"
@@ -247,10 +279,18 @@ def build() -> dict[str, Any]:
         "dropped": sorted(dropped),
         "ships": sorted(ships, key=lambda s: s["name"]),
         "modules": sorted(kept, key=lambda m: (order[m["category"]], m["name"])),
+        "commodities": commodities(),
     }
 
 
 def main() -> None:
+    if "--commodities" in sys.argv[1:]:
+        data = json.loads(OUT.read_text(encoding="utf-8"))
+        data["commodities"] = commodities()
+        OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        rare = sum(1 for c in data["commodities"] if c.get("rare"))
+        print(f"{OUT}: {len(data['commodities'])} commodities ({rare} rare)")
+        return
     data = build()
     OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     variants = sum(len(m["variants"]) for m in data["modules"])
@@ -258,7 +298,8 @@ def main() -> None:
     no_stats += [v["symbol"] for m in data["modules"] for v in m["variants"] if "price" not in v]
     print("without EDSY figures:", ", ".join(no_stats) or "none")
     print(
-        f"{OUT}: {len(data['ships'])} ships, {len(data['modules'])} modules ({variants} variants)"
+        f"{OUT}: {len(data['ships'])} ships, {len(data['modules'])} modules ({variants} variants),"
+        f" {len(data['commodities'])} commodities"
     )
     print("unsold:", ", ".join(s["name"] for s in data["ships"] if s.get("unsold")) or "none")
     print("dropped:", ", ".join(data["dropped"]))

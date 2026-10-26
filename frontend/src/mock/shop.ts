@@ -5,7 +5,7 @@ import type { ShopPlaceView, ShopStationView, ShopView } from '../api/types'
 const daysAgo = (d: number, now: number) => new Date(now - d * 86_400_000).toISOString().replace(/\.\d{3}Z$/, 'Z')
 
 function station(name: string, kind: ShopStationView['kind'], distLs: number, extra: Partial<ShopStationView>): ShopStationView {
-  return { name, kind, distLs, price: null, offerAt: null, access: null, permit: false, shipCount: null, moduleCount: null, ...extra }
+  return { name, kind, distLs, price: null, offerAt: null, access: null, permit: false, shipCount: null, moduleCount: null, stock: null, ...extra }
 }
 
 export function buildShop(item: string | null, carriers: boolean, now = Date.now()): ShopView {

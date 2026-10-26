@@ -1,9 +1,9 @@
-// The Shop cards: a ship (blueprint, price, figures, slots) or a module (icon, price, figures,
-// variant buttons), with arrows to flip through the catalog.
+// The Shop cards: a ship (blueprint, price, figures, slots), a module (icon, price, figures,
+// variant buttons) or a commodity (its category), with arrows to flip through the catalog.
 
-import { ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Package, ShieldAlert } from 'lucide-react'
 import { createElement, type ReactNode } from 'react'
-import type { ShopModuleView, ShopRankView, ShopShipView, ShopVariantView } from '../../api/types'
+import type { ShopCommodityView, ShopModuleView, ShopRankView, ShopShipView, ShopVariantView } from '../../api/types'
 import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { SHIP_ORDERS, type ShipOrder } from './catalog'
@@ -277,6 +277,39 @@ export function ModuleCard({
         <div className="min-w-0 pt-3">{figures.length > 0 ? <Figures rows={figures} /> : <p className="text-sm text-zinc-500">{c.noFigures}</p>}</div>
       </div>
       <p className="mt-4 text-xs text-zinc-600">{c.source}</p>
+    </section>
+  )
+}
+
+export function CommodityCard({
+  commodity,
+  category,
+  position,
+  onStep,
+}: {
+  commodity: ShopCommodityView
+  /** Its market category, in the chosen language. */
+  category: string
+  position: string
+  onStep: (step: number) => void
+}) {
+  return (
+    <section aria-labelledby="commodity-card-title" className="min-w-0 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-sky-400/10 text-accent ring-1 ring-sky-400/30 ring-inset">
+            <Package className="size-7" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <h2 id="commodity-card-title" className="text-xl font-semibold break-words text-zinc-50 sm:text-2xl">
+              {commodity.name}
+            </h2>
+            <p className="mt-0.5 text-sm text-zinc-400">{category}</p>
+          </div>
+        </div>
+        <Flip position={position} onStep={onStep} />
+      </div>
+      {commodity.rare && <p className="mt-3 rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{t.shop.card.rare}</p>}
     </section>
   )
 }

@@ -597,17 +597,31 @@ export interface ShopModuleView {
   variants: ShopVariantView[]
 }
 
+/** A commodity some market had in stock. */
+export interface ShopCommodityView {
+  /** Journal symbol, lower case: what the search asks for. */
+  symbol: string
+  /** As markets name it. */
+  name: string
+  /** The market's category: Metals, Minerals, Chemicals... */
+  category: string
+  /** A rare commodity: one station sells it, a little at a time. */
+  rare: boolean
+}
+
 export interface ShopCatalogView {
   ships: ShopShipView[]
   modules: ShopModuleView[]
+  commodities: ShopCommodityView[]
 }
 
 export interface ShopStationView {
   name: string
   kind: SellStationView['kind']
   distLs: number | null
+  /** A commodity: what the market sells one tonne for. */
   price: number | null
-  /** When Spansh last had its shipyard / outfitting (ISO). */
+  /** When Spansh last had its shipyard / outfitting / market (ISO). */
   offerAt: string | null
   /** A carrier: open to all, or access unknown. */
   access: 'all' | 'unknown' | null
@@ -616,6 +630,8 @@ export interface ShopStationView {
   /** Nothing chosen: ships / modules Spansh knows it sells (null: no shipyard / outfitting; 0: no list). */
   shipCount: number | null
   moduleCount: number | null
+  /** A commodity: tonnes in stock when the market was reported. */
+  stock: number | null
   /** Yours, on the station. */
   bookmark?: BookmarkView | null
 }

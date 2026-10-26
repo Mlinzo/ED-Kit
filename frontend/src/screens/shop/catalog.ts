@@ -1,9 +1,13 @@
-// The Shop tab's catalog: finding ships and modules by words, and the variants of a module
-// (class, rating, mount, missile guidance) as the buttons choose them.
+// The Shop tab's catalog: finding ships, modules and commodities by words, the variants of a
+// module (class, rating, mount, missile guidance) as the buttons choose them, and the groups the
+// commodities are listed in.
 
-import type { ShopCatalogView, ShopModuleView, ShopShipView, ShopVariantView } from '../../api/types'
+import type { ShopCatalogView, ShopCommodityView, ShopModuleView, ShopShipView, ShopVariantView } from '../../api/types'
 
-export type Pick = { kind: 'ship'; ship: ShopShipView } | { kind: 'module'; module: ShopModuleView; want: Want }
+export type Pick =
+  | { kind: 'ship'; ship: ShopShipView }
+  | { kind: 'module'; module: ShopModuleView; want: Want }
+  | { kind: 'commodity'; commodity: ShopCommodityView }
 
 /** Variant attributes asked for; what is missing takes a default. */
 export interface Want {
@@ -22,6 +26,7 @@ const ALIASES: Record<string, string> = {
   vette: 'federal corvette',
   srv: 'planetary vehicle hangar',
   scoop: 'fuel scoop',
+  ltd: 'low temperature diamonds',
 }
 
 const MOUNTS: Record<string, NonNullable<Want['mount']>> = { fix: 'Fixed', gim: 'Gimballed', tur: 'Turreted' }
@@ -97,7 +102,13 @@ export function searchCatalog(catalog: ShopCatalogView, query: string, limit = 1
     const s = score(module.name, query_)
     if (s > 0 && hasVariant(module, want)) found.push({ pick: { kind: 'module', module, want }, score: s })
   }
-  const nameOf = (p: Pick) => (p.kind === 'ship' ? p.ship.name : p.module.name)
+  if (!variant) {
+    for (const commodity of catalog.commodities) {
+      const s = score(commodity.name, query_)
+      if (s > 0) found.push({ pick: { kind: 'commodity', commodity }, score: s })
+    }
+  }
+  const nameOf = (p: Pick) => (p.kind === 'ship' ? p.ship.name : p.kind === 'module' ? p.module.name : p.commodity.name)
   found.sort((a, b) => b.score - a.score || nameOf(a.pick).length - nameOf(b.pick).length || nameOf(a.pick).localeCompare(nameOf(b.pick)))
   return found.slice(0, limit).map((f) => f.pick)
 }
@@ -144,14 +155,35 @@ export function optionsFor(module: ShopModuleView, chosen: ShopVariantView) {
 export function lookup(
   catalog: ShopCatalogView,
   symbol: string,
-): { kind: 'ship'; ship: ShopShipView } | { kind: 'module'; module: ShopModuleView; variant: ShopVariantView } | null {
+):
+  | { kind: 'ship'; ship: ShopShipView }
+  | { kind: 'module'; module: ShopModuleView; variant: ShopVariantView }
+  | { kind: 'commodity'; commodity: ShopCommodityView }
+  | null {
   const ship = catalog.ships.find((s) => s.symbol === symbol)
   if (ship) return { kind: 'ship', ship }
   for (const module of catalog.modules) {
     const variant = module.variants.find((v) => v.symbol === symbol)
     if (variant) return { kind: 'module', module, variant }
   }
-  return null
+  const commodity = catalog.commodities.find((c) => c.symbol === symbol)
+  return commodity ? { kind: 'commodity', commodity } : null
+}
+
+/** The group rare commodities are listed in, whatever their market category. */
+export const RARE = 'Rare'
+
+/** The group a commodity is listed in: its market category, the rare ones apart. */
+export const commodityGroup = (c: ShopCommodityView): string => (c.rare ? RARE : c.category)
+
+/** The commodity groups in the catalog's order (by category, the rare ones last). */
+export function commodityGroups(catalog: ShopCatalogView): string[] {
+  return [...new Set(catalog.commodities.map(commodityGroup))]
+}
+
+/** The commodities of a group, in the catalog's order (by name). */
+export function commoditiesOf(catalog: ShopCatalogView, group: string): ShopCommodityView[] {
+  return catalog.commodities.filter((c) => commodityGroup(c) === group)
 }
 
 export type ShipOrder = 'name' | 'price' | 'size'

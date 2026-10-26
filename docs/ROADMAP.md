@@ -14,9 +14,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   newcomer is worse than none. Re-check the guide after big game updates.
 
 ### Commodities and materials (asked 2026-10-26)
-- The Shop finds commodities too: where to buy one (Titanium etc.: Spansh's station search filters
-  on a market's commodity and stock, and each station brings price, stock and when its market was
-  seen; carriers and stale markets need the same care as ships and modules).
 - Raw, manufactured and encoded materials (Arsenic etc.) are not sold: the nearest material trader
   of the right kind (Spansh lists them: 372 raw traders, the nearest to Merope 192 ly away), and
   where to find them yourself.
@@ -62,6 +59,12 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Commodities in the Shop (2026-10-26): find a commodity by name or by market category (rare ones
+  apart) and see the nearest stations whose market had it in stock, with the price a tonne in full,
+  the tonnes in stock and how old the report is. Spansh's station search filters on the name and
+  some stock; the catalog (379 commodities, 139 rare) is those some market has. Carriers on
+  request, as for ships: near the Pleiades the nearest Titanium was on carriers seen a year before.
+  Near the Pleiades only carriers had Painite in stock: then the hint names the nearest carrier.
 - Bookmarks (2026-10-26): bookmark a system, a body, a station or a spot on a planet, with a tag
   (mining, biology, geology, station & trade, scenic view, other) and your comment; the notes
   became bookmarks with their text as the comment. Where: the System tab (the system, a body, the

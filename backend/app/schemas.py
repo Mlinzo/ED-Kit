@@ -416,23 +416,32 @@ class ShopModuleView(CamelModel):
     variants: list[ShopVariantView]
 
 
+class ShopCommodityView(CamelModel):
+    symbol: str  # journal symbol, lower case
+    name: str  # as markets name it
+    category: str  # the market's: Metals, Minerals, Chemicals...
+    rare: bool = False  # a rare commodity: one station sells it, a little at a time
+
+
 class ShopCatalogView(CamelModel):
     ships: list[ShopShipView]
     modules: list[ShopModuleView]
+    commodities: list[ShopCommodityView] = []
 
 
 class ShopStationView(CamelModel):
     name: str
     kind: str  # as in SellStationView
     dist_ls: int | None
-    price: int | None
-    offer_at: str | None  # when Spansh last had its shipyard / outfitting (ISO)
+    price: int | None  # a commodity: what the market sells one tonne for
+    offer_at: str | None  # when Spansh last had its shipyard / outfitting / market (ISO)
     access: str | None  # a carrier: all | unknown
     permit: bool  # the system needs a permit
     # Nothing chosen: how many ships / modules Spansh knows it sells (None: no shipyard /
     # outfitting; 0: has one, but no list)
     ship_count: int | None = None
     module_count: int | None = None
+    stock: int | None = None  # a commodity: tonnes in stock when the market was reported
     bookmark: BookmarkView | None = None  # yours, on the station
 
 

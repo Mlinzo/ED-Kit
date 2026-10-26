@@ -1,5 +1,5 @@
-"""The Shop tab: the nearest shipyards and outfitting, and the nearest stations selling a ship
-or a module.
+"""The Shop tab: the nearest shipyards and outfitting, and the nearest stations selling a ship,
+a module or a commodity.
 
 Spansh's station search knows a station's shipyard and outfitting as the last player who docked
 there with an EDDN uploader (EDMC, EDDiscovery...) reported them, so the date of that report
@@ -12,9 +12,12 @@ an ARX purchase adds are listed too, at no price, and crowded the answer (near t
 of the 40 stations found for a 6D Vessel Hangar had only those); and a renamed module under its
 old name as well (`OLD_NAMES`), as Spansh keeps the name each report came with. Before anything
 is chosen, the tab lists the stations with a shipyard or outfitting, with how many ships and
-modules Spansh knows they sell. An
-answer is kept in memory and reused for an hour while you stay within 20 ly of where it was
-asked.
+modules Spansh knows they sell. A commodity is looked for in the markets with some in stock;
+each station shows what it sells a tonne for and how much it had, as of its market's report
+(stock goes down with every purchase: a report days old may be off). Near the Pleiades the
+nearest Titanium was on fleet carriers seen a year before, hence carriers on request only, as
+for ships and modules. An answer is kept in memory and reused for an hour while you stay within
+20 ly of where it was asked.
 
 What else stands in the way is told, not filtered: the navy rank a ship needs (from the
 journal's Rank and Promotion events), a module unlocked first (Powerplay, a technology broker:
@@ -46,6 +49,7 @@ from app import spansh
 from app.schemas import (
     SellCarrierHint,
     ShopCatalogView,
+    ShopCommodityView,
     ShopModuleView,
     ShopPlaceView,
     ShopRankNeed,
@@ -84,6 +88,7 @@ SHOP_SERVICES = ["Shipyard", "Outfitting"]  # Spansh's names; several values: ei
 # Modules renamed in the game: Spansh has each station under the name of its latest report.
 OLD_NAMES = {"Vessel Hangar": ["Fighter Hangar"]}  # Operations update, 2026-06-30
 FOR_CREDITS = {"value": [1, 10**10], "comparison": "<=>"}  # a module's price at a station
+IN_STOCK = {"value": [1, 10**9], "comparison": "<=>"}  # tonnes of a commodity at a market
 
 Navy = Literal["empire", "federation"]
 # The navy rank a ship needs (Elite Dangerous Wiki, Empire/Ranks and Federation/Ranks, checked
@@ -140,7 +145,7 @@ Vec = tuple[float, float, float]
 
 @dataclass(frozen=True, slots=True)
 class Item:
-    kind: Literal["ship", "module"]
+    kind: Literal["ship", "module", "commodity"]
     symbol: str  # journal symbol, lower case
     name: str
     size: int | None = None
@@ -150,8 +155,8 @@ class Item:
     unlock: str | None = None
 
     def label(self) -> str:
-        """ "Anaconda", "Frame Shift Drive 5A", "Multi-Cannon 2E Gimballed"."""
-        if self.kind == "ship":
+        """ "Anaconda", "Frame Shift Drive 5A", "Multi-Cannon 2E Gimballed", "Titanium"."""
+        if self.kind != "module":
             return self.name
         extra = " ".join(x for x in (self.mount, self.guidance) if x)
         return f"{self.name} {self.size}{self.rating}" + (f" {extra}" if extra else "")
@@ -178,6 +183,8 @@ def _items() -> dict[str, Item]:
                 v["guidance"],
                 m["unlock"],
             )
+    for c in data.get("commodities") or []:
+        items[c["symbol"]] = Item("commodity", c["symbol"], c["name"])
     return items
 
 
@@ -228,6 +235,7 @@ def catalog_view() -> ShopCatalogView:
             )
             for m in data["modules"]
         ],
+        commodities=[ShopCommodityView(**c) for c in data.get("commodities") or []],
     )
 
 
@@ -244,6 +252,8 @@ def catalog_json() -> tuple[bytes, bytes]:
 def _filters(item: Item) -> dict[str, Any]:
     if item.kind == "ship":
         return {"ships": [{"name": {"value": [item.name]}}]}
+    if item.kind == "commodity":
+        return {"market": [{"name": item.name, "supply": IN_STOCK}]}
     return {
         "modules": [
             {
@@ -257,7 +267,24 @@ def _filters(item: Item) -> dict[str, Any]:
 
 
 def offer(raw: dict[str, Any], item: Item) -> dict[str, Any] | None:
-    """The station's fields with its price for `item`, or None when it lacks that exact item."""
+    """The station's fields with its price for `item` (a commodity: and its stock), or None when
+    it lacks that exact item."""
+    if item.kind == "commodity":
+        row = next(
+            (
+                m
+                for m in raw.get("market") or []
+                if isinstance(m, dict) and m.get("commodity") == item.name
+            ),
+            None,
+        )
+        if row is None or not isinstance(row.get("supply"), int) or row["supply"] <= 0:
+            return None
+        return {k: raw.get(k) for k in spansh.STATION_FIELDS} | {
+            "price": row.get("buy_price"),
+            "stock": row["supply"],
+            "offer_at": raw.get("market_updated_at") or raw.get("updated_at"),
+        }
     ship = item.kind == "ship"
     key = "symbol" if ship else "ed_symbol"
     match = next(
@@ -477,6 +504,7 @@ def _station_view(o: dict[str, Any], permits: set[int]) -> ShopStationView:
         permit=o.get("system_id64") in permits,
         ship_count=o.get("ship_count"),
         module_count=o.get("module_count"),
+        stock=o.get("stock"),
     )
 
 

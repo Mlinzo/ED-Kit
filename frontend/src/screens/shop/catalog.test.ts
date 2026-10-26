@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ShopCatalogView, ShopModuleView, ShopVariantView } from '../../api/types'
-import { lookup, neighbour, nextModule, optionsFor, orderShips, parseQuery, searchCatalog, variantFor } from './catalog'
+import { commoditiesOf, commodityGroups, lookup, neighbour, nextModule, optionsFor, orderShips, parseQuery, searchCatalog, variantFor } from './catalog'
 
 const v = (symbol: string, size: number, rating: string, mount: ShopVariantView['mount'] = null, guidance: ShopVariantView['guidance'] = null): ShopVariantView => ({
   symbol,
@@ -43,9 +43,16 @@ const catalog: ShopCatalogView = {
     { symbol: 'ferdelance', name: 'Fer-de-Lance', stats: null, rank: null },
   ],
   modules: [fsd, { name: 'Frame Shift Drive (SCO)', category: 'core', type: null, unlock: null, variants: [v('sco5a', 5, 'A')] }, mc, missiles],
+  commodities: [
+    { symbol: 'gold', name: 'Gold', category: 'Metals', rare: false },
+    { symbol: 'titanium', name: 'Titanium', category: 'Metals', rare: false },
+    { symbol: 'lowtemperaturediamond', name: 'Low Temperature Diamonds', category: 'Minerals', rare: false },
+    { symbol: 'lavianbrandy', name: 'Lavian Brandy', category: 'Legal Drugs', rare: true },
+  ],
 }
 
-const names = (query: string) => searchCatalog(catalog, query).map((p) => (p.kind === 'ship' ? p.ship.name : p.module.name))
+const names = (query: string) =>
+  searchCatalog(catalog, query).map((p) => (p.kind === 'ship' ? p.ship.name : p.kind === 'module' ? p.module.name : p.commodity.name))
 
 describe('shop catalog search', () => {
   it('finds by word starts, initials and aliases', () => {
@@ -65,6 +72,22 @@ describe('shop catalog search', () => {
     expect(names('fsd 2a')).toEqual(['Frame Shift Drive'])
     const [pick] = searchCatalog(catalog, 'fsd 5a')
     expect(pick.kind === 'module' && variantFor(pick.module, pick.want).symbol).toBe('fsd5a')
+  })
+
+  it('finds commodities, not when a module variant is asked for', () => {
+    expect(names('titan')).toEqual(['Titanium'])
+    expect(names('ltd')).toEqual(['Low Temperature Diamonds'])
+    expect(names('brandy')).toEqual(['Lavian Brandy'])
+    expect(names('gold 5a')).toEqual([])
+  })
+})
+
+describe('commodity groups', () => {
+  it('lists the market categories, the rare commodities apart and last', () => {
+    expect(commodityGroups(catalog)).toEqual(['Metals', 'Minerals', 'Rare'])
+    expect(commoditiesOf(catalog, 'Metals').map((c) => c.symbol)).toEqual(['gold', 'titanium'])
+    expect(commoditiesOf(catalog, 'Rare').map((c) => c.symbol)).toEqual(['lavianbrandy'])
+    expect(lookup(catalog, 'titanium')).toMatchObject({ kind: 'commodity', commodity: { name: 'Titanium' } })
   })
 })
 

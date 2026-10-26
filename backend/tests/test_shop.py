@@ -31,6 +31,7 @@ def raw(
     access: str | None = None,
     services: tuple[str, ...] = ("Shipyard", "Outfitting"),
     system_id: int | None = None,
+    market: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     return {
         "name": name,
@@ -51,6 +52,20 @@ def raw(
         "services": [{"name": s} for s in services],
         "ships": ships or [],
         "modules": modules or [],
+        "market": market or [],
+        "market_updated_at": "2026-10-03T10:00:00Z",
+    }
+
+
+def goods(name: str, supply: int, price: int = 4000) -> dict[str, Any]:
+    """A market row as Spansh sends it."""
+    return {
+        "commodity": name,
+        "category": "Metals",
+        "buy_price": price,
+        "sell_price": price - 100,
+        "supply": supply,
+        "demand": 0,
     }
 
 
@@ -107,6 +122,32 @@ def test_offer_needs_the_exact_item() -> None:
     ship = Item("ship", "anaconda", "Anaconda")
     yard = raw("C", "S", 1, ships=[{"symbol": "Anaconda", "name": "Anaconda", "price": 9}])
     assert offer(yard, ship)["offer_at"] == "2026-10-01T10:00:00Z"  # type: ignore[index]
+
+
+def test_commodities_in_the_catalog_and_the_search() -> None:
+    titanium = find("titanium")
+    assert titanium is not None and titanium.kind == "commodity" and titanium.label() == "Titanium"
+    catalog = shop.catalog_view()
+    by_symbol = {c.symbol: c for c in catalog.commodities}
+    assert by_symbol["titanium"].category == "Metals" and not by_symbol["titanium"].rare
+    assert by_symbol["lavianbrandy"].rare  # one station sells it
+    # Every symbol stands for one item: ships, modules and commodities do not share any.
+    symbols = [s.symbol for s in catalog.ships] + [c.symbol for c in catalog.commodities]
+    symbols += [v.symbol for m in catalog.modules for v in m.variants]
+    assert len(symbols) == len(set(symbols))
+    [asked] = shop._filters(titanium)["market"]
+    assert asked == {"name": "Titanium", "supply": shop.IN_STOCK}
+
+
+def test_commodity_offer_brings_price_and_stock() -> None:
+    titanium = find("titanium")
+    assert titanium is not None
+    port = raw("A", "S", 1, market=[goods("Gold", 50), goods("Titanium", 11963, 3788)])
+    got = offer(port, titanium)
+    assert got is not None and (got["price"], got["stock"]) == (3788, 11963)
+    assert got["offer_at"] == "2026-10-03T10:00:00Z" and "market" not in got
+    assert offer(raw("B", "S", 1, market=[goods("Titanium", 0)]), titanium) is None
+    assert offer(raw("C", "S", 1, market=[goods("Gold", 50)]), titanium) is None
 
 
 def test_shops_count_what_they_sell() -> None:
@@ -211,6 +252,12 @@ def test_shop_view(conn: sqlite3.Connection, proj: Projector) -> None:
     nearby = shop.shop_view(conn, state(), finder, None)
     assert nearby.item is None and len(nearby.places) == 3
     assert nearby.places[0].stations[0].module_count == 1
+
+    market = FakeFinder([raw("Mart", "Sol", 11, market=[goods("Titanium", 640, 3900)])])
+    view = shop.shop_view(conn, state(), market, "titanium")
+    assert view.state == "ready" and view.item == "Titanium"
+    [station] = view.places[0].stations
+    assert (station.price, station.stock) == (3900, 640)
 
 
 def test_stronghold_carrier_only_for_its_power(conn: sqlite3.Connection, proj: Projector) -> None:

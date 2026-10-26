@@ -18439,5 +18439,2041 @@
     }
    ]
   }
+ ],
+ "commodities": [
+  {
+   "symbol": "agronomictreatment",
+   "name": "Agronomic Treatment",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "explosives",
+   "name": "Explosives",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "helium",
+   "name": "Helium",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "hydrogenfuel",
+   "name": "Hydrogen Fuel",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "hydrogenperoxide",
+   "name": "Hydrogen Peroxide",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "liquidoxygen",
+   "name": "Liquid oxygen",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "mineraloil",
+   "name": "Mineral Oil",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "nerveagents",
+   "name": "Nerve Agents",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "pesticides",
+   "name": "Pesticides",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "surfacestabilisers",
+   "name": "Surface Stabilisers",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "syntheticreagents",
+   "name": "Synthetic Reagents",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "tritium",
+   "name": "Tritium",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "water",
+   "name": "Water",
+   "category": "Chemicals"
+  },
+  {
+   "symbol": "clothing",
+   "name": "Clothing",
+   "category": "Consumer Items"
+  },
+  {
+   "symbol": "consumertechnology",
+   "name": "Consumer Technology",
+   "category": "Consumer Items"
+  },
+  {
+   "symbol": "domesticappliances",
+   "name": "Domestic Appliances",
+   "category": "Consumer Items"
+  },
+  {
+   "symbol": "evacuationshelter",
+   "name": "Evacuation Shelter",
+   "category": "Consumer Items"
+  },
+  {
+   "symbol": "survivalequipment",
+   "name": "Survival Equipment",
+   "category": "Consumer Items"
+  },
+  {
+   "symbol": "algae",
+   "name": "Algae",
+   "category": "Foods"
+  },
+  {
+   "symbol": "animalmeat",
+   "name": "Animal Meat",
+   "category": "Foods"
+  },
+  {
+   "symbol": "coffee",
+   "name": "Coffee",
+   "category": "Foods"
+  },
+  {
+   "symbol": "fish",
+   "name": "Fish",
+   "category": "Foods"
+  },
+  {
+   "symbol": "foodcartridges",
+   "name": "Food Cartridges",
+   "category": "Foods"
+  },
+  {
+   "symbol": "fruitandvegetables",
+   "name": "Fruit and Vegetables",
+   "category": "Foods"
+  },
+  {
+   "symbol": "grain",
+   "name": "Grain",
+   "category": "Foods"
+  },
+  {
+   "symbol": "syntheticmeat",
+   "name": "Synthetic Meat",
+   "category": "Foods"
+  },
+  {
+   "symbol": "tea",
+   "name": "Tea",
+   "category": "Foods"
+  },
+  {
+   "symbol": "cmmcomposite",
+   "name": "CMM Composite",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "ceramiccomposites",
+   "name": "Ceramic Composites",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "insulatingmembrane",
+   "name": "Insulating Membrane",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "metaalloys",
+   "name": "Meta-Alloys",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "coolinghoses",
+   "name": "Micro-weave Cooling Hoses",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "neofabricinsulation",
+   "name": "Neofabric Insulation",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "polymers",
+   "name": "Polymers",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "semiconductors",
+   "name": "Semiconductors",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "superconductors",
+   "name": "Superconductors",
+   "category": "Industrial Materials"
+  },
+  {
+   "symbol": "beer",
+   "name": "Beer",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "bootlegliquor",
+   "name": "Bootleg Liquor",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "liquor",
+   "name": "Liquor",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "basicnarcotics",
+   "name": "Narcotics",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "onionheadc",
+   "name": "Onionhead Gamma Strain",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "tobacco",
+   "name": "Tobacco",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "wine",
+   "name": "Wine",
+   "category": "Legal Drugs"
+  },
+  {
+   "symbol": "articulationmotors",
+   "name": "Articulation Motors",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "atmosphericextractors",
+   "name": "Atmospheric Processors",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "buildingfabricators",
+   "name": "Building Fabricators",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "cropharvesters",
+   "name": "Crop Harvesters",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "emergencypowercells",
+   "name": "Emergency Power Cells",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "powergridassembly",
+   "name": "Energy Grid Assembly",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "exhaustmanifold",
+   "name": "Exhaust Manifold",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "geologicalequipment",
+   "name": "Geological Equipment",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "hnshockmount",
+   "name": "HN Shock Mount",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "heatsinkinterlink",
+   "name": "Heatsink Interlink",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "iondistributor",
+   "name": "Ion Distributor",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "magneticemittercoil",
+   "name": "Magnetic Emitter Coil",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "marinesupplies",
+   "name": "Marine Equipment",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "heliostaticfurnaces",
+   "name": "Microbial Furnaces",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "mineralextractors",
+   "name": "Mineral Extractors",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "modularterminals",
+   "name": "Modular Terminals",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "powerconverter",
+   "name": "Power Converter",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "powergenerators",
+   "name": "Power Generators",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "powertransferconduits",
+   "name": "Power Transfer Bus",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "radiationbaffle",
+   "name": "Radiation Baffle",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "reinforcedmountingplate",
+   "name": "Reinforced Mounting Plate",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "skimercomponents",
+   "name": "Skimmer Components",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "thermalcoolingunits",
+   "name": "Thermal Cooling Units",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "waterpurifiers",
+   "name": "Water Purifiers",
+   "category": "Machinery"
+  },
+  {
+   "symbol": "advancedmedicines",
+   "name": "Advanced Medicines",
+   "category": "Medicines"
+  },
+  {
+   "symbol": "agriculturalmedicines",
+   "name": "Agri-Medicines",
+   "category": "Medicines"
+  },
+  {
+   "symbol": "basicmedicines",
+   "name": "Basic Medicines",
+   "category": "Medicines"
+  },
+  {
+   "symbol": "combatstabilisers",
+   "name": "Combat Stabilisers",
+   "category": "Medicines"
+  },
+  {
+   "symbol": "performanceenhancers",
+   "name": "Performance Enhancers",
+   "category": "Medicines"
+  },
+  {
+   "symbol": "progenitorcells",
+   "name": "Progenitor Cells",
+   "category": "Medicines"
+  },
+  {
+   "symbol": "aluminium",
+   "name": "Aluminium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "beryllium",
+   "name": "Beryllium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "bismuth",
+   "name": "Bismuth",
+   "category": "Metals"
+  },
+  {
+   "symbol": "cobalt",
+   "name": "Cobalt",
+   "category": "Metals"
+  },
+  {
+   "symbol": "copper",
+   "name": "Copper",
+   "category": "Metals"
+  },
+  {
+   "symbol": "gallium",
+   "name": "Gallium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "gold",
+   "name": "Gold",
+   "category": "Metals"
+  },
+  {
+   "symbol": "hafnium178",
+   "name": "Hafnium 178",
+   "category": "Metals"
+  },
+  {
+   "symbol": "indium",
+   "name": "Indium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "iridium",
+   "name": "Iridium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "lanthanum",
+   "name": "Lanthanum",
+   "category": "Metals"
+  },
+  {
+   "symbol": "lithium",
+   "name": "Lithium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "osmium",
+   "name": "Osmium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "palladium",
+   "name": "Palladium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "platinum",
+   "name": "Platinum",
+   "category": "Metals"
+  },
+  {
+   "symbol": "praseodymium",
+   "name": "Praseodymium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "samarium",
+   "name": "Samarium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "silver",
+   "name": "Silver",
+   "category": "Metals"
+  },
+  {
+   "symbol": "steel",
+   "name": "Steel",
+   "category": "Metals"
+  },
+  {
+   "symbol": "tantalum",
+   "name": "Tantalum",
+   "category": "Metals"
+  },
+  {
+   "symbol": "thallium",
+   "name": "Thallium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "thorium",
+   "name": "Thorium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "titanium",
+   "name": "Titanium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "uranium",
+   "name": "Uranium",
+   "category": "Metals"
+  },
+  {
+   "symbol": "alexandrite",
+   "name": "Alexandrite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "bastnasite",
+   "name": "Bastnasite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "bauxite",
+   "name": "Bauxite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "benitoite",
+   "name": "Benitoite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "bertrandite",
+   "name": "Bertrandite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "bromellite",
+   "name": "Bromellite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "coltan",
+   "name": "Coltan",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "cryolite",
+   "name": "Cryolite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "deuterium",
+   "name": "Deuterium",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "diamond",
+   "name": "Diamond",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "gallite",
+   "name": "Gallite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "goslarite",
+   "name": "Goslarite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "grandidierite",
+   "name": "Grandidierite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "haematite",
+   "name": "Haematite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "indite",
+   "name": "Indite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "jadeite",
+   "name": "Jadeite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "lepidolite",
+   "name": "Lepidolite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "lithiumhydroxide",
+   "name": "Lithium Hydroxide",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "lowtemperaturediamond",
+   "name": "Low Temperature Diamonds",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "magnesite",
+   "name": "Magnesite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "methaneclathrate",
+   "name": "Methane Clathrate",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "methanolmonohydratecrystals",
+   "name": "Methanol Monohydrate Crystals",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "moissanite",
+   "name": "Moissanite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "monazite",
+   "name": "Monazite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "musgravite",
+   "name": "Musgravite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "olivine",
+   "name": "Olivine",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "painite",
+   "name": "Painite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "periclasedunite",
+   "name": "Periclase Dunite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "pyrophyllite",
+   "name": "Pyrophyllite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "quartzpyroxenite",
+   "name": "Quartz Pyroxenite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "rhodplumsite",
+   "name": "Rhodplumsite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "ruby",
+   "name": "Ruby",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "rutile",
+   "name": "Rutile",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "sapphire",
+   "name": "Sapphire",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "serendibite",
+   "name": "Serendibite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "taaffeite",
+   "name": "Taaffeite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "thortveitite",
+   "name": "Thortveitite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "uraninite",
+   "name": "Uraninite",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "opal",
+   "name": "Void Opal",
+   "category": "Minerals"
+  },
+  {
+   "symbol": "ancientkey",
+   "name": "Ancient Key",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "antimattercontainmentunit",
+   "name": "Antimatter Containment Unit",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "antiquejewellery",
+   "name": "Antique Jewellery",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "antiquities",
+   "name": "Antiquities",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "assaultplans",
+   "name": "Assault Plans",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "usscargoblackbox",
+   "name": "Black Box",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidbonefragments",
+   "name": "Bone Fragments",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidgeneratortissuesample",
+   "name": "Caustic Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "comercialsamples",
+   "name": "Commercial Samples",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidcystspecimen",
+   "name": "Cyst Specimen",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "damagedescapepod",
+   "name": "Damaged Escape Pod",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "earthrelics",
+   "name": "Earth Relics",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "encryptedcorrespondence",
+   "name": "Encrypted Correspondence",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "usscargoexperimentalchemicals",
+   "name": "Experimental Chemicals",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "geologicalsamples",
+   "name": "Geological Samples",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "ancientcasket",
+   "name": "Guardian Casket",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "ancientorb",
+   "name": "Guardian Orb",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "ancientrelic",
+   "name": "Guardian Relic",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "ancienttablet",
+   "name": "Guardian Tablet",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "ancienttotem",
+   "name": "Guardian Totem",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "ancienturn",
+   "name": "Guardian Urn",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "largeexplorationdatacash",
+   "name": "Large Survey Data Cache",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "militaryintelligence",
+   "name": "Military Intelligence",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "usscargomilitaryplans",
+   "name": "Military Plans",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "m_tissuesample_nerves",
+   "name": "Mollusc Brain Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "m_tissuesample_fluid",
+   "name": "Mollusc Fluid",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "m3_tissuesample_membrane",
+   "name": "Mollusc Membrane",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "m3_tissuesample_mycelium",
+   "name": "Mollusc Mycelium",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "m_tissuesample_soft",
+   "name": "Mollusc Soft Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "m3_tissuesample_spores",
+   "name": "Mollusc Spores",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "mysteriousidol",
+   "name": "Mysterious Idol",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "occupiedcryopod",
+   "name": "Occupied Escape Pod",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidorgansample",
+   "name": "Organ Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "personaleffects",
+   "name": "Personal Effects",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "s_tissuesample_cells",
+   "name": "Pod Core Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "s_tissuesample_surface",
+   "name": "Pod Dead Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "s6_tissuesample_mesoglea",
+   "name": "Pod Mesoglea",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "s6_tissuesample_cells",
+   "name": "Pod Outer Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "s6_tissuesample_coenosarc",
+   "name": "Pod Shell Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "s_tissuesample_core",
+   "name": "Pod Surface Tissue",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "preciousgems",
+   "name": "Precious Gems",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "usscargoprototypetech",
+   "name": "Prototype Tech",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "scientificresearch",
+   "name": "Scientific Research",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "scientificsamples",
+   "name": "Scientific Samples",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "smallexplorationdatacash",
+   "name": "Small Survey Data Cache",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "tacticaldata",
+   "name": "Tactical Data",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "usscargotechnicalblueprints",
+   "name": "Technical Blueprints",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype2",
+   "name": "Thargoid Basilisk Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unknownbiologicalmatter",
+   "name": "Thargoid Biological Matter",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype1",
+   "name": "Thargoid Cyclops Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype6",
+   "name": "Thargoid Glaive Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidheart",
+   "name": "Thargoid Heart",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype4",
+   "name": "Thargoid Hydra Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unknownartifact3",
+   "name": "Thargoid Link",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype3",
+   "name": "Thargoid Medusa Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype5",
+   "name": "Thargoid Orthrus Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unknownartifact2",
+   "name": "Thargoid Probe",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unknownresin",
+   "name": "Thargoid Resin",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidscouttissuesample",
+   "name": "Thargoid Scout Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unknownartifact",
+   "name": "Thargoid Sensor",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unknowntechnologysamples",
+   "name": "Thargoid Technology Samples",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype9a",
+   "name": "Titan Deep Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtitandrivecomponent",
+   "name": "Titan Drive Component",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype10a",
+   "name": "Titan Maw Deep Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype10c",
+   "name": "Titan Maw Partial Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype10b",
+   "name": "Titan Maw Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype9c",
+   "name": "Titan Partial Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidtissuesampletype9b",
+   "name": "Titan Tissue Sample",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "usscargotradedata",
+   "name": "Trade Data",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "unocuppiedescapepod",
+   "name": "Unoccupied Escape Pod",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "wreckagecomponents",
+   "name": "Wreckage Components",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "thargoidpod",
+   "name": "Xenobiological Prison Pod",
+   "category": "Salvage"
+  },
+  {
+   "symbol": "imperialslaves",
+   "name": "Imperial Slaves",
+   "category": "Slavery"
+  },
+  {
+   "symbol": "slaves",
+   "name": "Slaves",
+   "category": "Slavery"
+  },
+  {
+   "symbol": "advancedcatalysers",
+   "name": "Advanced Catalysers",
+   "category": "Technology"
+  },
+  {
+   "symbol": "animalmonitors",
+   "name": "Animal Monitors",
+   "category": "Technology"
+  },
+  {
+   "symbol": "aquaponicsystems",
+   "name": "Aquaponic Systems",
+   "category": "Technology"
+  },
+  {
+   "symbol": "autofabricators",
+   "name": "Auto-Fabricators",
+   "category": "Technology"
+  },
+  {
+   "symbol": "bioreducinglichen",
+   "name": "Bioreducing Lichen",
+   "category": "Technology"
+  },
+  {
+   "symbol": "computercomponents",
+   "name": "Computer Components",
+   "category": "Technology"
+  },
+  {
+   "symbol": "hazardousenvironmentsuits",
+   "name": "H.E. Suits",
+   "category": "Technology"
+  },
+  {
+   "symbol": "diagnosticsensor",
+   "name": "Hardware Diagnostic Sensor",
+   "category": "Technology"
+  },
+  {
+   "symbol": "terrainenrichmentsystems",
+   "name": "Land Enrichment Systems",
+   "category": "Technology"
+  },
+  {
+   "symbol": "medicaldiagnosticequipment",
+   "name": "Medical Diagnostic Equipment",
+   "category": "Technology"
+  },
+  {
+   "symbol": "microcontrollers",
+   "name": "Micro Controllers",
+   "category": "Technology"
+  },
+  {
+   "symbol": "mutomimager",
+   "name": "Muon Imager",
+   "category": "Technology"
+  },
+  {
+   "symbol": "nanobreakers",
+   "name": "Nanobreakers",
+   "category": "Technology"
+  },
+  {
+   "symbol": "resonatingseparators",
+   "name": "Resonating Separators",
+   "category": "Technology"
+  },
+  {
+   "symbol": "robotics",
+   "name": "Robotics",
+   "category": "Technology"
+  },
+  {
+   "symbol": "structuralregulators",
+   "name": "Structural Regulators",
+   "category": "Technology"
+  },
+  {
+   "symbol": "conductivefabrics",
+   "name": "Conductive Fabrics",
+   "category": "Textiles"
+  },
+  {
+   "symbol": "leather",
+   "name": "Leather",
+   "category": "Textiles"
+  },
+  {
+   "symbol": "militarygradefabrics",
+   "name": "Military Grade Fabrics",
+   "category": "Textiles"
+  },
+  {
+   "symbol": "naturalfabrics",
+   "name": "Natural Fabrics",
+   "category": "Textiles"
+  },
+  {
+   "symbol": "syntheticfabrics",
+   "name": "Synthetic Fabrics",
+   "category": "Textiles"
+  },
+  {
+   "symbol": "biowaste",
+   "name": "Biowaste",
+   "category": "Waste"
+  },
+  {
+   "symbol": "chemicalwaste",
+   "name": "Chemical Waste",
+   "category": "Waste"
+  },
+  {
+   "symbol": "scrap",
+   "name": "Scrap",
+   "category": "Waste"
+  },
+  {
+   "symbol": "toxicwaste",
+   "name": "Toxic Waste",
+   "category": "Waste"
+  },
+  {
+   "symbol": "battleweapons",
+   "name": "Battle Weapons",
+   "category": "Weapons"
+  },
+  {
+   "symbol": "landmines",
+   "name": "Landmines",
+   "category": "Weapons"
+  },
+  {
+   "symbol": "nonlethalweapons",
+   "name": "Non-Lethal Weapons",
+   "category": "Weapons"
+  },
+  {
+   "symbol": "personalweapons",
+   "name": "Personal Weapons",
+   "category": "Weapons"
+  },
+  {
+   "symbol": "reactivearmour",
+   "name": "Reactive Armour",
+   "category": "Weapons"
+  },
+  {
+   "symbol": "cetiaepyornisegg",
+   "name": "Aepyornis Egg",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "alacarakmoskinart",
+   "name": "Alacarakmo Skin Art",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "albinoquechuamammoth",
+   "name": "Albino Quechua Mammoth Meat",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "altairianskin",
+   "name": "Altairian Skin",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "alyabodilysoap",
+   "name": "Alya Body Soap",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "anduligafireworks",
+   "name": "Anduliga Fire Works",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "anynacoffee",
+   "name": "Any Na Coffee",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "apavietii",
+   "name": "Apa Vietii",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "aroucaconventualsweets",
+   "name": "Arouca Conventual Sweets",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "bluemilk",
+   "name": "Azure Milk",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "bakedgreebles",
+   "name": "Baked Greebles",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "baltahsinevacuumkrill",
+   "name": "Baltah'sine Vacuum Krill",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "bankiamphibiousleather",
+   "name": "Banki Amphibious Leather",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "bastsnakegin",
+   "name": "Bast Snake Gin",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "belalansrayleather",
+   "name": "Belalans Ray Leather",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "borasetanipathogenetics",
+   "name": "Borasetani Pathogenetics",
+   "category": "Weapons",
+   "rare": true
+  },
+  {
+   "symbol": "buckyballbeermats",
+   "name": "Buckyball Beer Mats",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "burnhambiledistillate",
+   "name": "Burnham Bile Distillate",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "cd75catcoffee",
+   "name": "CD-75 Kitten Brand Coffee",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "centaurimegagin",
+   "name": "Centauri Mega Gin",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "ceremonialheiketea",
+   "name": "Ceremonial Heike Tea",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "cetirabbits",
+   "name": "Ceti Rabbits",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "chameleoncloth",
+   "name": "Chameleon Cloth",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "chateaudeaegaeon",
+   "name": "Chateau De Aegaeon",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "cherbonesbloodcrystals",
+   "name": "Cherbones Blood Crystals",
+   "category": "Metals",
+   "rare": true
+  },
+  {
+   "symbol": "chieridanimarinepaste",
+   "name": "Chi Eridani Marine Paste",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "classifiedexperimentalequipment",
+   "name": "Classified Experimental Equipment",
+   "category": "Technology",
+   "rare": true
+  },
+  {
+   "symbol": "coquimspongiformvictuals",
+   "name": "Coquim Spongiform Victuals",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "animaleffigies",
+   "name": "Crom Silver Fesh",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "crystallinespheres",
+   "name": "Crystalline Spheres",
+   "category": "Salvage",
+   "rare": true
+  },
+  {
+   "symbol": "damnacarapaces",
+   "name": "Damna Carapaces",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "deltaphoenicispalms",
+   "name": "Delta Phoenicis Palms",
+   "category": "Chemicals",
+   "rare": true
+  },
+  {
+   "symbol": "deuringastruffles",
+   "name": "Deuringas Truffles",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "disomacorn",
+   "name": "Diso Ma Corn",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "duradrives",
+   "name": "Duradrives",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "aerialedenapple",
+   "name": "Eden Apples of Aerial",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "eleuthermals",
+   "name": "Eleu Thermals",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "eraninpearlwhisky",
+   "name": "Eranin Pearl Whisky",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "eshuumbrellas",
+   "name": "Eshu Umbrellas",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "esusekucaviar",
+   "name": "Esuseku Caviar",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "ethgrezeteabuds",
+   "name": "Ethgreze Tea Buds",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "fujintea",
+   "name": "Fujin Tea",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "galactictravelguide",
+   "name": "Galactic Travel Guide",
+   "category": "Salvage",
+   "rare": true
+  },
+  {
+   "symbol": "geawendancedust",
+   "name": "Geawen Dance Dust",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "gerasiangueuzebeer",
+   "name": "Gerasian Gueuze Beer",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "giantirukamasnails",
+   "name": "Giant Irukama Snails",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "giantverrix",
+   "name": "Giant Verrix",
+   "category": "Machinery",
+   "rare": true
+  },
+  {
+   "symbol": "gilyasignatureweapons",
+   "name": "Gilya Signature Weapons",
+   "category": "Weapons",
+   "rare": true
+  },
+  {
+   "symbol": "gomanyauponcoffee",
+   "name": "Goman Yaupon Coffee",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "hip10175bushmeat",
+   "name": "HIP 10175 Bush Meat",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "hip118311swarm",
+   "name": "HIP 118311 Swarm",
+   "category": "Weapons",
+   "rare": true
+  },
+  {
+   "symbol": "hiporganophosphates",
+   "name": "HIP Organophosphates",
+   "category": "Chemicals",
+   "rare": true
+  },
+  {
+   "symbol": "hip41181squid",
+   "name": "HIP Proto-Squid",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "hr7221wheat",
+   "name": "HR 7221 Wheat",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "haidneblackbrew",
+   "name": "Haiden Black Brew",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "harmasilversearum",
+   "name": "Harma Silver Sea Rum",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "havasupaidreamcatcher",
+   "name": "Havasupai Dream Catcher",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "helvetitjpearls",
+   "name": "Helvetitj Pearls",
+   "category": "Metals",
+   "rare": true
+  },
+  {
+   "symbol": "holvaduellingblades",
+   "name": "Holva Duelling Blades",
+   "category": "Weapons",
+   "rare": true
+  },
+  {
+   "symbol": "honestypills",
+   "name": "Honesty Pills",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "indibourbon",
+   "name": "Indi Bourbon",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "jaquesquinentianstill",
+   "name": "Jaques Quinentian Still",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "jaradharrepuzzlebox",
+   "name": "Jaradharre Puzzle Box",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "jarouarice",
+   "name": "Jaroua Rice",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "jotunmookah",
+   "name": "Jotun Mookah",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "kachiriginleaches",
+   "name": "Kachirigin Filter Leeches",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "kamitracigars",
+   "name": "Kamitra Cigars",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "kamorinhistoricweapons",
+   "name": "Kamorin Historic Weapons",
+   "category": "Weapons",
+   "rare": true
+  },
+  {
+   "symbol": "karetiicouture",
+   "name": "Karetii Couture",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "karsukilocusts",
+   "name": "Karsuki Locusts",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "kinagoinstruments",
+   "name": "Kinago Violins",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "konggaale",
+   "name": "Kongga Ale",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "korrokungpellets",
+   "name": "Koro Kung Pellets",
+   "category": "Chemicals",
+   "rare": true
+  },
+  {
+   "symbol": "ltthypersweet",
+   "name": "LTT Hyper Sweet",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "lavianbrandy",
+   "name": "Lavian Brandy",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "alieneggs",
+   "name": "Leathery Eggs",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "leestianeviljuice",
+   "name": "Leestian Evil Juice",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "livehecateseaworms",
+   "name": "Live Hecate Sea Worms",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "transgeniconionhead",
+   "name": "Lucan Onionhead",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "lyraeweed",
+   "name": "Lyrae Weed",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "masterchefs",
+   "name": "Master Chefs",
+   "category": "Slavery",
+   "rare": true
+  },
+  {
+   "symbol": "mechucoshightea",
+   "name": "Mechucos High Tea",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "medbstarlube",
+   "name": "Medb Starlube",
+   "category": "Chemicals",
+   "rare": true
+  },
+  {
+   "symbol": "mokojingbeastfeast",
+   "name": "Mokojing Beast Feast",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "momusbogspaniel",
+   "name": "Momus Bog Spaniel",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "motronaexperiencejelly",
+   "name": "Motrona Experience Jelly",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "mukusubiichitinos",
+   "name": "Mukusubii Chitin-os",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "mulachigiantfungus",
+   "name": "Mulachi Giant Fungus",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "nanomedicines",
+   "name": "Nanomedicines",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "neritusberries",
+   "name": "Neritus Berries",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "ngadandarifireopals",
+   "name": "Ngadandari Fire Opals",
+   "category": "Metals",
+   "rare": true
+  },
+  {
+   "symbol": "ngunamodernantiques",
+   "name": "Nguna Modern Antiques",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "njangarisaddles",
+   "name": "Njangari Saddles",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "noneuclidianexotanks",
+   "name": "Non Euclidian Exotanks",
+   "category": "Machinery",
+   "rare": true
+  },
+  {
+   "symbol": "ochoengchillies",
+   "name": "Ochoeng Chillies",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "onionhead",
+   "name": "Onionhead",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "onionheada",
+   "name": "Onionhead Alpha Strain",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "onionheadb",
+   "name": "Onionhead Beta Strain",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "ophiuchiexinoartefacts",
+   "name": "Ophiuch Exino Artefacts",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "orrerianviciousbrew",
+   "name": "Orrerian Vicious Brew",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "pantaaprayersticks",
+   "name": "Pantaa Prayer Sticks",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "pavoniseargrubs",
+   "name": "Pavonis Ear Grubs",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "platinumaloy",
+   "name": "Platinum Alloy",
+   "category": "Metals",
+   "rare": true
+  },
+  {
+   "symbol": "rajukrustoves",
+   "name": "Rajukru Multi-Stoves",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "rapabaosnakeskins",
+   "name": "Rapa Bao Snake Skins",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "rusanioldsmokey",
+   "name": "Rusani Old Smokey",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "sanumameat",
+   "name": "Sanuma Decorative Meat",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "saxonwine",
+   "name": "Saxon Wine",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "shanscharisorchid",
+   "name": "Shan's Charis Orchid",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "soontillrelics",
+   "name": "Soontill Relics",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "sothiscrystallinegold",
+   "name": "Sothis Crystalline Gold",
+   "category": "Metals",
+   "rare": true
+  },
+  {
+   "symbol": "tanmarktranquiltea",
+   "name": "Tanmark Tranquil Tea",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "tarachtorspice",
+   "name": "Tarach Spice",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "taurichimes",
+   "name": "Tauri Chimes",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "terramaterbloodbores",
+   "name": "Terra Mater Blood Bores",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "thehuttonmug",
+   "name": "The Hutton Mug",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "watersofshintara",
+   "name": "The Waters of Shintara",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "thrutiscream",
+   "name": "Thrutis Cream",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "tiegfriessynthsilk",
+   "name": "Tiegfries Synth Silk",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "tiolcewaste2pasteunits",
+   "name": "Tiolce Waste2Paste Units",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "toxandjivirocide",
+   "name": "Toxandji Virocide",
+   "category": "Chemicals",
+   "rare": true
+  },
+  {
+   "symbol": "advert1",
+   "name": "Ultra-Compact Processor Prototypes",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "uszaiantreegrub",
+   "name": "Uszaian Tree Grub",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "utgaroarmillenialeggs",
+   "name": "Utgaroar Millennial Eggs",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "uzumokulowgwings",
+   "name": "Uzumoku Low-G Wings",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "vherculisbodyrub",
+   "name": "V Herculis Body Rub",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "vanayequirhinofur",
+   "name": "Vanayequi Ceratomorpha Fur",
+   "category": "Textiles",
+   "rare": true
+  },
+  {
+   "symbol": "vegaslimweed",
+   "name": "Vega Slimweed",
+   "category": "Medicines",
+   "rare": true
+  },
+  {
+   "symbol": "vidavantianlace",
+   "name": "Vidavantian Lace",
+   "category": "Consumer Items",
+   "rare": true
+  },
+  {
+   "symbol": "lftvoidextractcoffee",
+   "name": "Void Extract Coffee",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "volkhabbeedrones",
+   "name": "Volkhab Bee Drones",
+   "category": "Machinery",
+   "rare": true
+  },
+  {
+   "symbol": "wheemetewheatcakes",
+   "name": "Wheemete Wheat Cakes",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "witchhaulkobebeef",
+   "name": "Witchhaul Kobe Beef",
+   "category": "Foods",
+   "rare": true
+  },
+  {
+   "symbol": "wolf1301fesh",
+   "name": "Wolf Fesh",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "wulpahyperboresystems",
+   "name": "Wulpa Hyperbore Systems",
+   "category": "Machinery",
+   "rare": true
+  },
+  {
+   "symbol": "wuthielokufroth",
+   "name": "Wuthielo Ku Froth",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "xihecompanions",
+   "name": "Xihe Biomorphic Companions",
+   "category": "Technology",
+   "rare": true
+  },
+  {
+   "symbol": "yasokondileaf",
+   "name": "Yaso Kondi Leaf",
+   "category": "Legal Drugs",
+   "rare": true
+  },
+  {
+   "symbol": "zeesszeantglue",
+   "name": "Zeessze Ant Grub Glue",
+   "category": "Consumer Items",
+   "rare": true
+  }
  ]
 }
