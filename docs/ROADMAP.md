@@ -13,6 +13,18 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
+### Commodities and materials (asked 2026-10-26)
+- The Shop finds commodities too: where to buy one (Titanium etc.: Spansh's station search filters
+  on a market's commodity and stock, and each station brings price, stock and when its market was
+  seen; carriers and stale markets need the same care as ships and modules).
+- Raw, manufactured and encoded materials (Arsenic etc.) are not sold: the nearest material trader
+  of the right kind (Spansh lists them: 372 raw traders, the nearest to Merope 192 ly away), and
+  where to find them yourself.
+- Show each planet's materials (the app has them from your scans and Spansh) and highlight the ones
+  you need for the engineering upgrade you are working towards, or plan to: the blueprint recipes
+  per grade against your stock (the journal's `Materials`). The journal does not say which upgrade
+  you plan, so probably a list of goals in the app. Settle the details first.
+
 ### Your path on the globe: check the recording
 - Check how the path is built (`app/track.py`: a point every 5 m on foot, 20 m in the SRV, 50 m
   in the ship below 5 km; stretches; the globe gets new points every 5 s) and whether it fills the
