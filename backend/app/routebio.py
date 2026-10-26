@@ -3,7 +3,9 @@
 Spansh knows a body's biological signal count from other commanders' FSS scans and, when
 someone mapped it, the genera from DSS. The species are predicted here from the body's
 physical facts, like for your own scans; the estimate is a (min, max) range of base values
-(the first-footfall bonus is not assumed: nobody can tell whether someone landed there).
+(the first-footfall bonus is not assumed: nobody can tell whether someone landed there). With a
+minimum value of one species, only species worth that much count: a genus whose cheapest
+candidate is below it may give nothing.
 
 For codex routes the same predictions become codex entries (a species' colour variant, from
 the parent star or the body's materials) with the chance of each being there: a genus
@@ -157,8 +159,20 @@ class BioEstimate:
     best: int = 0  # base value of the dearest species that may grow there
 
 
-def estimate(raw: dict[str, Any]) -> BioEstimate | None:
-    """Value range of a body's biology; None without biological signals."""
+def _counted(ranges: dict[str, tuple[int, int]], minimum: int) -> dict[str, tuple[int, int]]:
+    """Genus value ranges counting only species worth `minimum` or more: a genus whose cheapest
+    candidate is below it may give nothing, one whose dearest is below it gives nothing."""
+    if minimum <= 0:
+        return ranges
+    return {
+        genus: (lo if lo >= minimum else 0, hi if hi >= minimum else 0)
+        for genus, (lo, hi) in ranges.items()
+    }
+
+
+def estimate(raw: dict[str, Any], min_species_value: int = 0) -> BioEstimate | None:
+    """Value range of a body's biology (only species worth `min_species_value` or more
+    counted); None without biological signals."""
     signals = bio_signals(raw)
     if signals <= 0:
         return None
@@ -173,7 +187,7 @@ def estimate(raw: dict[str, Any]) -> BioEstimate | None:
     }
     predictions = exobio.predict(body, system, genuses or None)
     ranges = exobio.genus_ranges(predictions, genuses)
-    low, high = exobio.range_total(ranges, max(signals, len(genuses)))
+    low, high = exobio.range_total(_counted(ranges, min_species_value), max(signals, len(genuses)))
     certain = genuses or exobio.deduced_genera(predictions, signals)
     return BioEstimate(
         signals=signals,

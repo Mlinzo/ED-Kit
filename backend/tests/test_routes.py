@@ -910,3 +910,9 @@ def test_bio_route_minimum_value_of_one_species() -> None:
     # Only planets where a species worth 5M may grow: the cheap one is left out, the one with
     # both genera stays.
     assert stops(5_000_000) == [2, 3]
+    # Its value counts only the species worth that much: the Bacterium is left out.
+    every, counted = routebio.estimate(both), routebio.estimate(both, 5_000_000)
+    assert every is not None and counted is not None
+    assert counted.high == high.high < every.high
+    assert counted.low == (high.low if high.low >= 5_000_000 else 0)
+    assert counted.best == every.best

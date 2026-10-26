@@ -164,7 +164,9 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   total, the route form takes the least a single species there must be worth (base value, no
   ×5 bonus; 0, the default: any): a planet counts only if the dearest species that may grow on
   it (DSS genera when known, else the predicted ones) reaches it, so planets with only cheap
-  species are left out. Their values still count every species.
+  species are left out. Since 2026-10-26 their values count only the species worth that much
+  too: a genus whose cheapest candidate is below the minimum may give nothing, so it adds 0 to
+  the low end; one whose dearest is below it adds nothing at all.
 - Routes do not bring you back, and follow you on (2026-10-22): new routes leave out systems
   where you analysed any species (with "skip finished", on by default): a 50-stop route took
   the player back to Pleiades Sector GW-W c1-15 for the 8 species left after 14 analysed there.

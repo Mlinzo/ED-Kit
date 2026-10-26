@@ -338,7 +338,7 @@ class _Collector:
         region: str | None = None
         new: tuple[routebio.CodexChance, ...] = ()
         if bio_page:
-            bio = routebio.estimate(raw)
+            bio = routebio.estimate(raw, self.req.bio_min_species_value)
             if bio is None:
                 return
             if self.req.goal == "codex":

@@ -244,7 +244,7 @@ export const en: Strings = {
     bioMinValueHint:
       'Optimistic estimate from predicted species, excl. the first footfall bonus (×5).',
     bioMinSpeciesValue: 'Min. value of one species',
-    bioMinSpeciesValueHint: 'Only planets where at least one species worth this much may grow (from predicted species, excl. the ×5 bonus).',
+    bioMinSpeciesValueHint: 'Only planets where at least one species worth this much may grow; a planet’s value counts only such species (from predicted species, excl. the ×5 bonus).',
     bioRequireGenuses: 'Only planets with known genera',
     bioRequireGenusesHint: 'Genera are known once someone has mapped the planet (DSS), so the estimate is more accurate',
     bioSignals: (n: number) => `${n} ${plural(n, ['signal', 'signals'])}`,
