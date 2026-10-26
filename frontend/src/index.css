@@ -52,6 +52,10 @@ body {
 [data-snapshot='no-name'] [data-snapshot-name] {
   display: none !important;
 }
+/* Only in the picture: the app's name in its corner. */
+[data-snapshot] [data-snapshot-only] {
+  display: flex !important;
+}
 /* Text a hair wider in the copy must not wrap anew (ShareDialog's markSingleLines), nor make a
    table's box scroll. */
 [data-snapshot] [data-snapshot-line] {

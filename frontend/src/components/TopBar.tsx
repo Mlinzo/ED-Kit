@@ -12,18 +12,10 @@ import { SettingsButton } from '../settings/SettingsDialog'
 import { useNetwork } from '../settings/useNetwork'
 import { ConnectionIndicator } from './ConnectionIndicator'
 import { Credits } from './Credits'
+import { Logo } from './Logo'
 import { SupportLink } from './SupportLink'
 import { TopTabs } from './TabBar'
 import type { Tab } from './tabs'
-
-function Logo() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-6 shrink-0 text-accent" aria-hidden fill="none" stroke="currentColor">
-      <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
-      <ellipse cx="12" cy="12" rx="10" ry="4.2" strokeWidth="1.6" transform="rotate(-25 12 12)" opacity="0.7" />
-    </svg>
-  )
-}
 
 function exitMockHref(): string {
   const url = new URL(window.location.href)

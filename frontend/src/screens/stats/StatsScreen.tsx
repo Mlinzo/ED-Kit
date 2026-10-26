@@ -3,6 +3,7 @@ import { ChartNoAxesColumn } from 'lucide-react'
 import { useRef } from 'react'
 import { useView } from '../../api/hooks'
 import type { StatsView } from '../../api/types'
+import { Logo } from '../../components/Logo'
 import { EmptyState, ViewFallback } from '../../components/States'
 import { t } from '../../i18n'
 import { Activity } from './Activity'
@@ -52,6 +53,12 @@ export function StatsScreen() {
       <Scanning stats={data} className="xl:col-span-12" />
       <Firsts stats={data} className="xl:col-span-12" />
       <Deaths stats={data} className="xl:col-span-12" />
+
+      {/* The app's name in the corner of the picture (index.css): where it came from. */}
+      <p data-snapshot-only className="hidden items-center justify-end gap-1.5 text-xs font-medium text-zinc-500 xl:col-span-12">
+        <Logo className="size-4" />
+        {t.appName}
+      </p>
     </div>
   )
 }

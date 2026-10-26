@@ -179,7 +179,8 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   Download, copy to the clipboard, or send through the system's share sheet where the browser
   allows (a secure page: the PC itself); on a phone over the LAN the picture is held to save it.
   A drawn 16:9 card with the galaxy and your travels was tried first and dropped: the tab as it
-  is was wanted.
+  is was wanted. Since 2026-10-26 the picture carries the app's mark and name, small, in its
+  bottom right corner (only in the picture, not on the page).
 - Where to sell: the next jump first (2026-10-22): the next system of the route plotted in the
   game is asked about on its own (Spansh, the stations of that system) and, when you can sell
   there, it leads the list as "Next jump" (after the system you are in, when that one buys data),
