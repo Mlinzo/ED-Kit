@@ -14,12 +14,9 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   newcomer is worse than none. Re-check the guide after big game updates.
 
 ### Release
-- Delete the `v0.1.0` release (2026-10-17; the repository is private for now) with its tag, and
-  release again once the app is in decent shape (decided 2026-10-19). On 2026-10-20 origin had no
-  tags left, but the local `v0.1.0` still points at the 2026-10-17 commit: `git tag -d v0.1.0`
-  before tagging again, and delete a leftover draft release in the web UI (Releases). The version
-  stays 0.1.0: nobody outside has seen it. Make the repository public before announcing it (the
-  post links to `releases/latest`).
+- v0.2.0 and v0.2.1 are out (2026-10-24), and the repository is public (2026-10-26). Left from
+  the 2026-10-19 decision to drop the first release: origin still has the `v0.1.0` tag (the
+  2026-10-17 commit); delete it, with its release if one is still listed.
 
 ### Bookmarks
 - Make bookmarks (asked 2026-10-26). Settle the scope first: places on a planet's surface (mark
@@ -33,13 +30,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   0.5 MB in the SRV, up to 1.6 MB in low flight (the 0.25 s status poll caps it at 4 points a
   second). Not yet seen on real play. If it grows too much: thin old stretches (Douglas–Peucker),
   keep the latest visits per body, and count the table in the database size check.
-
-### Species prediction: check for a missed pattern
-- HIP 19036 (2026-10-25): on both 3 a and 3 b the Bacterium card said "one of two species", and
-  both turned out Green: Bacterium Tela - Green on 3 a (variant `_Tungsten_`, colour from a
-  material) and Bacterium Cerbrus - Green on 3 b (variant `_K_`, colour from the star class).
-  Check whether something in the body data tells the two candidates apart (and the colour), so the
-  prediction could name one species instead of two. The journal for that evening has the scans.
 
 ## Deferred
 - Rank progress (Explorer, Exobiologist).
@@ -70,6 +60,16 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Bacterium Tela or Cerbrus in a thin water atmosphere (checked 2026-10-26, nothing to change):
+  HIP 19036 3 a gave Tela and 3 b and 3 c Cerbrus, on near twins (rocky, no volcanism,
+  0.044–0.048 g, 419–428 K, moons of the same planet). Of the 600 thin-water bodies with biology
+  nearest to HIP 19036 on Spansh, other players' finds name the Bacterium on 379: 169 Tela and 210
+  Cerbrus, with the same gravity, temperature, pressure, mass, orbit and materials (no measure
+  tells them apart better than chance: AUC 0.47–0.53), and 35 systems have both. So the card
+  stays "one of two species". Tela's colour comes from a group-B material: each of these bodies
+  had two, the larger share won 79 times and the smaller 88, with no fixed order between the
+  materials, so every one present stays a candidate. Both HIP 19036 cards came out Green by
+  chance: Tela's Tungsten and Cerbrus's K star.
 - Mining locations (2026-10-26): the FSS's "Planetary Mining Location" signals (the most common
   signal in the user's journals: 477 against 143 biological) have their own count instead of
   "other": a "Mining N" badge in the body list, a row under the body's signals and a reason chip;
