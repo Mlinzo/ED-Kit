@@ -553,13 +553,14 @@ def _drop_old_caches(conn: sqlite3.Connection) -> None:
 
 
 def init_schema(conn: sqlite3.Connection) -> None:
-    from app import notes, usersettings
+    from app import bookmarks, usersettings
 
     _drop_old_caches(conn)
     conn.executescript(BASE_SCHEMA)
     _add_missing_columns(conn)
     conn.executescript(usersettings.SCHEMA)
-    conn.executescript(notes.SCHEMA)
+    conn.executescript(bookmarks.SCHEMA)
+    bookmarks.migrate(conn)
     conn.executescript(PROJECTION_SCHEMA)
     if get_meta(conn, "schema_version") is None:
         set_meta(conn, "schema_version", SCHEMA_VERSION)

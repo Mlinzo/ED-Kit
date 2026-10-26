@@ -1,5 +1,6 @@
 import type { ConnectionState, Transport } from './transport'
 import type {
+  BookmarksView,
   GalaxyView,
   HistoryView,
   IngestState,
@@ -30,6 +31,7 @@ export interface ViewMap {
   route: RouteView
   navroute: NavRouteView
   galaxy: GalaxyView
+  bookmarks: BookmarksView
   live: LiveView
 }
 
@@ -55,6 +57,7 @@ export const TOPICS: readonly Topic[] = [
   'route',
   'navroute',
   'galaxy',
+  'bookmarks',
   'live',
 ]
 

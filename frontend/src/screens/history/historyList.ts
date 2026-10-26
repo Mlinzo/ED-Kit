@@ -1,9 +1,9 @@
 // Filtering and day grouping of the visited systems (pure, unit-tested).
 import type { HistoryEntry } from '../../api/types'
 
-export type HistoryFilter = 'all' | 'explored' | 'bio' | 'firsts' | 'unsold' | 'notes'
+export type HistoryFilter = 'all' | 'explored' | 'bio' | 'firsts' | 'unsold' | 'bookmarks'
 
-export const HISTORY_FILTERS: readonly HistoryFilter[] = ['all', 'explored', 'bio', 'firsts', 'unsold', 'notes']
+export const HISTORY_FILTERS: readonly HistoryFilter[] = ['all', 'explored', 'bio', 'firsts', 'unsold', 'bookmarks']
 
 /** A pass-through jump: nothing scanned beyond the arrival star. */
 export function isTransit(e: HistoryEntry): boolean {
@@ -16,7 +16,7 @@ const MATCH: Record<HistoryFilter, (e: HistoryEntry) => boolean> = {
   bio: (e) => e.bioSignals > 0 || e.speciesAnalysed > 0,
   firsts: (e) => e.firstDiscoveries + e.firstMapped + e.firstFootfalls > 0,
   unsold: (e) => e.unsoldValue > 0,
-  notes: (e) => e.note !== null || e.bodyNotes > 0,
+  bookmarks: (e) => e.bookmark !== null || e.innerBookmarks > 0,
 }
 
 export function matchesFilter(e: HistoryEntry, filter: HistoryFilter): boolean {
@@ -32,7 +32,7 @@ export function matchesQuery(e: HistoryEntry, query: string): boolean {
 }
 
 export function filterCounts(systems: readonly HistoryEntry[], query: string): Record<HistoryFilter, number> {
-  const counts = { all: 0, explored: 0, bio: 0, firsts: 0, unsold: 0, notes: 0 }
+  const counts = { all: 0, explored: 0, bio: 0, firsts: 0, unsold: 0, bookmarks: 0 }
   for (const e of systems) {
     if (!matchesQuery(e, query)) continue
     for (const f of HISTORY_FILTERS) if (MATCH[f](e)) counts[f] += 1

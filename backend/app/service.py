@@ -39,7 +39,7 @@ FUEL_STEP_T = 0.5  # a fuel change this big (scooping, jumping): new forecast an
 TRACK_SHOW_S = 5.0  # the globe gets the path you go along at most this often
 # Views built from nearly everything the journal-derived ones are: refreshed with any of them.
 DERIVED_TOPICS = frozenset(
-    {"stats", "history", "sessions", "route", "navroute", "galaxy", "sell", "shop"}
+    {"stats", "history", "sessions", "route", "navroute", "galaxy", "sell", "shop", "bookmarks"}
 )
 # Not from the journal: they never make the journal-derived views stale.
 OWN_TOPICS = frozenset({"surface", "live"})

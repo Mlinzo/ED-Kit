@@ -1,4 +1,4 @@
-import { CircleCheck, MapPin, StickyNote } from 'lucide-react'
+import { BookmarkCheck, CircleCheck, MapPin } from 'lucide-react'
 import { useRef, type KeyboardEvent } from 'react'
 import type { BodyView } from '../../api/types'
 import { BodyBadges, type RouteTarget } from '../../components/BodyBadges'
@@ -194,7 +194,9 @@ function BodyRow({
               <span className="sr-only sm:not-sr-only">{t.system.youAreHere}</span>
             </span>
           )}
-          {body.note && <StickyNote className="size-3.5 shrink-0 self-center text-amber-300" aria-label={t.notes.has} />}
+          {(body.bookmark || body.places.length > 0) && (
+            <BookmarkCheck className="size-3.5 shrink-0 self-center text-amber-300" aria-label={t.bookmarks.has} />
+          )}
           <span className={`shrink-0 text-sm ${caption}`}>{formatLs(body.distanceLs)}</span>
         </div>
         <div className={`flex min-w-0 items-center gap-2 pl-6 text-sm ${caption}`}>

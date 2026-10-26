@@ -3,7 +3,7 @@
 // plus a short journal backfill so the progress bar shows.
 
 import { createLiveTransport, type StreamHandlers, type Transport } from '../api/transport'
-import type { IngestState, LiveStatus, NoteRequest, SurfaceView, SystemView, Topic } from '../api/types'
+import type { BookmarkHereRequest, BookmarkPatch, BookmarkRequest, IngestState, LiveStatus, SurfaceView, SystemView, Topic } from '../api/types'
 import { offsetLatLon } from '../lib/geo'
 import {
   buildSell,
@@ -12,10 +12,11 @@ import {
   buildSystem,
   PLANET_RADIUS_M,
   SITE_ORIGIN,
+  SURFACE_BODY_ID,
   SURFACE_BODY_NAME,
 } from './fixtures'
 import { buildHistory, buildPastSystem, withHistory } from './history'
-import { createMockNotes } from './notes'
+import { createMockBookmarks } from './bookmarks'
 import { createMockRoute } from './route'
 import { buildSessions } from './sessions'
 import { buildShop } from './shop'
@@ -107,6 +108,31 @@ function simulatedStatus(seconds: number): LiveStatus {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/** A few bookmarks so the demo shows them: a spot on the planet, a system you passed, a station. */
+function seedBookmarks(marks: ReturnType<typeof createMockBookmarks>, system: SystemView, passed: { address: string; name: string } | undefined) {
+  const address = system.address ?? ''
+  const spot = offsetLatLon(SITE_ORIGIN, 1_850, -2_400, PLANET_RADIUS_M)
+  marks.create({
+    kind: 'place',
+    systemAddress: address,
+    systemName: system.name,
+    bodyId: SURFACE_BODY_ID,
+    bodyName: SURFACE_BODY_NAME,
+    ...spot,
+    title: 'Bronzite outcrop',
+    category: 'mining',
+    comment: 'Bronzite and bertrandite in the rocks by the crater rim: come back with the SRV.',
+  })
+  if (passed) marks.create({ kind: 'system', systemAddress: passed.address, systemName: passed.name, category: 'scenic', comment: 'Ringed water world in the glow of the star.' })
+  marks.create({
+    kind: 'station',
+    systemAddress: '3238296097059',
+    systemName: 'Eol Prou RS-T d3-94',
+    title: 'Gagarin Gate',
+    comment: 'Universal Cartographics and Vista Genomics, large pads.',
+  })
+}
+
 export function createMockTransport(): Transport {
   const history = buildHistory(buildSystem())
   const system = withHistory(buildSystem(), history)
@@ -121,7 +147,8 @@ export function createMockTransport(): Transport {
   const elapsed = () => (performance.now() - startedAt) / 1_000
   const live = createLiveTransport()
   const players = buildLive()
-  const notes = createMockNotes()
+  const marks = createMockBookmarks({ system, status: () => simulatedStatus(elapsed()) })
+  seedBookmarks(marks, system, history.systems[3])
 
   let ingest: IngestState = {
     backfillDone: false,
@@ -164,6 +191,7 @@ export function createMockTransport(): Transport {
     '/api/view/route': () => route.view(),
     '/api/view/navroute': () => navroute,
     '/api/view/galaxy': () => buildGalaxy(history, route.view(), navroute),
+    '/api/view/bookmarks': () => marks.view(),
     '/api/view/live': () => players,
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,
@@ -180,15 +208,25 @@ export function createMockTransport(): Transport {
       await delay(60 + Math.random() * 80)
       const handler = routes[url.pathname]
       if (!handler) throw new Error(`HTTP 404: ${path}`)
-      return notes.apply(url.pathname, structuredClone(handler(url.searchParams))) as T
+      return marks.apply(url.pathname, structuredClone(handler(url.searchParams))) as T
     },
 
     async send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T | null> {
       await delay(80)
-      if (method === 'PUT' && path === '/api/notes') {
-        notes.put(body as NoteRequest)
-        notify?.(['system', 'navroute', 'history', 'galaxy'])
-        return null
+      const bookmark = /^\/api\/bookmarks(?:\/(here|\d+))?$/.exec(path)
+      if (bookmark) {
+        const [, which] = bookmark
+        const id = Number(which)
+        const result =
+          method === 'POST' && which === 'here'
+            ? marks.createHere(body as BookmarkHereRequest)
+            : method === 'POST'
+              ? marks.create(body as BookmarkRequest)
+              : method === 'PUT'
+                ? marks.update(id, body as BookmarkPatch)
+                : (marks.remove(id), null)
+        notify?.(['bookmarks', 'system', 'navroute', 'history', 'galaxy', 'surface', 'sell', 'shop'])
+        return structuredClone(result) as T | null
       }
       return structuredClone(route.send(method, path, body) ?? null) as T | null
     },

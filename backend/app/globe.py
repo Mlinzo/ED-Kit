@@ -14,7 +14,7 @@ from __future__ import annotations
 import sqlite3
 from collections import defaultdict
 
-from app import canonn, exobio, track
+from app import bookmarks, canonn, exobio, track
 from app.exobio.variants import colour_of
 from app.models import BodyFacts, SystemFacts
 from app.schemas import CommunityFinds, GlobeMark, GlobeShip, GlobeView, LiveStatus
@@ -196,4 +196,5 @@ def globe_view(
         community_state=state,
         community_at=at,
         community=finds,
+        places=bookmarks.places_on(conn, address, body_id),
     )

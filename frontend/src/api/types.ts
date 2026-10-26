@@ -16,6 +16,82 @@ export type SpeciesStatus = 'predicted' | 'sampling' | 'analysed'
  *  logged: known. */
 export type CodexStatus = 'new' | 'new_region' | 'new_colour' | 'logged'
 
+/** What a bookmark marks. */
+export type BookmarkKind = 'system' | 'body' | 'station' | 'place'
+/** A bookmark's tag. */
+export type BookmarkCategory = 'mining' | 'bio' | 'geo' | 'trade' | 'scenic' | 'other'
+
+/** A bookmark of yours: a system, a body, a station or a place on a planet. */
+export interface BookmarkView {
+  id: number
+  kind: BookmarkKind
+  systemAddress: string
+  systemName: string | null
+  /** A body's; a place's body. */
+  bodyId: number | null
+  bodyName: string | null
+  /** A place. */
+  lat: number | null
+  lon: number | null
+  /** A station's name; a place's name (yours or the mark's). */
+  title: string | null
+  category: BookmarkCategory
+  /** '' when none. */
+  comment: string
+  createdAt: string
+  updatedAt: string
+  /** From your current system (the bookmarks list). */
+  distanceLy: number | null
+}
+
+/** Where you are, as far as the journal says (the live state adds: on the ground, docked). */
+export interface BookmarkHere {
+  systemAddress: string | null
+  systemName: string | null
+  /** The body you are at (approached, landed on). */
+  bodyId: number | null
+  bodyName: string | null
+  /** The station you last docked at, in this system. */
+  station: string | null
+}
+
+/** GET /api/view/bookmarks: every bookmark, the latest first. */
+export interface BookmarksView {
+  items: BookmarkView[]
+  here: BookmarkHere
+}
+
+/** POST /api/bookmarks: a system, a body, a station (by its name) or a place (body, lat, lon). */
+export interface BookmarkRequest {
+  kind: BookmarkKind
+  systemAddress: string
+  bodyId?: number | null
+  lat?: number | null
+  lon?: number | null
+  title?: string | null
+  category?: BookmarkCategory | null
+  comment?: string
+  systemName?: string | null
+  bodyName?: string | null
+  x?: number
+  y?: number
+  z?: number
+}
+
+/** POST /api/bookmarks/here: where you are now. */
+export interface BookmarkHereRequest {
+  what: 'system' | 'body' | 'place' | 'station'
+  category?: BookmarkCategory | null
+  comment?: string
+}
+
+/** PUT /api/bookmarks/{id}: left out = unchanged. */
+export interface BookmarkPatch {
+  title?: string | null
+  category?: BookmarkCategory
+  comment?: string
+}
+
 export interface SpeciesView {
   genus: string
   species: string
@@ -166,8 +242,10 @@ export interface BodyView {
   parents: ParentRef[]
   orbit: OrbitView | null
   visual: BodyVisual
-  /** Your note (null: none). */
-  note: string | null
+  /** Yours, on the body. */
+  bookmark: BookmarkView | null
+  /** Your bookmarked places on its surface. */
+  places: BookmarkView[]
 }
 
 export interface BarycentreView {
@@ -220,8 +298,9 @@ export interface SystemView {
   /** A system you have not been to (shown from Spansh / EDSM): its data is being asked for,
    * they know no bodies, or the app runs offline. null: you have been there, or the data is in. */
   lookup: 'pending' | 'missing' | 'offline' | null
-  /** Your note on the system (bodies carry their own). */
-  note: string | null
+  /** Yours, on the system, and on its stations (bodies carry their own). */
+  bookmark: BookmarkView | null
+  stations: BookmarkView[]
 }
 
 export interface SamplePoint {
@@ -297,6 +376,8 @@ export interface GlobeView {
   /** When Canonn was asked (ISO). */
   communityAt: string | null
   community: CommunityFinds[]
+  /** Your bookmarked places on this planet. */
+  places: BookmarkView[]
 }
 
 export interface SurfaceView {
@@ -394,6 +475,8 @@ export interface SellStationView {
   docked: boolean
   /** A carrier: open to all (per Spansh), or not known. Closed ones are never listed. */
   access: 'all' | 'unknown' | null
+  /** Yours, on the station. */
+  bookmark?: BookmarkView | null
   /** The system needs a permit. */
   permit: boolean
 }
@@ -529,6 +612,8 @@ export interface ShopStationView {
   /** Nothing chosen: ships / modules Spansh knows it sells (null: no shipyard / outfitting; 0: no list). */
   shipCount: number | null
   moduleCount: number | null
+  /** Yours, on the station. */
+  bookmark?: BookmarkView | null
 }
 
 export interface ShopPlaceView {
@@ -795,9 +880,9 @@ export interface HistoryEntry {
   lostValue: number
   /** Notable finds, most remarkable first: elw, black_hole, neutron, ww, ... */
   notable: string[]
-  /** Your note on the system; bodies there with a note of yours. */
-  note: string | null
-  bodyNotes: number
+  /** Yours, on the system; your others there (bodies, places, stations). */
+  bookmark: BookmarkView | null
+  innerBookmarks: number
 }
 
 /** GET /api/view/history */
@@ -1064,8 +1149,8 @@ export interface NavHopView {
   discovery: DiscoveryChanceView | null
   /** Your scan of its arrival star: first discovery (or not); null without a scan. */
   discoveredByYou: boolean | null
-  /** Your note on the system. */
-  note: string | null
+  /** Yours, on the system. */
+  bookmark: BookmarkView | null
 }
 
 export interface FuelForecastView {
@@ -1214,29 +1299,20 @@ export interface GalaxyView {
   engineers: GalaxyEngineerView[]
   /** Spansh / EDSM are asked: any system opens on the System tab (else only yours). */
   online: boolean
-  /** Systems with a note of yours and a known position, visited or not. */
-  notes: GalaxyNoteView[]
+  /** Systems holding bookmarks of yours, position known, visited or not. */
+  bookmarks: GalaxyBookmarkView[]
 }
 
-export interface GalaxyNoteView {
+export interface GalaxyBookmarkView {
   address: string
   name: string | null
   x: number
   y: number
   z: number
-  text: string
-}
-
-/** PUT /api/notes: your note on a system (bodyId null) or a body; empty text deletes it. */
-export interface NoteRequest {
-  systemAddress: string
-  bodyId: number | null
-  text: string
-  systemName?: string | null
-  bodyName?: string | null
-  x?: number
-  y?: number
-  z?: number
+  /** The system's own. */
+  bookmark: BookmarkView | null
+  /** The others there: bodies, places, stations. */
+  inner: number
 }
 
 /** A system with someone in it lately (EDDN): how we know, never who. */
@@ -1289,6 +1365,7 @@ export type Topic =
   | 'route'
   | 'navroute'
   | 'galaxy'
+  | 'bookmarks'
   | 'live'
 
 // Server-Sent Events on GET /api/stream:

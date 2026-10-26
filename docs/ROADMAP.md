@@ -13,16 +13,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
-### Release
-- v0.2.0 and v0.2.1 are out (2026-10-24), and the repository is public (2026-10-26). Left from
-  the 2026-10-19 decision to drop the first release: origin still has the `v0.1.0` tag (the
-  2026-10-17 commit); delete it, with its release if one is still listed.
-
-### Bookmarks
-- Make bookmarks (asked 2026-10-26). Settle the scope first: places on a planet's surface (mark
-  where you stand from Status.json, give it a name, see it on the globe; private, as the Discord
-  player who mines asked for his spots) and/or systems and bodies.
-
 ### Your path on the globe: check the recording
 - Check how the path is built (`app/track.py`: a point every 5 m on foot, 20 m in the SRV, 50 m
   in the ship below 5 km; stretches; the globe gets new points every 5 s) and whether it fills the
@@ -60,6 +50,18 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Bookmarks (2026-10-26): bookmark a system, a body, a station or a spot on a planet, with a tag
+  (mining, biology, geology, station & trade, scenic view, other) and your comment; the notes
+  became bookmarks with their text as the comment. Where: the System tab (the system, a body, the
+  spots on a body, the bookmarked stations), the route plotted in the game, Where to sell and the
+  Shop (a station), the globe (tap the ground or a mark, or "Bookmark where I am"; each spot an icon
+  of its tag) and the new Bookmarks tab: everything in one list, with search, kind and tag filters,
+  newest or nearest first (light years, or metres on the planet you are on), and bookmark where you
+  are in one tap (your system, the body you are at, your spot, the station you are docked at).
+  Shown in the history ("Bookmarked" filter) and on the galaxy map (a ring in the system's tag
+  colour). Private: kept in your database only.
+- The first release removed (2026-10-26): the `v0.1.0` tag deleted from origin; v0.2.0 and v0.2.1
+  are the releases, and the repository is public.
 - Bacterium Tela or Cerbrus in a thin water atmosphere (checked 2026-10-26, nothing to change):
   HIP 19036 3 a gave Tela and 3 b and 3 c Cerbrus, on near twins (rocky, no volcanism,
   0.044–0.048 g, 419–428 K, moons of the same planet). Of the 600 thin-water bodies with biology

@@ -261,7 +261,8 @@ function body(input: BodyInput): BodyView {
     codexMaybe: species.filter((s) => s.codex !== 'logged' && !s.certain).length,
     parents,
     visual,
-    note: input.note ?? null,
+    bookmark: input.bookmark ?? null,
+    places: input.places ?? [],
   }
   return { ...base, ...deriveInterest(base) }
 }
@@ -694,7 +695,8 @@ export function buildSystem(): SystemView {
       bioMax: sum((b) => b.bioValueMax),
     },
     lookup: null,
-    note: null,
+    bookmark: null,
+    stations: [],
   }
 }
 
@@ -731,6 +733,7 @@ function buildGlobe(): GlobeView {
     track: [], // the transport draws the drive in (mock/index.ts)
     communityState: 'ok',
     communityAt: '2026-10-16T19:40:30Z',
+    places: [], // your bookmarks: mock/bookmarks.ts
     community: [
       { name: 'Concha Renibus - Red', category: 'Biology', points: spread(away(5.6, -8.2), 9), yours: false },
       { name: 'Stratum Tectonicas - Teal', category: 'Biology', points: spread(away(0.3, 0.6), 6), yours: true },

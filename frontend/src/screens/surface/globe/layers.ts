@@ -1,15 +1,16 @@
 // What the planet globe shows, layer by layer: the colour of each layer and where its data comes
 // from (said next to it in the legend and on every mark's card).
 
-import type { GlobeMark, GlobeView } from '../../../api/types'
+import type { BookmarkView, GlobeMark, GlobeView } from '../../../api/types'
+import { bookmarkName } from '../../../components/bookmarks'
 import { t } from '../../../i18n'
 import { haversineM, type LatLon } from '../../../lib/geo'
 
 /** Layers you can hide; your ship is shown whenever it is on the planet, you whenever you are. */
-export type LayerId = 'samples' | 'track' | 'codex' | 'landings' | 'settlements' | 'community'
-export const LAYERS: readonly LayerId[] = ['samples', 'track', 'codex', 'landings', 'settlements', 'community']
+export type LayerId = 'bookmarks' | 'samples' | 'track' | 'codex' | 'landings' | 'settlements' | 'community'
+export const LAYERS: readonly LayerId[] = ['bookmarks', 'samples', 'track', 'codex', 'landings', 'settlements', 'community']
 
-export type SourceId = 'live' | 'journal' | 'recorded' | 'tracked' | 'community'
+export type SourceId = 'live' | 'journal' | 'recorded' | 'tracked' | 'community' | 'yours'
 
 export interface LayerStyle {
   /** sRGB hex: the WebGL marks and the legend dots. */
@@ -25,6 +26,7 @@ const PATH_JOIN_M = 2_000
 export const SHIP_COLOR = '#e4e4e7' // zinc-200
 
 export const LAYER_STYLE: Record<LayerId | 'ship', LayerStyle> = {
+  bookmarks: { color: '#fde68a', size: 12, source: 'yours' }, // amber-200, as on the galaxy map; drawn as icons
   samples: { color: '#34d399', size: 10, source: 'recorded' }, // emerald-400: value
   track: { color: '#7dd3fc', size: 2.5, source: 'tracked' }, // sky-300: you, lighter
   codex: { color: '#fde68a', size: 10, source: 'journal' }, // amber-200
@@ -46,6 +48,8 @@ export interface GlobePoint {
   at: string | null
   /** A Canonn find: its name ("Osseus Discus - Blue"), the list filters on it. */
   find?: string
+  /** One of your bookmarked places. */
+  bookmark?: BookmarkView
 }
 
 function markLayer(kind: GlobeMark['kind']): LayerId {
@@ -76,9 +80,22 @@ function markPoint(m: GlobeMark): GlobePoint {
   return { id, layer, lat: m.lat, lon: m.lon, title, detail: null, at: m.at }
 }
 
+function placePoint(b: BookmarkView): GlobePoint {
+  return {
+    id: `bookmark:${b.id}`,
+    layer: 'bookmarks',
+    lat: b.lat ?? 0,
+    lon: b.lon ?? 0,
+    title: bookmarkName(b),
+    detail: t.bookmarks.category[b.category],
+    at: b.createdAt,
+    bookmark: b,
+  }
+}
+
 /** Every mark of the globe; Canonn's only for `find` when one is chosen. */
 export function globePoints(globe: GlobeView, find: string | null = null): GlobePoint[] {
-  const points = globe.marks.map(markPoint)
+  const points = [...globe.places.filter((b) => b.lat !== null && b.lon !== null).map(placePoint), ...globe.marks.map(markPoint)]
   const ship = globe.ship
   if (ship && ship.lat !== null && ship.lon !== null) {
     points.push({
@@ -102,7 +119,7 @@ export function globePoints(globe: GlobeView, find: string | null = null): Globe
 
 /** How many marks each layer has (the legend counts; the path: its points). */
 export function layerCounts(globe: GlobeView): Record<LayerId, number> {
-  const counts: Record<LayerId, number> = { samples: 0, track: 0, codex: 0, landings: 0, settlements: 0, community: 0 }
+  const counts: Record<LayerId, number> = { bookmarks: globe.places.length, samples: 0, track: 0, codex: 0, landings: 0, settlements: 0, community: 0 }
   for (const m of globe.marks) counts[markLayer(m.kind)] += 1
   for (const s of globe.track) counts.track += s.length
   for (const f of globe.community) counts.community += f.points.length

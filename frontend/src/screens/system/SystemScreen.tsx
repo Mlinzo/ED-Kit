@@ -16,8 +16,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useIngest, useLiveStatusSelector, useView } from '../../api/hooks'
 import type { SystemRef, SystemView } from '../../api/types'
 import { Credits } from '../../components/Credits'
-import { Note } from '../../components/Note'
-import type { NoteTarget } from '../../components/notes'
+import { BookmarkBox, BookmarkLine } from '../../components/Bookmark'
+import type { BookmarkTarget } from '../../components/bookmarks'
 import { Segmented } from '../../components/Segmented'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
@@ -94,10 +94,11 @@ function BioRange({ min, max }: { min: number; max: number }) {
 /** Opens a system from the history; null opens the current system. */
 type OpenSystem = (address: string | null) => void
 
-/** Your note on the system (bodyId null) or on one of its bodies. */
-function systemNoteTarget(system: SystemView, body?: { bodyId: number; name: string }): NoteTarget {
+/** What your bookmark marks: the system, or one of its bodies. */
+function bookmarkTarget(system: SystemView, body?: { bodyId: number; name: string }): BookmarkTarget {
   const [x, y, z] = system.starPos ?? []
   return {
+    kind: body ? 'body' : 'system',
     systemAddress: system.address ?? '',
     bodyId: body?.bodyId ?? null,
     systemName: system.name,
@@ -224,7 +225,20 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
           {system.name ?? t.common.unknown}
         </h1>
         {system.address && (
-          <Note key={system.address} note={system.note} target={systemNoteTarget(system)} className="mt-2 max-w-xl" />
+          <BookmarkBox key={system.address} bookmark={system.bookmark} target={bookmarkTarget(system)} className="mt-2 max-w-xl" />
+        )}
+        {system.stations.length > 0 && (
+          <div className="mt-2 max-w-xl">
+            <p className="text-xs text-zinc-500">{t.bookmarks.stations}</p>
+            <ul className="mt-1 space-y-1">
+              {system.stations.map((s) => (
+                <li key={s.id} className="text-sm">
+                  <span className="font-medium text-zinc-200">{s.title}</span>
+                  <BookmarkLine bookmark={s} clamp className="mt-0.5 text-xs" />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
       {/* Phone: one row, the bio range gets the widest tile (and wraps rather than clips at 360px). */}
@@ -542,7 +556,7 @@ export function SystemScreen({
                 headingId="detail-title"
                 isCurrent={detail.bodyId === currentBodyId}
                 routeTarget={targetOf(routeTargets, detail.bodyId)}
-                noteTarget={data.address ? systemNoteTarget(data, detail) : null}
+                bookmarkTarget={data.address ? bookmarkTarget(data, detail) : null}
               />
             ) : (
               <p className="py-12 text-center text-sm text-zinc-500">{t.system.selectHint}</p>
@@ -558,7 +572,7 @@ export function SystemScreen({
             headingId="sheet-title"
             isCurrent={selected.bodyId === currentBodyId}
             routeTarget={targetOf(routeTargets, selected.bodyId)}
-            noteTarget={data.address ? systemNoteTarget(data, selected) : null}
+            bookmarkTarget={data.address ? bookmarkTarget(data, selected) : null}
           />
         </Sheet>
       )}

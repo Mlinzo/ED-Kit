@@ -1,11 +1,11 @@
 // Visited systems, newest first: where you have been and what you did there.
 // A row opens the system on the System tab (history mode).
-import { CircleCheck, Flag, Footprints, History, Leaf, Map as MapIcon, Search, StickyNote, X } from 'lucide-react'
+import { BookmarkCheck, CircleCheck, Flag, Footprints, History, Leaf, Map as MapIcon, Search, X } from 'lucide-react'
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import type { BodyVisual, HistoryEntry, HistoryStar } from '../../api/types'
 import { Credits } from '../../components/Credits'
-import { NoteText } from '../../components/Note'
+import { BookmarkLine } from '../../components/Bookmark'
 import { EmptyState, ViewFallback } from '../../components/States'
 import { t } from '../../i18n'
 import { exactCredits } from '../../lib/format'
@@ -208,13 +208,13 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
           <Firsts e={e} />
         </span>
         <Value e={e} dim={transit} />
-        {(e.note || e.bodyNotes > 0) && (
+        {(e.bookmark || e.innerBookmarks > 0) && (
           <span className="col-span-full col-start-2 mt-1 flex min-w-0 flex-col gap-0.5">
-            {e.note && <NoteText text={e.note} clamp className="text-xs" />}
-            {e.bodyNotes > 0 && (
+            {e.bookmark && <BookmarkLine bookmark={e.bookmark} clamp className="text-xs" />}
+            {e.innerBookmarks > 0 && (
               <span className="inline-flex items-center gap-1.5 text-xs text-amber-200/70">
-                <StickyNote className="size-3 shrink-0" aria-hidden />
-                {t.notes.bodies(e.bodyNotes)}
+                <BookmarkCheck className="size-3 shrink-0" aria-hidden />
+                {t.bookmarks.inner(e.innerBookmarks)}
               </span>
             )}
           </span>

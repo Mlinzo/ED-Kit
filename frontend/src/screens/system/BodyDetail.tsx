@@ -1,11 +1,11 @@
 import { Check, Leaf, Map as MapIcon, MapPin, Route, Sun } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { BodyView } from '../../api/types'
+import type { BodyView, BookmarkCategory } from '../../api/types'
 import { ReasonChips, type RouteTarget } from '../../components/BodyBadges'
+import { BookmarkBox } from '../../components/Bookmark'
+import { bookmarkName, type BookmarkTarget } from '../../components/bookmarks'
 import { CodexSummary } from '../../components/CodexBadge'
 import { CreditRange, Credits } from '../../components/Credits'
-import { Note } from '../../components/Note'
-import type { NoteTarget } from '../../components/notes'
 import { communityText, isCommunity } from '../../components/source'
 import { CommunityGlyph, CommunityNotice, SourceList, SourceTag } from '../../components/SourceBadge'
 import { SpeciesList } from '../../components/SpeciesList'
@@ -226,20 +226,28 @@ function ProgressPanel({ body }: { body: BodyView }) {
   )
 }
 
+/** The tag a new bookmark on this body starts with: what it is most likely kept for. */
+function suggestedTag(body: BodyView): BookmarkCategory {
+  if (body.signals.bio > 0 || body.species.length > 0) return 'bio'
+  if (body.signals.mining > 0) return 'mining'
+  if (body.signals.geo > 0) return 'geo'
+  return 'other'
+}
+
 export function BodyDetail({
   body,
   headingId,
   isCurrent,
   routeTarget = null,
-  noteTarget = null,
+  bookmarkTarget = null,
 }: {
   body: BodyView
   headingId: string
   isCurrent: boolean
   /** The stored route counts on this body. */
   routeTarget?: RouteTarget | null
-  /** Where your note on this body goes (null: no notes, e.g. no system address). */
-  noteTarget?: NoteTarget | null
+  /** What your bookmark on this body marks (null: none, e.g. no system address). */
+  bookmarkTarget?: BookmarkTarget | null
 }) {
   const hasBio = body.signals.bio > 0 || body.species.length > 0
   const isPlanet = body.kind === 'planet'
@@ -302,9 +310,22 @@ export function BodyDetail({
             <CommunityNotice body={body} />
           </div>
         )}
-        {noteTarget && (
+        {bookmarkTarget && (
           <div className="pt-1">
-            <Note key={body.id64} note={body.note} target={noteTarget} />
+            <BookmarkBox key={body.id64} bookmark={body.bookmark} target={bookmarkTarget} suggest={suggestedTag(body)} />
+          </div>
+        )}
+        {bookmarkTarget && body.places.length > 0 && (
+          <div className="pt-1">
+            <p className="text-xs text-zinc-500">{t.bookmarks.places}</p>
+            <ul className="mt-1.5 space-y-2">
+              {body.places.map((p) => (
+                <li key={p.id}>
+                  <p className="mb-1 text-xs text-zinc-400 tabular-nums">{bookmarkName(p)}</p>
+                  <BookmarkBox bookmark={p} target={{ ...bookmarkTarget, kind: 'place', lat: p.lat, lon: p.lon }} compact />
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </header>

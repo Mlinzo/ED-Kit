@@ -37,7 +37,13 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
   }
 
   return (
-    <div role="tablist" aria-label={t.tabs.label} onKeyDown={onKeyDown} className="flex items-center gap-1">
+    // Too little room (a wide right side, the demo's badge): the tabs scroll, the page does not.
+    <div
+      role="tablist"
+      aria-label={t.tabs.label}
+      onKeyDown={onKeyDown}
+      className="flex items-center gap-1 overflow-x-auto py-1 [scrollbar-width:none] xl:gap-0.5 [&::-webkit-scrollbar]:hidden"
+    >
       {TABS.map(({ id, label, short, icon: Icon }) => {
         const active = id === tab
         return (
@@ -54,18 +60,18 @@ export function TopTabs({ tab, onTab, surfaceLive }: TabProps) {
             tabIndex={active ? 0 : -1}
             onClick={() => onTab(id)}
             title={label}
-            className={`focus-ring flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors xl:px-2.5 2xl:px-3 ${
+            className={`focus-ring flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors xl:px-2 2xl:px-2.5 ${
               active ? 'bg-zinc-800 text-zinc-50' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'
             }`}
           >
             <Icon className={`size-4 ${active ? 'text-accent' : ''}`} aria-hidden />
-            {/* Icons only below xl, the short names up to 2xl: eight labels do not fit next to the rest of the bar there. */}
+            {/* Icons only below xl, the short names from there: nine full names do not fit next to the rest of the bar. */}
             {short !== label && (
-              <span aria-hidden className="hidden xl:inline 2xl:hidden">
+              <span aria-hidden className="hidden xl:inline">
                 {short}
               </span>
             )}
-            <span className={short !== label ? 'sr-only 2xl:not-sr-only' : 'sr-only xl:not-sr-only'}>{label}</span>
+            <span className={short !== label ? 'sr-only' : 'sr-only xl:not-sr-only'}>{label}</span>
             {id === 'surface' && surfaceLive && (
               <>
                 <LiveDot />
@@ -109,7 +115,7 @@ export function BottomTabs({ tab, onTab, surfaceLive }: TabProps) {
                     </span>
                   )}
                 </span>
-                <span className="max-w-full truncate" aria-hidden={short !== label}>
+                <span className="max-w-full truncate tracking-tighter" aria-hidden={short !== label}>
                   {short}
                 </span>
                 {short !== label && <span className="sr-only">{label}</span>}

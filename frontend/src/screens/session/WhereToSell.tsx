@@ -2,6 +2,7 @@ import { LoaderCircle, Navigation, Store } from 'lucide-react'
 import { useState } from 'react'
 import { useView } from '../../api/hooks'
 import type { SellCarrierHint, SellPlaceView, SellStationView, SellView } from '../../api/types'
+import { InlineBookmark } from '../../components/Bookmark'
 import { CopyButton } from '../../components/CopyButton'
 import { CommunityGlyph } from '../../components/SourceBadge'
 import { Label } from '../../components/States'
@@ -28,7 +29,17 @@ function DataBadge({ on, carrying, label, hint, tone }: { on: boolean; carrying:
   )
 }
 
-function Station({ station, carrying, now }: { station: SellStationView; carrying: Carrying; now: number }) {
+function Station({
+  station,
+  carrying,
+  now,
+  place,
+}: {
+  station: SellStationView
+  carrying: Carrying
+  now: number
+  place: SellPlaceView
+}) {
   const s = t.session.sell
   return (
     <li className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -61,6 +72,12 @@ function Station({ station, carrying, now }: { station: SellStationView; carryin
       )}
       {station.seenAt && <span className="text-xs text-amber-200/70">{s.seen(formatRelative(station.seenAt, now))}</span>}
       {station.docked && <span className="text-xs text-zinc-500">{s.docked}</span>}
+      {place.systemAddress && (
+        <InlineBookmark
+          bookmark={station.bookmark ?? null}
+          target={{ kind: 'station', systemAddress: place.systemAddress, systemName: place.systemName, title: station.name }}
+        />
+      )}
     </li>
   )
 }
@@ -103,7 +120,7 @@ function Place({
       </div>
       <ul className="mt-1 space-y-1">
         {place.stations.map((station) => (
-          <Station key={station.name} station={station} carrying={carrying} now={now} />
+          <Station key={station.name} station={station} carrying={carrying} now={now} place={place} />
         ))}
       </ul>
       {place.more > 0 && <p className="mt-1 text-xs text-zinc-500">{t.session.sell.more(place.more)}</p>}

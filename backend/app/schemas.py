@@ -21,6 +21,28 @@ SpeciesStatus = Literal["predicted", "sampling", "analysed"]
 # the species is in your codex for this region, this colour is not (a new entry all the same);
 # logged: known
 CodexStatus = Literal["new", "new_region", "new_colour", "logged"]
+# What a bookmark marks, and its tag (app.bookmarks).
+BookmarkKind = Literal["system", "body", "station", "place"]
+BookmarkCategory = Literal["mining", "bio", "geo", "trade", "scenic", "other"]
+
+
+class BookmarkView(CamelModel):
+    """A bookmark of yours (app.bookmarks): a system, a body, a station or a place on a planet."""
+
+    id: int
+    kind: BookmarkKind
+    system_address: str
+    system_name: str | None
+    body_id: int | None  # a body's; a place's body
+    body_name: str | None
+    lat: float | None  # a place
+    lon: float | None
+    title: str | None  # a station's name; a place's name (yours or the mark's)
+    category: BookmarkCategory
+    comment: str  # "" when none
+    created_at: str
+    updated_at: str
+    distance_ly: float | None = None  # from your current system (the bookmarks list)
 
 
 class HighlightSettings(CamelModel):
@@ -160,7 +182,8 @@ class BodyView(CamelModel):
     parents: list[ParentRef]  # immediate parent first; [] for the root body
     orbit: OrbitView | None
     visual: BodyVisual
-    note: str | None = None  # yours (app.notes)
+    bookmark: BookmarkView | None = None  # yours, on the body (app.bookmarks)
+    places: list[BookmarkView] = []  # your bookmarked places on its surface
 
 
 class SystemTotals(CamelModel):
@@ -210,7 +233,9 @@ class SystemView(CamelModel):
     barycentres: list[BarycentreView]
     totals: SystemTotals
     lookup: CommunityLookup | None = None  # never visited: where its community data stands
-    note: str | None = None  # yours, on the system (app.notes); bodies carry their own
+    # Yours (app.bookmarks): on the system, and on its stations; bodies carry their own.
+    bookmark: BookmarkView | None = None
+    stations: list[BookmarkView] = []
 
 
 class SamplePoint(CamelModel):
@@ -276,6 +301,7 @@ class GlobeView(CamelModel):
     community_state: Literal["ok", "loading", "failed", "off"]  # app.canonn.State
     community_at: str | None  # when Canonn was asked (ISO)
     community: list[CommunityFinds]
+    places: list[BookmarkView] = []  # your bookmarked places on this planet
 
 
 class SurfaceView(CamelModel):
@@ -295,6 +321,7 @@ class SellStationView(CamelModel):
     docked: bool  # you docked here
     access: str | None  # a carrier: all (open to everybody, per Spansh) | unknown
     permit: bool  # the system needs a permit
+    bookmark: BookmarkView | None = None  # yours, on the station
 
 
 class SellPlaceView(CamelModel):
@@ -403,6 +430,7 @@ class ShopStationView(CamelModel):
     # outfitting; 0: has one, but no list)
     ship_count: int | None = None
     module_count: int | None = None
+    bookmark: BookmarkView | None = None  # yours, on the station
 
 
 class ShopPlaceView(CamelModel):
@@ -712,8 +740,8 @@ class HistoryEntry(CamelModel):
     unsold_value: int  # part of `value` not sold yet
     lost_value: int  # data lost on death (not in `value`; mapping bonus already gone)
     notable: list[str]  # notable finds, most remarkable first: elw, ww, neutron, ...
-    note: str | None = None  # yours, on the system
-    body_notes: int = 0  # bodies there with a note of yours
+    bookmark: BookmarkView | None = None  # yours, on the system
+    inner_bookmarks: int = 0  # your bookmarks there besides the system's: bodies, places, stations
 
 
 class HistoryView(CamelModel):
@@ -931,7 +959,7 @@ class NavHopView(CamelModel):
     short: bool  # the fuel runs out on the jump into it
     discovery: DiscoveryChanceView | None  # ahead
     discovered_by_you: bool | None  # your scan of its arrival star: first discovery (or not)
-    note: str | None = None  # yours, on the system
+    bookmark: BookmarkView | None = None  # yours, on the system
 
 
 class FuelForecastView(CamelModel):
@@ -989,29 +1017,71 @@ class GalaxySystemView(CamelModel):
     region: int | None  # codex region number (1..42, app.regionmap); None off the map
 
 
-class GalaxyNoteView(CamelModel):
-    """A system with a note of yours, visited or not."""
+class GalaxyBookmarkView(CamelModel):
+    """A system holding bookmarks of yours (its own, or its bodies', places', stations'), visited
+    or not."""
 
     address: str
     name: str | None
     x: float
     y: float
     z: float
-    text: str
+    bookmark: BookmarkView | None  # the system's own
+    inner: int  # the others there
 
 
-class NoteRequest(CamelModel):
-    """PUT /api/notes: write your note on a system (body_id None) or a body; empty text deletes.
-    The name and position help show a system you have not been to."""
+class BookmarkRequest(CamelModel):
+    """POST /api/bookmarks: bookmark a system, a body, a station (by its name) or a place (body,
+    latitude, longitude). The names and position help show a place you have not been to."""
 
+    kind: BookmarkKind
     system_address: str
     body_id: int | None = None
-    text: str = Field(max_length=4000)
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
+    title: str | None = Field(default=None, max_length=400)
+    category: BookmarkCategory | None = None
+    comment: str = Field(default="", max_length=4000)
     system_name: str | None = None
     body_name: str | None = None
     x: float | None = None
     y: float | None = None
     z: float | None = None
+
+
+class BookmarkHereRequest(CamelModel):
+    """POST /api/bookmarks/here: bookmark where you are now: the system, the body you are at,
+    your spot on its surface, the station you are docked at."""
+
+    what: Literal["system", "body", "place", "station"]
+    category: BookmarkCategory | None = None
+    comment: str = Field(default="", max_length=4000)
+
+
+class BookmarkPatch(CamelModel):
+    """PUT /api/bookmarks/{id}: a new title, tag or comment (left out: unchanged)."""
+
+    title: str | None = Field(default=None, max_length=400)
+    category: BookmarkCategory | None = None
+    comment: str | None = Field(default=None, max_length=4000)
+
+
+class BookmarkHere(CamelModel):
+    """Where you are, as far as the journal says: what "bookmark it" can mark right now (the
+    browser adds the live state: on the ground, docked)."""
+
+    system_address: str | None
+    system_name: str | None
+    body_id: int | None  # the body you are at (approached, landed on)
+    body_name: str | None
+    station: str | None  # the station you last docked at, in this system
+
+
+class BookmarksView(CamelModel):
+    """Every bookmark of yours, the latest first, with how far each system is from you."""
+
+    items: list[BookmarkView]
+    here: BookmarkHere
 
 
 class GalaxyRegionView(CamelModel):
@@ -1065,7 +1135,7 @@ class GalaxyView(CamelModel):
     regions: list[GalaxyRegionView]  # in the order you first came
     engineers: list[GalaxyEngineerView]
     online: bool  # Spansh/EDSM are asked: any system opens on the System tab (else: only yours)
-    notes: list[GalaxyNoteView] = []  # systems with a note of yours and a known position
+    bookmarks: list[GalaxyBookmarkView] = []  # systems holding bookmarks, position known
 
 
 class LiveSystemView(CamelModel):

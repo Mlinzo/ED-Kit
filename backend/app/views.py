@@ -6,7 +6,7 @@ import json
 import sqlite3
 from collections.abc import Callable, Iterable
 
-from app import enrich, exobio, notes, usersettings
+from app import bookmarks, enrich, exobio, usersettings
 from app.codex import CodexIndex, codex_index, colour_status, predicted_status
 from app.exobio.odds import chances
 from app.exobio.variants import colour_of, variants
@@ -582,9 +582,14 @@ def system_view(
         lookup = _lookup(conn, address, online)
         system = load_community_system(conn, address)
         if system is None:
-            note = notes.of_system(conn, address).get(notes.SYSTEM)
+            marks = bookmarks.in_system(conn, address)
             return _empty_system(current).model_copy(
-                update={"address": str(address), "lookup": lookup, "note": note}
+                update={
+                    "address": str(address),
+                    "lookup": lookup,
+                    "bookmark": marks.system,
+                    "stations": marks.stations,
+                }
             )
         if system.bodies:
             lookup = None  # bodies from an earlier lookup stand, whatever the last one said
@@ -607,10 +612,13 @@ def system_view(
     odyssey = bool(state["odyssey"]) if state else True
     codex = codex_index(conn, fid)
     highlight = usersettings.load(conn)
-    noted = notes.of_system(conn, system.address)
+    marks = bookmarks.in_system(conn, system.address)
     bodies = [
         _body_view(conn, system, f, fid, odyssey, codex, highlight).model_copy(
-            update={"note": noted.get(f.body_id)}
+            update={
+                "bookmark": marks.bodies.get(f.body_id),
+                "places": marks.places.get(f.body_id, []),
+            }
         )
         for f in system.bodies.values()
     ]
@@ -623,7 +631,8 @@ def system_view(
         scanned_count=sum(1 for b in bodies if b.source == "journal"),
         all_bodies_found=bool(mine and mine["all_found"]),
         lookup=lookup,
-        note=noted.get(notes.SYSTEM),
+        bookmark=marks.system,
+        stations=marks.stations,
         is_current=is_current,
         current_system=current,
         current_body_id=state["body_id"] if is_current else None,

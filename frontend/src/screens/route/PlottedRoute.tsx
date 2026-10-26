@@ -1,19 +1,19 @@
 // The route plotted in the game (NavRoute.json), on the Route tab. Only what needs attention is
 // shown up front: fuel trouble and a dangerous star on the next jump (warnings), the systems ahead
-// likely nobody has discovered, the ones with your notes; else one calm line. The jumps
+// likely nobody has discovered, the ones you bookmarked; else one calm line. The jumps
 // themselves (star, fuel on arrival, chance) are folded away: the game lists them too.
 // Updates by itself as you jump.
-import { Check, ChevronDown, ChevronUp, CircleAlert, Fuel, LoaderCircle, MapPin, Navigation, Sparkles, StickyNote, TriangleAlert } from 'lucide-react'
+import { BookmarkCheck, BookmarkPlus, Check, ChevronDown, ChevronUp, CircleAlert, Fuel, LoaderCircle, MapPin, Navigation, Sparkles, TriangleAlert } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import type { NavHopView, NavRouteView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
-import { Note } from '../../components/Note'
-import type { NoteTarget } from '../../components/notes'
+import { BookmarkBox } from '../../components/Bookmark'
+import type { BookmarkTarget } from '../../components/bookmarks'
 import { Label } from '../../components/States'
 import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import { formatLy, formatTons } from '../../lib/format'
-import { aheadHops, chanceTone, destination, fuelTone, KIND_COLOR, likelyFirsts, notedAhead, percent, sortedWarnings } from './plotted'
+import { aheadHops, chanceTone, destination, fuelTone, KIND_COLOR, likelyFirsts, bookmarkedAhead, percent, sortedWarnings } from './plotted'
 
 /** Systems named in one line, the rest counted. */
 const NAMED = 4
@@ -72,7 +72,7 @@ function names(hops: NavHopView[], label: (h: NavHopView) => string): string {
 /** What is worth knowing beyond the warnings; one calm line when there is nothing. */
 function Notable({ view }: { view: NavRouteView }) {
   const likely = likelyFirsts(view)
-  const noted = notedAhead(view)
+  const marked = bookmarkedAhead(view)
   const noScoop = !view.fuel.hasScoop && view.fuel.enough !== true
   const icon = 'size-4'
   const lines: ReactNode[] = []
@@ -92,10 +92,10 @@ function Notable({ view }: { view: NavRouteView }) {
       </Line>,
     )
   }
-  if (noted.length > 0) {
+  if (marked.length > 0) {
     lines.push(
-      <Line key="notes" icon={<StickyNote className={`${icon} text-amber-200/80`} aria-hidden />}>
-        {t.plotted.withNotes(names(noted, (h) => h.name))}
+      <Line key="bookmarks" icon={<BookmarkCheck className={`${icon} text-amber-200/80`} aria-hidden />}>
+        {t.plotted.withBookmarks(names(marked, (h) => h.name))}
       </Line>,
     )
   }
@@ -178,15 +178,15 @@ function ChanceCell({ hop }: { hop: NavHopView }) {
   )
 }
 
-function noteTarget(hop: NavHopView): NoteTarget {
-  return { systemAddress: hop.address, bodyId: null, systemName: hop.name, x: hop.x, y: hop.y, z: hop.z }
+function bookmarkTarget(hop: NavHopView): BookmarkTarget {
+  return { kind: 'system', systemAddress: hop.address, systemName: hop.name, x: hop.x, y: hop.y, z: hop.z }
 }
 
 function HopRow({ hop, capacity, tightBelow }: { hop: NavHopView; capacity: number | null; tightBelow: number }) {
   const here = hop.status === 'here'
   const passed = hop.status === 'passed'
   const tight = hop.fuelAfter !== null && hop.fuelAfter < tightBelow
-  // Adding a note: the editor opens under the row.
+  // Adding a bookmark: the editor opens under the row.
   const [adding, setAdding] = useState(false)
   return (
     <li className={`grid ${GRID} items-center gap-x-3 px-4 py-2 text-sm ${here ? 'bg-emerald-500/[0.06]' : ''} ${passed ? 'text-zinc-500' : 'text-zinc-300'}`}>
@@ -199,15 +199,15 @@ function HopRow({ hop, capacity, tightBelow }: { hop: NavHopView; capacity: numb
           {hop.name}
         </span>
         {!passed && <CopyButton text={hop.name} />}
-        {!hop.note && !adding && (
+        {!hop.bookmark && !adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            title={t.notes.addLong}
-            aria-label={`${t.notes.addLong}: ${hop.name}`}
+            title={t.bookmarks.addLong}
+            aria-label={`${t.bookmarks.addLong}: ${hop.name}`}
             className="focus-ring inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-800 hover:text-zinc-200"
           >
-            <StickyNote className="size-3.5" aria-hidden />
+            <BookmarkPlus className="size-3.5" aria-hidden />
           </button>
         )}
         {here && <span className="shrink-0 text-xs text-emerald-300">{t.plotted.here}</span>}
@@ -217,9 +217,15 @@ function HopRow({ hop, capacity, tightBelow }: { hop: NavHopView; capacity: numb
       <span className="hidden text-right text-zinc-400 tabular-nums md:block">{hop.index > 0 ? formatLy(hop.distanceLy) : ''}</span>
       <FuelCell hop={hop} capacity={capacity} tight={tight} />
       <ChanceCell hop={hop} />
-      {(hop.note || adding) && (
+      {(hop.bookmark || adding) && (
         <div className="col-span-full mt-1.5 pl-[calc(1.75rem+0.75rem)]">
-          <Note key={hop.address} note={hop.note} target={noteTarget(hop)} compact onClose={adding ? () => setAdding(false) : undefined} />
+          <BookmarkBox
+            key={hop.address}
+            bookmark={hop.bookmark}
+            target={bookmarkTarget(hop)}
+            compact
+            onClose={adding ? () => setAdding(false) : undefined}
+          />
         </div>
       )}
     </li>

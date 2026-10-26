@@ -1,9 +1,12 @@
 // The Surface tab's planet globe with what goes around it: the layers and where each comes from,
-// the card of the chosen mark (distance and heading from you), other players' finds (Canonn).
+// the card of the chosen mark (distance and heading from you, bookmark it), your bookmarks (a tap on
+// the ground marks a spot), other players' finds (Canonn).
 
-import { Check, Database, LocateFixed, X } from 'lucide-react'
+import { BookmarkPlus, Check, Database, LocateFixed, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { BodyView, GlobeView, LiveStatus } from '../../../api/types'
+import type { BodyView, BookmarkCategory, GlobeView, LiveStatus } from '../../../api/types'
+import { BookmarkBox } from '../../../components/Bookmark'
+import { coords as formatCoords, type BookmarkTarget } from '../../../components/bookmarks'
 import { Label } from '../../../components/States'
 import { sourceDate } from '../../../components/source'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
@@ -60,24 +63,112 @@ function Dot({ color, className = 'size-2.5' }: { color: string; className?: str
 }
 
 function coords(p: LatLon): string {
-  return `${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`
+  return formatCoords(p.lat, p.lon)
+}
+
+/** The system of a body: the low 55 bits of its id64. */
+function systemAddressOf(body: BodyView): string {
+  return (BigInt(body.id64) & ((1n << 55n) - 1n)).toString()
+}
+
+/** What a bookmark of a spot on this planet marks. */
+function spotTarget(body: BodyView, globe: GlobeView, spot: LatLon, title: string | null = null): BookmarkTarget {
+  return { kind: 'place', systemAddress: systemAddressOf(body), bodyId: body.bodyId, bodyName: globe.bodyName, lat: spot.lat, lon: spot.lon, title }
+}
+
+/** The tag a bookmark of a mark starts with: biology for samples and life, geology for geology. */
+function suggestedTag(point: GlobePoint): BookmarkCategory {
+  if (point.layer === 'samples') return 'bio'
+  if (point.layer === 'community') return point.detail === 'Biology' ? 'bio' : point.detail === 'Geology' ? 'geo' : 'other'
+  return 'other'
+}
+
+/** Marks with a name worth keeping as the bookmark's name (not "Landing", not your ship). */
+const NAMED: ReadonlySet<GlobePoint['layer']> = new Set(['samples', 'codex', 'settlements', 'community'])
+
+/** The distance and heading from you to a point, or why there is none. */
+function FromYou({ here, point, radiusM }: { here: Here | null; point: LatLon; radiusM: number }) {
+  return (
+    <p className="mt-3 text-sm">
+      {here ? (
+        <span className="font-semibold text-zinc-100 tabular-nums">
+          {t.globe.fromYou(formatMeters(haversineM(here, point, radiusM)), formatDegrees(bearingDeg(here, point)))}
+        </span>
+      ) : (
+        <span className="text-zinc-500">{t.globe.noYou}</span>
+      )}
+    </p>
+  )
+}
+
+function CloseButton({ onClose }: { onClose: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClose}
+      title={t.globe.close}
+      aria-label={t.globe.close}
+      className="focus-ring -mt-1 -mr-1 flex size-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+    >
+      <X className="size-4" aria-hidden />
+    </button>
+  )
+}
+
+/** A spot you tapped on the ground (or where you are): its place, and bookmarking it. */
+function SpotCard({
+  spot,
+  here,
+  body,
+  globe,
+  editing,
+  onClose,
+}: {
+  spot: LatLon
+  here: Here | null
+  body: BodyView
+  globe: GlobeView
+  /** Opened straight in the editor; closes with it. */
+  editing: boolean
+  onClose: () => void
+}) {
+  return (
+    <div className="rounded-2xl bg-zinc-900/60 p-4 ring-1 ring-zinc-800" aria-live="polite">
+      <div className="flex items-start gap-3">
+        <Dot color={LAYER_STYLE.bookmarks.color} className="mt-1.5 size-3" />
+        <p className="min-w-0 flex-1 font-semibold break-words text-zinc-50 tabular-nums">{t.bookmarks.spot(coords(spot))}</p>
+        <CloseButton onClose={onClose} />
+      </div>
+      <FromYou here={here} point={spot} radiusM={globe.radiusM} />
+      <BookmarkBox
+        key={coords(spot)}
+        bookmark={null}
+        target={spotTarget(body, globe, spot)}
+        onClose={editing ? onClose : undefined}
+        className="mt-3"
+      />
+    </div>
+  )
 }
 
 function MarkCard({
   point,
   others,
   here,
-  radiusM,
+  body,
+  globe,
   onChoose,
   onClose,
 }: {
   point: GlobePoint
   others: GlobePoint[]
   here: Here | null
-  radiusM: number
+  body: BodyView
+  globe: GlobeView
   onChoose: (p: GlobePoint) => void
   onClose: () => void
 }) {
+  const radiusM = globe.radiusM
   const style = LAYER_STYLE[point.layer]
   const community = point.layer === 'community'
   const date = sourceDate(point.at, true)
@@ -96,26 +187,18 @@ function MarkCard({
             </span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          title={t.globe.close}
-          aria-label={t.globe.close}
-          className="focus-ring -mt-1 -mr-1 flex size-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
-        >
-          <X className="size-4" aria-hidden />
-        </button>
+        <CloseButton onClose={onClose} />
       </div>
-      <p className="mt-3 text-sm">
-        {here ? (
-          <span className="font-semibold text-zinc-100 tabular-nums">
-            {t.globe.fromYou(formatMeters(haversineM(here, point, radiusM)), formatDegrees(bearingDeg(here, point)))}
-          </span>
-        ) : (
-          <span className="text-zinc-500">{t.globe.noYou}</span>
-        )}
-      </p>
+      <FromYou here={here} point={point} radiusM={radiusM} />
       <p className="mt-1 text-xs text-zinc-500 tabular-nums">{coords(point)}</p>
+      <BookmarkBox
+        key={point.id}
+        bookmark={point.bookmark ?? null}
+        target={spotTarget(body, globe, point, NAMED.has(point.layer) ? point.title : null)}
+        suggest={suggestedTag(point)}
+        compact
+        className="mt-3"
+      />
       {others.length > 0 && (
         <div className="mt-3 border-t border-zinc-800 pt-3">
           <p className="text-xs text-zinc-500">{t.globe.nearby(others.length)}</p>
@@ -294,7 +377,13 @@ export function PlanetGlobe({ globe, body, status }: { globe: GlobeView; body: B
   const here = hereOn(globe, status)
   const [hidden, setHidden] = useState(readHidden)
   const [find, setFind] = useState<string | null>(null)
-  const [picked, setPicked] = useState<string[]>([])
+  const [picked, setPickedState] = useState<string[]>([])
+  // A spot on the ground: tapped (its card offers a bookmark), or where you are (its editor opens).
+  const [spot, setSpot] = useState<{ at: LatLon; editing: boolean } | null>(null)
+  const setPicked = (ids: string[]) => {
+    setPickedState(ids)
+    if (ids.length > 0) setSpot(null)
+  }
   // Landed, on foot or in the SRV here: the globe looks at you from close by, at once or as you land.
   const grounded = here !== null && Boolean(status?.landed || status?.onFoot || status?.inSrv)
   const [focus, setFocus] = useState<GlobeFocus>(() =>
@@ -315,7 +404,11 @@ export function PlanetGlobe({ globe, body, status }: { globe: GlobeView; body: B
   }, [globe, hidden, hereLat, hereLon])
   const shown = useMemo(() => all.filter((p) => p.layer === 'ship' || !hidden.has(p.layer)), [all, hidden])
   const pickedPoints = picked.map((id) => shown.find((p) => p.id === id)).filter((p): p is GlobePoint => Boolean(p))
-  const selected = pickedPoints[0] ?? null
+  const spotPoint = useMemo<GlobePoint | null>(
+    () => (spot ? { id: 'spot', layer: 'bookmarks', lat: spot.at.lat, lon: spot.at.lon, title: '', detail: null, at: null } : null),
+    [spot],
+  )
+  const selected = pickedPoints[0] ?? spotPoint
 
   const toggle = (layer: LayerId) => {
     const next = new Set(hidden)
@@ -359,37 +452,56 @@ export function PlanetGlobe({ globe, body, status }: { globe: GlobeView; body: B
             here={here}
             selected={selected}
             onPick={setPicked}
+            onGround={(at) => setSpot(at ? { at, editing: false } : null)}
             focus={focus}
             label={t.globe.label(globe.bodyName)}
           />
         </div>
         {here && (
-          <button
-            type="button"
-            onClick={() => setFocus({ lat: here.lat, lon: here.lon })}
-            title={t.globe.toYou}
-            aria-label={t.globe.toYou}
-            className="focus-ring absolute top-3 right-3 flex size-10 items-center justify-center rounded-xl bg-zinc-950/60 text-zinc-300 ring-1 ring-white/10 backdrop-blur-sm ring-inset hover:bg-zinc-900/80 hover:text-zinc-50 lg:size-9"
-          >
-            <LocateFixed className="size-4" aria-hidden />
-          </button>
+          <div className="absolute top-3 right-3 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setFocus({ lat: here.lat, lon: here.lon })}
+              title={t.globe.toYou}
+              aria-label={t.globe.toYou}
+              className="focus-ring flex size-10 items-center justify-center rounded-xl bg-zinc-950/60 text-zinc-300 ring-1 ring-white/10 backdrop-blur-sm ring-inset hover:bg-zinc-900/80 hover:text-zinc-50 lg:size-9"
+            >
+              <LocateFixed className="size-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPickedState([])
+                setSpot({ at: { lat: here.lat, lon: here.lon }, editing: true })
+              }}
+              title={t.bookmarks.bookmarkHere}
+              aria-label={t.bookmarks.bookmarkHere}
+              className="focus-ring flex size-10 items-center justify-center rounded-xl bg-zinc-950/60 text-amber-200 ring-1 ring-white/10 backdrop-blur-sm ring-inset hover:bg-zinc-900/80 hover:text-amber-100 lg:size-9"
+            >
+              <BookmarkPlus className="size-4" aria-hidden />
+            </button>
+          </div>
         )}
       </div>
       <p className="-mt-3 text-xs text-zinc-500">
-        {coarse ? t.globe.hintTouch : t.globe.hintMouse}
+        {coarse ? t.globe.hintTouch : t.globe.hintMouse} · {t.bookmarks.spotHint}
         <br />
         {t.globe.unreal}
       </p>
 
-      {selected && (
+      {pickedPoints[0] && (
         <MarkCard
-          point={selected}
+          point={pickedPoints[0]}
           others={pickedPoints.slice(1, 6)}
           here={here}
-          radiusM={globe.radiusM}
+          body={body}
+          globe={globe}
           onChoose={choose}
           onClose={() => setPicked([])}
         />
+      )}
+      {spot && !pickedPoints[0] && (
+        <SpotCard spot={spot.at} here={here} body={body} globe={globe} editing={spot.editing} onClose={() => setSpot(null)} />
       )}
       <Legend globe={globe} here={here} hidden={hidden} onToggle={toggle} />
       <CommunityFindsList globe={globe} find={find} onFind={chooseFind} />

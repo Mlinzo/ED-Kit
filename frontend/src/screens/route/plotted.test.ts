@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NavHopView, NavRouteView } from '../../api/types'
-import { aheadHops, chanceTone, fuelTone, likelyFirsts, notedAhead, percent, sortedWarnings } from './plotted'
+import { bookmarkOf } from '../../mock/bookmarks'
+import { aheadHops, bookmarkedAhead, chanceTone, fuelTone, likelyFirsts, percent, sortedWarnings } from './plotted'
 
 function hop(index: number, status: NavHopView['status']): NavHopView {
   return {
@@ -20,7 +21,7 @@ function hop(index: number, status: NavHopView['status']): NavHopView {
     short: false,
     discovery: null,
     discoveredByYou: null,
-    note: null,
+    bookmark: null,
   }
 }
 
@@ -70,16 +71,16 @@ describe('plotted route panel', () => {
     expect(aheadHops(v)[0].index).toBe(0)
   })
 
-  it('names the systems ahead likely undiscovered, and those with notes', () => {
+  it('names the systems ahead likely undiscovered, and those you bookmarked', () => {
     const v = view(5, 1)
     const chance = (p: number) => ({ probability: p, state: 'unknown' as const, reasons: [] })
     v.hops[0].discovery = chance(0.95) // passed: not named
     v.hops[2].discovery = chance(0.6)
     v.hops[3].discovery = chance(0.92)
     v.hops[4].discovery = chance(0.03)
-    v.hops[4].note = 'refuel'
+    v.hops[4].bookmark = bookmarkOf({ comment: 'refuel' })
     expect(likelyFirsts(v).map((h) => h.index)).toEqual([3, 2])
-    expect(notedAhead(v).map((h) => h.index)).toEqual([4])
+    expect(bookmarkedAhead(v).map((h) => h.index)).toEqual([4])
   })
 
   it('puts fuel trouble first', () => {

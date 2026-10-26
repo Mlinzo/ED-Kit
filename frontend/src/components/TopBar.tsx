@@ -251,12 +251,13 @@ export function TopBar({ tab, onTab, surfaceLive }: { tab: Tab; onTab: (t: Tab) 
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/85 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 lg:gap-6 lg:px-6 xl:gap-4 2xl:gap-6">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 lg:gap-6 lg:px-6 xl:gap-4 2xl:gap-5">
+        <div className="flex min-w-0 items-center gap-2.5 xl:shrink-0">
           <Logo />
-          <span className="truncate text-[15px] font-semibold tracking-tight whitespace-nowrap text-zinc-100 max-[379px]:sr-only">{t.appName}</span>
+          {/* The name gives way to the tab names from xl: nine of them fill the bar there. */}
+          <span className="truncate text-[15px] font-semibold tracking-tight whitespace-nowrap text-zinc-100 max-[379px]:sr-only xl:sr-only">{t.appName}</span>
         </div>
-        <div className="hidden lg:block">
+        <div className="hidden min-w-0 lg:block">
           <TopTabs tab={tab} onTab={onTab} surfaceLive={surfaceLive} />
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 xl:gap-3 2xl:gap-4">

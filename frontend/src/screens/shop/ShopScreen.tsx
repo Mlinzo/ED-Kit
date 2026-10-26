@@ -6,6 +6,7 @@ import { ChevronDown, LoaderCircle, Navigation, Search, ShoppingCart, X } from '
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore, useView } from '../../api/hooks'
 import type { ShopCatalogView, ShopModuleView, ShopPlaceView, ShopShipView, ShopStationView, ShopView } from '../../api/types'
+import { InlineBookmark } from '../../components/Bookmark'
 import { CopyButton } from '../../components/CopyButton'
 import { Credits } from '../../components/Credits'
 import { CommunityGlyph } from '../../components/SourceBadge'
@@ -204,7 +205,7 @@ function Picker({
   )
 }
 
-function Station({ station, now }: { station: ShopStationView; now: number }) {
+function Station({ station, now, place }: { station: ShopStationView; now: number; place: ShopPlaceView }) {
   const s = t.shop
   const sell = t.session.sell
   const age = station.offerAt !== null ? now - Date.parse(station.offerAt) : 0
@@ -234,6 +235,12 @@ function Station({ station, now }: { station: ShopStationView; now: number }) {
           {age > MONTH_AFTER_MS ? s.dataFrom(formatMonthYear(station.offerAt)) : s.dataAge(formatRelative(station.offerAt, now))}
         </span>
       )}
+      {place.systemAddress && (
+        <InlineBookmark
+          bookmark={station.bookmark ?? null}
+          target={{ kind: 'station', systemAddress: place.systemAddress, systemName: place.systemName, title: station.name }}
+        />
+      )}
     </li>
   )
 }
@@ -254,7 +261,7 @@ function Place({ place, now, onRouteTo }: { place: ShopPlaceView; now: number; o
       </div>
       <ul className="mt-1 space-y-1">
         {place.stations.map((station) => (
-          <Station key={station.name} station={station} now={now} />
+          <Station key={station.name} station={station} now={now} place={place} />
         ))}
       </ul>
       {place.more > 0 && <p className="mt-1 text-xs text-zinc-500">{t.session.sell.more(place.more)}</p>}

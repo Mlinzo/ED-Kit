@@ -88,7 +88,7 @@ export function buildNavRoute(system: SystemView): NavRouteView {
       short: false,
       discovery: null,
       discoveredByYou: true,
-      note: null,
+      bookmark: null,
     },
   ]
   AHEAD.forEach(([starClass, probability, state], i) => {
@@ -115,7 +115,7 @@ export function buildNavRoute(system: SystemView): NavRouteView {
       short: false,
       discovery: { probability, state, reasons: REASONS[state] },
       discoveredByYou: null,
-      note: null,
+      bookmark: null,
     })
     if (kind === 'scoopable') tank = CAPACITY
   })
@@ -226,7 +226,7 @@ export function buildGalaxy(history: HistoryView, route: RouteView, plotted: Nav
     region: 18,
     engineers: DEMO_ENGINEERS,
     online: true,
-    notes: [],
+    bookmarks: [],
     regions: [
       {
         id: 18,

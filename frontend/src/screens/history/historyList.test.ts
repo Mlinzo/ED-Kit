@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { HistoryEntry } from '../../api/types'
+import { bookmarkOf } from '../../mock/bookmarks'
 import { filterCounts, groupByDay, isTransit, limitRows, matchesFilter, matchesQuery, relativeDay } from './historyList'
 
 function entry(name: string, at: string, extra: Partial<HistoryEntry> = {}): HistoryEntry {
@@ -23,8 +24,8 @@ function entry(name: string, at: string, extra: Partial<HistoryEntry> = {}): His
     unsoldValue: 0,
     lostValue: 0,
     notable: [],
-    note: null,
-    bodyNotes: 0,
+    bookmark: null,
+    innerBookmarks: 0,
     ...extra,
   }
 }
@@ -39,9 +40,9 @@ describe('history filters', () => {
     bodiesScanned: 4,
     firstDiscoveries: 4,
     unsoldValue: 900_000,
-    note: 'come back',
+    bookmark: bookmarkOf({ comment: 'come back' }),
   })
-  const noted = entry('Col 285 Sector AB-C d1', local(2026, 10, 15, 19), { bodyNotes: 1 })
+  const noted = entry('Col 285 Sector AB-C d1', local(2026, 10, 15, 19), { innerBookmarks: 1 })
 
   it('treats a lone arrival star as transit', () => {
     expect(isTransit(transit)).toBe(true)
@@ -54,7 +55,7 @@ describe('history filters', () => {
     expect([transit, bio, firsts].filter((e) => matchesFilter(e, 'bio'))).toEqual([bio])
     expect([transit, bio, firsts].filter((e) => matchesFilter(e, 'firsts'))).toEqual([firsts])
     expect([transit, bio, firsts].filter((e) => matchesFilter(e, 'unsold'))).toEqual([firsts])
-    expect([transit, bio, firsts, noted].filter((e) => matchesFilter(e, 'notes'))).toEqual([firsts, noted])
+    expect([transit, bio, firsts, noted].filter((e) => matchesFilter(e, 'bookmarks'))).toEqual([firsts, noted])
   })
 
   it('searches names by words, ignoring case', () => {
@@ -64,14 +65,14 @@ describe('history filters', () => {
   })
 
   it('counts every filter within the search', () => {
-    expect(filterCounts([transit, bio, firsts], '')).toEqual({ all: 3, explored: 2, bio: 1, firsts: 1, unsold: 1, notes: 1 })
+    expect(filterCounts([transit, bio, firsts], '')).toEqual({ all: 3, explored: 2, bio: 1, firsts: 1, unsold: 1, bookmarks: 1 })
     expect(filterCounts([transit, bio, firsts], 'sector')).toEqual({
       all: 2,
       explored: 1,
       bio: 1,
       firsts: 0,
       unsold: 0,
-      notes: 0,
+      bookmarks: 0,
     })
   })
 })

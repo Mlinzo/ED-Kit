@@ -17,9 +17,9 @@ export function likelyFirsts(view: NavRouteView): NavHopView[] {
     .sort((a, b) => (b.discovery?.probability ?? 0) - (a.discovery?.probability ?? 0))
 }
 
-/** Systems ahead with your notes. */
-export function notedAhead(view: NavRouteView): NavHopView[] {
-  return view.hops.filter((h) => h.status === 'ahead' && h.note)
+/** Systems ahead you bookmarked. */
+export function bookmarkedAhead(view: NavRouteView): NavHopView[] {
+  return view.hops.filter((h) => h.status === 'ahead' && h.bookmark)
 }
 
 export function destination(view: NavRouteView): NavHopView | null {

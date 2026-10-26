@@ -6,6 +6,7 @@ import { panelId, tabId, TABS, type Tab } from './components/tabs'
 import { TopBar } from './components/TopBar'
 import { Welcome } from './components/Welcome'
 import { GuideProvider } from './guide/GuideProvider'
+import { BookmarksScreen } from './screens/bookmarks/BookmarksScreen'
 import { GalaxyScreen } from './screens/galaxy/GalaxyScreen'
 import { HistoryScreen } from './screens/history/HistoryScreen'
 import { RouteScreen } from './screens/route/RouteScreen'
@@ -154,6 +155,7 @@ export default function App() {
             {tab === 'session' && <SessionScreen onRouteTo={planRouteTo} />}
             {tab === 'history' && <HistoryScreen onOpenSystem={openSystem} />}
             {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
+            {tab === 'bookmarks' && <BookmarksScreen onOpenSystem={openSystem} onShowSurface={() => goTo('surface')} />}
             {tab === 'shop' && <ShopScreen onRouteTo={planRouteTo} />}
             {tab === 'stats' && <StatsScreen />}
           </main>

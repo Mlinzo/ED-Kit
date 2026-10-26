@@ -27,6 +27,7 @@ from starlette.types import Scope
 
 from app import (
     __version__,
+    bookmarks,
     datadir,
     db,
     discovery,
@@ -36,7 +37,6 @@ from app import (
     history,
     navroute,
     neutron,
-    notes,
     regionmap,
     routes,
     selling,
@@ -48,6 +48,11 @@ from app import (
 )
 from app.config import Settings, parse_dir
 from app.schemas import (
+    BookmarkHereRequest,
+    BookmarkPatch,
+    BookmarkRequest,
+    BookmarksView,
+    BookmarkView,
     DataDirRequest,
     GalaxyView,
     HighlightSettings,
@@ -59,7 +64,6 @@ from app.schemas import (
     NavRouteView,
     NetworkInfo,
     NeutronRequest,
-    NoteRequest,
     RoutePoint,
     RouteRequest,
     RouteStopUpdate,
@@ -193,9 +197,10 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         """Where to sell data near you (asks Spansh when you moved away from the last search)."""
         conn = read_conn()
         fid = active_fid(conn)
-        return selling.sell_view(
+        view = selling.sell_view(
             conn, fid, views.cmdr_state(conn, fid), sellers, carriers, service.navroute.current
         )
+        return view.model_copy(update={"places": bookmarks.mark_stations(conn, view.places)})
 
     @app.get("/api/shop/catalog", response_model=ShopCatalogView, response_model_by_alias=True)
     def shop_catalog(request: Request) -> Response:
@@ -214,7 +219,8 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
     def view_shop(item: str | None = None, carriers: bool = False) -> ShopView:
         """The nearest stations selling a ship or module (journal symbol), asked from Spansh."""
         conn = read_conn()
-        return shop.shop_view(conn, views.cmdr_state(conn, active_fid(conn)), shops, item, carriers)
+        view = shop.shop_view(conn, views.cmdr_state(conn, active_fid(conn)), shops, item, carriers)
+        return view.model_copy(update={"places": bookmarks.mark_stations(conn, view.places)})
 
     @app.get("/api/view/stats", response_model=StatsView, response_model_by_alias=True)
     def view_stats() -> StatsView:
@@ -354,9 +360,34 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
             raise HTTPException(404, "no such stop")
         service.invalidate({"route"})
 
-    @app.put("/api/notes", status_code=204)
-    def put_note(body: NoteRequest) -> None:
-        """Your note on a system or one of its bodies; empty text deletes it."""
+    @app.get("/api/view/bookmarks", response_model=BookmarksView, response_model_by_alias=True)
+    def view_bookmarks() -> BookmarksView:
+        conn = read_conn()
+        return bookmarks.bookmarks_view(conn, active_fid(conn))
+
+    # Where bookmarks show: every view but the session's and the stats'.
+    marked_views = {
+        "bookmarks",
+        "system",
+        "navroute",
+        "history",
+        "galaxy",
+        "surface",
+        "sell",
+        "shop",
+    }
+
+    def saved(conn: sqlite3.Connection, bookmark_id: int) -> BookmarkView:
+        found = bookmarks.get(conn, bookmark_id)
+        if found is None:
+            raise HTTPException(404, "no such bookmark")
+        service.invalidate(marked_views)
+        return found
+
+    @app.post("/api/bookmarks", response_model=BookmarkView, response_model_by_alias=True)
+    def post_bookmark(body: BookmarkRequest) -> BookmarkView:
+        """Bookmark a system, a body, a station or a place; a system, body or station already
+        bookmarked gives its bookmark back unchanged."""
         try:
             address = int(body.system_address)
         except ValueError as exc:
@@ -365,18 +396,68 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         pos = None if None in xyz else (float(body.x or 0), float(body.y or 0), float(body.z or 0))
         conn = db.connect(settings.db_path)
         try:
-            notes.save(
+            bookmark_id = bookmarks.add(
                 conn,
+                body.kind,
                 address,
-                notes.SYSTEM if body.body_id is None else body.body_id,
-                body.text,
+                body_id=body.body_id,
+                lat=body.lat,
+                lon=body.lon,
+                title=body.title,
+                category=body.category,
+                comment=body.comment,
                 system_name=body.system_name,
                 body_name=body.body_name,
                 pos=pos,
             )
+            return saved(conn, bookmark_id)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
         finally:
             conn.close()
-        service.invalidate({"system", "navroute", "history", "galaxy"})
+
+    @app.post("/api/bookmarks/here", response_model=BookmarkView, response_model_by_alias=True)
+    def post_bookmark_here(body: BookmarkHereRequest) -> BookmarkView:
+        """Bookmark where you are now: the system, the body, your spot on it, your station."""
+        conn = db.connect(settings.db_path)
+        try:
+            bookmark_id = bookmarks.add_here(
+                conn,
+                active_fid(conn),
+                service.live,
+                body.what,
+                category=body.category,
+                comment=body.comment,
+            )
+            return saved(conn, bookmark_id)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        finally:
+            conn.close()
+
+    @app.put(
+        "/api/bookmarks/{bookmark_id}", response_model=BookmarkView, response_model_by_alias=True
+    )
+    def put_bookmark(bookmark_id: int, body: BookmarkPatch) -> BookmarkView:
+        conn = db.connect(settings.db_path)
+        try:
+            bookmarks.update(
+                conn, bookmark_id, title=body.title, category=body.category, comment=body.comment
+            )
+            return saved(conn, bookmark_id)
+        finally:
+            conn.close()
+
+    @app.delete("/api/bookmarks/{bookmark_id}", status_code=204)
+    def delete_bookmark(bookmark_id: int) -> None:
+        conn = db.connect(settings.db_path)
+        try:
+            found = bookmarks.delete(conn, bookmark_id)
+        finally:
+            conn.close()
+        if not found:
+            raise HTTPException(404, "no such bookmark")
+        service.invalidate(marked_views)
 
     @app.get("/api/settings", response_model=HighlightSettings, response_model_by_alias=True)
     def get_settings() -> HighlightSettings:

@@ -1,5 +1,5 @@
 // The planet globe (lazy chunk: three.js, react-three-fiber, drei). Marks are WebGL points, one
-// draw per layer; you and your ship are HTML icons kept over their spot every frame.
+// draw per layer; you, your ship and your bookmarks are HTML icons kept over their spot every frame.
 
 import { Line, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber'
@@ -26,10 +26,11 @@ import {
 } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { BodyVisual } from '../../../api/types'
+import { CATEGORY_STYLE } from '../../../components/bookmarks'
 import { useMediaQuery } from '../../../hooks/useMediaQuery'
 import type { LatLon } from '../../../lib/geo'
 import { PlanetSurface } from '../../../map/visuals'
-import { facesCamera, gridLine, greatCircle, headingVector, pickNear, toVector, viewAngles, type ScreenPoint, type Vec3 } from './geometry'
+import { facesCamera, gridLine, greatCircle, headingVector, pickNear, toLatLon, toVector, viewAngles, type ScreenPoint, type Vec3 } from './geometry'
 import { LAYER_STYLE, SHIP_COLOR, YOU_COLOR, type GlobePoint, type LayerStyle } from './layers'
 
 /** Where the view turns to, and how high over the ground it comes down to (if given). */
@@ -49,6 +50,8 @@ export interface GlobeCanvasProps {
   selected: GlobePoint | null
   /** Ids of the marks under a click or tap, nearest first ([] on empty ground). */
   onPick: (ids: string[]) => void
+  /** Where on the ground a click or tap with no mark under it landed (null: past the planet). */
+  onGround?: (spot: LatLon | null) => void
   /** The view turns (and comes down) to this whenever a new object is passed. */
   focus: GlobeFocus
   label: string
@@ -75,6 +78,7 @@ function markLift(d: number): number {
 const spherical = new Spherical()
 const projected = new Vector3()
 const ahead = new Vector3()
+const ray = new Vector3()
 const lightOffset = new Vector3()
 
 function rgb(hex: string): [number, number, number] {
@@ -247,22 +251,39 @@ function place(el: HTMLElement | null, mark: (LatLon & { heading?: number | null
 function Trackers({
   here,
   ship,
+  pins,
   youRef,
   shipRef,
+  pinRefs,
 }: {
   here: GlobeCanvasProps['here']
   ship: LatLon | null
+  pins: readonly GlobePoint[]
   youRef: RefObject<HTMLDivElement | null>
   shipRef: RefObject<HTMLDivElement | null>
+  pinRefs: RefObject<Map<string, HTMLDivElement>>
 }) {
   const invalidate = useThree((s) => s.invalidate)
-  useEffect(() => invalidate(), [here, ship, invalidate])
+  useEffect(() => invalidate(), [here, ship, pins, invalidate])
   useFrame(({ camera, size }) => {
     camera.updateMatrixWorld() // CameraRig moved it this frame, before the render does this
     place(youRef.current, here, camera, size.width, size.height)
     place(shipRef.current, ship, camera, size.width, size.height)
+    for (const p of pins) place(pinRefs.current.get(p.id) ?? null, p, camera, size.width, size.height)
   })
   return null
+}
+
+/** The spot on the unit sphere under a point of the view (fractions of its width and height), or null past the planet. */
+function groundAt(camera: PerspectiveCamera, fx: number, fy: number): LatLon | null {
+  const eye = camera.position
+  ray.set(fx * 2 - 1, 1 - fy * 2, 0.5).unproject(camera).sub(eye).normalize()
+  const b = eye.dot(ray)
+  const disc = b * b - (eye.lengthSq() - 1)
+  if (disc < 0) return null
+  const hit = -b - Math.sqrt(disc)
+  if (hit < 0) return null
+  return toLatLon([eye.x + ray.x * hit, eye.y + ray.y * hit, eye.z + ray.z * hit])
 }
 
 /**
@@ -384,6 +405,7 @@ export default function GlobeCanvas({
   here,
   selected,
   onPick,
+  onGround,
   focus,
   label,
   className = '',
@@ -393,6 +415,7 @@ export default function GlobeCanvas({
   const eventSource = useRef<HTMLDivElement>(null)
   const youRef = useRef<HTMLDivElement>(null)
   const shipRef = useRef<HTMLDivElement>(null)
+  const pinRefs = useRef(new Map<string, HTMLDivElement>())
   const camera = useRef<PerspectiveCamera | null>(null)
   const invalidate = useRef<(() => void) | null>(null)
   const down = useRef<{ x: number; y: number } | null>(null)
@@ -403,9 +426,11 @@ export default function GlobeCanvas({
 
   const layers = useMemo(() => {
     const by = new Map<keyof typeof LAYER_STYLE, GlobePoint[]>()
-    for (const p of points) if (p.layer !== 'ship') by.set(p.layer, [...(by.get(p.layer) ?? []), p])
+    // Your ship and your bookmarks are icons over the globe, not WebGL points.
+    for (const p of points) if (p.layer !== 'ship' && p.layer !== 'bookmarks') by.set(p.layer, [...(by.get(p.layer) ?? []), p])
     return [...by.entries()]
   }, [points])
+  const pins = useMemo(() => points.filter((p) => p.layer === 'bookmarks'), [points])
   const shipPoint = points.find((p) => p.layer === 'ship') ?? null
   const ship = useMemo(() => (shipPoint ? { lat: shipPoint.lat, lon: shipPoint.lon } : null), [shipPoint])
   const line = useMemo(
@@ -487,7 +512,9 @@ export default function GlobeCanvas({
       projected.set(...v).project(cam)
       screen.push({ id: p.id, x: ((projected.x + 1) / 2) * r.width, y: ((1 - projected.y) / 2) * r.height })
     }
-    onPick(pickNear(screen, e.clientX - r.left, e.clientY - r.top, coarse ? 22 : 14))
+    const picked = pickNear(screen, e.clientX - r.left, e.clientY - r.top, coarse ? 22 : 14)
+    onPick(picked)
+    if (picked.length === 0) onGround?.(groundAt(cam, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height))
   }
 
   return (
@@ -541,9 +568,31 @@ export default function GlobeCanvas({
               <Line points={line} color={YOU_COLOR} lineWidth={2} transparent opacity={0.85} depthWrite={false} renderOrder={9} />
             )}
           </Lifted>
-          <Trackers here={here} ship={ship} youRef={youRef} shipRef={shipRef} />
+          <Trackers here={here} ship={ship} pins={pins} youRef={youRef} shipRef={shipRef} pinRefs={pinRefs} />
         </Canvas>
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {pins.map((p) => {
+            const style = CATEGORY_STYLE[p.bookmark?.category ?? 'other']
+            const Icon = style.icon
+            return (
+              <div
+                key={p.id}
+                ref={(el) => {
+                  if (el) pinRefs.current.set(p.id, el)
+                  else pinRefs.current.delete(p.id)
+                }}
+                className="absolute top-0 left-0 opacity-0"
+                style={{ willChange: 'transform' }}
+              >
+                <span
+                  className="flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-950/85 ring-1"
+                  style={{ color: style.hex, boxShadow: `inset 0 0 0 1.5px ${style.hex}` }}
+                >
+                  <Icon className="size-3.5" strokeWidth={2.25} aria-hidden />
+                </span>
+              </div>
+            )
+          })}
           <div ref={shipRef} className="absolute top-0 left-0 opacity-0" style={{ willChange: 'transform' }}>
             <span
               className="flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-950/80 ring-1 ring-zinc-400/60"
