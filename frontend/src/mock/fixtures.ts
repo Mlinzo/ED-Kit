@@ -98,7 +98,14 @@ function sp(
   value: number,
   colonyRangeM: number,
   status: SpeciesStatus,
-  opts: { samples?: number; certain?: boolean; deduced?: boolean; bonus?: boolean; codex?: CodexStatus } = {},
+  opts: {
+    samples?: number
+    certain?: boolean
+    deduced?: boolean
+    bonus?: boolean
+    codex?: CodexStatus
+    chance?: number
+  } = {},
 ): SpeciesView {
   const bonus = opts.bonus ?? true
   return {
@@ -114,6 +121,7 @@ function sp(
     certain: opts.certain ?? (opts.deduced || status !== 'predicted'),
     deduced: opts.deduced ?? false,
     codex: opts.codex ?? (status === 'analysed' ? 'logged' : 'new'),
+    chance: opts.chance ?? null,
   }
 }
 
@@ -349,8 +357,8 @@ function buildBodies(): BodyView[] {
       species: [
         sp('Stratum', 'Stratum Tectonicas', 19_010_800, 500, 'sampling', { samples: 2 }),
         sp('Bacterium', 'Bacterium Aurasus', 1_000_000, 500, 'analysed'),
-        sp('Concha', 'Concha Renibus', 4_572_400, 150, 'predicted', { certain: true, codex: 'new_region' }),
-        sp('Concha', 'Concha Labiata', 2_352_400, 150, 'predicted', { certain: true, codex: 'new_colour' }),
+        sp('Concha', 'Concha Renibus', 4_572_400, 150, 'predicted', { certain: true, codex: 'new_region', chance: 0.61 }),
+        sp('Concha', 'Concha Labiata', 2_352_400, 150, 'predicted', { certain: true, codex: 'new_colour', chance: 0.39 }),
       ],
       fssValue: 23_410,
       dssValue: 112_640,
@@ -431,8 +439,8 @@ function buildBodies(): BodyView[] {
       species: [
         // No DSS yet, but only a Bacterium can grow here and there is one signal: the genus is
         // deduced, one of its species would be new (codexNew 1).
-        sp('Bacterium', 'Bacterium Tela', 1_949_000, 500, 'predicted', { deduced: true, codex: 'new' }),
-        sp('Bacterium', 'Bacterium Bullaris', 1_152_500, 500, 'predicted', { deduced: true, codex: 'logged' }),
+        sp('Bacterium', 'Bacterium Tela', 1_949_000, 500, 'predicted', { deduced: true, codex: 'new', chance: 0.09 }),
+        sp('Bacterium', 'Bacterium Bullaris', 1_152_500, 500, 'predicted', { deduced: true, codex: 'logged', chance: 0.91 }),
       ],
       fssValue: 2_140,
       dssValue: 9_870,
@@ -578,8 +586,8 @@ function buildBodies(): BodyView[] {
       genuses: ['Electricae', 'Fonticulua'],
       species: [
         sp('Electricae', 'Electricae Pluma', 6_284_600, 1_000, 'predicted', { certain: true, codex: 'new' }),
-        sp('Fonticulua', 'Fonticulua Lapida', 3_111_000, 500, 'predicted', { certain: true, codex: 'new_region' }),
-        sp('Fonticulua', 'Fonticulua Campestris', 1_000_000, 500, 'predicted', { certain: true, codex: 'logged' }),
+        sp('Fonticulua', 'Fonticulua Lapida', 3_111_000, 500, 'predicted', { certain: true, codex: 'new_region', chance: 0.7 }),
+        sp('Fonticulua', 'Fonticulua Campestris', 1_000_000, 500, 'predicted', { certain: true, codex: 'logged', chance: 0.3 }),
       ],
       fssValue: 8_920,
       dssValue: 38_120,

@@ -108,6 +108,17 @@ Checked 2026-10-19.
 | Group A never share a body: every group-A variant's samples have its own material and none of the other five | Canonn biostats `histograms.materials` |
 | Group B often do (14-27 % of a variant's samples hold each other group-B material), and neither a fixed order nor the largest share decides: a player's Fungoida Setisis was Tin on a body with molybdenum 1.24 %, tin 1.13 %. Every group-B material present is a candidate, at equal chance | Canonn biostats; the player's journal |
 
+## Chance of each candidate species (`odds.py`, `app/data/species_odds.json`)
+
+Checked 2026-10-26.
+
+| Fact | Source |
+|---|---|
+| When the rules leave several species of a genus the body data cannot tell them apart: HIP 19036 3 a gave Bacterium Tela and its near twins 3 b and 3 c Cerbrus (rocky, thin water, no volcanism, 0.044-0.048 g, 419-428 K, moons of one planet); of 379 thin-water bodies near it with a named Bacterium, 169 had Tela and 210 Cerbrus with the same gravity, temperature, pressure, mass, orbit and materials (AUC 0.47-0.53 each), and 35 systems had both | The player's journal; Spansh body search (`landmarks`: other players' finds with species and colour) |
+| A candidate weighs as often as Canonn logged it (all colours together) on bodies with this atmosphere and of this body type: `n * (atm + 0.5) / (n + 1) * (body + 0.5) / (n + 1)`, then its square root, shared to add up to 1 | Canonn biostats `count`, `histograms.atmos_types`, `histograms.body_types` (`tools/species_odds.py`) |
+| On 1,139 genera with two or more candidates and a species named on Spansh (near Merope, Colonia, Sagittarius A*, Synuefe EN-H d11-96, HIP 19036): log loss 0.65 against 0.84 for equal shares; candidates shown at 40-50 % were the one 45 % of the time, at 60-70 % 67 %, at 80-90 % 94 %. The square root was fitted on half of them and checked on the other half. Weighing the colour variant the body would give instead of the whole species gave 0.67; adding Canonn's gravity, temperature and pressure histograms made it worse | Spansh body search, the app's own rules (`exobio.predict` on each body) |
+| The colour of a group-B species does not follow the materials' shares either: on the thin-water bodies with Bacterium Tela (each with two group-B materials) the larger share gave the colour 79 times, the smaller 88, with no fixed order between the materials | Spansh `landmarks` colours against `materials` |
+
 ## Known limitations
 
 - The region comes from the region map by coordinates (app.regionmap) when no

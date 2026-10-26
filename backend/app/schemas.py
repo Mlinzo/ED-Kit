@@ -48,6 +48,9 @@ class SpeciesView(CamelModel):
     # the colour cannot be told.
     codex: CodexStatus
     colour: str | None = None  # "Teal"; candidates joined with " / " when not certain
+    # One of several species left of its genus: the chance it is the one here (0..1); None for a
+    # lone species or without Canonn data.
+    chance: float | None = None
 
 
 class SignalsView(CamelModel):

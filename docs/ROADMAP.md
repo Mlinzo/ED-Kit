@@ -70,6 +70,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   had two, the larger share won 79 times and the smaller 88, with no fixed order between the
   materials, so every one present stays a candidate. Both HIP 19036 cards came out Green by
   chance: Tela's Tungsten and Cerbrus's K star.
+- Chance of each candidate species (2026-10-26): in "one of two species" each candidate shows its
+  chance ("49%  Tela", "51%  Cerbrus"), from how often Canonn logged each of them on planets
+  with this atmosphere and of this body type. Checked on 1,139 genera where other players' finds
+  name the species: it comes true about as often as it says (shown 40–50 %: right 45 % of the
+  time; 80–90 %: 94 %), better than equal shares overall and for Bacterium most of all; for
+  Clypeus, Stratum and Concha, where the atmosphere does not tell the species apart, it stays
+  close to even.
 - Mining locations (2026-10-26): the FSS's "Planetary Mining Location" signals (the most common
   signal in the user's journals: 477 against 143 biological) have their own count instead of
   "other": a "Mining N" badge in the body list, a row under the body's signals and a reason chip;

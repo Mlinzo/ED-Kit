@@ -712,6 +712,8 @@ export const en: Strings = {
     oneOf: (n: number) => `one of ${['two', 'three', 'four'][n - 2] ?? n} species`,
     candidatesHint: (genus: string) =>
       `One bio signal is one genus: only one of these ${genus} species grows on the planet, so only one becomes a new Codex entry.`,
+    chanceHint:
+      'The chance it is this species: how often Canonn logged each of them on planets with this atmosphere and of this type. Checked on 1,139 other players’ finds: it comes true about as often as it says.',
     bonusLikely: 'bonus likely',
     bonusLikelyHint:
       'Paid if nobody handed this species in from this planet before you. To check: after the first sample, open the system map → Organic Information (“First logged by”).',

@@ -33,6 +33,9 @@ export interface SpeciesView {
   codex: CodexStatus
   /** "Teal"; candidates joined with " / " when not certain. */
   colour: string | null
+  /** One of several species left of its genus: the chance it is the one here (0..1); null for a
+   *  lone species or without Canonn data. */
+  chance: number | null
 }
 
 export interface SignalsView {

@@ -129,6 +129,13 @@ function SpeciesRow({ s, help }: { s: SpeciesView; help: boolean }) {
   )
 }
 
+/** A candidate’s chance as a whole percentage. */
+function chanceText(p: number): string {
+  if (p < 0.01) return '<1%'
+  if (p > 0.99) return '>99%'
+  return `${Math.round(p * 100)}%`
+}
+
 /** The candidates of one genus: the genus with what is known of it, then each species it may be. */
 function GenusRow({ candidates, help }: { candidates: readonly SpeciesView[]; help: boolean }) {
   const lead = candidates[0]
@@ -161,6 +168,11 @@ function GenusRow({ candidates, help }: { candidates: readonly SpeciesView[]; he
         <ul className="mt-2 space-y-2 border-l border-zinc-800 pl-3">
           {candidates.map((s) => (
             <li key={s.species} className="flex items-start gap-3">
+              {s.chance !== null && (
+                <span className="w-10 shrink-0 text-right text-sm text-zinc-300" title={t.species.chanceHint}>
+                  {chanceText(s.chance)}
+                </span>
+              )}
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
                 <span className={nameTone(s)}>
                   {epithet(s)}

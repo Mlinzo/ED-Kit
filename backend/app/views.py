@@ -8,6 +8,7 @@ from collections.abc import Callable, Iterable
 
 from app import enrich, exobio, notes, usersettings
 from app.codex import CodexIndex, codex_index, colour_status, predicted_status
+from app.exobio.odds import chances
 from app.exobio.variants import colour_of, variants
 from app.facts import body_id64, facts_from_json, load_community_system, load_system
 from app.globe import globe_view
@@ -183,6 +184,15 @@ def _build_species(
         ranges = exobio.genus_ranges(predictions, genuses, skip=seen_genera)
         # Before DSS: sure when the genera that can grow here fill every signal.
         deduced = set() if genuses else exobio.deduced_genera(predictions, bio_signals, seen_genera)
+        # Several species left of one genus: only one of them grows here.
+        candidates: dict[str, list[str]] = {}
+        for p in predictions:
+            if p.species.genus not in seen_genera:
+                candidates.setdefault(p.species.genus, []).append(p.species.species)
+        odds: dict[str, float] = {}
+        for members in candidates.values():
+            if len(members) > 1:
+                odds.update(chances(members, facts) or {})
         for p in sorted(predictions, key=lambda p: -p.species.base_value):
             sp = p.species
             if sp.genus in seen_genera:
@@ -203,6 +213,7 @@ def _build_species(
                     deduced=sp.genus in deduced,
                     codex=status,
                     colour=" / ".join(colours) or None,
+                    chance=odds.get(sp.species),
                 )
             )
 
