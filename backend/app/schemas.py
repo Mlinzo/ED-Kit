@@ -423,10 +423,21 @@ class ShopCommodityView(CamelModel):
     rare: bool = False  # a rare commodity: one station sells it, a little at a time
 
 
+class ShopMaterialView(CamelModel):
+    symbol: str  # journal symbol, lower case
+    name: str
+    type: str  # raw | manufactured | encoded
+    grade: int  # 1 (very common) .. 5 (very rare); raw ones go to 4
+    group: str | None  # the group material traders go by (raw: "1".."7"); None: not traded
+    sources: list[str] = []  # where it comes from (Elite Dangerous Wiki), English
+    rich: float | None = None  # raw: the share (%) on a body that counts as much
+
+
 class ShopCatalogView(CamelModel):
     ships: list[ShopShipView]
     modules: list[ShopModuleView]
     commodities: list[ShopCommodityView] = []
+    materials: list[ShopMaterialView] = []
 
 
 class ShopStationView(CamelModel):
@@ -454,6 +465,19 @@ class ShopPlaceView(CamelModel):
     more: int  # other stations there selling it
 
 
+class ShopBodyView(CamelModel):
+    """A landable body with much of a raw material (Spansh's body search)."""
+
+    name: str
+    system_name: str
+    system_address: str | None
+    distance_ly: float
+    jumps: int | None
+    dist_ls: int | None
+    share: float  # percent of the material
+    gravity_g: float | None
+
+
 class ShopRankView(CamelModel):
     navy: str  # empire | federation
     need: str  # the rank needed to buy the ship
@@ -473,6 +497,10 @@ class ShopView(CamelModel):
     rank: ShopRankView | None
     unlock: str | None  # as in ShopModuleView
     searched_at: str | None  # when Spansh was asked (ISO)
+    # A material: the nearest landable bodies with much of it (raw ones), and whether material
+    # traders take it at all (Guardian and Thargoid materials: no; places then stay empty).
+    bodies: list[ShopBodyView] = []
+    traded: bool = True
 
 
 class RiskPoint(CamelModel):

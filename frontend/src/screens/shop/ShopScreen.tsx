@@ -1,12 +1,13 @@
 // The Shop tab: the nearest shipyards and outfitting as soon as it opens, and where to buy a
 // ship, a module or a commodity once one is chosen, by words or from the lists. A module's class,
 // mount, rating and guidance are buttons above its results; a commodity's stations say how much
-// they had in stock.
+// they had in stock. A material (never sold) brings the nearest material traders of its type
+// and, a raw one, the nearest landable bodies with much of it.
 
-import { ChevronDown, LoaderCircle, Navigation, Search, ShoppingCart, X } from 'lucide-react'
+import { ArrowLeftRight, ChevronDown, LoaderCircle, Navigation, Pickaxe, Search, ShoppingCart, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore, useView } from '../../api/hooks'
-import type { ShopCatalogView, ShopModuleView, ShopPlaceView, ShopShipView, ShopStationView, ShopView } from '../../api/types'
+import type { ShopBodyView, ShopCatalogView, ShopModuleView, ShopPlaceView, ShopShipView, ShopStationView, ShopView } from '../../api/types'
 import { InlineBookmark } from '../../components/Bookmark'
 import { CopyButton } from '../../components/CopyButton'
 import { Credits } from '../../components/Credits'
@@ -22,17 +23,22 @@ import {
   commodityGroup,
   commodityGroups,
   lookup,
+  MATERIAL_KINDS,
+  materialKind,
+  materialRows,
+  materialsOf,
   neighbour,
   nextModule,
   orderShips,
   searchCatalog,
   SHIP_ORDERS,
   variantFor,
+  type MaterialKind,
   type Pick,
   type ShipOrder,
   type Want,
 } from './catalog'
-import { CommodityCard, ModuleCard, ShipCard } from './ItemCard'
+import { CommodityCard, MaterialCard, ModuleCard, ShipCard } from './ItemCard'
 import { Chip, ShipRow } from './parts'
 import { fitsRole, ROLE_FILTERS, type RoleFilter } from './roles'
 
@@ -43,11 +49,15 @@ const OLD_AFTER_MS = 30 * 86_400_000
 /** Reported earlier than this, the month is told instead of "1946 days ago". */
 const MONTH_AFTER_MS = 60 * 86_400_000
 
-type Group = 'ships' | ShopModuleView['category'] | 'commodities'
-const GROUPS: readonly Group[] = ['ships', 'core', 'optional', 'hardpoint', 'utility', 'commodities']
+type Group = 'ships' | ShopModuleView['category'] | 'commodities' | 'materials'
+const GROUPS: readonly Group[] = ['ships', 'core', 'optional', 'hardpoint', 'utility', 'commodities', 'materials']
 
 /** A commodity group's name: the market category in the chosen language (as is when unknown). */
 const categoryName = (group: string): string => (t.shop.commodityCategories as Record<string, string>)[group] ?? group
+
+/** A material trader group's name: raw ones are numbered, the others named (as is when unknown). */
+const materialGroupName = (kind: MaterialKind, group: string | null): string | null =>
+  group === null ? null : kind === 'raw' ? t.shop.rawCategory(group) : ((t.shop.materialGroups as Record<string, string>)[group] ?? group)
 
 let catalogRequest: Promise<ShopCatalogView> | null = null
 
@@ -74,6 +84,7 @@ function useShopCatalog(): ShopCatalogView | null {
 function pickLabel(p: Pick): string {
   if (p.kind === 'ship') return p.ship.name
   if (p.kind === 'commodity') return p.commodity.name
+  if (p.kind === 'material') return p.material.name
   const v = p.want.size !== undefined ? variantFor(p.module, p.want) : null
   return v ? `${p.module.name} ${v.size}${v.rating}` : p.module.name
 }
@@ -89,7 +100,7 @@ function Picker({
   onChoose,
 }: {
   catalog: ShopCatalogView | null
-  /** The chosen ship's or commodity's symbol, or module's name. */
+  /** The chosen ship's, commodity's or material's symbol, or module's name. */
   chosen: string | null
   /** The chosen module's variant: another module keeps its class and rating where it has them. */
   want: Want
@@ -105,16 +116,28 @@ function Picker({
   const chosenGoods = catalog && chosen ? catalog.commodities.find((c) => c.symbol === chosen) : undefined
   // The group shown: the one picked, else the chosen item's (the catalog may come after the choice).
   const [picked, setGroup] = useState<Group | null>(null)
-  const group: Group = picked ?? (chosenGoods ? 'commodities' : 'ships')
+  const chosenMaterial = catalog && chosen ? catalog.materials.find((m) => m.symbol === chosen) : undefined
+  const group: Group = picked ?? (chosenGoods ? 'commodities' : chosenMaterial ? 'materials' : 'ships')
   // The commodity group shown: the one picked, else the chosen commodity's, else the first.
   const [goods, setGoods] = useState<string | null>(null)
+  // The kind of materials shown: the one picked, else the chosen material's, else raw.
+  const [stuff, setStuff] = useState<MaterialKind | null>(null)
+  const stuffKind = stuff ?? (chosenMaterial ? materialKind(chosenMaterial) : 'raw')
   const found = catalog && query.trim() ? searchCatalog(catalog, query) : []
   const choose = (p: Pick) => {
-    onChoose(p.kind === 'ship' ? p.ship.symbol : p.kind === 'commodity' ? p.commodity.symbol : variantFor(p.module, { ...want, ...p.want }).symbol)
+    onChoose(
+      p.kind === 'ship'
+        ? p.ship.symbol
+        : p.kind === 'commodity'
+          ? p.commodity.symbol
+          : p.kind === 'material'
+            ? p.material.symbol
+            : variantFor(p.module, { ...want, ...p.want }).symbol,
+    )
     setQuery('')
     setOpen(false)
   }
-  const modules = catalog && group !== 'ships' && group !== 'commodities' ? catalog.modules.filter((m) => m.category === group) : []
+  const modules = catalog && group !== 'ships' && group !== 'commodities' && group !== 'materials' ? catalog.modules.filter((m) => m.category === group) : []
   const goodsGroups = catalog && group === 'commodities' ? commodityGroups(catalog) : []
   const goodsGroup = group === 'commodities' ? (goods ?? (chosenGoods ? commodityGroup(chosenGoods) : goodsGroups[0])) : undefined
 
@@ -156,7 +179,7 @@ function Picker({
           ) : (
             <ul className="space-y-1">
               {found.map((p) => (
-                <li key={p.kind === 'ship' ? p.ship.symbol : p.kind === 'commodity' ? p.commodity.symbol : p.module.name}>
+                <li key={p.kind === 'ship' ? p.ship.symbol : p.kind === 'commodity' ? p.commodity.symbol : p.kind === 'material' ? p.material.symbol : p.module.name}>
                   <button
                     type="button"
                     onClick={() => choose(p)}
@@ -164,7 +187,11 @@ function Picker({
                   >
                     <span className="min-w-0 break-words">{pickLabel(p)}</span>
                     <span className="shrink-0 text-xs text-zinc-500">
-                      {p.kind === 'commodity' ? categoryName(commodityGroup(p.commodity)) : s.groups[p.kind === 'ship' ? 'ships' : p.module.category]}
+                      {p.kind === 'commodity'
+                        ? categoryName(commodityGroup(p.commodity))
+                        : p.kind === 'material'
+                          ? s.materialTypes[materialKind(p.material)]
+                          : s.groups[p.kind === 'ship' ? 'ships' : p.module.category]}
                     </span>
                   </button>
                 </li>
@@ -246,6 +273,34 @@ function Picker({
                 </li>
               ))}
             </ul>
+          </>
+        )}
+        {catalog && group === 'materials' && (
+          <>
+            <div role="group" aria-label={s.materialFilter} className="mt-3 flex flex-wrap gap-1.5">
+              {MATERIAL_KINDS.map((k) => (
+                <Chip key={k} active={k === stuffKind} onClick={() => setStuff(k)}>
+                  {s.materialTypes[k]}
+                </Chip>
+              ))}
+            </div>
+            <div className="mt-3 space-y-3 border-t border-zinc-800 pt-3">
+              {materialRows(catalog, stuffKind).map((row) => (
+                <div key={row.group ?? ''}>
+                  {row.group !== null && <p className="mb-1.5 text-xs text-zinc-500">{materialGroupName(stuffKind, row.group)}</p>}
+                  <ul className="flex flex-wrap gap-1.5">
+                    {row.materials.map((material) => (
+                      <li key={material.symbol}>
+                        <Chip active={material.symbol === chosen} onClick={() => choose({ kind: 'material', material })} title={s.grade(material.grade)}>
+                          {material.name}
+                          <span className="ml-1.5 font-mono text-xs text-zinc-500">{material.grade}</span>
+                        </Chip>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </>
         )}
       </div>
@@ -335,7 +390,55 @@ function Place({ place, now, onRouteTo }: { place: ShopPlaceView; now: number; o
   )
 }
 
-function Status({ view, failed, onRetry }: { view: ShopView | null; failed: boolean; onRetry: () => void }) {
+/** The bodies of one system, nearest system first (Spansh sends them by distance). */
+function bySystem(bodies: readonly ShopBodyView[]): ShopBodyView[][] {
+  const systems = new Map<string, ShopBodyView[]>()
+  for (const b of bodies) systems.set(b.systemName, [...(systems.get(b.systemName) ?? []), b])
+  return [...systems.values()]
+}
+
+/** A system with landable bodies with much of a raw material: the system (to copy, to route to), each body's share. */
+function BodySystem({ bodies, onRouteTo }: { bodies: ShopBodyView[]; onRouteTo: (system: string) => void }) {
+  const [first] = bodies
+  const here = first.distanceLy < 0.5
+  return (
+    <li className="py-3">
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="min-w-0 font-medium break-words text-zinc-50">{first.systemName}</span>
+          <CopyButton text={first.systemName} />
+        </div>
+        <div className="flex items-baseline gap-2 sm:block sm:shrink-0 sm:text-right">
+          <div className="font-semibold whitespace-nowrap text-zinc-50 tabular-nums">{here ? t.route.youAreHere : formatLy(first.distanceLy)}</div>
+          {!here && first.jumps ? <div className="text-xs whitespace-nowrap text-zinc-500">{t.route.jumps(first.jumps)}</div> : null}
+        </div>
+      </div>
+      <ul className="mt-1 space-y-1">
+        {bodies.map((body) => (
+          <li key={body.name} className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
+            <span className="min-w-0 break-words text-zinc-200">{body.name}</span>
+            <span className="font-medium text-zinc-100 tabular-nums">{formatNumber(body.share, 2)} %</span>
+            {body.gravityG !== null && <span className="text-zinc-400 tabular-nums">{formatNumber(body.gravityG, 2)} g</span>}
+            {body.distLs !== null && <span className="text-zinc-500 tabular-nums">{formatLs(body.distLs)}</span>}
+          </li>
+        ))}
+      </ul>
+      {!here && (
+        <button
+          type="button"
+          onClick={() => onRouteTo(first.systemName)}
+          title={t.route.goalHint.transit}
+          className="focus-ring mt-2 inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8"
+        >
+          <Navigation className="size-3.5" aria-hidden />
+          {t.session.sell.routeHere}
+        </button>
+      )}
+    </li>
+  )
+}
+
+function Status({ view, failed, material, onRetry }: { view: ShopView | null; failed: boolean; material: boolean; onRetry: () => void }) {
   const s = t.shop
   if (!view && !failed)
     return (
@@ -353,11 +456,15 @@ function Status({ view, failed, onRetry }: { view: ShopView | null; failed: bool
           ? s.unknownPosition
           : view.state === 'unknown_item'
             ? s.unknownItem
-            : view.places.length === 0 && !view.nearerCarrier
-              ? view.item
-                ? s.empty
-                : s.emptyShops
-              : null
+            : !view.traded
+              ? s.notTraded
+              : view.places.length === 0 && !view.nearerCarrier
+                ? view.item
+                  ? material
+                    ? s.noTraders
+                    : s.empty
+                  : s.emptyShops
+                : null
   if (!text) return null
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-zinc-400" role="status">
@@ -432,6 +539,7 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
   }
   const chosen = catalog && symbol ? lookup(catalog, symbol) : null
   const want: Want = chosen?.kind === 'module' ? chosen.variant : {}
+  const material = chosen?.kind === 'material' ? chosen.material : null
 
   let card: ReactNode = null
   if (catalog && chosen?.kind === 'ship') {
@@ -467,6 +575,21 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
         }}
       />
     )
+  } else if (catalog && chosen?.kind === 'material') {
+    const kind = materialKind(chosen.material)
+    const group = materialsOf(catalog, kind)
+    card = (
+      <MaterialCard
+        material={chosen.material}
+        kind={t.shop.materialTypes[kind]}
+        group={materialGroupName(kind, chosen.material.group)}
+        position={`${group.indexOf(chosen.material) + 1} / ${group.length}`}
+        onStep={(step) => {
+          const next = neighbour(group, chosen.material, step)
+          if (next) choose(next.symbol, FLIP_SETTLE_MS)
+        }}
+      />
+    )
   } else if (catalog && chosen?.kind === 'module') {
     const group = catalog.modules.filter((m) => m.category === chosen.module.category)
     card = (
@@ -487,7 +610,17 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
       <Picker
         catalog={catalog}
-        chosen={chosen ? (chosen.kind === 'ship' ? chosen.ship.symbol : chosen.kind === 'commodity' ? chosen.commodity.symbol : chosen.module.name) : null}
+        chosen={
+          chosen
+            ? chosen.kind === 'ship'
+              ? chosen.ship.symbol
+              : chosen.kind === 'commodity'
+                ? chosen.commodity.symbol
+                : chosen.kind === 'material'
+                  ? chosen.material.symbol
+                  : chosen.module.name
+            : null
+        }
         want={want}
         ships={ships}
         role={role}
@@ -499,8 +632,8 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
         <section aria-labelledby="shop-title" className="min-w-0 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <Label as="h2" id="shop-title" className="flex items-center gap-2">
-              <ShoppingCart className="size-4" aria-hidden />
-              {chosen ? s.whereToBuy : s.nearest}
+              {material ? <ArrowLeftRight className="size-4" aria-hidden /> : <ShoppingCart className="size-4" aria-hidden />}
+              {material ? s.traders : chosen ? s.whereToBuy : s.nearest}
             </Label>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {chosen && (
@@ -514,12 +647,13 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
                   {s.back}
                 </button>
               )}
-              <CarriersSwitch on={carriers} onChange={toggleCarriers} />
+              {/* No carrier has a material trader. */}
+              {!material && <CarriersSwitch on={carriers} onChange={toggleCarriers} />}
             </div>
           </div>
-          {view?.ship && view.pad && <p className="mt-3 text-xs text-zinc-500">{s.padNote(view.ship, t.session.sell.pad[view.pad])}</p>}
+          {view?.ship && view.pad && view.traded && <p className="mt-3 text-xs text-zinc-500">{s.padNote(view.ship, t.session.sell.pad[view.pad])}</p>}
 
-          <Status view={settled ? data : null} failed={error !== null} onRetry={refetch} />
+          <Status view={settled ? data : null} failed={error !== null} material={!!material} onRetry={refetch} />
           {view && !carriers && view.nearerCarrier && <NearerCarrier hint={view.nearerCarrier} onShow={() => toggleCarriers(true)} />}
           {view && view.places.length > 0 && (
             <ol className={`mt-1 divide-y divide-zinc-800/80 ${settled ? '' : 'opacity-60'}`}>
@@ -540,6 +674,25 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
             </div>
           )}
         </section>
+        {material && material.rich !== null && (
+          <section aria-labelledby="shop-bodies" className="min-w-0 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
+            <Label as="h2" id="shop-bodies" className="flex items-center gap-2">
+              <Pickaxe className="size-4" aria-hidden />
+              {s.rich(formatNumber(material.rich, 2))}
+            </Label>
+            <p className="mt-2 text-xs text-zinc-500">{s.richHint}</p>
+            {view && view.bodies.length > 0 ? (
+              <ol className={`mt-1 divide-y divide-zinc-800/80 ${settled ? '' : 'opacity-60'}`}>
+                {bySystem(view.bodies).map((bodies) => (
+                  <BodySystem key={bodies[0].systemName} bodies={bodies} onRouteTo={onRouteTo} />
+                ))}
+              </ol>
+            ) : (
+              settled &&
+              data?.state === 'ready' && <p className="mt-3 text-sm text-zinc-400">{s.noRich}</p>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

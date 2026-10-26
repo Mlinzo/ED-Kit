@@ -13,14 +13,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
-### Commodities and materials (asked 2026-10-26)
-- Raw, manufactured and encoded materials (Arsenic etc.) are not sold: the nearest material trader
-  of the right kind (Spansh lists them: 372 raw traders, the nearest to Merope 192 ly away), and
-  where to find them yourself.
-- Show each planet's materials (the app has them from your scans and Spansh) and highlight the ones
-  you need for the engineering upgrade you are working towards, or plan to: the blueprint recipes
-  per grade against your stock (the journal's `Materials`). The journal does not say which upgrade
-  you plan, so probably a list of goals in the app. Settle the details first.
+### Engineering goals and planet materials (asked 2026-10-26, details settled the same day)
+- Goals in the Shop: a module type, a blueprint and the grade to reach, several goals at once; the
+  materials they need summed (EDSY's recipes per grade; at an engineer's top access level a grade
+  takes as many rolls as its number) against your stock (the journal's `Materials` and the events
+  after it): need, have, missing.
+- Each planet's materials (from your scans and Spansh) on the System tab's body card and on the
+  Surface globe, the ones your goals still miss highlighted.
 
 ### Your path on the globe: check the recording
 - Check how the path is built (`app/track.py`: a point every 5 m on foot, 20 m in the SRV, 50 m
@@ -59,6 +58,14 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Materials in the Shop (2026-10-26): materials are never sold, so choosing one (by name or from
+  the lists: raw, manufactured, encoded, and Guardian & Thargoid apart, a row per trader group by
+  grade) shows the nearest material traders of its type and, for a raw element, the nearest
+  landable bodies rich in it (Spansh: at least the share 4 in 5 landable bodies stay under, e.g.
+  Arsenic 2.51 %, Polonium 0.59 %), with share, gravity and distance from the arrival star. The
+  card tells type, grade and trader group, where the material comes from (the "Known Sources" of
+  its Elite Dangerous Wiki page, for 126 of 137) and links the page. Guardian and Thargoid
+  materials are taken by no trader: the card says so.
 - Commodities in the Shop (2026-10-26): find a commodity by name or by market category (rare ones
   apart) and see the nearest stations whose market had it in stock, with the price a tonne in full,
   the tonnes in stock and how old the report is. Spansh's station search filters on the name and

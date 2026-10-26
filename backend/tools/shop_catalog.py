@@ -1,4 +1,5 @@
-"""Builds app/data/shop.json: the ships, modules and commodities the Shop tab can look for.
+"""Builds app/data/shop.json: the ships, modules, commodities and materials the Shop tab can
+look for.
 
 Ships and modules come from EDCD FDevIDs (`shipyard.csv`, `outfitting.csv`), the tables EDMC
 and Spansh name them by. Left out: suits and on-foot gear, ship armour (each ship's own, sold
@@ -18,9 +19,17 @@ JavaScript: Node reads it.
 
 Commodities come from FDevIDs too (`commodity.csv`, `rare_commodity.csv`, the names Spansh's
 markets use), kept when Spansh has a market with some in stock: mission and salvage cargo is
-never sold. `--commodities` rebuilds only them, keeping the ships and modules as they are.
+never sold. `--commodities` rebuilds only them, keeping the rest as it is.
 
-    uv run python tools/shop_catalog.py [--commodities]
+Materials come from FDevIDs `material.csv` (type, grade, the group material traders go by;
+Guardian and Thargoid ones have none: traders do not take them), with where each comes from:
+the "Known Sources" list of its page on the Elite Dangerous Wiki (CC BY-SA), one line a source,
+read as wikitext through the wiki's MediaWiki API (50 pages a request).
+A raw element also gets the share of it that counts as much (`rich`): the 80th percentile of its
+share on landable bodies near Sol, the Pleiades, Colonia and in the core (Spansh body search),
+what the Shop's planet search asks for. `--materials` rebuilds only them.
+
+    uv run python tools/shop_catalog.py [--commodities | --materials]
 """
 
 from __future__ import annotations
@@ -28,8 +37,10 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -39,6 +50,20 @@ from typing import Any
 FDEVIDS = "https://raw.githubusercontent.com/EDCD/FDevIDs/master/"
 EDSY = "https://edsy.org/eddb.js"
 SPANSH = "https://spansh.co.uk/api/stations/search"
+SPANSH_BODIES = "https://spansh.co.uk/api/bodies/search"
+WIKI_API = "https://elite-dangerous.fandom.com/api.php"
+WIKI_BATCH = 50  # pages per API request (the MediaWiki limit for anonymous users)
+# Where raw elements' shares are sampled: the bubble, the Pleiades, Colonia, toward the core.
+RICH_SAMPLES = ("Sol", "Merope", "Colonia", "Synuefe EN-H d11-96")
+RICH_QUANTILE = 0.8
+TYPES = {"Raw": "raw", "Manufactured": "manufactured", "Encoded": "encoded"}
+# The groups of manufactured and encoded materials as the game and the wiki list them.
+GROUP_ORDER = [
+    "Chemical", "Thermic", "Heat", "Conductive", "Mechanical Components", "Capacitors",
+    "Shielding", "Composite", "Crystals", "Alloys",
+    "Emission Data", "Wake Scans", "Shield Data", "Encryption Files", "Data Archives",
+    "Encoded Firmware",
+]  # fmt: skip
 OUT = Path(__file__).resolve().parents[1] / "app" / "data" / "shop.json"
 HEADERS = {"User-Agent": "EDExplorerKit-tools", "Content-Type": "application/json"}
 CATEGORIES = {
@@ -183,6 +208,145 @@ def commodities() -> list[dict[str, Any]]:
     )
 
 
+def _plain(wikitext: str) -> str:
+    """A wikitext line as text: links by their label, templates and references dropped."""
+    text = re.sub(r"<ref[^>]*?/>|<ref.*?</ref>", "", wikitext)
+    text = re.sub(r"\{\{[^{}]*\}\}", "", text)
+    text = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", text)
+    text = re.sub(r"'{2,}", "", text)
+    return " ".join(text.split()).replace("( ", "(").replace(" )", ")").rstrip(":")
+
+
+# A sentence of the game's description that says where a material is found.
+HOW_FOUND = re.compile(
+    r"\b(collected|found|obtained|salvaged|scan\w*|recovered|retrieved|min(ed|ing)|harvested)\b",
+    re.I,
+)
+
+
+def known_sources(wikitext: str) -> list[str]:
+    """The "Known Sources" list of a page: one line per item, an item's own list after it
+    ("Surface Prospecting: Outcrop, Metallic Meteorite"). Without one, the first sentence of the
+    game's own description (the page's quote) that says where it is found."""
+    found = re.search(r"^==+\s*Known Sources\s*==+\s*$(.*?)(?=^==|\Z)", wikitext, re.M | re.S)
+    items: list[list[str]] = []
+    for line in found.group(1).splitlines() if found else []:
+        bullet = re.match(r"^(\*+)\s*(.*)$", line)
+        if not bullet:
+            continue
+        text = _plain(bullet.group(2))
+        if not text:
+            continue
+        if len(bullet.group(1)) == 1 or not items:
+            items.append([text])
+        else:
+            items[-1].append(text)
+    if not items:
+        quote = re.search(r"\{\{quote\|(.*?)(?:\}\}|\|)", wikitext, re.I | re.S)
+        text = _plain(re.sub(r"<br\s*/?>", " ", quote.group(1))) if quote else ""
+        sentences = re.findall(r"[^.]+\.", text)
+        return [x.strip() for x in sentences if HOW_FOUND.search(x)][:1]
+    return [f"{i[0]}: {', '.join(i[1:])}" if len(i) > 1 else i[0] for i in items]
+
+
+def wiki_sources(names: list[str]) -> dict[str, list[str]]:
+    """Name -> where the material comes from, by its wiki page (none when the page has no such
+    list), `WIKI_BATCH` pages a request."""
+    out: dict[str, list[str]] = {}
+    for at in range(0, len(names), WIKI_BATCH):
+        batch = names[at : at + WIKI_BATCH]
+        query = {
+            "action": "query",
+            "prop": "revisions",
+            "rvprop": "content",
+            "rvslots": "main",
+            "format": "json",
+            "formatversion": "2",
+            "redirects": "1",
+            "titles": "|".join(batch),
+        }
+        req = urllib.request.Request(
+            f"{WIKI_API}?{urllib.parse.urlencode(query)}",
+            headers={"User-Agent": HEADERS["User-Agent"]},
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310
+            data = json.loads(resp.read().decode("utf-8"))["query"]
+        # Each asked name to the page it ends at (normalised, then redirected).
+        final = {name: name for name in batch}
+        for step in ("normalized", "redirects"):
+            moved = {m["from"]: m["to"] for m in data.get(step) or []}
+            final = {name: moved.get(title, title) for name, title in final.items()}
+        pages = {
+            page["title"]: page["revisions"][0]["slots"]["main"]["content"]
+            for page in data.get("pages") or []
+            if page.get("revisions")
+        }
+        for name, title in final.items():
+            out[name] = known_sources(pages.get(title, ""))
+    return out
+
+
+def rich_shares() -> dict[str, float]:
+    """Raw element -> the share (percent) that counts as much: `RICH_QUANTILE` of its shares on
+    landable bodies around `RICH_SAMPLES`."""
+    shares: dict[str, list[float]] = {}
+    for reference in RICH_SAMPLES:
+        body = {
+            "filters": {"is_landable": {"value": True}},
+            "sort": [{"distance": {"direction": "asc"}}],
+            "size": 500,
+            "reference_system": reference,
+        }
+        req = urllib.request.Request(SPANSH_BODIES, data=json.dumps(body).encode(), headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310
+            data = json.loads(resp.read().decode("utf-8"))
+        for b in data.get("results") or []:
+            for m in b.get("materials") or []:
+                shares.setdefault(str(m["name"]), []).append(float(m["share"]))
+    return {
+        name: round(sorted(values)[int(len(values) * RICH_QUANTILE)], 2)
+        for name, values in shares.items()
+        if len(values) >= 20
+    }
+
+
+def materials() -> list[dict[str, Any]]:
+    """Every material by type, group, grade: where it comes from, and a raw one's rich share."""
+    rows = _get("material.csv")
+    for r in rows:
+        r["name"] = r["name"].strip()  # "Untypical Shield Scans "
+    rich = rich_shares()
+    by_name = wiki_sources([r["name"] for r in rows])
+    sources = [by_name[r["name"]] for r in rows]
+    out = []
+    for r, found in zip(rows, sources, strict=True):
+        item: dict[str, Any] = {
+            "symbol": r["symbol"].lower(),
+            "name": r["name"],
+            "type": TYPES[r["type"]],
+            "grade": int(r["rarity"]),
+            "group": None if r["category"] == "None" else r["category"],
+            "sources": found,
+        }
+        if item["type"] == "raw" and r["name"] in rich:
+            item["rich"] = rich[r["name"]]
+        out.append(item)
+    return sorted(out, key=material_order)
+
+
+def material_order(m: dict[str, Any]) -> tuple[Any, ...]:
+    """By type, then group in the game's order (raw ones by number; no group last), grade, name."""
+    group = m["group"]
+    return (
+        list(TYPES.values()).index(m["type"]),
+        group is None,
+        GROUP_ORDER.index(group) if group in GROUP_ORDER else 0,
+        group or "",
+        m["grade"],
+        m["name"],
+    )
+
+
 def unlock_of(entitlement: str) -> str | None:
     if entitlement.startswith("ELITE_SPECIFIC_V_POWER"):
         return "powerplay"
@@ -280,6 +444,7 @@ def build() -> dict[str, Any]:
         "ships": sorted(ships, key=lambda s: s["name"]),
         "modules": sorted(kept, key=lambda m: (order[m["category"]], m["name"])),
         "commodities": commodities(),
+        "materials": materials(),
     }
 
 
@@ -290,6 +455,16 @@ def main() -> None:
         OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         rare = sum(1 for c in data["commodities"] if c.get("rare"))
         print(f"{OUT}: {len(data['commodities'])} commodities ({rare} rare)")
+        return
+    if "--materials" in sys.argv[1:]:
+        data = json.loads(OUT.read_text(encoding="utf-8"))
+        data["materials"] = materials()
+        OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        bare = [m["name"] for m in data["materials"] if not m["sources"]]
+        raw = [m for m in data["materials"] if m["type"] == "raw"]
+        print(f"{OUT}: {len(data['materials'])} materials")
+        print("without wiki sources:", ", ".join(bare) or "none")
+        print("rich shares:", ", ".join(f"{m['name']} {m.get('rich')}" for m in raw))
         return
     data = build()
     OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")

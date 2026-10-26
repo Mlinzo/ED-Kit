@@ -609,10 +609,27 @@ export interface ShopCommodityView {
   rare: boolean
 }
 
+/** A material: never sold, exchanged at material traders of its type. */
+export interface ShopMaterialView {
+  /** Journal symbol, lower case. */
+  symbol: string
+  name: string
+  type: 'raw' | 'manufactured' | 'encoded'
+  /** 1 (very common) .. 5 (very rare); raw ones go to 4. */
+  grade: number
+  /** The group material traders go by (raw: "1".."7"); null: traders do not take it (Guardian, Thargoid). */
+  group: string | null
+  /** Where it comes from (Elite Dangerous Wiki), English. */
+  sources: string[]
+  /** Raw: the share (%) on a body that counts as much (null: not on planets). */
+  rich: number | null
+}
+
 export interface ShopCatalogView {
   ships: ShopShipView[]
   modules: ShopModuleView[]
   commodities: ShopCommodityView[]
+  materials: ShopMaterialView[]
 }
 
 export interface ShopStationView {
@@ -668,6 +685,23 @@ export interface ShopView {
   rank: ShopRankView | null
   unlock: ShopUnlock | null
   searchedAt: string | null
+  /** A raw material: the nearest landable bodies with much of it. */
+  bodies: ShopBodyView[]
+  /** A material: whether material traders take it at all (places stay empty when not). */
+  traded: boolean
+}
+
+/** A landable body with much of a raw material (Spansh's body search). */
+export interface ShopBodyView {
+  name: string
+  systemName: string
+  systemAddress: string | null
+  distanceLy: number
+  jumps: number | null
+  distLs: number | null
+  /** Percent of the material. */
+  share: number
+  gravityG: number | null
 }
 
 export interface LiveStatus {

@@ -32,6 +32,7 @@ def raw(
     services: tuple[str, ...] = ("Shipyard", "Outfitting"),
     system_id: int | None = None,
     market: list[dict[str, Any]] | None = None,
+    trader: str | None = None,
 ) -> dict[str, Any]:
     return {
         "name": name,
@@ -54,6 +55,7 @@ def raw(
         "modules": modules or [],
         "market": market or [],
         "market_updated_at": "2026-10-03T10:00:00Z",
+        "material_trader": trader,
     }
 
 
@@ -150,6 +152,40 @@ def test_commodity_offer_brings_price_and_stock() -> None:
     assert offer(raw("C", "S", 1, market=[goods("Gold", 50)]), titanium) is None
 
 
+def test_materials_in_the_catalog_and_the_trader_search() -> None:
+    arsenic, guardian = find("arsenic"), find("guardian_powercell")
+    assert arsenic is not None and arsenic.kind == "material" and arsenic.label() == "Arsenic"
+    assert guardian is not None
+    materials = {m.symbol: m for m in shop.catalog_view().materials}
+    assert (materials["arsenic"].type, materials["arsenic"].grade) == ("raw", 2)
+    assert materials["arsenic"].rich and materials["arsenic"].sources
+    assert materials["guardian_powercell"].group is None  # traders do not take it
+    assert shop._filters(arsenic) == {"material_trader": {"value": ["Raw"]}}
+    raw_trader = raw("A", "S", 1, trader="Raw", seen=NOW)
+    got = offer(raw_trader, arsenic)
+    assert got is not None and got["price"] is None and got["offer_at"] == NOW.isoformat()
+    assert offer(raw("B", "S", 1, trader="Encoded"), arsenic) is None
+
+
+def test_bodies_with_much_of_a_raw_material(monkeypatch: pytest.MonkeyPatch) -> None:
+    arsenic = find("arsenic")
+    assert arsenic is not None
+    asked: list[dict[str, Any]] = []
+
+    def body_search(filters: dict[str, Any], coords: Any, size: int) -> list[dict[str, Any]]:
+        asked.append(filters)
+        return []
+
+    monkeypatch.setattr(spansh, "body_search", body_search)
+    shop.search_bodies(arsenic, (0.0, 0.0, 0.0))
+    [wanted] = asked[0]["materials"]
+    assert wanted["name"] == "Arsenic" and asked[0]["is_landable"] == {"value": True}
+    assert wanted["share"]["value"][0] == shop._materials()["arsenic"]["rich"]
+    lead = find("lead")  # never on planets: no share, nothing asked
+    assert lead is not None and shop.search_bodies(lead, (0.0, 0.0, 0.0)) == []
+    assert len(asked) == 1
+
+
 def test_shops_count_what_they_sell() -> None:
     both = shop.shop(raw("A", "S", 1, ships=[{"symbol": "x"}] * 3, modules=[module("y")] * 7))
     assert both is not None and (both["ship_count"], both["module_count"]) == (3, 7)
@@ -213,7 +249,12 @@ def proj(conn: sqlite3.Connection) -> Projector:
 class FakeFinder(ShopFinder):
     """Spansh's stations given as they come (`raw`), filtered as `shop.search` does."""
 
-    def __init__(self, stations: list[dict[str, Any]], permits: set[int] | None = None) -> None:
+    def __init__(
+        self,
+        stations: list[dict[str, Any]],
+        permits: set[int] | None = None,
+        bodies: list[dict[str, Any]] | None = None,
+    ) -> None:
         self.asked: list[tuple[str | None, tuple[float, float, float]]] = []
 
         def find(item: Item | None, here: tuple[float, float, float]) -> list[dict[str, Any]]:
@@ -221,7 +262,7 @@ class FakeFinder(ShopFinder):
             kept = (offer(r, item) if item else shop.shop(r) for r in stations)
             return [o for o in kept if o is not None]
 
-        super().__init__(None, find, lambda: permits or set())
+        super().__init__(None, find, lambda: permits or set(), lambda item, here: bodies or [])
 
 
 def test_shop_view(conn: sqlite3.Connection, proj: Projector) -> None:
@@ -258,6 +299,28 @@ def test_shop_view(conn: sqlite3.Connection, proj: Projector) -> None:
     assert view.state == "ready" and view.item == "Titanium"
     [station] = view.places[0].stations
     assert (station.price, station.stock) == (3900, 640)
+
+    planet = {
+        "name": "Lave 2 a",
+        "system_name": "Lave",
+        "system_id64": 42,
+        "system_x": 30.0,
+        "system_y": 0.0,
+        "system_z": 0.0,
+        "distance_to_arrival": 812.4,
+        "gravity": 0.183,
+        "materials": [{"name": "Iron", "share": 20.1}, {"name": "Arsenic", "share": 2.7134}],
+    }
+    traders = FakeFinder([raw("Hub", "Sol", 11, trader="Raw")], bodies=[planet])
+    view = shop.shop_view(conn, state(), traders, "arsenic")
+    assert view.state == "ready" and view.traded and view.item == "Arsenic"
+    assert view.places[0].stations[0].name == "Hub" and view.places[0].stations[0].price is None
+    [body] = view.bodies
+    assert (body.name, body.share, body.gravity_g, body.dist_ls) == ("Lave 2 a", 2.71, 0.18, 812)
+    # Guardian materials: no trader takes them, none is asked for.
+    guardian = FakeFinder([raw("Hub", "Sol", 11, trader="Manufactured")])
+    view = shop.shop_view(conn, state(), guardian, "guardian_powercell")
+    assert view.state == "ready" and not view.traded and view.places == [] and guardian.asked == []
 
 
 def test_stronghold_carrier_only_for_its_power(conn: sqlite3.Connection, proj: Projector) -> None:

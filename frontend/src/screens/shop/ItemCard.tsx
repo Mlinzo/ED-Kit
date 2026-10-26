@@ -1,9 +1,10 @@
 // The Shop cards: a ship (blueprint, price, figures, slots), a module (icon, price, figures,
-// variant buttons) or a commodity (its category), with arrows to flip through the catalog.
+// variant buttons), a commodity (its category) or a material (type, grade, where it comes from),
+// with arrows to flip through the catalog.
 
-import { ChevronLeft, ChevronRight, Package, ShieldAlert } from 'lucide-react'
+import { Atom, Binary, ChevronLeft, ChevronRight, Cog, ExternalLink, Package, ShieldAlert } from 'lucide-react'
 import { createElement, type ReactNode } from 'react'
-import type { ShopCommodityView, ShopModuleView, ShopRankView, ShopShipView, ShopVariantView } from '../../api/types'
+import type { ShopCommodityView, ShopMaterialView, ShopModuleView, ShopRankView, ShopShipView, ShopVariantView } from '../../api/types'
 import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { SHIP_ORDERS, type ShipOrder } from './catalog'
@@ -310,6 +311,65 @@ export function CommodityCard({
         <Flip position={position} onStep={onStep} />
       </div>
       {commodity.rare && <p className="mt-3 rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{t.shop.card.rare}</p>}
+    </section>
+  )
+}
+
+const MATERIAL_ICONS = { raw: Atom, manufactured: Cog, encoded: Binary }
+
+export function MaterialCard({
+  material,
+  kind,
+  group,
+  position,
+  onStep,
+}: {
+  material: ShopMaterialView
+  /** Its type, or "special" when no trader takes it, in the chosen language. */
+  kind: string
+  /** Its trader group, in the chosen language (null: none). */
+  group: string | null
+  position: string
+  onStep: (step: number) => void
+}) {
+  const s = t.shop
+  const c = s.card
+  return (
+    <section aria-labelledby="material-card-title" className="min-w-0 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-sky-400/10 text-accent ring-1 ring-sky-400/30 ring-inset">
+            {createElement(MATERIAL_ICONS[material.type], { className: 'size-7', 'aria-hidden': true })}
+          </span>
+          <div className="min-w-0">
+            <h2 id="material-card-title" className="text-xl font-semibold break-words text-zinc-50 sm:text-2xl">
+              {material.name}
+            </h2>
+            <p className="mt-0.5 text-sm text-zinc-400">{[kind, s.grade(material.grade), group].filter(Boolean).join(' · ')}</p>
+          </div>
+        </div>
+        <Flip position={position} onStep={onStep} />
+      </div>
+      <p className="mt-3 rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{material.group === null ? c.notTraded : c.notSold}</p>
+      {material.sources.length > 0 && (
+        <>
+          <h3 className="mt-4 text-xs font-medium tracking-wide text-zinc-500 uppercase">{c.sources}</h3>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+            {material.sources.map((source) => (
+              <li key={source}>{source}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      <a
+        href={`https://elite-dangerous.fandom.com/wiki/${encodeURIComponent(material.name.replaceAll(' ', '_'))}`}
+        target="_blank"
+        rel="noreferrer"
+        className="focus-ring mt-3 inline-flex items-center gap-1 rounded-md text-sm text-zinc-400 hover:text-zinc-200"
+      >
+        {c.wiki}
+        <ExternalLink className="size-3.5" aria-hidden />
+      </a>
     </section>
   )
 }

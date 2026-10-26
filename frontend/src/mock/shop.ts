@@ -61,5 +61,7 @@ export function buildShop(item: string | null, carriers: boolean, now = Date.now
     rank: null,
     unlock: null,
     searchedAt: daysAgo(0.01, now),
+    bodies: [],
+    traded: true,
   }
 }

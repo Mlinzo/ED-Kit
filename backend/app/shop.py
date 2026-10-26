@@ -1,5 +1,5 @@
 """The Shop tab: the nearest shipyards and outfitting, and the nearest stations selling a ship,
-a module or a commodity.
+a module or a commodity, or trading a material.
 
 Spansh's station search knows a station's shipyard and outfitting as the last player who docked
 there with an EDDN uploader (EDMC, EDDiscovery...) reported them, so the date of that report
@@ -16,8 +16,12 @@ modules Spansh knows they sell. A commodity is looked for in the markets with so
 each station shows what it sells a tonne for and how much it had, as of its market's report
 (stock goes down with every purchase: a report days old may be off). Near the Pleiades the
 nearest Titanium was on fleet carriers seen a year before, hence carriers on request only, as
-for ships and modules. An answer is kept in memory and reused for an hour while you stay within
-20 ly of where it was asked.
+for ships and modules. Materials are never sold: a material trader of the material's type
+(raw, manufactured, encoded) exchanges it for others of that type, so the nearest such traders
+are listed (Guardian and Thargoid materials are not taken there). For a raw element the nearest
+landable bodies with much of it come too: a share at least the catalog's `rich` one, the 80th
+percentile of its shares on landable bodies. An answer is kept in memory and reused for an hour
+while you stay within 20 ly of where it was asked.
 
 What else stands in the way is told, not filtered: the navy rank a ship needs (from the
 journal's Rank and Promotion events), a module unlocked first (Powerplay, a technology broker:
@@ -48,8 +52,10 @@ from typing import Any, Literal
 from app import spansh
 from app.schemas import (
     SellCarrierHint,
+    ShopBodyView,
     ShopCatalogView,
     ShopCommodityView,
+    ShopMaterialView,
     ShopModuleView,
     ShopPlaceView,
     ShopRankNeed,
@@ -89,6 +95,9 @@ SHOP_SERVICES = ["Shipyard", "Outfitting"]  # Spansh's names; several values: ei
 OLD_NAMES = {"Vessel Hangar": ["Fighter Hangar"]}  # Operations update, 2026-06-30
 FOR_CREDITS = {"value": [1, 10**10], "comparison": "<=>"}  # a module's price at a station
 IN_STOCK = {"value": [1, 10**9], "comparison": "<=>"}  # tonnes of a commodity at a market
+# A material's type -> the kind of material trader that takes it (Spansh's names).
+TRADERS = {"raw": "Raw", "manufactured": "Manufactured", "encoded": "Encoded"}
+BODIES = 5  # landable bodies listed for a raw material
 
 Navy = Literal["empire", "federation"]
 # The navy rank a ship needs (Elite Dangerous Wiki, Empire/Ranks and Federation/Ranks, checked
@@ -145,7 +154,7 @@ Vec = tuple[float, float, float]
 
 @dataclass(frozen=True, slots=True)
 class Item:
-    kind: Literal["ship", "module", "commodity"]
+    kind: Literal["ship", "module", "commodity", "material"]
     symbol: str  # journal symbol, lower case
     name: str
     size: int | None = None
@@ -185,7 +194,14 @@ def _items() -> dict[str, Item]:
             )
     for c in data.get("commodities") or []:
         items[c["symbol"]] = Item("commodity", c["symbol"], c["name"])
+    for m in data.get("materials") or []:
+        items[m["symbol"]] = Item("material", m["symbol"], m["name"])
     return items
+
+
+@cache
+def _materials() -> dict[str, dict[str, Any]]:
+    return {m["symbol"]: m for m in _catalog().get("materials") or []}
 
 
 def find(symbol: str) -> Item | None:
@@ -236,6 +252,7 @@ def catalog_view() -> ShopCatalogView:
             for m in data["modules"]
         ],
         commodities=[ShopCommodityView(**c) for c in data.get("commodities") or []],
+        materials=[ShopMaterialView(**m) for m in data.get("materials") or []],
     )
 
 
@@ -254,6 +271,8 @@ def _filters(item: Item) -> dict[str, Any]:
         return {"ships": [{"name": {"value": [item.name]}}]}
     if item.kind == "commodity":
         return {"market": [{"name": item.name, "supply": IN_STOCK}]}
+    if item.kind == "material":
+        return {"material_trader": {"value": [TRADERS[_materials()[item.symbol]["type"]]]}}
     return {
         "modules": [
             {
@@ -268,7 +287,14 @@ def _filters(item: Item) -> dict[str, Any]:
 
 def offer(raw: dict[str, Any], item: Item) -> dict[str, Any] | None:
     """The station's fields with its price for `item` (a commodity: and its stock), or None when
-    it lacks that exact item."""
+    it lacks that exact item. A material: a trader of its type."""
+    if item.kind == "material":
+        if raw.get("material_trader") != TRADERS[_materials()[item.symbol]["type"]]:
+            return None
+        return {k: raw.get(k) for k in spansh.STATION_FIELDS} | {
+            "price": None,
+            "offer_at": raw.get("updated_at"),
+        }
     if item.kind == "commodity":
         row = next(
             (
@@ -328,6 +354,8 @@ def search(item: Item | None, coords: Vec) -> list[dict[str, Any]]:
     `coords`, asked in parallel; raises spansh.SpanshError."""
     filters = _filters(item) if item else {"services": [{"name": {"value": SHOP_SERVICES}}]}
     jobs = ((STATION_SIZE, STATION_TYPES), (CARRIER_SIZE, CARRIER_TYPES))
+    if item is not None and item.kind == "material":
+        jobs = jobs[:1]  # no carrier has a material trader
     with ThreadPoolExecutor(len(jobs)) as pool:
         parts = list(
             pool.map(lambda job: spansh.station_search(filters, coords, job[0], job[1]), jobs)
@@ -336,6 +364,19 @@ def search(item: Item | None, coords: Vec) -> list[dict[str, Any]]:
         (lambda raw: offer(raw, item)) if item else shop
     )
     return [o for part in parts for raw in part if (o := keep(raw)) is not None]
+
+
+def search_bodies(item: Item, coords: Vec) -> list[dict[str, Any]]:
+    """The landable bodies nearest to `coords` with at least the `rich` share of a raw material
+    (none without one); raises spansh.SpanshError."""
+    rich = _materials()[item.symbol].get("rich")
+    if rich is None:
+        return []
+    filters = {
+        "is_landable": {"value": True},
+        "materials": [{"name": item.name, "share": {"value": [rich, 100], "comparison": "<=>"}}],
+    }
+    return spansh.body_search(filters, coords, BODIES)
 
 
 class ShopFinder:
@@ -347,8 +388,10 @@ class ShopFinder:
         db_path: Path | None,
         find: Callable[[Item | None, Vec], list[dict[str, Any]]] = search,
         permits: Callable[[], set[int]] | None = None,
+        find_bodies: Callable[[Item, Vec], list[dict[str, Any]]] = search_bodies,
     ) -> None:
         self._find = find
+        self._find_bodies = find_bodies
         self._permits = permits or (lambda: permit_locked(db_path) if db_path else set())
         self._lock = threading.Lock()
         self._item_locks: dict[str, threading.Lock] = {}
@@ -358,7 +401,15 @@ class ShopFinder:
     def stations(self, item: Item | None, here: Vec) -> tuple[list[dict[str, Any]], datetime]:
         """The offers for `item` (None: the shops) and when Spansh was asked; raises
         spansh.SpanshError."""
-        key = item.symbol if item else ""
+        return self._kept(item.symbol if item else "", here, lambda: self._find(item, here))
+
+    def bodies(self, item: Item, here: Vec) -> list[dict[str, Any]]:
+        """The landable bodies with much of a raw material; raises spansh.SpanshError."""
+        return self._kept(f"bodies:{item.symbol}", here, lambda: self._find_bodies(item, here))[0]
+
+    def _kept(
+        self, key: str, here: Vec, ask: Callable[[], list[dict[str, Any]]]
+    ) -> tuple[list[dict[str, Any]], datetime]:
         with self._lock:
             item_lock = self._item_locks.setdefault(key, threading.Lock())
         with item_lock:
@@ -366,7 +417,7 @@ class ShopFinder:
             kept = self._answers.get(key)
             if kept and now - kept[0] <= FRESH_FOR and math.dist(kept[1], here) <= REUSE_WITHIN_LY:
                 return kept[2], kept[0]
-            found = self._find(item, here)
+            found = ask()
             with self._lock:
                 self._answers[key] = (now, here, found)
                 while len(self._answers) > KEEP_ANSWERS:
@@ -508,6 +559,34 @@ def _station_view(o: dict[str, Any], permits: set[int]) -> ShopStationView:
     )
 
 
+def _body_view(
+    raw: dict[str, Any], item: Item, here: Vec, jump_range: float | None
+) -> ShopBodyView | None:
+    position = _position(raw)
+    share = next(
+        (
+            m.get("share")
+            for m in raw.get("materials") or []
+            if isinstance(m, dict) and m.get("name") == item.name
+        ),
+        None,
+    )
+    if position is None or not raw.get("name") or not isinstance(share, int | float):
+        return None
+    distance = math.dist(here, position)
+    ls, gravity = raw.get("distance_to_arrival"), raw.get("gravity")
+    return ShopBodyView(
+        name=str(raw["name"]),
+        system_name=str(raw.get("system_name")),
+        system_address=str(raw["system_id64"]) if raw.get("system_id64") else None,
+        distance_ly=round(distance, 1),
+        jumps=jumps_to(distance, jump_range),
+        dist_ls=round(ls) if isinstance(ls, int | float) else None,
+        share=round(float(share), 2),
+        gravity_g=round(float(gravity), 2) if isinstance(gravity, int | float) else None,
+    )
+
+
 def shop_view(
     conn: sqlite3.Connection,
     state: sqlite3.Row | None,
@@ -549,10 +628,23 @@ def shop_view(
     if here_row is None or here_row["x"] is None:
         return view.model_copy(update={"state": "unknown_position"})
     here = (here_row["x"], here_row["y"], here_row["z"])
+    material = _materials().get(item.symbol) if item and item.kind == "material" else None
+    traded = material is None or material["group"] is not None
+    bodies: list[ShopBodyView] = []
     try:
-        found, asked_at = finder.stations(item, here)
+        if traded:
+            found, asked_at = finder.stations(item, here)
+        else:
+            found, asked_at = [], datetime.now(UTC)
+        if material is not None and item is not None:
+            bodies = [
+                b
+                for raw in finder.bodies(item, here)
+                if (b := _body_view(raw, item, here, jump_range))
+            ]
     except spansh.SpanshError:
-        return view.model_copy(update={"state": "failed"})
+        return view.model_copy(update={"state": "failed", "traded": traded})
+    view = view.model_copy(update={"traded": traded, "bodies": bodies})
 
     places, nearer = pick(
         found, here, pad, datetime.now(UTC), carriers, pledged=pledged_power(conn)

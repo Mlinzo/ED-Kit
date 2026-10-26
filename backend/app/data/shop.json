@@ -20475,5 +20475,1568 @@
    "category": "Consumer Items",
    "rare": true
   }
+ ],
+ "materials": [
+  {
+   "symbol": "carbon",
+   "name": "Carbon",
+   "type": "raw",
+   "grade": 1,
+   "group": "1",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 22.88
+  },
+  {
+   "symbol": "vanadium",
+   "name": "Vanadium",
+   "type": "raw",
+   "grade": 2,
+   "group": "1",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 5.09
+  },
+  {
+   "symbol": "niobium",
+   "name": "Niobium",
+   "type": "raw",
+   "grade": 3,
+   "group": "1",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining",
+    "Mission reward"
+   ],
+   "rich": 1.38
+  },
+  {
+   "symbol": "yttrium",
+   "name": "Yttrium",
+   "type": "raw",
+   "grade": 4,
+   "group": "1",
+   "sources": [
+    "Surface Prospecting: Bronzite Chondrite, Mesosiderite, Metallic Meteorite, Outcrop, Crystalline Shard"
+   ],
+   "rich": 1.22
+  },
+  {
+   "symbol": "phosphorus",
+   "name": "Phosphorus",
+   "type": "raw",
+   "grade": 1,
+   "group": "2",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 14.65
+  },
+  {
+   "symbol": "chromium",
+   "name": "Chromium",
+   "type": "raw",
+   "grade": 2,
+   "group": "2",
+   "sources": [
+    "Surface Prospecting: Bronzite Chondrite, Mesosiderite, Metallic Meteorite, Outcrop, Polyporous Growth",
+    "Asteroid Mining"
+   ],
+   "rich": 8.94
+  },
+  {
+   "symbol": "molybdenum",
+   "name": "Molybdenum",
+   "type": "raw",
+   "grade": 3,
+   "group": "2",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Mission reward"
+   ],
+   "rich": 1.32
+  },
+  {
+   "symbol": "technetium",
+   "name": "Technetium",
+   "type": "raw",
+   "grade": 4,
+   "group": "2",
+   "sources": [
+    "Surface Prospecting: Bronzite Chondrite, Crystalline Shard, Metallic Meteorite, Mesosiderite, Needle Crystals, Outcrop"
+   ],
+   "rich": 0.74
+  },
+  {
+   "symbol": "sulphur",
+   "name": "Sulphur",
+   "type": "raw",
+   "grade": 1,
+   "group": "3",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 27.21
+  },
+  {
+   "symbol": "manganese",
+   "name": "Manganese",
+   "type": "raw",
+   "grade": 2,
+   "group": "3",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite, Crystalline Fragments",
+    "Mission reward"
+   ],
+   "rich": 8.24
+  },
+  {
+   "symbol": "cadmium",
+   "name": "Cadmium",
+   "type": "raw",
+   "grade": 3,
+   "group": "3",
+   "sources": [
+    "Surface Prospecting: Crystalline Cluster, Mesosiderite, Metallic Meteorite, Outcrop (Metallic one with thin gap on a radar)",
+    "Asteroid Mining"
+   ],
+   "rich": 1.55
+  },
+  {
+   "symbol": "ruthenium",
+   "name": "Ruthenium",
+   "type": "raw",
+   "grade": 4,
+   "group": "3",
+   "sources": [
+    "Surface Prospecting: Metallic Meteorite, Bronzite Chondrite, Outcrop, Crystalline Shard"
+   ],
+   "rich": 1.24
+  },
+  {
+   "symbol": "iron",
+   "name": "Iron",
+   "type": "raw",
+   "grade": 1,
+   "group": "4",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 20.27
+  },
+  {
+   "symbol": "zinc",
+   "name": "Zinc",
+   "type": "raw",
+   "grade": 2,
+   "group": "4",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 5.54
+  },
+  {
+   "symbol": "tin",
+   "name": "Tin",
+   "type": "raw",
+   "grade": 3,
+   "group": "4",
+   "sources": [
+    "Surface Prospecting: Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining (Metallic)"
+   ],
+   "rich": 1.24
+  },
+  {
+   "symbol": "selenium",
+   "name": "Selenium",
+   "type": "raw",
+   "grade": 4,
+   "group": "4",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite, Crystalline Fragments",
+    "Asteroid Mining",
+    "Mission reward"
+   ],
+   "rich": 4.28
+  },
+  {
+   "symbol": "nickel",
+   "name": "Nickel",
+   "type": "raw",
+   "grade": 1,
+   "group": "5",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 15.33
+  },
+  {
+   "symbol": "germanium",
+   "name": "Germanium",
+   "type": "raw",
+   "grade": 2,
+   "group": "5",
+   "sources": [
+    "Surface Prospecting: Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining",
+    "Mission reward"
+   ],
+   "rich": 5.44
+  },
+  {
+   "symbol": "tungsten",
+   "name": "Tungsten",
+   "type": "raw",
+   "grade": 3,
+   "group": "5",
+   "sources": [
+    "Surface Prospecting: Outcrop, Mesosiderite, Metallic Meteorite",
+    "Asteroid Mining"
+   ],
+   "rich": 1.12
+  },
+  {
+   "symbol": "tellurium",
+   "name": "Tellurium",
+   "type": "raw",
+   "grade": 4,
+   "group": "5",
+   "sources": [
+    "Surface Prospecting: Mesosiderite, Metallic Meteorite, Crystalline Shard, Needle Crystals"
+   ],
+   "rich": 1.36
+  },
+  {
+   "symbol": "rhenium",
+   "name": "Rhenium",
+   "type": "raw",
+   "grade": 1,
+   "group": "6",
+   "sources": [
+    "Mining ice asteroids",
+    "Mining rocky asteroids",
+    "Phloem Excretions"
+   ]
+  },
+  {
+   "symbol": "arsenic",
+   "name": "Arsenic",
+   "type": "raw",
+   "grade": 2,
+   "group": "6",
+   "sources": [
+    "Surface Prospecting: Outcrop, Bronzite Chondrite, Mesosiderite, Metallic Meteorite, Crystalline Fragments",
+    "Asteroid Mining",
+    "Mission reward"
+   ],
+   "rich": 2.51
+  },
+  {
+   "symbol": "mercury",
+   "name": "Mercury",
+   "type": "raw",
+   "grade": 3,
+   "group": "6",
+   "sources": [
+    "Surface Prospecting: Outcrop, Mesosiderite, Metallic Meteorite, Crystalline Cluster"
+   ],
+   "rich": 0.89
+  },
+  {
+   "symbol": "polonium",
+   "name": "Polonium",
+   "type": "raw",
+   "grade": 4,
+   "group": "6",
+   "sources": [
+    "Surface Prospecting: Outcrop, Metallic Meteorite, Crystalline Shard, Needle Crystals",
+    "Mission reward"
+   ],
+   "rich": 0.59
+  },
+  {
+   "symbol": "lead",
+   "name": "Lead",
+   "type": "raw",
+   "grade": 1,
+   "group": "7",
+   "sources": [
+    "Collected from mining asteroids."
+   ]
+  },
+  {
+   "symbol": "zirconium",
+   "name": "Zirconium",
+   "type": "raw",
+   "grade": 2,
+   "group": "7",
+   "sources": [
+    "Surface Prospecting: Outcrop, Mesosiderite",
+    "Asteroid Mining"
+   ],
+   "rich": 2.5
+  },
+  {
+   "symbol": "boron",
+   "name": "Boron",
+   "type": "raw",
+   "grade": 3,
+   "group": "7",
+   "sources": [
+    "Collected from mining asteroids."
+   ]
+  },
+  {
+   "symbol": "antimony",
+   "name": "Antimony",
+   "type": "raw",
+   "grade": 4,
+   "group": "7",
+   "sources": [
+    "Surface Prospecting: Mesosiderite, Metallic Meteorite, Bronzite Chondrite, Outcrop, Crystalline Shard, Phloem Excretion"
+   ],
+   "rich": 1.15
+  },
+  {
+   "symbol": "chemicalstorageunits",
+   "name": "Chemical Storage Units",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Chemical",
+   "sources": [
+    "Ship salvage",
+    "Signal sources"
+   ]
+  },
+  {
+   "symbol": "chemicalprocessors",
+   "name": "Chemical Processors",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Chemical",
+   "sources": [
+    "Ship salvage (Transport ships)",
+    "Signal sources",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "chemicaldistillery",
+   "name": "Chemical Distillery",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Chemical",
+   "sources": [
+    "Ship Salvage (Transport ships)",
+    "Signal Sources (High Security Systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "chemicalmanipulators",
+   "name": "Chemical Manipulators",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Chemical",
+   "sources": [
+    "Ship Salvage (Transport ships)",
+    "Signal sources (Anarchy and/or Outbreak systems)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "pharmaceuticalisolators",
+   "name": "Pharmaceutical Isolators",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Chemical",
+   "sources": [
+    "High Grade Emissions (Outbreak system states with pop > 1,000,000 only)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "temperedalloys",
+   "name": "Tempered Alloys",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Thermic",
+   "sources": [
+    "Ship salvage (combat ships)"
+   ]
+  },
+  {
+   "symbol": "heatresistantceramics",
+   "name": "Heat Resistant Ceramics",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Thermic",
+   "sources": [
+    "Ship salvage (trading ships)"
+   ]
+  },
+  {
+   "symbol": "precipitatedalloys",
+   "name": "Precipitated Alloys",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Thermic",
+   "sources": [
+    "Ship salvage (military and authority ships)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "thermicalloys",
+   "name": "Thermic Alloys",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Thermic",
+   "sources": [
+    "Ship salvage (military and authority ships)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "militarygradealloys",
+   "name": "Military Grade Alloys",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Thermic",
+   "sources": [
+    "High Grade Emissions (War, Civil War or Civil Unrest system states)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "heatconductionwiring",
+   "name": "Heat Conduction Wiring",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Heat",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "heatdispersionplate",
+   "name": "Heat Dispersion Plate",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Heat",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "heatexchangers",
+   "name": "Heat Exchangers",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Heat",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources (Anarchy systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "heatvanes",
+   "name": "Heat Vanes",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Heat",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "protoheatradiators",
+   "name": "Proto Heat Radiators",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Heat",
+   "sources": [
+    "High Grade Emissions (Boom state systems)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "basicconductors",
+   "name": "Basic Conductors",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Conductive",
+   "sources": [
+    "Ship salvage (Trader ships)",
+    "Signal sources"
+   ]
+  },
+  {
+   "symbol": "conductivecomponents",
+   "name": "Conductive Components",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Conductive",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources (Anarchy systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "conductiveceramics",
+   "name": "Conductive Ceramics",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Conductive",
+   "sources": [
+    "Ship salvage (transport ships)",
+    "Signal sources (Anarchy systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "conductivepolymers",
+   "name": "Conductive Polymers",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Conductive",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources (Anarchy systems in the Outbreak state)",
+    "Mission reward",
+    "Convoy Beacons",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "biotechconductors",
+   "name": "Biotech Conductors",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Conductive",
+   "sources": [
+    "Mission Reward"
+   ]
+  },
+  {
+   "symbol": "mechanicalscrap",
+   "name": "Mechanical Scrap",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Mechanical Components",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources",
+    "Mission reward",
+    "Debris Field",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "mechanicalequipment",
+   "name": "Mechanical Equipment",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Mechanical Components",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources (Boom system states)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "mechanicalcomponents",
+   "name": "Mechanical Components",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Mechanical Components",
+   "sources": [
+    "Ship salvage (trading ships)",
+    "Signal sources (low security systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "configurablecomponents",
+   "name": "Configurable Components",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Mechanical Components",
+   "sources": [
+    "Ship salvage (Transport ships)",
+    "Signal sources (Low security systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "improvisedcomponents",
+   "name": "Improvised Components",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Mechanical Components",
+   "sources": [
+    "High Grade Emissions in Independent (HGEs in Civil Unrest systems have a higher chance of containing this material)"
+   ]
+  },
+  {
+   "symbol": "gridresistors",
+   "name": "Grid Resistors",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Capacitors",
+   "sources": [
+    "Ship salvage (military and authority ships)",
+    "Signal Sources",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "hybridcapacitors",
+   "name": "Hybrid Capacitors",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Capacitors",
+   "sources": [
+    "Ship salvage (military and authority ships)",
+    "Signal sources",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "electrochemicalarrays",
+   "name": "Electrochemical Arrays",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Capacitors",
+   "sources": [
+    "Ship salvage (Military and Authority ships)",
+    "Signal Sources (Anarchy systems)",
+    "Mission Reward (data delivery)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "polymercapacitors",
+   "name": "Polymer Capacitors",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Capacitors",
+   "sources": [
+    "Ship salvage (Military and Authority ships)",
+    "Signal sources (Anarchy systems)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "militarysupercapacitors",
+   "name": "Military Supercapacitors",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Capacitors",
+   "sources": [
+    "High Grade Emissions in Independent and Alliance (War and Civil War system states)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "wornshieldemitters",
+   "name": "Worn Shield Emitters",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Shielding",
+   "sources": [
+    "Salvage from destroyed ships",
+    "Signal sources",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "shieldemitters",
+   "name": "Shield Emitters",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Shielding",
+   "sources": [
+    "Ship salvage (combat ships)",
+    "Signal sources (Boom state systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "shieldingsensors",
+   "name": "Shielding Sensors",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Shielding",
+   "sources": [
+    "Ship salvage (combat ships)",
+    "Signal sources (high security systems)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "compoundshielding",
+   "name": "Compound Shielding",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Shielding",
+   "sources": [
+    "Ship salvage (Combat ships)",
+    "Signal sources (High Security, Boom, or Retreat systems)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "imperialshielding",
+   "name": "Imperial Shielding",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Shielding",
+   "sources": [
+    "High Grade Emissions in Imperial systems (state none/election)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "compactcomposites",
+   "name": "Compact Composites",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Composite",
+   "sources": [
+    "Ship salvage (military and security vessels)",
+    "Signal sources"
+   ]
+  },
+  {
+   "symbol": "filamentcomposites",
+   "name": "Filament Composites",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Composite",
+   "sources": [
+    "Ship salvage (Military and authority ships)",
+    "Signal sources"
+   ]
+  },
+  {
+   "symbol": "highdensitycomposites",
+   "name": "High Density Composites",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Composite",
+   "sources": [
+    "Ship salvage (military and authority ships) (especially vipers)",
+    "Signal sources (low security systems)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "fedproprietarycomposites",
+   "name": "Proprietary Composites",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Composite",
+   "sources": [
+    "Encoded Emissions",
+    "High Grade Emissions (Federal systems in the Election state)",
+    "Mission reward",
+    "Federal ship salvage (High Intensity Conflict Zones)"
+   ]
+  },
+  {
+   "symbol": "fedcorecomposites",
+   "name": "Core Dynamics Composites",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Composite",
+   "sources": [
+    "High Grade Emissions in Federal systems",
+    "Ship salvage (combat ships)"
+   ]
+  },
+  {
+   "symbol": "crystalshards",
+   "name": "Crystal Shards",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Crystals",
+   "sources": [
+    "Ship salvage (combat ships)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "uncutfocuscrystals",
+   "name": "Flawed Focus Crystals",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Crystals",
+   "sources": [
+    "Ship salvage (Combat ships)",
+    "Signal sources",
+    "Mission rewards",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "focuscrystals",
+   "name": "Focus Crystals",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Crystals",
+   "sources": [
+    "Ship salvage (Combat ships)",
+    "Signal sources (High security systems)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "refinedfocuscrystals",
+   "name": "Refined Focus Crystals",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Crystals",
+   "sources": [
+    "Ship salvage",
+    "Signal sources (High security systems)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "exquisitefocuscrystals",
+   "name": "Exquisite Focus Crystals",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Crystals",
+   "sources": [
+    "Mission reward",
+    "Destroying Anacondas in Hazardous Resource Extraction Sites"
+   ]
+  },
+  {
+   "symbol": "salvagedalloys",
+   "name": "Salvaged Alloys",
+   "type": "manufactured",
+   "grade": 1,
+   "group": "Alloys",
+   "sources": [
+    "Ship salvage",
+    "Signal sources",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "galvanisingalloys",
+   "name": "Galvanising Alloys",
+   "type": "manufactured",
+   "grade": 2,
+   "group": "Alloys",
+   "sources": [
+    "Ship salvage (combat ships)",
+    "Signal sources (systems in Election state)",
+    "Mission reward",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "phasealloys",
+   "name": "Phase Alloys",
+   "type": "manufactured",
+   "grade": 3,
+   "group": "Alloys",
+   "sources": [
+    "Ship salvage (Combat ships)",
+    "Signal sources (Boom system states)",
+    "Abandoned Settlement Salvage"
+   ]
+  },
+  {
+   "symbol": "protolightalloys",
+   "name": "Proto Light Alloys",
+   "type": "manufactured",
+   "grade": 4,
+   "group": "Alloys",
+   "sources": [
+    "High Grade Emissions (Boom state systems only)",
+    "Mission reward",
+    "Ship salvage (combat ships)"
+   ]
+  },
+  {
+   "symbol": "protoradiolicalloys",
+   "name": "Proto Radiolic Alloys",
+   "type": "manufactured",
+   "grade": 5,
+   "group": "Alloys",
+   "sources": [
+    "High Grade Emissions (Boom state systems)"
+   ]
+  },
+  {
+   "symbol": "guardian_powercell",
+   "name": "Guardian Power Cell",
+   "type": "manufactured",
+   "grade": 1,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "guardian_sentinel_wreckagecomponents",
+   "name": "Guardian Sentinel Wreckage Components",
+   "type": "manufactured",
+   "grade": 1,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "guardian_powerconduit",
+   "name": "Guardian Power Conduit",
+   "type": "manufactured",
+   "grade": 2,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "unknowncarapace",
+   "name": "Thargoid Carapace",
+   "type": "manufactured",
+   "grade": 2,
+   "group": null,
+   "sources": [
+    "Thargoid Surface Site"
+   ]
+  },
+  {
+   "symbol": "tg_biomechanicalconduits",
+   "name": "Bio-Mechanical Conduits",
+   "type": "manufactured",
+   "grade": 3,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "guardian_sentinel_weaponparts",
+   "name": "Guardian Sentinel Weapon Parts",
+   "type": "manufactured",
+   "grade": 3,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "guardian_techcomponent",
+   "name": "Guardian Technology Component",
+   "type": "manufactured",
+   "grade": 3,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "unknownenergycell",
+   "name": "Thargoid Energy Cell",
+   "type": "manufactured",
+   "grade": 3,
+   "group": null,
+   "sources": [
+    "Thargoid Scout surface crash sites",
+    "Thargoid Surface Site (destroy Scavengers)"
+   ]
+  },
+  {
+   "symbol": "tg_wreckagecomponents",
+   "name": "Wreckage Components",
+   "type": "manufactured",
+   "grade": 3,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "unknowntechnologycomponents",
+   "name": "Thargoid Technological Components",
+   "type": "manufactured",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Thargoid Surface Site"
+   ]
+  },
+  {
+   "symbol": "tg_weaponparts",
+   "name": "Weapon Parts",
+   "type": "manufactured",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "These materials are found when damaging or fully destroying a Thargoid ship."
+   ]
+  },
+  {
+   "symbol": "tg_propulsionelement",
+   "name": "Propulsion Elements",
+   "type": "manufactured",
+   "grade": 5,
+   "group": null,
+   "sources": [
+    "These elements are found when damaging or fully destroying a Thargoid ship."
+   ]
+  },
+  {
+   "symbol": "unknownenergysource",
+   "name": "Sensor Fragment",
+   "type": "manufactured",
+   "grade": 5,
+   "group": null,
+   "sources": [
+    "Non-Human Signal Sources",
+    "Nonhuman Signatures, either already on the ground or by destroying the damaged Thargoid Sensor",
+    "Destroy Scavengers at Thargoid Surface Sites",
+    "Alien Crash Sites"
+   ]
+  },
+  {
+   "symbol": "unknownorganiccircuitry",
+   "name": "Thargoid Organic Circuitry",
+   "type": "manufactured",
+   "grade": 5,
+   "group": null,
+   "sources": [
+    "Thargoid Surface Site",
+    "Salvager"
+   ]
+  },
+  {
+   "symbol": "scrambledemissiondata",
+   "name": "Exceptional Scrambled Emission Data",
+   "type": "encoded",
+   "grade": 1,
+   "group": "Emission Data",
+   "sources": [
+    "Ship scanning; 1.25% chance per scan",
+    "Private Data Beacons, System State: None; 10% chance per item, per beacon",
+    "Satellites",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "archivedemissiondata",
+   "name": "Irregular Emission Data",
+   "type": "encoded",
+   "grade": 2,
+   "group": "Emission Data",
+   "sources": [
+    "Private Data Beacons",
+    "Mission reward (usually at Military or Agriculture Surface Ports)"
+   ]
+  },
+  {
+   "symbol": "emissiondata",
+   "name": "Unexpected Emission Data",
+   "type": "encoded",
+   "grade": 3,
+   "group": "Emission Data",
+   "sources": [
+    "Ship scanning (combat ships)",
+    "Private Data Beacons"
+   ]
+  },
+  {
+   "symbol": "decodedemissiondata",
+   "name": "Decoded Emission Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": "Emission Data",
+   "sources": [
+    "Ship scanning (combat ships)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "compactemissionsdata",
+   "name": "Abnormal Compact Emissions Data",
+   "type": "encoded",
+   "grade": 5,
+   "group": "Emission Data",
+   "sources": [
+    "Ship scanning (combat ships)",
+    "Scanning Data beacons at Encoded Emissions",
+    "Mission Reward"
+   ]
+  },
+  {
+   "symbol": "disruptedwakeechoes",
+   "name": "Atypical Disrupted Wake Echoes",
+   "type": "encoded",
+   "grade": 1,
+   "group": "Wake Scans",
+   "sources": [
+    "High wake scanning",
+    "Mission reward (usually in Boom system states)"
+   ]
+  },
+  {
+   "symbol": "fsdtelemetry",
+   "name": "Anomalous FSD Telemetry",
+   "type": "encoded",
+   "grade": 2,
+   "group": "Wake Scans",
+   "sources": [
+    "High wake scanning",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "wakesolutions",
+   "name": "Strange Wake Solutions",
+   "type": "encoded",
+   "grade": 3,
+   "group": "Wake Scans",
+   "sources": [
+    "High wake scanning",
+    "Mission reward (Boom system states)",
+    "Technology Broker"
+   ]
+  },
+  {
+   "symbol": "hyperspacetrajectories",
+   "name": "Eccentric Hyperspace Trajectories",
+   "type": "encoded",
+   "grade": 4,
+   "group": "Wake Scans",
+   "sources": [
+    "High wake scanning"
+   ]
+  },
+  {
+   "symbol": "dataminedwake",
+   "name": "Datamined Wake Exceptions",
+   "type": "encoded",
+   "grade": 5,
+   "group": "Wake Scans",
+   "sources": [
+    "High wake scanning at busy sites including Stronghold Carriers",
+    "Private Data Beacons",
+    "Mission reward",
+    "Encoded Emissions (a type of Signal Source)",
+    "Trading up other Encoded Materials at a Material Trader"
+   ]
+  },
+  {
+   "symbol": "shieldcyclerecordings",
+   "name": "Distorted Shield Cycle Recordings",
+   "type": "encoded",
+   "grade": 1,
+   "group": "Shield Data",
+   "sources": [
+    "Ship scanning (trading ships)",
+    "Mission reward",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "shieldsoakanalysis",
+   "name": "Inconsistent Shield Soak Analysis",
+   "type": "encoded",
+   "grade": 2,
+   "group": "Shield Data",
+   "sources": [
+    "Ship scanning (trading ships)",
+    "Mission reward (usually in Boom system states)",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "shielddensityreports",
+   "name": "Untypical Shield Scans",
+   "type": "encoded",
+   "grade": 3,
+   "group": "Shield Data",
+   "sources": [
+    "Ship scanning (combat ships)",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "shieldpatternanalysis",
+   "name": "Aberrant Shield Pattern Analysis",
+   "type": "encoded",
+   "grade": 4,
+   "group": "Shield Data",
+   "sources": [
+    "Ship scanning (Combat ships)",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "shieldfrequencydata",
+   "name": "Peculiar Shield Frequency Data",
+   "type": "encoded",
+   "grade": 5,
+   "group": "Shield Data",
+   "sources": [
+    "Ship scanning",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "encryptedfiles",
+   "name": "Unusual Encrypted Files",
+   "type": "encoded",
+   "grade": 1,
+   "group": "Encryption Files",
+   "sources": [
+    "Surface Installation",
+    "Satellites",
+    "Private Data Beacons",
+    "Mission reward (Boom system states)",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "encryptioncodes",
+   "name": "Tagged Encryption Codes",
+   "type": "encoded",
+   "grade": 2,
+   "group": "Encryption Files",
+   "sources": [
+    "Surface Installation",
+    "Satellites",
+    "Private Data Beacons",
+    "Mission reward (Boom system states)",
+    "Hackable Data Transmitter (Space Installations)"
+   ]
+  },
+  {
+   "symbol": "symmetrickeys",
+   "name": "Open Symmetric Keys",
+   "type": "encoded",
+   "grade": 3,
+   "group": "Encryption Files",
+   "sources": [
+    "Surface Installation",
+    "Private Data Beacons",
+    "Satellites",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "encryptionarchives",
+   "name": "Atypical Encryption Archives",
+   "type": "encoded",
+   "grade": 4,
+   "group": "Encryption Files",
+   "sources": [
+    "Surface Installation (from surface scan missions)",
+    "Private Data Beacons"
+   ]
+  },
+  {
+   "symbol": "adaptiveencryptors",
+   "name": "Adaptive Encryptors Capture",
+   "type": "encoded",
+   "grade": 5,
+   "group": "Encryption Files",
+   "sources": [
+    "Settlement (from surface scan missions)",
+    "Private Data Beacons"
+   ]
+  },
+  {
+   "symbol": "bulkscandata",
+   "name": "Anomalous Bulk Scan Data",
+   "type": "encoded",
+   "grade": 1,
+   "group": "Data Archives",
+   "sources": [
+    "Ship scanning (Transport ships)",
+    "Mission reward",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "scanarchives",
+   "name": "Unidentified Scan Archives",
+   "type": "encoded",
+   "grade": 2,
+   "group": "Data Archives",
+   "sources": [
+    "Ship scanning (trading ships)",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "scandatabanks",
+   "name": "Classified Scan Databanks",
+   "type": "encoded",
+   "grade": 3,
+   "group": "Data Archives",
+   "sources": [
+    "Ship scanning (trading ships)",
+    "Surface Installation",
+    "Hackable Data Transmitter (Space Installations)"
+   ]
+  },
+  {
+   "symbol": "encodedscandata",
+   "name": "Divergent Scan Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": "Data Archives",
+   "sources": [
+    "Surface Installation",
+    "Mission reward",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "classifiedscandata",
+   "name": "Classified Scan Fragment",
+   "type": "encoded",
+   "grade": 5,
+   "group": "Data Archives",
+   "sources": [
+    "Surface Installation",
+    "Ship scanning (military and authority ships)",
+    "Mission reward (usually in Boom system states)",
+    "Hackable Data Transmitter and Hackable Comms Array (space Installations)"
+   ]
+  },
+  {
+   "symbol": "legacyfirmware",
+   "name": "Specialised Legacy Firmware",
+   "type": "encoded",
+   "grade": 1,
+   "group": "Encoded Firmware",
+   "sources": [
+    "Surface Installation",
+    "Satellites",
+    "Private Data Beacons",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "consumerfirmware",
+   "name": "Modified Consumer Firmware",
+   "type": "encoded",
+   "grade": 2,
+   "group": "Encoded Firmware",
+   "sources": [
+    "Surface Installation",
+    "Satellites",
+    "Private Data Beacons",
+    "Hackable Comms Array (Space Installations and Megaships)"
+   ]
+  },
+  {
+   "symbol": "industrialfirmware",
+   "name": "Cracked Industrial Firmware",
+   "type": "encoded",
+   "grade": 3,
+   "group": "Encoded Firmware",
+   "sources": [
+    "Surface Installation",
+    "Mission reward"
+   ]
+  },
+  {
+   "symbol": "securityfirmware",
+   "name": "Security Firmware Patch",
+   "type": "encoded",
+   "grade": 4,
+   "group": "Encoded Firmware",
+   "sources": [
+    "Surface Installation",
+    "Mission reward (Boom and Retreat system states)",
+    "Hackable Data Transmitter (Space Installations)"
+   ]
+  },
+  {
+   "symbol": "embeddedfirmware",
+   "name": "Modified Embedded Firmware",
+   "type": "encoded",
+   "grade": 5,
+   "group": "Encoded Firmware",
+   "sources": [
+    "Surface Installation (Medium and High Security)",
+    "Mission reward",
+    "Hackable Data Transmitter and Hackable Comms Array (space Installations)"
+   ]
+  },
+  {
+   "symbol": "tg_structuraldata",
+   "name": "Thargoid Structural Data",
+   "type": "encoded",
+   "grade": 2,
+   "group": null,
+   "sources": [
+    "Thargoid Surface Site"
+   ]
+  },
+  {
+   "symbol": "tg_shipflightdata",
+   "name": "Ship Flight Data",
+   "type": "encoded",
+   "grade": 3,
+   "group": null,
+   "sources": [
+    "Data collected from a detailed scan of a Thargoid vessel using a Xeno Scanner."
+   ]
+  },
+  {
+   "symbol": "tg_compositiondata",
+   "name": "Thargoid Material Composition Data",
+   "type": "encoded",
+   "grade": 3,
+   "group": null,
+   "sources": [
+    "Thargoid Surface Site"
+   ]
+  },
+  {
+   "symbol": "unknownshipsignature",
+   "name": "Thargoid Ship Signature",
+   "type": "encoded",
+   "grade": 3,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "guardian_moduleblueprint",
+   "name": "Guardian Module Blueprint Segment",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "guardian_weaponblueprint",
+   "name": "Guardian Weapon Blueprint Segment",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": []
+  },
+  {
+   "symbol": "ancientbiologicaldata",
+   "name": "Pattern Alpha Obelisk Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Ancient Ruins",
+    "Guardian Structure"
+   ]
+  },
+  {
+   "symbol": "ancientculturaldata",
+   "name": "Pattern Beta Obelisk Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Ancient Ruins",
+    "Guardian Structure"
+   ]
+  },
+  {
+   "symbol": "ancientlanguagedata",
+   "name": "Pattern Delta Obelisk Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Ancient Ruins",
+    "Guardian Structure"
+   ]
+  },
+  {
+   "symbol": "ancienttechnologicaldata",
+   "name": "Pattern Epsilon Obelisk Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Ancient Ruins",
+    "Guardian Structure"
+   ]
+  },
+  {
+   "symbol": "ancienthistoricaldata",
+   "name": "Pattern Gamma Obelisk Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Ancient Ruins",
+    "Guardian Structure"
+   ]
+  },
+  {
+   "symbol": "tg_shipsystemsdata",
+   "name": "Ship Systems Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Data collected from a detailed scan of a Thargoid vessel using a Xeno Scanner."
+   ]
+  },
+  {
+   "symbol": "tg_residuedata",
+   "name": "Thargoid Residue Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "Thargoid Surface Site"
+   ]
+  },
+  {
+   "symbol": "unknownwakedata",
+   "name": "Thargoid Wake Data",
+   "type": "encoded",
+   "grade": 4,
+   "group": null,
+   "sources": [
+    "High wake scanning (Thargoid Interceptor)"
+   ]
+  },
+  {
+   "symbol": "guardian_vesselblueprint",
+   "name": "Guardian Vessel Blueprint Segment",
+   "type": "encoded",
+   "grade": 5,
+   "group": null,
+   "sources": []
+  }
  ]
 }

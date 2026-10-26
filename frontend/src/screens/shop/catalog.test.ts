@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ShopCatalogView, ShopModuleView, ShopVariantView } from '../../api/types'
-import { commoditiesOf, commodityGroups, lookup, neighbour, nextModule, optionsFor, orderShips, parseQuery, searchCatalog, variantFor } from './catalog'
+import { commoditiesOf, commodityGroups, lookup, materialKind, materialRows, neighbour, nextModule, optionsFor, orderShips, parseQuery, searchCatalog, variantFor } from './catalog'
 
 const v = (symbol: string, size: number, rating: string, mount: ShopVariantView['mount'] = null, guidance: ShopVariantView['guidance'] = null): ShopVariantView => ({
   symbol,
@@ -49,10 +49,19 @@ const catalog: ShopCatalogView = {
     { symbol: 'lowtemperaturediamond', name: 'Low Temperature Diamonds', category: 'Minerals', rare: false },
     { symbol: 'lavianbrandy', name: 'Lavian Brandy', category: 'Legal Drugs', rare: true },
   ],
+  materials: [
+    { symbol: 'phosphorus', name: 'Phosphorus', type: 'raw', grade: 1, group: '2', sources: [], rich: 14.6 },
+    { symbol: 'arsenic', name: 'Arsenic', type: 'raw', grade: 2, group: '6', sources: ['Outcrop'], rich: 2.5 },
+    { symbol: 'mercury', name: 'Mercury', type: 'raw', grade: 3, group: '6', sources: [], rich: 0.9 },
+    { symbol: 'heatvanes', name: 'Heat Vanes', type: 'manufactured', grade: 4, group: 'Heat', sources: [], rich: null },
+    { symbol: 'guardian_powercell', name: 'Guardian Power Cell', type: 'manufactured', grade: 1, group: null, sources: [], rich: null },
+  ],
 }
 
 const names = (query: string) =>
-  searchCatalog(catalog, query).map((p) => (p.kind === 'ship' ? p.ship.name : p.kind === 'module' ? p.module.name : p.commodity.name))
+  searchCatalog(catalog, query).map((p) =>
+    p.kind === 'ship' ? p.ship.name : p.kind === 'module' ? p.module.name : p.kind === 'commodity' ? p.commodity.name : p.material.name,
+  )
 
 describe('shop catalog search', () => {
   it('finds by word starts, initials and aliases', () => {
@@ -79,6 +88,20 @@ describe('shop catalog search', () => {
     expect(names('ltd')).toEqual(['Low Temperature Diamonds'])
     expect(names('brandy')).toEqual(['Lavian Brandy'])
     expect(names('gold 5a')).toEqual([])
+  })
+})
+
+describe('materials', () => {
+  it('are found by name and listed by kind, a row per trader group', () => {
+    expect(names('arsen')).toEqual(['Arsenic'])
+    expect(lookup(catalog, 'heatvanes')).toMatchObject({ kind: 'material', material: { grade: 4 } })
+    expect(materialRows(catalog, 'raw').map((r) => [r.group, r.materials.map((m) => m.symbol)])).toEqual([
+      ['2', ['phosphorus']],
+      ['6', ['arsenic', 'mercury']],
+    ])
+    // No trader takes Guardian materials: a kind of their own, whatever their type.
+    expect(materialKind(catalog.materials[4])).toBe('special')
+    expect(materialRows(catalog, 'manufactured').map((r) => r.group)).toEqual(['Heat'])
   })
 })
 

@@ -147,6 +147,27 @@ def station_search(
     return [r for r in data.get("results") or [] if isinstance(r, dict)]
 
 
+def body_search(
+    filters: dict[str, Any], coords: tuple[float, float, float], size: int
+) -> list[dict[str, Any]]:
+    """Bodies matching `filters` (Spansh's form), nearest to `coords` first, with the fields
+    the planner reads (`BODY_FIELDS`)."""
+    x, y, z = coords
+    data = _post(
+        BODIES_SEARCH,
+        {
+            "filters": filters,
+            "sort": [{"distance": {"direction": "asc"}}],
+            "size": size,
+            "page": 0,
+            "reference_coords": {"x": x, "y": y, "z": z},
+        },
+    )
+    return [
+        {k: r.get(k) for k in BODY_FIELDS} for r in data.get("results") or [] if isinstance(r, dict)
+    ]
+
+
 def _service_names(station: dict[str, Any]) -> list[str]:
     return [
         str(s["name"])
