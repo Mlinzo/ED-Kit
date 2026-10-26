@@ -520,6 +520,7 @@ def test_no_first_footfall_in_populated_systems(conn: sqlite3.Connection, proj: 
     assert stats.stats_view(conn, "F1").first_footfalls_total == 0
     body = next(b for b in views.system_view(conn, "F1").bodies if b.body_id == 13)
     assert not body.footfall_claimable and not body.footfall_by_me
+    assert body.footfall_taken == "populated"
 
 
 def test_no_first_footfall_on_planets_others_mapped(
@@ -547,3 +548,5 @@ def test_no_first_footfall_on_planets_others_mapped(
     s = stats.stats_view(conn, "F1")
     assert s.first_footfalls_total == 0
     assert all(f.footfall_at is None for f in s.firsts)
+    body = next(b for b in views.system_view(conn, "F1").bodies if b.body_id == 22)
+    assert not body.footfall_claimable and body.footfall_taken == "mapped"

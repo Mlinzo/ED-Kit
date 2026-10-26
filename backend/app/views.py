@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections.abc import Callable, Iterable
+from typing import Literal
 
 from app import bookmarks, enrich, exobio, usersettings
 from app.codex import CodexIndex, codex_index, colour_status, predicted_status
@@ -97,6 +98,18 @@ def cmdr_state(conn: sqlite3.Connection, fid: str | None) -> sqlite3.Row | None:
     if not fid:
         return None
     return conn.execute("SELECT * FROM cmdr_state WHERE fid = ?", (fid,)).fetchone()
+
+
+def _footfall_taken(
+    facts: BodyFacts, populated: bool | None
+) -> Literal["populated", "mapped"] | None:
+    """Why the first footfall is not yours to take though the journal says nobody walked
+    there (`exobio.untouched`): a populated system, or a body others mapped before you."""
+    if not facts.landable or facts.was_footfalled is not False:
+        return None
+    if populated:
+        return "populated"
+    return "mapped" if facts.was_mapped is not False else None
 
 
 def _bonus_multiplier(facts: BodyFacts, system: SystemFacts) -> int:
@@ -333,9 +346,8 @@ def _body_view(
         was_footfalled=facts.was_footfalled,
         mapped_by_me=mapped_by_me,
         footfall_by_me=bool(cmdr_body and cmdr_body["footfall_at"]),
-        footfall_claimable=(
-            facts.landable and facts.was_footfalled is False and not system.populated
-        ),
+        footfall_claimable=bool(facts.landable) and exobio.untouched(facts, system.populated),
+        footfall_taken=_footfall_taken(facts, system.populated),
         signals=signals,
         genuses=sorted(_genus_name(g) for g in genuses),
         species=species,

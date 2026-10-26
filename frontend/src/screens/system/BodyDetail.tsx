@@ -443,9 +443,12 @@ export function BodyDetail({
               </Row>
               {body.landable && (
                 <Row label={t.body.footfallLabel} help="footfall">
-                  {!body.footfallByMe && body.wasFootfalled === false && !body.footfallClaimable ? (
-                    <span className="text-zinc-500" title={t.body.footfallPopulatedHint}>
-                      {t.body.footfallPopulated}
+                  {!body.footfallByMe && body.footfallTaken ? (
+                    <span
+                      className="text-zinc-500"
+                      title={body.footfallTaken === 'populated' ? t.body.footfallPopulatedHint : t.body.footfallMappedHint}
+                    >
+                      {body.footfallTaken === 'populated' ? t.body.footfallPopulated : t.body.footfallMapped}
                     </span>
                   ) : (
                     <span className={body.footfallClaimable || body.footfallByMe ? 'text-emerald-300' : undefined}>

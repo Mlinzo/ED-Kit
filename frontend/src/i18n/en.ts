@@ -733,6 +733,9 @@ export const en: Strings = {
       byMe ? 'you made first footfall' : v === null ? 'unknown' : v ? 'footfall already made' : 'no footfall yet',
     footfallPopulated: 'not counted in populated systems',
     footfallPopulatedHint: 'Populated systems give no first footfall, even if the journal says “no footfall yet”',
+    footfallMapped: 'already mapped: someone has likely landed',
+    footfallMappedHint:
+      'The journal says “no footfall yet”, but the body was mapped before you. Players who land for samples nearly always map first, and their footfall can be missing from the record',
     discoveredLabel: 'Discovered',
     mappedLabel: 'Mapped',
     footfallLabel: 'Footfall',

@@ -189,7 +189,9 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - First footfalls by the bonus's rule (2026-10-22): stepping out counts as your first footfall
   only where nobody has mapped the planet or walked on it, outside populated systems
   (`exobio.untouched`, shared with the ×5 bonus). `WasFootfalled: false` alone counted HR 1172
-  A 8 a and A 8 d, where others had landed and logged every species (and had mapped both).
+  A 8 a and A 8 d, where others had landed and logged every species (and had mapped both). The
+  System tab's body card follows the same rule since 2026-10-26: a planet others mapped says
+  "already mapped: someone has likely landed" instead of a green "no footfall yet".
 - Shop catalog cards (2026-10-21): choosing a ship opens its card: a blueprint sketch (top, side
   and rear views in true scale, dimension lines; 35 ships traced from the wiki's blueprint sheets
   by `tools/ship_outlines.py`, which also reads screenshots of the game's schematics; the other 13

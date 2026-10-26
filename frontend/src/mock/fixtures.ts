@@ -248,6 +248,7 @@ function body(input: BodyInput): BodyView {
     footfallByMe: input.footfallByMe ?? false,
     footfallClaimable:
       input.footfallClaimable ?? (Boolean(input.landable) && input.kind === 'planet' && !community),
+    footfallTaken: input.footfallTaken ?? null,
     worthMapping: input.kind === 'planet' && !mappedByMe && dssValue - fssValue >= MAP_GAIN_THRESHOLD,
     signals,
     species,

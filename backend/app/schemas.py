@@ -163,7 +163,9 @@ class BodyView(CamelModel):
     was_footfalled: bool | None
     mapped_by_me: bool
     footfall_by_me: bool  # you were the first to walk on it
-    footfall_claimable: bool  # landable, nobody walked here yet, and not a populated system
+    footfall_claimable: bool  # landable, nobody mapped or walked here, not a populated system
+    # Why not, though the journal says nobody walked here (None: it does not, or it is yours).
+    footfall_taken: Literal["populated", "mapped"] | None
     signals: SignalsView
     genuses: list[str]  # English genus names confirmed by DSS
     species: list[SpeciesView]
