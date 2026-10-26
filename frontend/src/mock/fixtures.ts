@@ -835,7 +835,7 @@ export function buildSell(carriers: boolean, now = Date.now()): SellView {
           { name: 'Gagarin Gate', kind: 'starport', distLs: 518, cartographics: true, genomics: true, seenAt: null, docked: true, access: null, permit: false },
         ],
         more: 3,
-        nextJump: false,
+        routeJump: null,
       },
       {
         systemName: 'Kojeara',
@@ -847,7 +847,7 @@ export function buildSell(carriers: boolean, now = Date.now()): SellView {
           { name: 'Lee Biological Hub', kind: 'settlement', distLs: 2_513, cartographics: false, genomics: true, seenAt: null, docked: false, access: null, permit: false },
         ],
         more: 1,
-        nextJump: false,
+        routeJump: null,
       },
       {
         systemName: 'Colonia',
@@ -858,7 +858,7 @@ export function buildSell(carriers: boolean, now = Date.now()): SellView {
           { name: 'Jaques Station', kind: 'starport', distLs: 1_530, cartographics: true, genomics: true, seenAt: null, docked: true, access: null, permit: false },
         ],
         more: 11,
-        nextJump: false,
+        routeJump: null,
       },
     ],
   }
@@ -876,7 +876,7 @@ function carrierPlaces(daysAgo: (d: number) => string): SellView['places'] {
         { name: 'K7Q-2VZ', kind: 'carrier', distLs: 12, cartographics: true, genomics: true, seenAt: daysAgo(3), docked: false, access: 'all', permit: false },
       ],
       more: 0,
-      nextJump: false,
+      routeJump: null,
     },
     {
       systemName: 'Oochoss Brou QN-A c15-4',
@@ -887,7 +887,7 @@ function carrierPlaces(daysAgo: (d: number) => string): SellView['places'] {
         { name: 'X2F-81B', kind: 'carrier', distLs: 0, cartographics: true, genomics: false, seenAt: daysAgo(21), docked: false, access: 'unknown', permit: false },
       ],
       more: 0,
-      nextJump: false,
+      routeJump: null,
     },
   ]
 }

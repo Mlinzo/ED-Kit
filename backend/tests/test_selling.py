@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 import threading
+from collections.abc import Sequence
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -366,74 +368,155 @@ def test_finder_searches_once_and_the_view_lists_it(
     assert len(fake.calls) == 1  # the stored search covers the same spot
 
 
-def test_pick_puts_the_next_jump_first() -> None:
+def test_pick_puts_the_first_place_on_the_route_first() -> None:
     stations = [
         station("Near Port", "Near", 10.0),
         station("Mid Port", "Mid", 50.0),
         station("Ahead Port", "Ahead", 60.0, uc=False),
     ]
-    ahead = stations[2].system_address
-    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, first=ahead)
+    mid, ahead = stations[1].system_address, stations[2].system_address
+    route = {ahead: 2, mid: 5}
+    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, route=route)
     assert [p[1][0].system_name for p in places] == ["Ahead", "Near", "Mid"]
     # Where you are stays on top.
     places, _ = pick(
-        [station("Here Port", "Here", 0.0), *stations], (0.0, 0.0, 0.0), "M", NOW, first=ahead
+        [station("Here Port", "Here", 0.0), *stations], (0.0, 0.0, 0.0), "M", NOW, route=route
     )
     assert [p[1][0].system_name for p in places] == ["Here", "Ahead", "Near", "Mid"]
-    # Nowhere to sell there: the nearest first, as always.
-    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, first=123)
+    # Nowhere to sell on the route: the nearest first, as always.
+    places, _ = pick(stations, (0.0, 0.0, 0.0), "M", NOW, route={123: 1})
     assert [p[1][0].system_name for p in places] == ["Near", "Mid", "Ahead"]
 
 
-def test_next_jump_of_the_plotted_route() -> None:
+def test_systems_ahead_on_the_plotted_route() -> None:
     systems = tuple(
         PlottedSystem(n, a, x, 0.0, 0.0, "K")
         for n, a, x in [("A", 1, 0), ("B", 2, 30), ("C", 3, 60)]
     )
     route = PlottedRoute("2026-10-22T10:00:00Z", systems)
-    assert selling.next_jump(route, 1) == systems[1]
-    assert selling.next_jump(route, 2) == systems[2]
-    assert selling.next_jump(route, 3) is None  # its end
-    assert selling.next_jump(route, 9) is None  # off it
-    assert selling.next_jump(None, 1) is None
+    assert selling.ahead(route, 1) == systems[1:]
+    assert selling.ahead(route, 2) == systems[2:]
+    assert selling.ahead(route, 3) == ()  # its end
+    assert selling.ahead(route, 9) == ()  # off it
+    assert selling.ahead(None, 1) == ()
 
 
-def test_the_view_lists_the_next_jump_first(
+def _wait(finder: selling.SellFinder, changed: threading.Event) -> None:
+    for _ in range(50):
+        if not finder.busy and not finder._asking:  # noqa: SLF001 - the test waits for the worker
+            return
+        changed.wait(0.1)
+        changed.clear()
+
+
+def test_the_view_lists_the_first_place_on_the_route_first(
     tmp_path: Path, conn: sqlite3.Connection, proj: Projector
 ) -> None:
     feed(conn, proj, [CMDR, jump()])
+    empty = PlottedSystem("Empty System", 776, 31.0, 2.0, 3.0, "K")
     ahead = PlottedSystem("Ahead System", 777, 61.0, 2.0, 3.0, "K")
     route = PlottedRoute(
         "2026-10-22T10:00:00Z",
-        (PlottedSystem("Col 285 Sector TT-H c10-4", SA, 1.0, 2.0, 3.0, "K"), ahead),
+        (PlottedSystem("Col 285 Sector TT-H c10-4", SA, 1.0, 2.0, 3.0, "K"), empty, ahead),
     )
-    asked: list[str] = []
+    asked: list[list[str]] = []
 
-    def find_system(system: PlottedSystem) -> list[dict[str, Any]]:
-        asked.append(system.name)
-        port = raw_station("Ahead", system.x, system_y=system.y, system_z=system.z)
-        return [{**port, "system_id64": system.address, "services": ["Vista Genomics"]}]
+    def find_route(
+        systems: Sequence[PlottedSystem], here: tuple[float, float, float]
+    ) -> tuple[list[dict[str, Any]], float]:
+        asked.append([s.name for s in systems])
+        port = raw_station("Ahead", ahead.x, system_y=ahead.y, system_z=ahead.z)
+        return [{**port, "system_id64": ahead.address, "services": ["Vista Genomics"]}], math.inf
 
     changed = threading.Event()
     finder = selling.SellFinder(
         tmp_path / "test.db",
         changed.set,
         find=FakeSpansh(),
-        find_system=find_system,
+        find_route=find_route,
         permits=lambda: set(),
     )
     state = views.cmdr_state(conn, "F1")
     selling.sell_view(conn, "F1", state, finder, plotted=route)
-    for _ in range(50):  # both searches stored
-        if asked and not finder.busy and finder.system_stations(777):
-            break
-        changed.wait(0.1)
-        changed.clear()
+    _wait(finder, changed)
     sell = selling.sell_view(conn, "F1", state, finder, plotted=route)
     assert [p.system_name for p in sell.places] == ["Ahead System", "Hub System"]
-    assert sell.places[0].next_jump and not sell.places[1].next_jump
+    assert sell.places[0].route_jump == 2 and sell.places[1].route_jump is None
     assert sell.places[0].stations[0].genomics and not sell.places[0].stations[0].cartographics
     # The hidden carrier is still nearer than every station listed.
     assert sell.nearer_carrier is not None and sell.nearer_carrier.name == "FC"
     selling.sell_view(conn, "F1", state, finder, plotted=route)
-    assert asked == ["Ahead System"]  # asked once
+    assert asked == [["Empty System", "Ahead System"]]  # asked once
+
+
+def test_the_route_is_asked_about_again_only_while_needed(tmp_path: Path) -> None:
+    systems = tuple(
+        PlottedSystem(n, a, x, 0.0, 0.0, "K")
+        for n, a, x in [("A", 1, 30.0), ("B", 2, 60.0), ("C", 3, 90.0)]
+    )
+    answers: list[tuple[list[dict[str, Any]], float]] = []
+    asked: list[list[str]] = []
+
+    def find_route(
+        ahead: Sequence[PlottedSystem], here: tuple[float, float, float]
+    ) -> tuple[list[dict[str, Any]], float]:
+        asked.append([s.name for s in ahead])
+        return answers.pop(0)
+
+    def port_in(system: PlottedSystem) -> dict[str, Any]:
+        return {**raw_station(system.name, system.x), "system_id64": system.address}
+
+    changed = threading.Event()
+    finder = selling.SellFinder(
+        tmp_path / "test.db", changed.set, find=FakeSpansh(), find_route=find_route,
+        permits=lambda: set(),
+    )  # fmt: skip
+    here = (0.0, 0.0, 0.0)
+    # A full page up to 45 ly: A is known (nothing there), B and C are not: asked next time.
+    answers += [([], 45.0), ([port_in(systems[2])], math.inf)]
+    finder.request_route(systems, here)
+    _wait(finder, changed)
+    finder.request_route(systems, here)
+    _wait(finder, changed)
+    finder.request_route(systems, here)
+    _wait(finder, changed)
+    assert asked == [["A", "B", "C"], ["B", "C"]]
+    assert [len(finder.system_stations(s.address)) for s in systems] == [0, 0, 1]
+
+    # A place known before the first unknown system: the rest is not asked about.
+    finder = selling.SellFinder(
+        tmp_path / "test.db", changed.set, find=FakeSpansh(), find_route=find_route,
+        permits=lambda: set(),
+    )  # fmt: skip
+    asked.clear()
+    answers += [([port_in(systems[0])], 45.0)]
+    finder.request_route(systems, here)
+    _wait(finder, changed)
+    finder.request_route(systems, here)
+    _wait(finder, changed)
+    assert asked == [["A", "B", "C"]]
+
+
+def test_the_route_far_ahead_waits(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(selling, "ROUTE_ASK_WITHIN", 1)
+    systems = tuple(
+        PlottedSystem(n, a, x, 0.0, 0.0, "K") for n, a, x in [("A", 1, 30.0), ("B", 2, 60.0)]
+    )
+    asked: list[list[str]] = []
+
+    def find_route(
+        ahead: Sequence[PlottedSystem], here: tuple[float, float, float]
+    ) -> tuple[list[dict[str, Any]], float]:
+        asked.append([s.name for s in ahead])
+        return [], 45.0  # A known, B not
+
+    changed = threading.Event()
+    finder = selling.SellFinder(
+        tmp_path / "test.db", changed.set, find=FakeSpansh(), find_route=find_route,
+        permits=lambda: set(),
+    )  # fmt: skip
+    finder.request_route(systems, (0.0, 0.0, 0.0))
+    _wait(finder, changed)
+    finder.request_route(systems, (0.0, 0.0, 0.0))  # B is the 2nd jump: not yet
+    _wait(finder, changed)
+    assert asked == [["A", "B"]]

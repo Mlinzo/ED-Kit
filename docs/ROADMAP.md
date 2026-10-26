@@ -180,7 +180,12 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Where to sell: the next jump first (2026-10-22): the next system of the route plotted in the
   game is asked about on its own (Spansh, the stations of that system) and, when you can sell
   there, it leads the list as "Next jump" (after the system you are in, when that one buys data),
-  wherever the nearest station is: it is on the way.
+  wherever the nearest station is: it is on the way. Since 2026-10-26 the whole route ahead is
+  checked, not only the next jump: one Spansh search per service and kind for up to 100 systems
+  ahead (by id64), each system kept 6 h; the first place to sell on the route leads, marked "On
+  your route, jump N" ("Next jump" for the next). Asked again only while no place is known ahead
+  of the systems not yet answered for and they are within 50 jumps, so a route through empty
+  space costs one search per 50 jumps, not one per jump.
 - Route tab fixes (2026-10-22): while you are at the next stop and it is not done yet, its card
   also names the stop after it ("Then:", with the copy button and the distance), so the last
   system can be copied from the second to last. "Refresh data" is gone: it rebuilt the route from

@@ -1074,6 +1074,7 @@ export const en: Strings = {
         `A fleet carrier is nearer: ${name} (${system}), ${distance}. It may have moved or be closed to docking.`,
       routeHere: 'Route here',
       nextJump: 'Next jump',
+      onRoute: (n: number) => `On your route, jump ${n}`,
       showCarriers: 'Show carriers',
       carriers:
         'Fleet carriers move, and the owner can close docking at any time: position and access are as last seen. Carriers closed to the public are left out.',

@@ -99,10 +99,10 @@ function Place({
   const here = place.distanceLy < 0.5
   return (
     <li className="py-3">
-      {place.nextJump && (
+      {place.routeJump !== null && (
         <p className="mb-0.5 flex items-center gap-1.5 text-xs font-medium text-sky-300">
           <Navigation className="size-3.5" aria-hidden />
-          {t.session.sell.nextJump}
+          {place.routeJump === 1 ? t.session.sell.nextJump : t.session.sell.onRoute(place.routeJump)}
         </p>
       )}
       {/* Phones: the distance goes under the name (long system names need the width). */}

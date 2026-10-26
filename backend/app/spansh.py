@@ -107,11 +107,19 @@ def _post(url: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def stations(
-    service: str, coords: tuple[float, float, float], size: int, types: list[str] | None = None
+    service: str,
+    coords: tuple[float, float, float],
+    size: int,
+    types: list[str] | None = None,
+    systems: list[int] | None = None,
 ) -> list[dict[str, Any]]:
     """The stations offering a service (Spansh's name, e.g. "Vista Genomics"), of the given
-    types (Spansh's names) if any, nearest to `coords` first, with the fields app.selling reads."""
-    found = station_search({"services": [{"name": {"value": [service]}}]}, coords, size, types)
+    types (Spansh's names) if any, in the given systems (id64) if any, nearest to `coords`
+    first, with the fields app.selling reads."""
+    filters: dict[str, Any] = {"services": [{"name": {"value": [service]}}]}
+    if systems:
+        filters["system_id64"] = {"value": systems}
+    found = station_search(filters, coords, size, types)
     return [{k: r.get(k) for k in STATION_FIELDS} | {"services": _service_names(r)} for r in found]
 
 
