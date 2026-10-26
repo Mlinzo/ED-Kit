@@ -6,6 +6,7 @@ import { BookmarkBox } from '../../components/Bookmark'
 import { bookmarkName, type BookmarkTarget } from '../../components/bookmarks'
 import { CodexSummary } from '../../components/CodexBadge'
 import { CreditRange, Credits } from '../../components/Credits'
+import { PlanetMaterials } from '../../components/PlanetMaterials'
 import { communityText, isCommunity } from '../../components/source'
 import { CommunityGlyph, CommunityNotice, SourceList, SourceTag } from '../../components/SourceBadge'
 import { SpeciesList } from '../../components/SpeciesList'
@@ -426,6 +427,12 @@ export function BodyDetail({
           )}
         </dl>
       </Section>
+
+      {body.materials.length > 0 && (
+        <Section title={t.body.materials}>
+          <PlanetMaterials materials={body.materials} />
+        </Section>
+      )}
 
       <Section title={t.body.discovery} help="firsts">
         <dl className="divide-y divide-zinc-800/70">

@@ -262,6 +262,7 @@ function body(input: BodyInput): BodyView {
     codexMaybe: species.filter((s) => s.codex !== 'logged' && !s.certain).length,
     parents,
     visual,
+    materials: input.materials ?? [],
     bookmark: input.bookmark ?? null,
     places: input.places ?? [],
   }

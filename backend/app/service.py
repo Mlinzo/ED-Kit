@@ -41,8 +41,9 @@ TRACK_SHOW_S = 5.0  # the globe gets the path you go along at most this often
 DERIVED_TOPICS = frozenset(
     {"stats", "history", "sessions", "route", "navroute", "galaxy", "sell", "shop", "bookmarks"}
 )
-# Not from the journal: they never make the journal-derived views stale.
-OWN_TOPICS = frozenset({"surface", "live"})
+# They never make the journal-derived views stale: not from the journal, or (engineering:
+# your materials) from journal events nothing else reads.
+OWN_TOPICS = frozenset({"surface", "live", "engineering"})
 
 
 def _str(path: Path | None) -> str | None:

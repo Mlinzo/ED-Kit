@@ -83,6 +83,7 @@ function body(bodyId: number, o: Opts = {}): BodyView {
             periodS: o.period ?? 100 * DAY,
           }
         : null,
+    materials: [],
     visual: {
       planetClass: kind === 'planet' ? 'Rocky body' : null,
       starType: kind === 'star' ? 'K' : null,

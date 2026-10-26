@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useLiveStatus, useView } from '../../api/hooks'
 import type { ActiveScanView, BodyView, LiveStatus } from '../../api/types'
 import { CodexBadge } from '../../components/CodexBadge'
+import { PlanetMaterials } from '../../components/PlanetMaterials'
 import { SampleDots } from '../../components/SampleDots'
 import { Segmented } from '../../components/Segmented'
 import { SpeciesList, SpeciesValue } from '../../components/SpeciesList'
@@ -204,6 +205,14 @@ export function SurfaceScreen() {
               </div>
             </div>
           )}
+          {body.materials.length > 0 && (
+            <div>
+              <Label as="h2">{t.body.materials}</Label>
+              <div className="mt-2">
+                <PlanetMaterials materials={body.materials} />
+              </div>
+            </div>
+          )}
         </section>
         <section className="lg:col-start-1 lg:row-start-1">
           <PlanetGlobe globe={globe} body={body} status={status} />
@@ -260,6 +269,14 @@ export function SurfaceScreen() {
           <HelpTip topic="sampling" />
         </div>
         <SampleState scan={activeScan} position={position} />
+        {body && body.materials.length > 0 && (
+          <div>
+            <Label as="h2">{t.body.materials}</Label>
+            <div className="mt-2">
+              <PlanetMaterials materials={body.materials} />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Radar or planet (desktop: left, spans both rows) */}

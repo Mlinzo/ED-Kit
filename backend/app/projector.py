@@ -12,7 +12,7 @@ import sqlite3
 from collections.abc import Callable
 from typing import Any
 
-from app import exobio
+from app import engineering, exobio
 from app.db import get_meta, set_meta
 from app.facts import body_facts_from_scan, facts_from_json, facts_to_json, merge_facts
 from app.values import estimate_body_value
@@ -109,6 +109,8 @@ class Projector:
             "SellExplorationData": self._sell_carto,
             "Died": self._died,
             "EngineerProgress": self._engineers,
+            # Your materials (app.engineering reads them from the events when asked).
+            **dict.fromkeys(("Materials", *engineering.DELTAS), self._materials),
             "Resurrect": self._resurrect,
         }
 
@@ -608,6 +610,9 @@ class Projector:
             ),
         )
         return frozenset({"system", "surface"})
+
+    def _materials(self, ev: dict[str, Any], _: int) -> frozenset[str]:
+        return frozenset({"engineering"})
 
     def _engineers(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         # At login, every engineer you know; later, one at a time as you progress.

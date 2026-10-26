@@ -1,5 +1,6 @@
 import type { ConnectionState, Transport } from './transport'
 import type {
+  EngineeringView,
   BookmarksView,
   GalaxyView,
   HistoryView,
@@ -32,6 +33,7 @@ export interface ViewMap {
   navroute: NavRouteView
   galaxy: GalaxyView
   bookmarks: BookmarksView
+  engineering: EngineeringView
   live: LiveView
 }
 

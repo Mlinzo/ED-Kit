@@ -13,14 +13,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
-### Engineering goals and planet materials (asked 2026-10-26, details settled the same day)
-- Goals in the Shop: a module type, a blueprint and the grade to reach, several goals at once; the
-  materials they need summed (EDSY's recipes per grade; at an engineer's top access level a grade
-  takes as many rolls as its number) against your stock (the journal's `Materials` and the events
-  after it): need, have, missing.
-- Each planet's materials (from your scans and Spansh) on the System tab's body card and on the
-  Surface globe, the ones your goals still miss highlighted.
-
 ### Your path on the globe: check the recording
 - Check how the path is built (`app/track.py`: a point every 5 m on foot, 20 m in the SRV, 50 m
   in the ship below 5 km; stretches; the globe gets new points every 5 s) and whether it fills the
@@ -58,6 +50,14 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Engineering goals and planet materials (2026-10-27): in the Shop, goals for engineers (a kind of
+  module, a blueprint, the grade it has and the one to reach, an experimental effect, how many
+  modules), several at once; the materials they take are added up (EDSY's recipes; a grade takes
+  as many rolls as its number, as at an engineer's top access level) against your stock from the
+  journal (the Materials list at each login, then what you collected, traded, spent and were
+  given): have / need, what is short first; a material's name opens it in the Shop (traders,
+  planets rich in it). Each planet's elements (your scan or Spansh) show on the System tab's body
+  card and on the Surface tab, the ones your goals still miss highlighted.
 - Materials in the Shop (2026-10-26): materials are never sold, so choosing one (by name or from
   the lists: raw, manufactured, encoded, and Guardian & Thargoid apart, a row per trader group by
   grade) shows the nearest material traders of its type and, for a raw element, the nearest

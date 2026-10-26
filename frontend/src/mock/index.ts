@@ -19,6 +19,7 @@ import { buildHistory, buildPastSystem, withHistory } from './history'
 import { createMockBookmarks } from './bookmarks'
 import { createMockRoute } from './route'
 import { buildSessions } from './sessions'
+import { buildEngineering } from './engineering'
 import { buildShop } from './shop'
 import { buildGalaxy, buildLive, buildNavRoute } from './travel'
 import { buildStats } from './stats'
@@ -192,6 +193,7 @@ export function createMockTransport(): Transport {
     '/api/view/navroute': () => navroute,
     '/api/view/galaxy': () => buildGalaxy(history, route.view(), navroute),
     '/api/view/bookmarks': () => marks.view(),
+    '/api/view/engineering': () => buildEngineering(),
     '/api/view/live': () => players,
     '/api/status': () => simulatedStatus(elapsed()),
     '/api/ingest': () => ingest,

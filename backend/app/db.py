@@ -553,7 +553,7 @@ def _drop_old_caches(conn: sqlite3.Connection) -> None:
 
 
 def init_schema(conn: sqlite3.Connection) -> None:
-    from app import bookmarks, usersettings
+    from app import bookmarks, engineering, usersettings
 
     _drop_old_caches(conn)
     conn.executescript(BASE_SCHEMA)
@@ -561,6 +561,7 @@ def init_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(usersettings.SCHEMA)
     conn.executescript(bookmarks.SCHEMA)
     bookmarks.migrate(conn)
+    conn.executescript(engineering.SCHEMA)
     conn.executescript(PROJECTION_SCHEMA)
     if get_meta(conn, "schema_version") is None:
         set_meta(conn, "schema_version", SCHEMA_VERSION)

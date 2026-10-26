@@ -38,6 +38,7 @@ import {
   type ShipOrder,
   type Want,
 } from './catalog'
+import { EngineeringGoals } from './EngineeringGoals'
 import { CommodityCard, MaterialCard, ModuleCard, ShipCard } from './ItemCard'
 import { Chip, ShipRow } from './parts'
 import { fitsRole, ROLE_FILTERS, type RoleFilter } from './roles'
@@ -540,6 +541,8 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
   const chosen = catalog && symbol ? lookup(catalog, symbol) : null
   const want: Want = chosen?.kind === 'module' ? chosen.variant : {}
   const material = chosen?.kind === 'material' ? chosen.material : null
+  const materialName = (symbol: string) =>
+    catalog?.materials.find((m) => m.symbol === symbol)?.name ?? catalog?.engineering?.extraMaterials[symbol]?.name ?? symbol
 
   let card: ReactNode = null
   if (catalog && chosen?.kind === 'ship') {
@@ -628,6 +631,7 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
         onChoose={chooseAndShow}
       />
       <div ref={top} className="min-w-0 scroll-mt-20 space-y-4 lg:space-y-6">
+        {catalog?.engineering && <EngineeringGoals catalog={catalog.engineering} names={materialName} onChoose={chooseAndShow} />}
         {card}
         <section aria-labelledby="shop-title" className="min-w-0 rounded-2xl bg-zinc-900/50 p-5 ring-1 ring-zinc-800">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

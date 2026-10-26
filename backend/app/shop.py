@@ -49,7 +49,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any, Literal
 
-from app import spansh
+from app import engineering, spansh
 from app.schemas import (
     SellCarrierHint,
     ShopBodyView,
@@ -253,6 +253,7 @@ def catalog_view() -> ShopCatalogView:
         ],
         commodities=[ShopCommodityView(**c) for c in data.get("commodities") or []],
         materials=[ShopMaterialView(**m) for m in data.get("materials") or []],
+        engineering=engineering.catalog_view(),
     )
 
 

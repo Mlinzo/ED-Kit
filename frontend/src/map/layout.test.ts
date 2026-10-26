@@ -93,6 +93,7 @@ function body(bodyId: number, o: BodyOpts = {}): BodyView {
     done: false,
     parents: o.parents ?? [],
     orbit: o.orbit ?? null,
+    materials: [],
     visual: {
       planetClass: kind === 'planet' ? 'Rocky body' : null,
       starType: kind === 'star' ? 'K' : null,

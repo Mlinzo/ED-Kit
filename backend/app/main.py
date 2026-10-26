@@ -32,6 +32,7 @@ from app import (
     db,
     discovery,
     eddn,
+    engineering,
     fuel,
     galaxy,
     history,
@@ -54,6 +55,8 @@ from app.schemas import (
     BookmarksView,
     BookmarkView,
     DataDirRequest,
+    EngineeringGoalRequest,
+    EngineeringView,
     GalaxyView,
     HighlightSettings,
     HistoryView,
@@ -458,6 +461,56 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         if not found:
             raise HTTPException(404, "no such bookmark")
         service.invalidate(marked_views)
+
+    @app.get("/api/view/engineering", response_model=EngineeringView, response_model_by_alias=True)
+    def view_engineering() -> EngineeringView:
+        return engineering.engineering_view(read_conn())
+
+    def goal_args(body: EngineeringGoalRequest) -> tuple[str, str, int, int, str | None, int]:
+        return (
+            body.module,
+            body.blueprint,
+            body.grade_from,
+            body.grade_to,
+            body.experimental,
+            body.count,
+        )
+
+    @app.post("/api/engineering/goals", status_code=201)
+    def post_goal(body: EngineeringGoalRequest) -> dict[str, int]:
+        conn = db.connect(settings.db_path)
+        try:
+            goal_id = engineering.add(conn, *goal_args(body))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        finally:
+            conn.close()
+        service.invalidate({"engineering"})
+        return {"id": goal_id}
+
+    @app.put("/api/engineering/goals/{goal_id}", status_code=204)
+    def put_goal(goal_id: int, body: EngineeringGoalRequest) -> None:
+        conn = db.connect(settings.db_path)
+        try:
+            found = engineering.update(conn, goal_id, *goal_args(body))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        finally:
+            conn.close()
+        if not found:
+            raise HTTPException(404, "no such goal")
+        service.invalidate({"engineering"})
+
+    @app.delete("/api/engineering/goals/{goal_id}", status_code=204)
+    def delete_goal(goal_id: int) -> None:
+        conn = db.connect(settings.db_path)
+        try:
+            found = engineering.delete(conn, goal_id)
+        finally:
+            conn.close()
+        if not found:
+            raise HTTPException(404, "no such goal")
+        service.invalidate({"engineering"})
 
     @app.get("/api/settings", response_model=HighlightSettings, response_model_by_alias=True)
     def get_settings() -> HighlightSettings:

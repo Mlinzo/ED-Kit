@@ -56,6 +56,7 @@ const catalog: ShopCatalogView = {
     { symbol: 'heatvanes', name: 'Heat Vanes', type: 'manufactured', grade: 4, group: 'Heat', sources: [], rich: null },
     { symbol: 'guardian_powercell', name: 'Guardian Power Cell', type: 'manufactured', grade: 1, group: null, sources: [], rich: null },
   ],
+  engineering: null,
 }
 
 const names = (query: string) =>

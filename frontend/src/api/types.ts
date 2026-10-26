@@ -245,6 +245,8 @@ export interface BodyView {
   parents: ParentRef[]
   orbit: OrbitView | null
   visual: BodyVisual
+  /** A planet's elements, the most first (your scan or Spansh). */
+  materials: BodyMaterialView[]
   /** Yours, on the body. */
   bookmark: BookmarkView | null
   /** Your bookmarked places on its surface. */
@@ -598,6 +600,16 @@ export interface ShopModuleView {
 }
 
 /** A commodity some market had in stock. */
+/** A raw element in a planet's crust, as the game lists it. */
+export interface BodyMaterialView {
+  /** Journal symbol, lower case ("iron"). */
+  symbol: string
+  name: string
+  percent: number
+  /** 1 (very common) .. 4 (rare); null: not in the catalog. */
+  grade: number | null
+}
+
 export interface ShopCommodityView {
   /** Journal symbol, lower case: what the search asks for. */
   symbol: string
@@ -607,6 +619,71 @@ export interface ShopCommodityView {
   category: string
   /** A rare commodity: one station sells it, a little at a time. */
   rare: boolean
+}
+
+/** A kind of module engineers work on (EDSY's key, e.g. cfsd) and what they can do to it. */
+export interface EngineeringKindView {
+  key: string
+  /** EDSY's, e.g. "Frame Shift Drives". */
+  name: string
+  blueprints: string[]
+  experimentals: string[]
+}
+
+export interface EngineeringBlueprintView {
+  name: string
+  /** Per grade: material symbol -> how many one roll takes. */
+  grades: Record<string, number>[]
+}
+
+export interface EngineeringExperimentalView {
+  name: string
+  materials: Record<string, number>
+}
+
+/** A material the Shop's catalog lacks (new Thargoid ones), as EDSY has it. */
+export interface EngineeringMaterialView {
+  name: string
+  type: 'raw' | 'manufactured' | 'encoded'
+  grade: number
+}
+
+export interface EngineeringCatalogView {
+  modules: EngineeringKindView[]
+  blueprints: Record<string, EngineeringBlueprintView>
+  experimentals: Record<string, EngineeringExperimentalView>
+  extraMaterials: Record<string, EngineeringMaterialView>
+}
+
+export interface EngineeringGoalView {
+  id: number
+  /** An EngineeringKindView key. */
+  module: string
+  blueprint: string
+  /** The grade the module has now (0: none). */
+  gradeFrom: number
+  gradeTo: number
+  experimental: string | null
+  /** How many such modules. */
+  count: number
+}
+
+export interface EngineeringNeedView {
+  /** Material, journal symbol. */
+  symbol: string
+  /** What the goals take in all (grade N counted N rolls). */
+  need: number
+  have: number
+}
+
+/** GET /api/view/engineering: your goals and what they take against your stock. */
+export interface EngineeringView {
+  goals: EngineeringGoalView[]
+  needs: EngineeringNeedView[]
+  /** Your materials by symbol: the journal's latest list and what changed since. */
+  stock: Record<string, number>
+  /** When the journal last listed them all (null: never). */
+  stockAt: string | null
 }
 
 /** A material: never sold, exchanged at material traders of its type. */
@@ -630,6 +707,7 @@ export interface ShopCatalogView {
   modules: ShopModuleView[]
   commodities: ShopCommodityView[]
   materials: ShopMaterialView[]
+  engineering: EngineeringCatalogView | null
 }
 
 export interface ShopStationView {
@@ -1420,6 +1498,7 @@ export type Topic =
   | 'navroute'
   | 'galaxy'
   | 'bookmarks'
+  | 'engineering'
   | 'live'
 
 // Server-Sent Events on GET /api/stream:

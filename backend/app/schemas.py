@@ -138,6 +138,15 @@ Interest = Literal["high", "medium", "low"]
 DataSource = Literal["journal", "spansh", "edsm"]
 
 
+class BodyMaterialView(CamelModel):
+    """A raw element in a planet's crust (your scan or Spansh), as the game lists it."""
+
+    symbol: str  # journal symbol, lower case ("iron")
+    name: str  # "Iron"
+    percent: float
+    grade: int | None  # 1 (very common) .. 4 (rare); None: not in the catalog
+
+
 class BodyView(CamelModel):
     id64: str
     body_id: int
@@ -184,6 +193,7 @@ class BodyView(CamelModel):
     parents: list[ParentRef]  # immediate parent first; [] for the root body
     orbit: OrbitView | None
     visual: BodyVisual
+    materials: list[BodyMaterialView] = []  # a planet's elements, the most first
     bookmark: BookmarkView | None = None  # yours, on the body (app.bookmarks)
     places: list[BookmarkView] = []  # your bookmarked places on its surface
 
@@ -425,6 +435,74 @@ class ShopCommodityView(CamelModel):
     rare: bool = False  # a rare commodity: one station sells it, a little at a time
 
 
+class EngineeringKindView(CamelModel):
+    """A kind of module engineers work on (EDSY's key, e.g. cfsd) and what they can do to it."""
+
+    key: str
+    name: str  # EDSY's, e.g. "Frame Shift Drives"
+    blueprints: list[str]  # keys into EngineeringCatalogView.blueprints
+    experimentals: list[str]
+
+
+class EngineeringBlueprintView(CamelModel):
+    name: str
+    grades: list[dict[str, int]]  # per grade: material symbol -> how many one roll takes
+
+
+class EngineeringExperimentalView(CamelModel):
+    name: str
+    materials: dict[str, int]
+
+
+class EngineeringMaterialView(CamelModel):
+    """A material the Shop's catalog lacks (new Thargoid ones), as EDSY has it."""
+
+    name: str
+    type: str  # raw | manufactured | encoded
+    grade: int
+
+
+class EngineeringCatalogView(CamelModel):
+    modules: list[EngineeringKindView]
+    blueprints: dict[str, EngineeringBlueprintView]
+    experimentals: dict[str, EngineeringExperimentalView]
+    extra_materials: dict[str, EngineeringMaterialView]
+
+
+class EngineeringGoalView(CamelModel):
+    id: int
+    module: str  # an EngineeringKindView key
+    blueprint: str
+    grade_from: int  # the grade the module has now (0: none)
+    grade_to: int
+    experimental: str | None
+    count: int  # how many such modules
+
+
+class EngineeringGoalRequest(CamelModel):
+    module: str
+    blueprint: str
+    grade_from: int = Field(0, ge=0, le=5)
+    grade_to: int = Field(ge=0, le=5)
+    experimental: str | None = None
+    count: int = Field(1, ge=1, le=99)
+
+
+class EngineeringNeedView(CamelModel):
+    symbol: str  # material, journal symbol
+    need: int  # what the goals take in all
+    have: int
+
+
+class EngineeringView(CamelModel):
+    """GET /api/view/engineering: your goals and what they take against your stock."""
+
+    goals: list[EngineeringGoalView]
+    needs: list[EngineeringNeedView]  # every material the goals take
+    stock: dict[str, int]  # your materials by symbol (the journal's latest list and since)
+    stock_at: str | None  # when the journal last listed them all (None: never)
+
+
 class ShopMaterialView(CamelModel):
     symbol: str  # journal symbol, lower case
     name: str
@@ -440,6 +518,7 @@ class ShopCatalogView(CamelModel):
     modules: list[ShopModuleView]
     commodities: list[ShopCommodityView] = []
     materials: list[ShopMaterialView] = []
+    engineering: EngineeringCatalogView | None = None
 
 
 class ShopStationView(CamelModel):

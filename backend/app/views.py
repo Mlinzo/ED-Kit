@@ -7,7 +7,7 @@ import sqlite3
 from collections.abc import Callable, Iterable
 from typing import Literal
 
-from app import bookmarks, enrich, exobio, usersettings
+from app import bookmarks, engineering, enrich, exobio, usersettings
 from app.codex import CodexIndex, codex_index, colour_status, predicted_status
 from app.exobio.odds import chances
 from app.exobio.variants import colour_of, variants
@@ -366,6 +366,7 @@ def _body_view(
         parents=_parent_refs(facts.parents),
         orbit=_orbit(facts),
         visual=_visual(facts),
+        materials=engineering.body_materials(facts.materials) if facts.kind == "planet" else [],
     )
 
 
