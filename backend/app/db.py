@@ -276,6 +276,7 @@ CREATE TABLE IF NOT EXISTS systems(
   x REAL, y REAL, z REAL,
   body_count INTEGER,
   non_body_count INTEGER,
+  honk_progress REAL,  -- FSSDiscoveryScan.Progress: the share of the bodies known after it
   all_found INTEGER NOT NULL DEFAULT 0,
   region TEXT,
   population INTEGER

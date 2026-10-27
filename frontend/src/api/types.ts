@@ -285,6 +285,11 @@ export interface SystemView {
   bodyCount: number | null
   scannedCount: number
   allBodiesFound: boolean
+  /**
+   * The game knew the system in advance (most populated ones): every body was known before the
+   * honk and none gets a scan in the journal. Their FSS data does not sell (totals.fss is 0).
+   */
+  knownInAdvance: boolean
   /** The commander is in this system now (false: a system from the history). */
   isCurrent: boolean
   /** Where the commander is now. */

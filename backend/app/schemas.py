@@ -230,6 +230,9 @@ class SystemView(CamelModel):
     body_count: int | None  # from FSS honk; None until honked
     scanned_count: int
     all_bodies_found: bool
+    # The game knew the system in advance (most populated ones): every body was known before the
+    # honk and none gets a Scan in the journal, so their FSS data does not sell (app.views).
+    known_in_advance: bool = False
     is_current: bool  # the commander is in this system now (else: a system from the history)
     current_system: SystemRef | None  # where the commander is now
     current_body_id: int | None  # body the commander is near/on (current system only)

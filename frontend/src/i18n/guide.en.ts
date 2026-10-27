@@ -38,7 +38,7 @@ export const guideEn: Strings['guide'] = {
         'Players call it the honk, after its sound. It is built into every ship: put it in a fire group and hold the trigger until it charges (about 5 seconds). It works in supercruise and in normal space.',
         'The honk tells how many bodies the system has, but not what they are: that is the FSS’s job. The star you arrive at is scanned by itself, and so is any body you fly close to.',
       ],
-      inApp: 'The System tab shows “Bodies found”: how many you have scanned out of the count the honk gave.',
+      inApp: 'The System tab shows “Bodies found”: how many you have scanned out of the count the honk gave. In a system the game knows in advance (most populated ones) every body is known from the start: the tile says “Known in advance”, and the FSS scan is worth nothing there.',
     },
     fss: {
       title: 'FSS: Full Spectrum System Scanner',

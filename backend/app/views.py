@@ -629,7 +629,8 @@ def system_view(
             lookup = None  # bodies from an earlier lookup stand, whatever the last one said
     is_current = address == current_address
     mine = conn.execute(
-        "SELECT body_count, all_found FROM systems WHERE address = ?", (system.address,)
+        "SELECT body_count, all_found, honk_progress FROM systems WHERE address = ?",
+        (system.address,),
     ).fetchone()
     ext = conn.execute(
         "SELECT body_count FROM ext_systems WHERE address = ?", (system.address,)
@@ -657,13 +658,24 @@ def system_view(
         for f in system.bodies.values()
     ]
     bodies.sort(key=lambda b: (-b.total_value, b.distance_ls or 0.0))
+    scanned_count = sum(1 for b in bodies if b.source == "journal")
+    # The honk found every body known already, yet none was ever scanned, not even the arrival
+    # star (scanned by itself 5-6 s after the jump, before you can honk): the game knew the system
+    # in advance (most populated ones). It writes no Scan for such bodies: no FSS data to sell.
+    known_in_advance = bool(
+        mine
+        and (mine["honk_progress"] or 0) >= 0.999
+        and not mine["all_found"]
+        and scanned_count == 0
+    )
     return SystemView(
         address=str(system.address),
         name=system.name,
         star_pos=system.star_pos,
         body_count=body_count,
-        scanned_count=sum(1 for b in bodies if b.source == "journal"),
+        scanned_count=scanned_count,
         all_bodies_found=bool(mine and mine["all_found"]),
+        known_in_advance=known_in_advance,
         lookup=lookup,
         bookmark=marks.system,
         stations=marks.stations,
@@ -683,8 +695,11 @@ def system_view(
         bodies=bodies,
         barycentres=_barycentres(conn, system),
         totals=SystemTotals(
-            fss=sum(b.fss_value for b in bodies),
-            dss=sum(b.dss_value if b.kind == "planet" else b.fss_value for b in bodies),
+            fss=0 if known_in_advance else sum(b.fss_value for b in bodies),
+            dss=sum(
+                b.dss_value if b.kind == "planet" else 0 if known_in_advance else b.fss_value
+                for b in bodies
+            ),
             bio_min=sum(b.bio_value_min for b in bodies),
             bio_max=sum(b.bio_value_max for b in bodies),
         ),

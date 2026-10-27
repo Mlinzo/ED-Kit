@@ -21,7 +21,7 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 21
+VERSION = 22
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
 
@@ -523,8 +523,9 @@ class Projector:
         if address is None:
             return frozenset()
         self.conn.execute(
-            "UPDATE systems SET body_count = ?, non_body_count = ? WHERE address = ?",
-            (ev.get("BodyCount"), ev.get("NonBodyCount"), address),
+            "UPDATE systems SET body_count = ?, non_body_count = ?, honk_progress = ? "
+            "WHERE address = ?",
+            (ev.get("BodyCount"), ev.get("NonBodyCount"), ev.get("Progress"), address),
         )
         return frozenset({"system"})
 

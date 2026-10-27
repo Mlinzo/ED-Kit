@@ -205,8 +205,10 @@ function PastBanner({
 }
 
 function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSystem: OpenSystem }) {
-  const { bodyCount, scannedCount, allBodiesFound, totals } = system
+  const { bodyCount, scannedCount, allBodiesFound, knownInAdvance, totals } = system
   const pct = bodyCount ? Math.min(100, (scannedCount / bodyCount) * 100) : 0
+  // Known in advance: every body is known, as the game's FSS shows, though none was scanned.
+  const found = knownInAdvance && bodyCount !== null ? bodyCount : scannedCount
   return (
     <section aria-labelledby="system-title" className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="min-w-0">
@@ -261,6 +263,14 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
               <p className="hidden truncate text-[11px] leading-tight text-zinc-500 sm:block" title={t.system.honkUnknown}>
                 {t.system.honkUnknown}
               </p>
+            ) : knownInAdvance ? (
+              <>
+                {/* Phone: no room for the words; a full grey bar, not the emerald one of your own scans. */}
+                <div className="h-1 rounded-full bg-zinc-600 sm:hidden" aria-hidden />
+                <p className="hidden truncate text-[11px] leading-tight text-zinc-500 sm:block" title={t.system.knownInAdvanceHint}>
+                  {t.system.knownInAdvance}
+                </p>
+              </>
             ) : (
               <div
                 className="h-1 overflow-hidden rounded-full bg-zinc-800"
@@ -278,8 +288,9 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
             )
           }
         >
-          {scannedCount}
+          {found}
           <span className="text-zinc-500">/{bodyCount ?? '?'}</span>
+          {knownInAdvance && <span className="sr-only">, {t.system.knownInAdvance}</span>}
           {/* On a phone the emerald progress bar says it; the tile has no room for the icon. */}
           {allBodiesFound && (
             <>
@@ -288,8 +299,19 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
             </>
           )}
         </Stat>
-        <Stat label={t.system.fssLong} short={t.system.fss} help="fss">
-          <Credits value={totals.fss} />
+        <Stat
+          label={t.system.fssLong}
+          short={t.system.fss}
+          help="fss"
+          footer={
+            knownInAdvance && (
+              <p className="hidden truncate text-[11px] leading-tight text-zinc-500 sm:block" title={t.system.fssNothingToSellHint}>
+                {t.system.fssNothingToSell}
+              </p>
+            )
+          }
+        >
+          <Credits value={totals.fss} className={knownInAdvance ? 'text-zinc-500' : undefined} />
         </Stat>
         <Stat label={t.system.dssLong} short={t.system.dss} help="dss">
           <Credits value={totals.dss} />

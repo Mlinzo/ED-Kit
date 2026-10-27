@@ -130,6 +130,66 @@ def test_journal_wins_and_community_fills_gaps(conn: sqlite3.Connection) -> None
     assert views.session_view(conn, "F1").unsold_carto_bodies == 1
 
 
+def test_a_system_the_game_knew_in_advance(conn: sqlite3.Connection) -> None:
+    proj = Projector(conn)
+    feed(
+        conn,
+        proj,
+        {"timestamp": "2026-10-27T19:00:00Z", "event": "Commander", "FID": "F1", "Name": "T"},
+        {
+            "timestamp": "2026-10-27T19:08:35Z",
+            "event": "FSDJump",
+            "StarSystem": SYSTEM,
+            "SystemAddress": SA,
+            "StarPos": [1.0, 2.0, 3.0],
+            "JumpDist": 10.0,
+        },
+        # A populated system: every body is known at once, and no Scan comes, not even the star's.
+        {
+            "timestamp": "2026-10-27T19:09:07Z",
+            "event": "FSSDiscoveryScan",
+            "Progress": 1.0,
+            "BodyCount": 31,
+            "NonBodyCount": 34,
+            "SystemName": SYSTEM,
+            "SystemAddress": SA,
+        },
+    )
+    enrich.store(conn, spansh_system())
+    view = views.system_view(conn, "F1")
+    assert view.known_in_advance and view.scanned_count == 0 and view.body_count == 31
+    assert view.totals.fss == 0  # nothing scanned: no FSS data to sell
+    planets = [b for b in view.bodies if b.kind == "planet"]
+    assert view.totals.dss == sum(b.dss_value for b in planets) > 0
+
+    # One body scanned after all (an explored system honked again): it is yours to sell.
+    feed(
+        conn,
+        proj,
+        {
+            "timestamp": "2026-10-27T19:10:00Z",
+            "event": "Scan",
+            "ScanType": "AutoScan",
+            "BodyName": "CD-23 5548 A",
+            "BodyID": 1,
+            "Parents": [{"Null": 0}],
+            "StarSystem": SYSTEM,
+            "SystemAddress": SA,
+            "DistanceFromArrivalLS": 0.0,
+            "StarType": "M",
+            "Subclass": 0,
+            "StellarMass": 0.6,
+            "Radius": 5.0e8,
+            "SurfaceTemperature": 4352.0,
+            "Luminosity": "V",
+            "WasDiscovered": True,
+            "WasMapped": False,
+        },
+    )
+    view = views.system_view(conn, "F1")
+    assert not view.known_in_advance and view.totals.fss > 0
+
+
 def test_fetch_cache_freshness(conn: sqlite3.Connection) -> None:
     assert enrich.needs_fetch(conn, SA)
     enrich.store(conn, spansh_system())

@@ -683,6 +683,7 @@ export function buildSystem(): SystemView {
     // As the backend counts: only your own scans are "found".
     scannedCount: bodies.filter((b) => b.source === 'journal').length,
     allBodiesFound: false,
+    knownInAdvance: false,
     isCurrent: true,
     currentSystem: { address: ADDRESS.toString(), name: SYSTEM_NAME },
     currentBodyId: SURFACE_BODY_ID,

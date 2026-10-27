@@ -42,6 +42,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Systems the game knew in advance (2026-10-27): in most populated systems the honk finds every
+  body known at once (Progress 1.0) and the journal gets no Scan, not even the arrival star's, nor
+  FSSAllBodiesFound, so "Bodies found" read 0/31 while the game's FSS showed 31/31. A system
+  honked to 100 % with nothing ever scanned there now shows every body found, "Known in advance",
+  and its FSS scan at 0, "Nothing to sell" (no Scan, no data to sell; the stars' FSS value left
+  the DSS total too, the planets' map value stays). In the journals every first honk came after
+  the arrival star's own scan (5-6 s after the jump, 115 of 115), so the rule waits for nothing;
+  it marks 7 of 180 visited systems, all populated (Deciat, FK Aquarii, LFT 42...). The bodies'
+  own FSS values and the History tab's count are as before.
 - Engineering goals start from your ship (2026-10-27): a new goal, or another module or
   blueprint in the form, takes its "now" grade from such a module on your current ship (the
   latest Loadout and the rolls at engineers after it; 0 when it has another blueprint or none,

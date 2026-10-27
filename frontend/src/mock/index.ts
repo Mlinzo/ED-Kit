@@ -34,6 +34,7 @@ function emptySystem(system: SystemView): SystemView {
     bodyCount: null,
     scannedCount: 0,
     allBodiesFound: false,
+    knownInAdvance: false,
     isCurrent: false,
     currentBodyId: null,
     shipBodyId: null,

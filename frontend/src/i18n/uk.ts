@@ -132,6 +132,11 @@ export const uk: Strings = {
     honk: 'Знайдено тіл',
     honkUnknown: 'Зробіть FSS-сканування (honk), щоб дізнатися кількість тіл',
     allFound: 'усі тіла знайдено',
+    knownInAdvance: 'Відомі заздалегідь',
+    knownInAdvanceHint:
+      'Гра знає цю систему заздалегідь, як більшість населених: усі тіла відомі одразу, і сканів по них у журналі немає.',
+    fssNothingToSell: 'Продати нічого',
+    fssNothingToSellHint: 'Тіла були відомі заздалегідь: даних FSS по них для продажу немає.',
     fss: 'FSS',
     dss: 'DSS',
     bio: 'Біо',

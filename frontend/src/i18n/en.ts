@@ -129,6 +129,11 @@ export const en: Strings = {
     honk: 'Bodies found',
     honkUnknown: 'Do an FSS scan (honk) to get the body count',
     allFound: 'all bodies found',
+    knownInAdvance: 'Known in advance',
+    knownInAdvanceHint:
+      'The game knows this system in advance, as most populated ones: every body is known from the start, and none gets a scan in the journal.',
+    fssNothingToSell: 'Nothing to sell',
+    fssNothingToSellHint: 'The bodies were known in advance: there is no FSS data of them to sell.',
     fss: 'FSS',
     dss: 'DSS',
     bio: 'Bio',
