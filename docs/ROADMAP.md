@@ -50,6 +50,15 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Time spent (2026-10-27): how long you stayed in each system and at each planet (from the
+  approach to leaving, landings included), every visit together, and what the stay brought per
+  hour (the estimate of your scans and analysed species; stays under 10 minutes get none). The
+  journal tells when things happened, not when you were away: each gap between two events goes to
+  where you were, a silence over 30 minutes is taken for AFK and not counted, nor is the launcher,
+  the main menu or quitting. On the History tab (two columns, and an order by time or by pace), in
+  the System tab's header and on a planet's card; where you are now it counts on while the game
+  runs. On the author's journals: 65 h in 178 systems; a crash on 2026-10-21 left almost 4 h until
+  the next launch that a plain "approach to leaving" count put on one planet.
 - Engineering goals and planet materials (2026-10-27): in the Shop, goals for engineers (a kind of
   module, a blueprint, the grade it has and the one to reach, an experimental effect, how many
   modules), several at once; the materials they take are added up (EDSY's recipes; a grade takes

@@ -610,6 +610,18 @@ export const uk: Strings = {
     layer: 'Ваші закладки',
   },
 
+  timeSpent: {
+    inSystem: 'Час у системі',
+    atPlanet: 'Час біля планети',
+    systemHint:
+      'Скільки ви провели тут за всі візити: від прибуття до відльоту, без меню гри та пауз понад 30 хвилин (AFK)',
+    planetHint:
+      'Скільки ви провели біля планети за всі візити: від підльоту до відльоту, з посадками, без меню гри та пауз понад 30 хвилин (AFK)',
+    perHour: (credits: string) => `${credits}/год`,
+    perHourHint:
+      'Дохід за годину: оцінка ваших сканів і вивчених видів, поділена на цей час (менше 10 хвилин не рахуються)',
+  },
+
   history: {
     title: 'Історія',
     summary: (systems: number) => `${systems} ${plural(systems, ['система', 'системи', 'систем'])}`,
@@ -639,6 +651,11 @@ export const uk: Strings = {
     colBio: 'Біо',
     colFirsts: 'Перші',
     colValue: 'Цінність',
+    colSpent: 'У системі',
+    colPerHour: 'За годину',
+    colDay: 'Дата',
+    sortLabel: 'Порядок',
+    sort: { recent: 'Останні', time: 'Довше', perHour: 'За годину' },
     today: 'Сьогодні',
     yesterday: 'Учора',
     daySystems: (n: number) => `${n} ${plural(n, ['система', 'системи', 'систем'])}`,

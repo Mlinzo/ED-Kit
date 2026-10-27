@@ -606,6 +606,18 @@ export const en: Strings = {
     layer: 'Your bookmarks',
   },
 
+  timeSpent: {
+    inSystem: 'Time in the system',
+    atPlanet: 'Time at the planet',
+    systemHint:
+      'Your time here over all visits: from arrival to leaving, without the game menu and pauses over 30 minutes (AFK)',
+    planetHint:
+      'Your time at the planet over all visits: from approach to leaving, landings included, without the game menu and pauses over 30 minutes (AFK)',
+    perHour: (credits: string) => `${credits}/h`,
+    perHourHint:
+      'Earned per hour: the estimate of your scans and analysed species over this time (under 10 minutes not counted)',
+  },
+
   history: {
     title: 'History',
     summary: (systems: number) => `${systems} ${plural(systems, ['system', 'systems'])}`,
@@ -635,6 +647,11 @@ export const en: Strings = {
     colBio: 'Bio',
     colFirsts: 'Firsts',
     colValue: 'Value',
+    colSpent: 'Stayed',
+    colPerHour: 'Per hour',
+    colDay: 'Date',
+    sortLabel: 'Order',
+    sort: { recent: 'Recent', time: 'Longest', perHour: 'Per hour' },
     today: 'Today',
     yesterday: 'Yesterday',
     daySystems: (n: number) => `${n} ${plural(n, ['system', 'systems'])}`,

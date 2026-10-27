@@ -229,6 +229,7 @@ PROJECTION_TABLES = (
     "docks",
     "jumps",
     "visits",
+    "body_time",
     "deaths",
     "codex_entries",
     "surface_marks",
@@ -405,14 +406,26 @@ CREATE INDEX IF NOT EXISTS jumps_by_cmdr ON jumps(fid, ts);
 -- Arrivals in a system: FSD and carrier jumps, and a Location in another system than before
 -- (respawn, first login). Reloading the game where you are is not a new visit.
 -- how: jump | carrier | location (you did not fly there: the galaxy map breaks the path)
+-- seconds: time spent in the system on this visit (app.projector: AFK and the menu left out)
 CREATE TABLE IF NOT EXISTS visits(
   id INTEGER PRIMARY KEY,
   fid TEXT NOT NULL,
   ts TEXT NOT NULL,
   system_address INTEGER NOT NULL,
-  how TEXT NOT NULL DEFAULT 'jump'
+  how TEXT NOT NULL DEFAULT 'jump',
+  seconds INTEGER NOT NULL DEFAULT 0
 ) STRICT;
 CREATE INDEX IF NOT EXISTS visits_by_system ON visits(fid, system_address, id);
+
+-- Time spent at a planet, every visit together: near it (ApproachBody..LeaveBody), on its
+-- surface included, as app.projector counts the system's.
+CREATE TABLE IF NOT EXISTS body_time(
+  fid TEXT NOT NULL,
+  system_address INTEGER NOT NULL,
+  body_id INTEGER NOT NULL,
+  seconds INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY(fid, system_address, body_id)
+) STRICT;
 
 -- Codex discoveries. name: codex symbol (a variant for biology); species: canonical
 -- exobio species symbol when the entry is an organism; region: "$Codex_RegionName_N;".

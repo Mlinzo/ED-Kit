@@ -116,6 +116,8 @@ function body(bodyId: number, o: BodyOpts = {}): BodyView {
     },
     bookmark: null,
     places: [],
+    timeS: 0,
+    earnedValue: 0,
   }
 }
 

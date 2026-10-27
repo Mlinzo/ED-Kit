@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { HistoryEntry } from '../../api/types'
 import { bookmarkOf } from '../../mock/bookmarks'
-import { filterCounts, groupByDay, isTransit, limitRows, matchesFilter, matchesQuery, relativeDay } from './historyList'
+import {
+  filterCounts,
+  groupByDay,
+  isTransit,
+  limitRows,
+  matchesFilter,
+  matchesQuery,
+  relativeDay,
+  sortSystems,
+  type HistorySort,
+} from './historyList'
 
 function entry(name: string, at: string, extra: Partial<HistoryEntry> = {}): HistoryEntry {
   return {
@@ -26,6 +36,7 @@ function entry(name: string, at: string, extra: Partial<HistoryEntry> = {}): His
     notable: [],
     bookmark: null,
     innerBookmarks: 0,
+    timeS: 0,
     ...extra,
   }
 }
@@ -107,5 +118,29 @@ describe('day groups', () => {
     expect(relativeDay('2026-10-16', now)).toBe('today')
     expect(relativeDay('2026-10-15', now)).toBe('yesterday')
     expect(relativeDay('2026-10-13', now)).toBeNull()
+  })
+})
+
+describe('history order', () => {
+  // Newest first, as the backend sends them.
+  const list = [
+    entry('a', local(2026, 10, 16, 22), { timeS: 300, value: 100_000 }),
+    entry('b', local(2026, 10, 16, 21), { timeS: 3_600, value: 2_000_000 }),
+    entry('c', local(2026, 10, 16, 20), { timeS: 3_600, value: 9_000_000 }),
+    entry('d', local(2026, 10, 16, 19), { timeS: 1_200, value: 6_000_000 }),
+  ]
+  const stay = (e: HistoryEntry) => ({ timeS: e.timeS, perHour: e.timeS >= 600 ? (e.value * 3_600) / e.timeS : null })
+  const names = (sort: HistorySort) => sortSystems(list, sort, stay).map((e) => e.name).join('')
+
+  it('keeps the newest first by default', () => {
+    expect(names('recent')).toBe('abcd')
+  })
+
+  it('puts the longest stays first, the newest first among equals', () => {
+    expect(names('time')).toBe('bcda')
+  })
+
+  it('puts the best pace first and short stays last', () => {
+    expect(names('perHour')).toBe('dcba')
   })
 })

@@ -87,3 +87,32 @@ export function relativeDay(day: string, now = Date.now()): 'today' | 'yesterday
   yesterday.setDate(yesterday.getDate() - 1)
   return day === localDay(yesterday.getTime()) ? 'yesterday' : null
 }
+
+export type HistorySort = 'recent' | 'time' | 'perHour'
+
+export const HISTORY_SORTS: readonly HistorySort[] = ['recent', 'time', 'perHour']
+
+/** A system's time spent (the current one counted on to now) and what it brought per hour. */
+export interface Stay {
+  timeS: number
+  perHour: number | null
+}
+
+/**
+ * Systems in the chosen order. Recent: as they come (newest first). The others: the most first;
+ * ties keep the newest first, and systems without a figure (too short a stay) go last.
+ */
+export function sortSystems(
+  systems: readonly HistoryEntry[],
+  sort: HistorySort,
+  stay: (e: HistoryEntry) => Stay,
+): HistoryEntry[] {
+  if (sort === 'recent') return [...systems]
+  const value = (e: HistoryEntry) => (sort === 'time' ? stay(e).timeS : stay(e).perHour)
+  return [...systems].sort((a, b) => {
+    const va = value(a)
+    const vb = value(b)
+    if (va === null || vb === null) return va === vb ? 0 : va === null ? 1 : -1
+    return vb - va
+  })
+}

@@ -100,6 +100,12 @@ def cmdr_state(conn: sqlite3.Connection, fid: str | None) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM cmdr_state WHERE fid = ?", (fid,)).fetchone()
 
 
+def last_event_at(conn: sqlite3.Connection) -> str | None:
+    """Time of the last journal event: the time spent is counted up to it (app.projector)."""
+    row = conn.execute("SELECT ts FROM events ORDER BY id DESC LIMIT 1").fetchone()
+    return row["ts"] if row else None
+
+
 def _footfall_taken(
     facts: BodyFacts, populated: bool | None
 ) -> Literal["populated", "mapped"] | None:
@@ -295,8 +301,12 @@ def _body_view(
         (*key, fid),
     ).fetchall()
     cmdr_body = conn.execute(
-        "SELECT mapped_at, efficient, footfall_at FROM body_cmdr "
+        "SELECT mapped_at, efficient, carto, footfall_at FROM body_cmdr "
         "WHERE fid = ? AND system_address = ? AND body_id = ?",
+        (fid, *key),
+    ).fetchone()
+    spent = conn.execute(
+        "SELECT seconds FROM body_time WHERE fid = ? AND system_address = ? AND body_id = ?",
         (fid, *key),
     ).fetchone()
     mapped_by_me = bool(cmdr_body and cmdr_body["mapped_at"])
@@ -312,6 +322,15 @@ def _body_view(
     parent_id = next((body_id for kind, body_id in facts.parents if kind != "Null"), None)
     best_carto = value.dss if facts.kind == "planet" else value.fss
     bio_done = sum(1 for sp in species if sp.status == "analysed")
+    # What you made here, as the history counts it: your scan (mapped or not) and the species.
+    earned = 0
+    if cmdr_body is not None and cmdr_body["carto"] != "lost":
+        earned += best_carto if mapped_by_me else value.fss
+    for scan in scans:
+        if scan["status"] == "analysed" and scan["sale"] != "lost":
+            known = exobio.get_species(scan["species"])
+            base = scan["value"] if scan["value"] is not None else known.base_value if known else 0
+            earned += base + (scan["bonus"] or 0)
     interest, reasons, done = _interest(
         facts, signals, bio_done, mapped_by_me, worth_mapping, value.dss, bio_max, highlight
     )
@@ -367,6 +386,8 @@ def _body_view(
         orbit=_orbit(facts),
         visual=_visual(facts),
         materials=engineering.body_materials(facts.materials) if facts.kind == "planet" else [],
+        time_s=spent["seconds"] if spent else 0,
+        earned_value=earned,
     )
 
 
@@ -617,8 +638,8 @@ def system_view(
     if body_count is None and ext is not None:
         body_count = ext["body_count"]
     visits = conn.execute(
-        "SELECT COUNT(*) AS n, MIN(ts) AS first_at, MAX(ts) AS last_at, MAX(id) AS last_id "
-        "FROM visits WHERE fid = ? AND system_address = ?",
+        "SELECT COUNT(*) AS n, MIN(ts) AS first_at, MAX(ts) AS last_at, MAX(id) AS last_id, "
+        "SUM(seconds) AS seconds FROM visits WHERE fid = ? AND system_address = ?",
         (fid, system.address),
     ).fetchone()
     last_id = visits["last_id"]
@@ -654,6 +675,9 @@ def system_view(
         visits=visits["n"],
         first_visit_at=visits["first_at"],
         last_visit_at=visits["last_at"],
+        time_s=visits["seconds"] or 0,
+        earned_value=sum(b.earned_value for b in bodies),
+        time_as_of=last_event_at(conn),
         prev_system=_neighbour(conn, fid, last_id, before=True) if last_id else None,
         next_system=_neighbour(conn, fid, last_id, before=False) if last_id else None,
         bodies=bodies,

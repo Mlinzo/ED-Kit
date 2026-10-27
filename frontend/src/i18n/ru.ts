@@ -611,6 +611,18 @@ export const ru = {
     layer: 'Ваши закладки',
   },
 
+  timeSpent: {
+    inSystem: 'Время в системе',
+    atPlanet: 'Время у планеты',
+    systemHint:
+      'Сколько вы провели здесь за все визиты: от прибытия до отлёта, без меню игры и пауз дольше 30 минут (AFK)',
+    planetHint:
+      'Сколько вы провели у планеты за все визиты: от подлёта до отлёта, с посадками, без меню игры и пауз дольше 30 минут (AFK)',
+    perHour: (credits: string) => `${credits}/ч`,
+    perHourHint:
+      'Доход за час: оценка ваших сканов и изученных видов, делённая на это время (меньше 10 минут не считаются)',
+  },
+
   history: {
     title: 'История',
     summary: (systems: number) => `${systems} ${plural(systems, ['система', 'системы', 'систем'])}`,
@@ -640,6 +652,11 @@ export const ru = {
     colBio: 'Био',
     colFirsts: 'Первые',
     colValue: 'Ценность',
+    colSpent: 'В системе',
+    colPerHour: 'В час',
+    colDay: 'Дата',
+    sortLabel: 'Порядок',
+    sort: { recent: 'Недавние', time: 'Дольше', perHour: 'В час' },
     today: 'Сегодня',
     yesterday: 'Вчера',
     daySystems: (n: number) => `${n} ${plural(n, ['система', 'системы', 'систем'])}`,

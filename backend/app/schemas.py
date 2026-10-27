@@ -196,6 +196,8 @@ class BodyView(CamelModel):
     materials: list[BodyMaterialView] = []  # a planet's elements, the most first
     bookmark: BookmarkView | None = None  # yours, on the body (app.bookmarks)
     places: list[BookmarkView] = []  # your bookmarked places on its surface
+    time_s: int = 0  # time you spent at it (a planet), every visit together (app.projector)
+    earned_value: int = 0  # your scans of it and species analysed on it (lost data excluded)
 
 
 class SystemTotals(CamelModel):
@@ -238,6 +240,11 @@ class SystemView(CamelModel):
     visits: int  # arrivals in this system
     first_visit_at: str | None
     last_visit_at: str | None
+    time_s: int = 0  # time you spent here, every visit together (app.projector)
+    earned_value: int = 0  # your scans and species analysed here (lost data excluded)
+    # The last journal event: the time spent is counted up to it (the current place counts on
+    # while the game runs).
+    time_as_of: str | None = None
     # Neighbours in the history (systems ordered by their last visit), for stepping through it.
     prev_system: SystemRef | None
     next_system: SystemRef | None
@@ -863,11 +870,13 @@ class HistoryEntry(CamelModel):
     notable: list[str]  # notable finds, most remarkable first: elw, ww, neutron, ...
     bookmark: BookmarkView | None = None  # yours, on the system
     inner_bookmarks: int = 0  # your bookmarks there besides the system's: bodies, places, stations
+    time_s: int = 0  # time you spent there, every visit together (app.projector)
 
 
 class HistoryView(CamelModel):
     current_address: str | None
     systems: list[HistoryEntry]  # most recently visited first
+    time_as_of: str | None = None  # as SystemView.time_as_of
 
 
 # What the community databases know: its arrival star scanned | some bodies | only the system

@@ -8,12 +8,12 @@ import { Credits } from '../../components/Credits'
 import { Label } from '../../components/States'
 import { t } from '../../i18n'
 import { exactCredits, formatCredits, formatLy, formatNumber } from '../../lib/format'
+import { formatDuration as duration } from '../../lib/timeSpent'
 import { eventDay, eventFull, eventTime } from '../../lib/when'
 import {
   DEFAULT_SORT,
   nextSort,
   sortRows,
-  splitDuration,
   toRows,
   totals,
   type SessionRow,
@@ -42,11 +42,6 @@ const COLUMNS: readonly { key: SessionSort; show: string }[] = [
   { key: 'earned', show: 'flex' },
   { key: 'perHour', show: 'hidden sm:flex' },
 ]
-
-function duration(seconds: number): string {
-  const { h, m } = splitDuration(seconds)
-  return t.session.past.duration(h, m)
-}
 
 function Dash() {
   return (

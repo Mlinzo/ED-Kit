@@ -12,7 +12,7 @@ from app.facts import facts_from_json
 from app.schemas import HistoryEntry, HistoryStar, HistoryView
 from app.stats import NOTABLE_PLANETS, notable_star
 from app.values import estimate_body_value
-from app.views import cmdr_state, star_subtype
+from app.views import cmdr_state, last_event_at, star_subtype
 
 # Most remarkable first. Common finds (rings, landable with atmosphere) are left out.
 NOTABLE_ORDER = (
@@ -126,6 +126,7 @@ def history_view(conn: sqlite3.Connection, fid: str | None) -> HistoryView:
     for row in conn.execute(
         "SELECT v.system_address AS address, s.name, COUNT(*) AS visits, "
         "MIN(v.ts) AS first_at, MAX(v.ts) AS last_at, MAX(v.id) AS last_id, "
+        "SUM(v.seconds) AS seconds, "
         "s.body_count, s.all_found, e.body_count AS ext_count "
         "FROM visits v JOIN systems s ON s.address = v.system_address "
         "LEFT JOIN ext_systems e ON e.address = v.system_address "
@@ -158,10 +159,13 @@ def history_view(conn: sqlite3.Connection, fid: str | None) -> HistoryView:
                 if row["address"] in marked
                 else None,
                 inner_bookmarks=inner.get(row["address"], 0),
+                time_s=row["seconds"] or 0,
             )
         )
 
     current = state["system_address"] if state else None
     return HistoryView(
-        current_address=str(current) if current is not None else None, systems=systems
+        current_address=str(current) if current is not None else None,
+        systems=systems,
+        time_as_of=last_event_at(conn),
     )

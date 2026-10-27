@@ -37,11 +37,11 @@ function star(i: number): HistoryStar {
 /** Stops worth a look along the route: [index in the list, what was found there]. */
 const STOPS: Record<number, Partial<HistoryEntry>> = {
   3: { bodiesScanned: 14, bodyCount: 14, allBodiesFound: true, bodiesMapped: 2, bioSignals: 3, speciesAnalysed: 3, firstDiscoveries: 9, firstMapped: 2, firstFootfalls: 1, value: 41_820_400, unsoldValue: 41_820_400, notable: ['ww', 'terraformable'] },
-  7: { bodiesScanned: 6, bodyCount: 9, bodiesMapped: 1, firstDiscoveries: 6, firstMapped: 1, value: 3_912_000, unsoldValue: 3_912_000, notable: ['elw'] },
-  12: { bodiesScanned: 21, bodyCount: 21, allBodiesFound: true, bodiesMapped: 3, bioSignals: 5, speciesAnalysed: 4, firstDiscoveries: 21, firstMapped: 3, value: 28_440_100, unsoldValue: 28_440_100, notable: ['neutron', 'aw', 'terraformable'] },
-  19: { bodiesScanned: 4, bodyCount: 11, bioSignals: 2, value: 52_300, notable: [] },
-  26: { bodiesScanned: 9, bodyCount: 9, allBodiesFound: true, bodiesMapped: 2, bioSignals: 2, speciesAnalysed: 2, value: 12_208_900, unsoldValue: 0, notable: ['terraformable'] },
-  31: { bodiesScanned: 1, bodyCount: 1, allBodiesFound: true, value: 0, unsoldValue: 0, lostValue: 1_220_400, notable: ['black_hole'] },
+  7: { timeS: 1_260, bodiesScanned: 6, bodyCount: 9, bodiesMapped: 1, firstDiscoveries: 6, firstMapped: 1, value: 3_912_000, unsoldValue: 3_912_000, notable: ['elw'] },
+  12: { timeS: 5_340, bodiesScanned: 21, bodyCount: 21, allBodiesFound: true, bodiesMapped: 3, bioSignals: 5, speciesAnalysed: 4, firstDiscoveries: 21, firstMapped: 3, value: 28_440_100, unsoldValue: 28_440_100, notable: ['neutron', 'aw', 'terraformable'] },
+  19: { timeS: 540, bodiesScanned: 4, bodyCount: 11, bioSignals: 2, value: 52_300, notable: [] },
+  26: { timeS: 2_940, bodiesScanned: 9, bodyCount: 9, allBodiesFound: true, bodiesMapped: 2, bioSignals: 2, speciesAnalysed: 2, value: 12_208_900, unsoldValue: 0, notable: ['terraformable'] },
+  31: { timeS: 420, bodiesScanned: 1, bodyCount: 1, allBodiesFound: true, value: 0, unsoldValue: 0, lostValue: 1_220_400, notable: ['black_hole'] },
 }
 
 const COUNT = 38
@@ -51,10 +51,14 @@ export function buildHistory(current: SystemView): HistoryView {
   const random = rng(61)
   const systems: HistoryEntry[] = []
   let at = Date.parse(current.lastVisitAt ?? '2026-10-16T19:40:00Z')
+  let stayed = current.timeS
   for (let i = 0; i < COUNT; i++) {
     if (i > 0) {
       // Breaks between sessions: a night and a day off.
-      at -= i === 15 ? 14 * 3_600_000 : i === 29 ? 30 * 3_600_000 : (60 + random() * 240) * 1_000
+      const step = i === 15 ? 14 * 3_600_000 : i === 29 ? 30 * 3_600_000 : (60 + random() * 240) * 1_000
+      at -= step
+      // Until the next jump; before a break, a few minutes until logging off.
+      stayed = step > 3_600_000 ? 180 : Math.round(step / 1_000)
     }
     const iso = new Date(at).toISOString().replace(/\.\d{3}Z$/, 'Z')
     if (i === 0) {
@@ -80,6 +84,7 @@ export function buildHistory(current: SystemView): HistoryView {
         notable: ['ww', 'terraformable'],
         bookmark: null,
         innerBookmarks: 0,
+        timeS: stayed,
       })
       continue
     }
@@ -109,10 +114,11 @@ export function buildHistory(current: SystemView): HistoryView {
       notable: STARS[starIndex][0] === 'N' ? ['neutron'] : STARS[starIndex][0] === 'DA' ? ['white_dwarf'] : [],
       bookmark: null,
       innerBookmarks: 0,
+      timeS: stayed,
       ...STOPS[i],
     })
   }
-  return { currentAddress: current.address, systems }
+  return { currentAddress: current.address, systems, timeAsOf: current.timeAsOf }
 }
 
 function ref(entry: HistoryEntry | undefined): SystemRef | null {

@@ -1,5 +1,6 @@
 // Past sessions: figures and sorting (pure, unit-tested).
 import type { SessionEntry } from '../../api/types'
+import { perHour } from '../../lib/timeSpent'
 
 export type SessionSort = 'start' | 'played' | 'jumps' | 'bodies' | 'species' | 'codex' | 'earned' | 'perHour'
 
@@ -9,9 +10,6 @@ export interface SortState {
 }
 
 export const DEFAULT_SORT: SortState = { key: 'start', desc: true }
-
-/** Sessions shorter than this get no "per hour": a few minutes say nothing about a pace. */
-export const MIN_PER_HOUR_S = 600
 
 export interface SessionRow {
   s: SessionEntry
@@ -28,7 +26,7 @@ export function toRows(sessions: readonly SessionEntry[], gameRunning: boolean, 
     const live = s.open && gameRunning
     const since = Math.round((now - Date.parse(s.startedAt)) / 1_000)
     const playedS = live && Number.isFinite(since) ? Math.max(s.durationS, since) : s.durationS
-    return { s, live, playedS, perHour: playedS >= MIN_PER_HOUR_S ? (s.value * 3_600) / playedS : null }
+    return { s, live, playedS, perHour: perHour(s.value, playedS) }
   })
 }
 
@@ -72,10 +70,4 @@ export function totals(rows: readonly SessionRow[]): { playedS: number; earned: 
     earned += r.s.value
   }
   return { playedS, earned }
-}
-
-/** Whole hours and the minutes left over (a minute at least). */
-export function splitDuration(seconds: number): { h: number; m: number } {
-  const minutes = Math.max(1, Math.round(seconds / 60))
-  return { h: Math.floor(minutes / 60), m: minutes % 60 }
 }

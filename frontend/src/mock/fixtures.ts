@@ -265,6 +265,8 @@ function body(input: BodyInput): BodyView {
     materials: input.materials ?? [],
     bookmark: input.bookmark ?? null,
     places: input.places ?? [],
+    timeS: input.timeS ?? 0,
+    earnedValue: input.earnedValue ?? 0,
   }
   return { ...base, ...deriveInterest(base) }
 }
@@ -342,6 +344,9 @@ function buildBodies(): BodyView[] {
     body({
       bodyId: SURFACE_BODY_ID,
       shortName: 'A 3',
+      // On its surface for a while: the sampling run of the Surface tab.
+      timeS: 2_460,
+      earnedValue: 19_870_400,
       kind: 'planet',
       subtype: 'High metal content body',
       parents: OF_A(),
@@ -686,6 +691,10 @@ export function buildSystem(): SystemView {
     visits: 1,
     firstVisitAt: '2026-10-16T19:40:12Z',
     lastVisitAt: '2026-10-16T19:40:12Z',
+    timeS: 6_420,
+    earnedValue: 64_812_300,
+    // The demo journal is live: the time here counts on.
+    timeAsOf: new Date().toISOString(),
     prevSystem: null,
     nextSystem: null,
     bodies,

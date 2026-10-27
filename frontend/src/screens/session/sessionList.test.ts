@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SessionEntry } from '../../api/types'
-import { DEFAULT_SORT, nextSort, sortRows, splitDuration, toRows, totals } from './sessionList'
+import { DEFAULT_SORT, nextSort, sortRows, toRows, totals } from './sessionList'
 
 function session(startedAt: string, durationS: number, value: number, extra: Partial<SessionEntry> = {}): SessionEntry {
   return {
@@ -89,11 +89,5 @@ describe('nextSort', () => {
 describe('figures', () => {
   it('adds up time and earnings', () => {
     expect(totals(toRows(SESSIONS, false, NOW))).toEqual({ playedS: 14_700, earned: 75_000_000 })
-  })
-
-  it('splits a duration into hours and minutes', () => {
-    expect(splitDuration(5_820)).toEqual({ h: 1, m: 37 })
-    expect(splitDuration(20)).toEqual({ h: 0, m: 1 })
-    expect(splitDuration(3_599)).toEqual({ h: 1, m: 0 })
   })
 })

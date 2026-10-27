@@ -10,6 +10,7 @@ import json
 import logging
 import sqlite3
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from app import engineering, exobio
@@ -20,9 +21,15 @@ from app.values import estimate_body_value
 log = logging.getLogger(__name__)
 
 # Bump whenever projection logic changes: projections are then rebuilt from `events`.
-VERSION = 20
+VERSION = 21
 
 ALL_TOPICS = frozenset({"system", "surface", "session"})
+
+# Time spent (visits.seconds, body_time): each gap between two journal events goes to where you
+# were when it began. A silence longer than this is taken for being away from the keyboard and
+# not counted at all; nor is the time before these events: the launcher, the main menu, quitting.
+AFK_GAP_S = 30 * 60
+OUT_OF_GAME_EVENTS = frozenset({"Fileheader", "Commander", "NewCommander", "LoadGame", "Shutdown"})
 
 # BodyType values that name a body of the system map. A drop at a station or a ring follows an
 # ApproachBody of its planet; "Null" is a barycentre (seen: "Sharur AB", BodyID 0).
@@ -43,6 +50,13 @@ SIGNAL_KINDS = {
 
 # (event timestamp) -> (lat, lon) of the commander when the event happened, if known live.
 PositionProvider = Callable[[str], tuple[float, float] | None]
+
+
+def _epoch(ts: Any) -> float | None:
+    try:
+        return datetime.fromisoformat(str(ts)).timestamp()
+    except ValueError:
+        return None
 
 
 def _number(value: Any) -> float | None:
@@ -72,6 +86,7 @@ class Projector:
         self.conn = conn
         self.position = position
         self.fid: str | None = get_meta(conn, "active_fid")
+        self._last_at: float | None = None  # time of the previous event (_spend_time)
         self.handlers: dict[str, Callable[[dict[str, Any], int], frozenset[str]]] = {
             "Commander": self._commander,
             "NewCommander": self._commander,
@@ -115,6 +130,7 @@ class Projector:
         }
 
     def apply(self, ev: dict[str, Any], event_id: int) -> frozenset[str]:
+        self._spend_time(ev, event_id)
         handler = self.handlers.get(str(ev.get("event")))
         if handler is None:
             return frozenset()
@@ -179,6 +195,42 @@ class Projector:
         if row is None:
             return False
         return exobio.bonus_likely(facts_from_json(row["facts"]), bool(row["population"]))
+
+    # ------------------------------------------------------------------ time spent
+
+    def _spend_time(self, ev: dict[str, Any], event_id: int) -> None:
+        """Credit the time since the previous event to where the commander was: the visit of the
+        system, and the planet when near one. No view is refreshed for it (the screens count on
+        from `time_as_of` while the game runs)."""
+        now = _epoch(ev.get("timestamp"))
+        if now is None:
+            return
+        if self._last_at is None:
+            # The first event since the app started: the one before it is in the database.
+            row = self.conn.execute(
+                "SELECT ts FROM events WHERE id < ? ORDER BY id DESC LIMIT 1", (event_id,)
+            ).fetchone()
+            self._last_at = _epoch(row["ts"]) if row else None
+        before, self._last_at = self._last_at, now
+        if before is None or ev.get("event") in OUT_OF_GAME_EVENTS:
+            return
+        gap = round(now - before)
+        if not 0 < gap <= AFK_GAP_S:
+            return
+        state = self._state()
+        if state is None or state["system_address"] is None:
+            return
+        self.conn.execute(
+            "UPDATE visits SET seconds = seconds + ? WHERE id = "
+            "(SELECT MAX(id) FROM visits WHERE fid = ? AND system_address = ?)",
+            (gap, self.fid, state["system_address"]),
+        )
+        if state["body_id"] is not None:
+            self.conn.execute(
+                "INSERT INTO body_time(fid, system_address, body_id, seconds) VALUES(?, ?, ?, ?) "
+                "ON CONFLICT DO UPDATE SET seconds = seconds + excluded.seconds",
+                (self.fid, state["system_address"], state["body_id"], gap),
+            )
 
     # ------------------------------------------------------------------ commander
 

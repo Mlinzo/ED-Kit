@@ -11,6 +11,7 @@ import { communityText, isCommunity } from '../../components/source'
 import { CommunityGlyph, CommunityNotice, SourceList, SourceTag } from '../../components/SourceBadge'
 import { SpeciesList } from '../../components/SpeciesList'
 import { Label } from '../../components/States'
+import { TimeSpent } from '../../components/TimeSpent'
 import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import type { TopicId } from '../../guide/topics'
@@ -239,12 +240,15 @@ export function BodyDetail({
   body,
   headingId,
   isCurrent,
+  timeAsOf,
   routeTarget = null,
   bookmarkTarget = null,
 }: {
   body: BodyView
   headingId: string
   isCurrent: boolean
+  /** The last journal event: the body's time spent is counted up to it. */
+  timeAsOf: string | null
   /** The stored route counts on this body. */
   routeTarget?: RouteTarget | null
   /** What your bookmark on this body marks (null: none, e.g. no system address). */
@@ -276,7 +280,7 @@ export function BodyDetail({
         <p className="text-sm text-zinc-500 proportional-nums">
           {body.name} · {formatLs(body.distanceLs)}
         </p>
-        {(isCurrent || routeTarget) && (
+        {(isCurrent || routeTarget || body.timeS >= 60) && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {isCurrent && (
               <p className="inline-flex items-center gap-1.5 text-sm font-medium text-accent">
@@ -284,6 +288,14 @@ export function BodyDetail({
                 {t.system.youAreHere}
               </p>
             )}
+            <TimeSpent
+              seconds={body.timeS}
+              earned={body.earnedValue}
+              asOf={timeAsOf}
+              here={isCurrent}
+              label={t.timeSpent.atPlanet}
+              hint={t.timeSpent.planetHint}
+            />
             {routeTarget && (
               <p
                 className={`inline-flex items-center gap-1.5 text-sm font-medium ${routeTarget === 'done' ? 'text-zinc-500' : 'text-accent'}`}

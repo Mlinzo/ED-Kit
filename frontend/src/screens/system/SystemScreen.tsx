@@ -21,6 +21,7 @@ import type { BookmarkTarget } from '../../components/bookmarks'
 import { Segmented } from '../../components/Segmented'
 import { Sheet } from '../../components/Sheet'
 import { EmptyState, Label, ViewFallback } from '../../components/States'
+import { TimeSpent } from '../../components/TimeSpent'
 import { useIsDesktop } from '../../hooks/useMediaQuery'
 import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
@@ -209,7 +210,7 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
   return (
     <section aria-labelledby="system-title" className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div className="min-w-0">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <Label>{system.isCurrent ? t.tabs.system : unvisited(system) ? t.system.notVisited : t.system.past}</Label>
           {!unvisited(system) && (
             <div className="flex items-center gap-1.5">
@@ -217,6 +218,14 @@ function SystemHeader({ system, onOpenSystem }: { system: SystemView; onOpenSyst
               <StepButton target={system.nextSystem} direction="next" system={system} onOpenSystem={onOpenSystem} />
             </div>
           )}
+          <TimeSpent
+            seconds={system.timeS}
+            earned={system.earnedValue}
+            asOf={system.timeAsOf}
+            here={system.isCurrent}
+            label={t.timeSpent.inSystem}
+            hint={t.timeSpent.systemHint}
+          />
         </div>
         <h1
           id="system-title"
@@ -555,6 +564,7 @@ export function SystemScreen({
                 body={detail}
                 headingId="detail-title"
                 isCurrent={detail.bodyId === currentBodyId}
+                timeAsOf={data.timeAsOf}
                 routeTarget={targetOf(routeTargets, detail.bodyId)}
                 bookmarkTarget={data.address ? bookmarkTarget(data, detail) : null}
               />
@@ -571,6 +581,7 @@ export function SystemScreen({
             body={selected}
             headingId="sheet-title"
             isCurrent={selected.bodyId === currentBodyId}
+            timeAsOf={data.timeAsOf}
             routeTarget={targetOf(routeTargets, selected.bodyId)}
             bookmarkTarget={data.address ? bookmarkTarget(data, selected) : null}
           />

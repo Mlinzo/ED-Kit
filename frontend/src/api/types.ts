@@ -251,6 +251,10 @@ export interface BodyView {
   bookmark: BookmarkView | null
   /** Your bookmarked places on its surface. */
   places: BookmarkView[]
+  /** Seconds you spent at it (a planet), every visit together; AFK and the game menu left out. */
+  timeS: number
+  /** Your scans of it and species analysed on it (lost data excluded). */
+  earnedValue: number
 }
 
 export interface BarycentreView {
@@ -294,6 +298,12 @@ export interface SystemView {
   visits: number
   firstVisitAt: string | null
   lastVisitAt: string | null
+  /** Seconds you spent here, every visit together; AFK and the game menu left out. */
+  timeS: number
+  /** Your scans and species analysed here (lost data excluded). */
+  earnedValue: number
+  /** The last journal event: time spent is counted up to it (the current place counts on). */
+  timeAsOf: string | null
   /** Neighbours in the history (systems ordered by their last visit). */
   prevSystem: SystemRef | null
   nextSystem: SystemRef | null
@@ -1015,6 +1025,8 @@ export interface HistoryEntry {
   /** Yours, on the system; your others there (bodies, places, stations). */
   bookmark: BookmarkView | null
   innerBookmarks: number
+  /** Seconds you spent there, every visit together; AFK and the game menu left out. */
+  timeS: number
 }
 
 /** GET /api/view/history */
@@ -1022,6 +1034,8 @@ export interface HistoryView {
   currentAddress: string | null
   /** Most recently visited first. */
   systems: HistoryEntry[]
+  /** As SystemView.timeAsOf. */
+  timeAsOf: string | null
 }
 
 /** riches: around a start point; line: along a straight line between two systems. */

@@ -4,6 +4,8 @@ import { locale } from '../i18n'
 
 const dayFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
 const dayYearFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+const dateFmt = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' })
+const dateYearFmt = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: '2-digit' })
 const timeFmt = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
 const fullFmt = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'medium' })
 
@@ -32,6 +34,14 @@ export function eventDay(iso: string | null | undefined, now = Date.now()): stri
   if (t === null) return null
   const sameYear = new Date(t).getFullYear() === new Date(now).getFullYear()
   return tidy((sameYear ? dayFmt : dayYearFmt).format(t))
+}
+
+/** "16.10" (with the year when it is not the current one: "16.10.25"), for narrow columns. */
+export function eventDate(iso: string | null | undefined, now = Date.now()): string | null {
+  const t = parse(iso)
+  if (t === null) return null
+  const sameYear = new Date(t).getFullYear() === new Date(now).getFullYear()
+  return (sameYear ? dateFmt : dateYearFmt).format(t)
 }
 
 /** "19:48" */

@@ -1,15 +1,31 @@
-// Visited systems, newest first: where you have been and what you did there.
-// A row opens the system on the System tab (history mode).
-import { BookmarkCheck, CircleCheck, Flag, Footprints, History, Leaf, Map as MapIcon, Search, X } from 'lucide-react'
+// Visited systems, newest first (or by the time spent, or by what it brought per hour): where you
+// have been and what you did there. A row opens the system on the System tab (history mode).
+import {
+  BookmarkCheck,
+  CalendarClock,
+  CircleCheck,
+  Flag,
+  Footprints,
+  History,
+  Leaf,
+  Map as MapIcon,
+  Search,
+  Timer,
+  TrendingUp,
+  X,
+} from 'lucide-react'
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useView } from '../../api/hooks'
+import { useIngest, useView } from '../../api/hooks'
 import type { BodyVisual, HistoryEntry, HistoryStar } from '../../api/types'
 import { Credits } from '../../components/Credits'
 import { BookmarkLine } from '../../components/Bookmark'
+import { Segmented } from '../../components/Segmented'
 import { EmptyState, ViewFallback } from '../../components/States'
+import { useNow } from '../../hooks/useNow'
 import { t } from '../../i18n'
 import { exactCredits } from '../../lib/format'
-import { eventDay, eventDayTime, eventTime } from '../../lib/when'
+import { formatDuration, liveSeconds, perHour } from '../../lib/timeSpent'
+import { eventDate, eventDay, eventDayTime, eventFull, eventTime } from '../../lib/when'
 import { bodyColor } from '../../map/visuals/colors'
 import { NotableGlyph } from '../stats/NotableGlyph'
 import {
@@ -21,8 +37,11 @@ import {
   matchesFilter,
   matchesQuery,
   relativeDay,
+  sortSystems,
   type DayGroup,
   type HistoryFilter,
+  type HistorySort,
+  type Stay,
 } from './historyList'
 
 /** Rows rendered at first and added per "show more" (long trips have thousands of systems). */
@@ -31,14 +50,25 @@ const PAGE = 150
 const MAX_GLYPHS = 3
 
 /**
- * Search, filter, list length and scroll position survive leaving the tab: you open a system,
- * look at it and come back to the same place in the list.
+ * Search, filter, order, list length and scroll position survive leaving the tab: you open a
+ * system, look at it and come back to the same place in the list.
  */
-const memory = { query: '', filter: 'all' as HistoryFilter, limit: PAGE, scrollY: 0 }
+const memory = { query: '', filter: 'all' as HistoryFilter, sort: 'recent' as HistorySort, limit: PAGE, scrollY: 0 }
 
-// Columns: time · system · bodies · DSS · bio · firsts · value (DSS and firsts from lg up).
+// Columns: time · system · bodies · DSS · bio · firsts · stayed · per hour · value (DSS, firsts,
+// stayed and per hour from lg up; below it the last column shows what the list is ordered by).
 const GRID =
-  'grid-cols-[3.25rem_minmax(0,1fr)_6.5rem] md:grid-cols-[3.25rem_minmax(0,1fr)_5.5rem_4.5rem_6.5rem] lg:grid-cols-[3.25rem_minmax(0,1fr)_5.5rem_3.5rem_4.5rem_7.5rem_6.5rem]'
+  'grid-cols-[3.25rem_minmax(0,1fr)_6.5rem] md:grid-cols-[3.25rem_minmax(0,1fr)_5.5rem_4.5rem_6.5rem] lg:grid-cols-[3.25rem_minmax(0,1fr)_5.5rem_3.5rem_4.5rem_7.5rem_5rem_4.5rem_6.5rem]'
+// Ordered by time or pace there are no day groups: the first column holds a date ("16.10.25").
+const GRID_DATED =
+  'grid-cols-[3.75rem_minmax(0,1fr)_6.5rem] md:grid-cols-[3.75rem_minmax(0,1fr)_5.5rem_4.5rem_6.5rem] lg:grid-cols-[3.75rem_minmax(0,1fr)_5.5rem_3.5rem_4.5rem_7.5rem_5rem_4.5rem_6.5rem]'
+const gridOf = (sort: HistorySort) => (sort === 'recent' ? GRID : GRID_DATED)
+
+const SORT_OPTIONS = [
+  { id: 'recent' as const, label: t.history.sort.recent, icon: CalendarClock },
+  { id: 'time' as const, label: t.history.sort.time, icon: Timer },
+  { id: 'perHour' as const, label: t.history.sort.perHour, icon: TrendingUp },
+]
 
 const EMPTY_VISUAL: BodyVisual = {
   planetClass: null,
@@ -136,6 +166,22 @@ function Firsts({ e }: { e: HistoryEntry }) {
   )
 }
 
+function Spent({ stay }: { stay: Stay }) {
+  return (
+    <span className="tabular-nums" title={t.timeSpent.systemHint}>
+      {stay.timeS >= 60 ? formatDuration(stay.timeS) : <Dash />}
+    </span>
+  )
+}
+
+function PerHour({ stay }: { stay: Stay }) {
+  return (
+    <span className="tabular-nums" title={t.timeSpent.perHourHint}>
+      {stay.perHour !== null && stay.perHour > 0 ? <Credits value={stay.perHour} /> : <Dash />}
+    </span>
+  )
+}
+
 function Mark({ className, label }: { className: string; label: string }) {
   return <span className={`size-1.5 shrink-0 rounded-full ${className}`} title={label} aria-label={label} role="img" />
 }
@@ -160,7 +206,19 @@ function Value({ e, dim }: { e: HistoryEntry; dim: boolean }) {
   )
 }
 
-function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen: (e: HistoryEntry) => void }) {
+function Row({
+  e,
+  stay,
+  sort,
+  current,
+  onOpen,
+}: {
+  e: HistoryEntry
+  stay: Stay
+  sort: HistorySort
+  current: boolean
+  onOpen: (e: HistoryEntry) => void
+}) {
   const transit = isTransit(e)
   const first = eventDayTime(e.firstVisitAt)
   return (
@@ -169,11 +227,18 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
         type="button"
         onClick={() => onOpen(e)}
         title={e.visits > 1 && first ? t.history.visitsHint(e.visits, first) : undefined}
-        className={`focus-ring grid w-full ${GRID} items-center gap-x-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800/40 ${
+        className={`focus-ring grid w-full ${gridOf(sort)} items-center gap-x-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-800/40 ${
           current ? 'bg-emerald-500/[0.06]' : ''
         } ${transit ? 'text-zinc-500' : 'text-zinc-300'}`}
       >
-        <span className="text-zinc-500 tabular-nums">{eventTime(e.lastVisitAt)}</span>
+        {/* Day groups name the day; ordered otherwise, the row does. */}
+        {sort === 'recent' ? (
+          <span className="text-zinc-500 tabular-nums">{eventTime(e.lastVisitAt)}</span>
+        ) : (
+          <span className="text-zinc-500 tabular-nums" title={eventFull(e.lastVisitAt) ?? undefined}>
+            {eventDate(e.lastVisitAt)}
+          </span>
+        )}
         <span className="flex min-w-0 items-center gap-2.5">
           <StarDot star={e.mainStar} />
           <span className={`truncate font-medium proportional-nums ${transit ? 'text-zinc-400' : 'text-zinc-100'}`}>{e.name}</span>
@@ -207,7 +272,28 @@ function Row({ e, current, onOpen }: { e: HistoryEntry; current: boolean; onOpen
         <span className="hidden lg:block">
           <Firsts e={e} />
         </span>
-        <Value e={e} dim={transit} />
+        <span className="hidden text-right lg:block">
+          <Spent stay={stay} />
+        </span>
+        <span className="hidden text-right lg:block">
+          <PerHour stay={stay} />
+        </span>
+        <span className="lg:hidden">
+          {sort === 'time' ? (
+            <span className="block text-right">
+              <Spent stay={stay} />
+            </span>
+          ) : sort === 'perHour' ? (
+            <span className="block text-right">
+              <PerHour stay={stay} />
+            </span>
+          ) : (
+            <Value e={e} dim={transit} />
+          )}
+        </span>
+        <span className="hidden lg:block">
+          <Value e={e} dim={transit} />
+        </span>
         {(e.bookmark || e.innerBookmarks > 0) && (
           <span className="col-span-full col-start-2 mt-1 flex min-w-0 flex-col gap-0.5">
             {e.bookmark && <BookmarkLine bookmark={e.bookmark} clamp className="text-xs" />}
@@ -231,22 +317,25 @@ function dayLabel(group: DayGroup): string {
   return eventDay(group.at) ?? t.common.unknown
 }
 
-function ColumnHeader() {
+function ColumnHeader({ sort }: { sort: HistorySort }) {
   const th = 'text-[11px] font-medium tracking-wide text-zinc-500 uppercase'
   return (
     <div
       aria-hidden
-      className={`sticky top-14 z-10 grid ${GRID} gap-x-3 rounded-t-2xl border-b border-zinc-800 bg-zinc-950/90 px-4 py-2.5 backdrop-blur`}
+      className={`sticky top-14 z-10 grid ${gridOf(sort)} gap-x-3 rounded-t-2xl border-b border-zinc-800 bg-zinc-950/90 px-4 py-2.5 backdrop-blur`}
     >
-      <span className={th}>{t.history.colTime}</span>
+      <span className={`${th} truncate`}>{sort === 'recent' ? t.history.colTime : t.history.colDay}</span>
       <span className={th}>{t.history.colSystem}</span>
       <span className={`${th} hidden md:block`}>{t.history.colBodies}</span>
       <span className={`${th} hidden lg:block`}>{t.history.colMapped}</span>
       <span className={`${th} hidden md:block`}>{t.history.colBio}</span>
       <span className={`${th} hidden lg:block`}>{t.history.colFirsts}</span>
-      <span className={`${th} text-right`} title={t.history.valueHint}>
-        {t.history.colValue}
+      <span className={`${th} hidden text-right lg:block`}>{t.history.colSpent}</span>
+      <span className={`${th} hidden text-right lg:block`}>{t.history.colPerHour}</span>
+      <span className={`${th} text-right lg:hidden`}>
+        {sort === 'time' ? t.history.colSpent : sort === 'perHour' ? t.history.colPerHour : t.history.colValue}
       </span>
+      <span className={`${th} hidden text-right lg:block`}>{t.history.colValue}</span>
     </div>
   )
 }
@@ -322,7 +411,10 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
   const { data, error, refetch } = useView('history')
   const [query, setQueryState] = useState(memory.query)
   const [filter, setFilterState] = useState(memory.filter)
+  const [sort, setSortState] = useState(memory.sort)
   const [limit, setLimitState] = useState(memory.limit)
+  const now = useNow()
+  const running = useIngest()?.gameRunning === true
 
   const setQuery = (q: string) => {
     memory.query = q
@@ -336,16 +428,39 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
     setFilterState(f)
     setLimitState(PAGE)
   }
+  const setSort = (s: HistorySort) => {
+    memory.sort = s
+    memory.limit = PAGE
+    setSortState(s)
+    setLimitState(PAGE)
+  }
   const showMore = () => {
     memory.limit = limit + PAGE
     setLimitState(limit + PAGE)
   }
 
   const systems = data?.systems
+  const currentAddress = data?.currentAddress
+  const timeAsOf = data?.timeAsOf ?? null
   const counts = useMemo(() => filterCounts(systems ?? [], query), [systems, query])
+  // Time spent per system: where you are now it counts on while the game runs.
+  const stays = useMemo(() => {
+    const out = new Map<string, Stay>()
+    for (const e of systems ?? []) {
+      const timeS = liveSeconds(e.timeS, timeAsOf, now, running && e.address === currentAddress)
+      out.set(e.address, { timeS, perHour: perHour(e.value, timeS) })
+    }
+    return out
+  }, [systems, currentAddress, timeAsOf, now, running])
+  const stayOf = (e: HistoryEntry): Stay => stays.get(e.address) ?? { timeS: e.timeS, perHour: perHour(e.value, e.timeS) }
   const shown = useMemo(
-    () => (systems ?? []).filter((e) => matchesQuery(e, query) && matchesFilter(e, filter)),
-    [systems, query, filter],
+    () =>
+      sortSystems(
+        (systems ?? []).filter((e) => matchesQuery(e, query) && matchesFilter(e, filter)),
+        sort,
+        (e) => stays.get(e.address) ?? { timeS: e.timeS, perHour: null },
+      ),
+    [systems, query, filter, sort, stays],
   )
   const groups = useMemo(() => limitRows(groupByDay(shown), limit), [shown, limit])
 
@@ -377,8 +492,9 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
         <SearchBox value={query} onChange={setQuery} />
       </section>
 
-      <div className="mt-5">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <FilterChips value={filter} counts={counts} onChange={setFilter} />
+        <Segmented label={t.history.sortLabel} value={sort} options={SORT_OPTIONS} onChange={setSort} />
       </div>
 
       {shown.length === 0 ? (
@@ -399,20 +515,42 @@ export function HistoryScreen({ onOpenSystem }: { onOpenSystem: (address: string
         </Frame>
       ) : (
         <Frame>
-          <ColumnHeader />
-          {groups.map((g) => (
-            <section key={g.day} aria-label={dayLabel(g)}>
-              <h2 className="flex items-baseline justify-between gap-4 border-b border-zinc-800/70 bg-zinc-900/60 px-4 py-2 text-xs">
-                <span className="font-semibold tracking-wide text-zinc-300 uppercase">{dayLabel(g)}</span>
-                <span className="text-zinc-500">{t.history.daySystems(g.entries.length)}</span>
-              </h2>
-              <ol className="divide-y divide-zinc-800/50">
-                {g.rows.map((e) => (
-                  <Row key={e.address} e={e} current={e.address === data.currentAddress} onOpen={open} />
-                ))}
-              </ol>
-            </section>
-          ))}
+          <ColumnHeader sort={sort} />
+          {sort === 'recent' ? (
+            groups.map((g) => (
+              <section key={g.day} aria-label={dayLabel(g)}>
+                <h2 className="flex items-baseline justify-between gap-4 border-b border-zinc-800/70 bg-zinc-900/60 px-4 py-2 text-xs">
+                  <span className="font-semibold tracking-wide text-zinc-300 uppercase">{dayLabel(g)}</span>
+                  <span className="text-zinc-500">{t.history.daySystems(g.entries.length)}</span>
+                </h2>
+                <ol className="divide-y divide-zinc-800/50">
+                  {g.rows.map((e) => (
+                    <Row
+                      key={e.address}
+                      e={e}
+                      stay={stayOf(e)}
+                      sort={sort}
+                      current={e.address === data.currentAddress}
+                      onOpen={open}
+                    />
+                  ))}
+                </ol>
+              </section>
+            ))
+          ) : (
+            <ol className="divide-y divide-zinc-800/50">
+              {shown.slice(0, limit).map((e) => (
+                <Row
+                  key={e.address}
+                  e={e}
+                  stay={stayOf(e)}
+                  sort={sort}
+                  current={e.address === data.currentAddress}
+                  onOpen={open}
+                />
+              ))}
+            </ol>
+          )}
           {shown.length > limit && (
             <div className="flex justify-center border-t border-zinc-800 p-3">
               <button
