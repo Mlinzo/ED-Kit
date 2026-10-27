@@ -5,7 +5,7 @@
 // distance from the star) and are remembered per browser.
 
 import { ArrowDown, ArrowRight, CircleDot, LoaderCircle, MapPin, Navigation, Pickaxe, Route, Store } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import type { MiningBuyerView, MiningRingView, MiningTripView, MiningView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
@@ -41,7 +41,7 @@ const FILTERS_KEY = 'edk.miningFilters'
 /** A filter changed waits this long before asking Spansh, so a few quick clicks ask once. */
 const SETTLE_MS = 450
 /** Rows shown before "Show all". */
-const FIRST_ROWS = 8
+const FIRST_ROWS = 12
 /** Reported earlier than this, a market is marked as old. */
 const OLD_AFTER_MS = 30 * 86_400_000
 /** Reported earlier than this, the month is told instead of "1946 days ago". */
@@ -57,8 +57,6 @@ function ringName(ring: MiningRingView): string {
   const parts = ringParts(ring)
   return parts.ring ? t.mining.ringOf(parts.body, parts.ring) : ring.name
 }
-/** From a ring to its buyer. */
-const fromRing = (ly: number) => (ly < 0.5 ? t.mining.sameSystem : t.mining.fromRing(formatLy(ly)))
 const distance = (ly: number, jumps: number | null) => (ly < 0.5 ? t.route.youAreHere : formatLy(ly) + (jumps ? ` · ${t.route.jumps(jumps)}` : ''))
 
 function Picker({ view, chosen, onChoose }: { view: MiningView | null; chosen: string | null; onChoose: (symbol: string) => void }) {
@@ -88,9 +86,9 @@ function Picker({ view, chosen, onChoose }: { view: MiningView | null; chosen: s
   )
 }
 
-function Stop({ icon, title, sub, copy }: { icon: ReactNode; title: string; sub?: ReactNode; copy?: string }) {
+function Stop({ icon, title, sub, copy, grow = true }: { icon: ReactNode; title: string; sub?: ReactNode; copy?: string; grow?: boolean }) {
   return (
-    <li className="flex min-w-0 items-start gap-2 rounded-xl bg-zinc-950/40 px-3 py-2 ring-1 ring-zinc-800 sm:flex-1">
+    <li className={`flex min-w-0 items-start gap-2 rounded-xl bg-zinc-950/40 px-3 py-2 ring-1 ring-zinc-800 ${grow ? 'sm:flex-1' : 'sm:items-center'}`}>
       <span className="mt-0.5 shrink-0 text-accent">{icon}</span>
       <span className="min-w-0">
         <span className="flex items-center gap-1">
@@ -127,7 +125,7 @@ function Trip({ trip, rings }: { trip: MiningTripView; rings: readonly MiningRin
       </div>
       <p className="mt-1 text-xs text-zinc-500">{m.tripHint}</p>
       <ol className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
-        <Stop icon={<MapPin className="size-4" />} title={m.you} />
+        <Stop icon={<MapPin className="size-4" />} title={m.you} grow={false} />
         <Leg ly={trip.distanceLy} />
         <Stop
           icon={<CircleDot className="size-4" />}
@@ -149,29 +147,84 @@ function Trip({ trip, rings }: { trip: MiningTripView; rings: readonly MiningRin
 
 const RESERVE_TONE: Record<string, string> = { Pristine: 'text-emerald-300', Major: 'text-zinc-300', Depleted: 'text-amber-200/70' }
 
-function RouteHere({ system, onRouteTo }: { system: string; onRouteTo: (system: string) => void }) {
+function RouteButton({ system, onRouteTo }: { system: string; onRouteTo: (system: string) => void }) {
+  const label = `${t.session.sell.routeHere}: ${system}`
   return (
-    <button type="button" onClick={() => onRouteTo(system)} title={t.route.goalHint.transit} className={`${quietButton} mt-2`}>
-      <Navigation className="size-3.5" aria-hidden />
-      {t.session.sell.routeHere}
+    <button
+      type="button"
+      onClick={() => onRouteTo(system)}
+      title={label}
+      aria-label={label}
+      className="focus-ring inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-400 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:size-8"
+    >
+      <Navigation className="size-4" aria-hidden />
     </button>
   )
 }
 
-/** The system (to copy) on the left, how far on the right; under it, what is there. */
-function Row({ system, ly, jumps, children, onRouteTo }: { system: string; ly: number; jumps: number | null; children: ReactNode; onRouteTo: (system: string) => void }) {
+/** One row of a list: the lead (how far, or the price), what it is, its facts, a button to route
+ *  there. Wider than a phone the lead is a column on the left; on a phone it sits top right with the
+ *  button under it, so the name and the facts keep the width. */
+function Line({
+  lead,
+  head,
+  facts,
+  system,
+  here,
+  onRouteTo,
+}: {
+  lead: ReactNode
+  head: ReactNode
+  facts: ReactNode
+  system: string
+  here: boolean
+  onRouteTo: (system: string) => void
+}) {
   return (
-    <li className="py-3">
-      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-        <div className="flex min-w-0 items-center gap-1">
-          <span className="min-w-0 font-medium break-words text-zinc-50">{system}</span>
-          <CopyButton text={system} />
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 py-2.5 sm:grid-cols-[6rem_minmax(0,1fr)_auto]">
+      <div className="col-start-2 row-start-1 text-right tabular-nums sm:col-start-1 sm:row-span-2">{lead}</div>
+      <div className="col-start-1 row-start-1 min-w-0 sm:col-start-2">{head}</div>
+      <div className="col-start-1 row-start-2 min-w-0 sm:col-start-2">{facts}</div>
+      {!here && (
+        <div className="col-start-2 row-start-2 mt-1 justify-self-end sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0">
+          <RouteButton system={system} onRouteTo={onRouteTo} />
         </div>
-        <div className="text-sm font-semibold whitespace-nowrap text-zinc-50 tabular-nums sm:shrink-0 sm:text-right">{distance(ly, jumps)}</div>
-      </div>
-      {children}
-      {ly >= 0.5 && <RouteHere system={system} onRouteTo={onRouteTo} />}
+      )}
     </li>
+  )
+}
+
+function Distance({ ly, jumps }: { ly: number; jumps: number | null }) {
+  if (ly < 0.5) return <div className="text-sm font-semibold text-zinc-50">{t.mining.here}</div>
+  return (
+    <>
+      <div className="text-sm font-semibold whitespace-nowrap text-zinc-50">{formatLy(ly)}</div>
+      {jumps ? <div className="text-xs whitespace-nowrap text-zinc-500">{t.route.jumps(jumps)}</div> : null}
+    </>
+  )
+}
+
+function Price({ price }: { price: number }) {
+  return (
+    <>
+      <div className="text-sm font-semibold whitespace-nowrap text-emerald-300">{formatNumber(price)}</div>
+      <div className="text-xs whitespace-nowrap text-zinc-500">{t.shop.perTonne(t.units.credits)}</div>
+    </>
+  )
+}
+
+/** Small facts in a row, by name, with "·" between them; empty ones are left out. */
+function Facts({ parts }: { parts: Record<string, ReactNode> }) {
+  const shown = Object.entries(parts).filter(([, x]) => x !== null && x !== false && x !== '')
+  return (
+    <p className="mt-0.5 text-xs text-zinc-500">
+      {shown.map(([name, x], i) => (
+        <Fragment key={name}>
+          {i > 0 && ' · '}
+          {x}
+        </Fragment>
+      ))}
+    </p>
   )
 }
 
@@ -179,42 +232,45 @@ function Ring({ ring, now, onRouteTo }: { ring: MiningRingView; now: number; onR
   const m = t.mining
   const type = ring.type ? ((m.ringTypes as Record<string, string>)[ring.type] ?? ring.type) : null
   const reserve = ring.reserve ? ((m.reserves as Record<string, string>)[ring.reserve] ?? ring.reserve) : null
+  const reported = ring.reportedAt ? ` · ${m.reported(formatRelative(ring.reportedAt, now))}` : ''
   return (
-    <Row system={ring.systemName} ly={ring.distanceLy} jumps={ring.jumps} onRouteTo={onRouteTo}>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="min-w-0 break-words text-zinc-200">{ringName(ring)}</span>
-        <span
-          title={m.hotspots(ring.count)}
-          className={`rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-inset ${
-            ring.count > 1 ? 'bg-accent/15 text-accent-strong ring-accent/40' : 'bg-zinc-800/70 text-zinc-300 ring-zinc-700'
-          }`}
-        >
-          ×{ring.count}
-        </span>
-        {type && <span className="text-zinc-400">{type}</span>}
-        {reserve && (
-          <span title={m.reserveHint} className={RESERVE_TONE[ring.reserve ?? ''] ?? 'text-zinc-400'}>
-            {reserve}
+    <Line
+      lead={<Distance ly={ring.distanceLy} jumps={ring.jumps} />}
+      system={ring.systemName}
+      here={ring.distanceLy < 0.5}
+      onRouteTo={onRouteTo}
+      head={
+        <div className="flex flex-wrap items-center gap-x-2">
+          <span className="flex min-w-0 items-center gap-1">
+            <span className="min-w-0 font-medium break-words text-zinc-50">{ring.systemName}</span>
+            <CopyButton text={ring.systemName} />
           </span>
-        )}
-        {ring.distLs !== null && <span className="text-zinc-500 tabular-nums">{formatLs(ring.distLs)}</span>}
-      </div>
-      {ring.others.length > 0 && (
-        <p className="mt-1 text-xs text-zinc-500">
-          {m.also}: {ring.others.map((o) => `${o.name} ×${o.count}`).join(' · ')}
-        </p>
-      )}
-      {ring.sell && (
-        <p className="mt-1 flex items-start gap-1.5 text-xs text-zinc-400">
-          <Store className="mt-px size-3.5 shrink-0" aria-hidden />
-          <span>
-            {m.sellAt} <span className="text-zinc-200">{ring.sell.station}</span> ({ring.sell.systemName}) · {fromRing(ring.sell.distanceLy)} ·{' '}
-            <span className="text-zinc-200 tabular-nums">{perTonne(ring.sell.price)}</span>
+          <span className="text-sm text-zinc-300">{ringName(ring)}</span>
+          <span
+            title={m.hotspots(ring.count) + reported}
+            className={`rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-inset ${
+              ring.count > 1 ? 'bg-accent/15 text-accent-strong ring-accent/40' : 'bg-zinc-800/70 text-zinc-300 ring-zinc-700'
+            }`}
+          >
+            ×{ring.count}
           </span>
-        </p>
-      )}
-      {ring.reportedAt && <p className="mt-1 text-xs text-zinc-500">{m.reported(formatRelative(ring.reportedAt, now))}</p>}
-    </Row>
+        </div>
+      }
+      facts={
+        <Facts
+          parts={{
+            type,
+            reserve: reserve && (
+              <span title={m.reserveHint} className={RESERVE_TONE[ring.reserve ?? ''] ?? 'text-zinc-400'}>
+                {reserve}
+              </span>
+            ),
+            ls: ring.distLs !== null && formatLs(ring.distLs),
+            also: ring.others.length > 0 && `${m.also}: ${ring.others.map((o) => `${o.name} ×${o.count}`).join(', ')}`,
+          }}
+        />
+      }
+    />
   )
 }
 
@@ -231,27 +287,43 @@ function MarketAge({ at, now }: { at: string; now: number }) {
 function Buyer({ buyer, now, onRouteTo }: { buyer: MiningBuyerView; now: number; onRouteTo: (system: string) => void }) {
   const sell = t.session.sell
   return (
-    <Row system={buyer.systemName} ly={buyer.distanceLy} jumps={buyer.jumps} onRouteTo={onRouteTo}>
-      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="min-w-0 text-sm break-words text-zinc-200">{buyer.station}</span>
-        <span className="text-base font-semibold whitespace-nowrap text-emerald-300 tabular-nums">{perTonne(buyer.price)}</span>
-      </div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
-        <span>
-          {sell.kind[buyer.kind]}
-          {buyer.distLs !== null && ` · ${formatLs(buyer.distLs)}`}
-          {buyer.pad && ` · ${sell.pad[buyer.pad]}`}
-        </span>
-        <span className="text-zinc-400 tabular-nums">{t.mining.demand(formatNumber(buyer.demand))}</span>
-        {buyer.marketAt && <MarketAge at={buyer.marketAt} now={now} />}
-        {buyer.permit && (
-          <span title={t.shop.permitHint} className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-200 ring-1 ring-amber-400/25 ring-inset">
-            {t.shop.permit}
+    <Line
+      lead={<Price price={buyer.price} />}
+      system={buyer.systemName}
+      here={buyer.distanceLy < 0.5}
+      onRouteTo={onRouteTo}
+      head={
+        <div className="flex flex-wrap items-center gap-x-1.5">
+          <span className="min-w-0 font-medium break-words text-zinc-50">{buyer.station}</span>
+          <span className="flex min-w-0 items-center gap-1 text-sm text-zinc-400">
+            <span className="min-w-0 break-words">{buyer.systemName}</span>
+            <CopyButton text={buyer.systemName} />
           </span>
-        )}
-        {buyer.access && <span className={buyer.access === 'all' ? 'text-zinc-400' : 'text-amber-200/70'}>{sell.access[buyer.access]}</span>}
-      </div>
-    </Row>
+        </div>
+      }
+      facts={
+        <Facts
+          parts={{
+            distance: <span className="text-zinc-300 tabular-nums">{distance(buyer.distanceLy, buyer.jumps)}</span>,
+            demand: <span className="text-zinc-400 tabular-nums">{t.mining.demand(formatNumber(buyer.demand))}</span>,
+            kind: sell.kind[buyer.kind],
+            pad: buyer.pad && (
+              <span title={sell.pad[buyer.pad]} className="font-mono">
+                {buyer.pad}
+              </span>
+            ),
+            ls: buyer.distLs !== null && formatLs(buyer.distLs),
+            age: buyer.marketAt && <MarketAge at={buyer.marketAt} now={now} />,
+            permit: buyer.permit && (
+              <span title={t.shop.permitHint} className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-medium text-amber-200 ring-1 ring-amber-400/25 ring-inset">
+                {t.shop.permit}
+              </span>
+            ),
+            access: buyer.access && <span className={buyer.access === 'all' ? 'text-zinc-400' : 'text-amber-200/70'}>{sell.access[buyer.access]}</span>,
+          }}
+        />
+      }
+    />
   )
 }
 
@@ -339,7 +411,7 @@ function RingFilters({ filters, onChange }: { filters: MiningFilters; onChange: 
   const toggle = (r: Reserve) =>
     onChange({ ...filters, reserves: filters.reserves.includes(r) ? filters.reserves.filter((x) => x !== r) : [...filters.reserves, r] })
   return (
-    <div className="mt-3 space-y-2">
+    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
       <div role="group" aria-label={f.reserves} title={f.anyReserves} className="flex flex-wrap items-center gap-1.5">
         <span className="mr-1 text-xs text-zinc-500">{f.reserves}</span>
         {RESERVES.map((r) => (

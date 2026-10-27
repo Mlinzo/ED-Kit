@@ -56,7 +56,9 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   the body's reserves (any of the five levels) and distance from the arrival star; markets by
   least demand (your hold from the latest Loadout, or 1,000-10,000 t), how fresh the prices are
   (a day to a month) and distance from the star. A ring reads "ABC 1 · ring A": "ABC 1 A Ring"
-  read as a body "ABC 1 A" to fly to.
+  read as a body "ABC 1 A" to fly to. The lists became compact two-line rows (the distance or the
+  price in a column on the left, a route icon on the right; twelve rows fit a second monitor where
+  five did), and the per-ring "sell at" line went: buyers far away made it the same on every ring.
 - Systems the game knew in advance (2026-10-27): in most populated systems the honk finds every
   body known at once (Progress 1.0) and the journal gets no Scan, not even the arrival star's, nor
   FSSAllBodiesFound, so "Bodies found" read 0/31 while the game's FSS showed 31/31. A system
