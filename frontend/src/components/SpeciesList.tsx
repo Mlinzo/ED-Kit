@@ -33,14 +33,14 @@ export function SpeciesValue({
   // Species missing from the catalog come with value 0: show "unknown", not "0".
   if (s.bonusValue <= 0) {
     return (
-      <span className={`inline-flex flex-col items-end ${className}`} title={t.species.valueUnknown}>
+      <span className={`inline-flex flex-col items-end tabular-nums ${className}`} title={t.species.valueUnknown}>
         {t.common.unknown}
       </span>
     )
   }
   const bonus = s.value > 0 && s.bonusValue > s.value
   return (
-    <span className={`inline-flex flex-col items-end ${className}`}>
+    <span className={`inline-flex flex-col items-end tabular-nums ${className}`}>
       <Credits value={s.bonusValue} />
       {bonus && (
         <span
@@ -169,7 +169,7 @@ function GenusRow({ candidates, help }: { candidates: readonly SpeciesView[]; he
           {candidates.map((s) => (
             <li key={s.species} className="flex items-start gap-3">
               {s.chance !== null && (
-                <span className="w-10 shrink-0 text-right text-sm text-zinc-300" title={t.species.chanceHint}>
+                <span className="w-10 shrink-0 text-right text-sm text-zinc-300 tabular-nums" title={t.species.chanceHint}>
                   {chanceText(s.chance)}
                 </span>
               )}

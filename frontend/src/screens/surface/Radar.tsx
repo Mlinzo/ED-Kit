@@ -61,7 +61,7 @@ export function Radar({ points, rangeM, heading, canSample, label }: RadarProps)
   const rimLabelAt = polar(R * 0.98, 135)
 
   return (
-    <svg viewBox="-118 -118 236 236" role="img" aria-label={label} className="h-full w-full select-none">
+    <svg viewBox="-118 -118 236 236" role="img" aria-label={label} className="h-full w-full tabular-nums select-none">
       <defs>
         <clipPath id={clipId}>
           <circle r={R} />

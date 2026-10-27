@@ -65,12 +65,97 @@ function LostLine({ icon: Icon, iconTone, text, value, estimate }: { icon: Lucid
   )
 }
 
-function DeathRow({ d }: { d: DeathView }) {
+// The parts of a death, laid out as a table row on wide screens and as a card on narrow ones.
+
+function Place({ d }: { d: DeathView }) {
+  const body = d.body && d.system && d.body.startsWith(`${d.system} `) ? d.body.slice(d.system.length + 1) : d.body
+  return (
+    <>
+      <div className="truncate text-zinc-100" title={d.system ?? undefined}>
+        {d.system ?? <span className="text-zinc-400">{t.stats.unknownSystem}</span>}
+      </div>
+      {body && (
+        <div className="truncate text-xs text-zinc-500" title={d.body ?? undefined}>
+          {body}
+        </div>
+      )}
+    </>
+  )
+}
+
+function Context({ d }: { d: DeathView }) {
   const ContextIcon = CONTEXT_ICON[d.context] ?? Skull
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800/70 px-2 py-0.5 text-xs whitespace-nowrap text-zinc-300">
+      <ContextIcon className="size-3.5 text-zinc-400" aria-hidden />
+      {t.stats.deathContext[d.context] ?? d.context}
+    </span>
+  )
+}
+
+function Killers({ d }: { d: DeathView }) {
+  if (d.killers.length === 0) return <span className="text-zinc-500">{t.stats.noKiller}</span>
+  return (
+    <ul className="space-y-1.5">
+      {d.killers.map((k, i) => (
+        <Killer key={`${k.name}-${i}`} k={k} />
+      ))}
+    </ul>
+  )
+}
+
+function Lost({ d }: { d: DeathView }) {
   const bio = d.lostBioCount > 0 || d.lostBioValue > 0
   const carto = d.lostCartoBodies > 0 || d.lostCartoValue > 0
-  const body = d.body && d.system && d.body.startsWith(`${d.system} `) ? d.body.slice(d.system.length + 1) : d.body
+  return (
+    <>
+      {bio && (
+        <LostLine
+          icon={Leaf}
+          iconTone="text-emerald-400/70"
+          text={t.stats.lostBio(d.lostBioCount, formatNumber(d.lostBioCount))}
+          value={d.lostBioValue}
+        />
+      )}
+      {carto && (
+        <LostLine
+          icon={MapIcon}
+          iconTone="text-sky-400/70"
+          text={t.stats.lostCarto(d.lostCartoBodies, formatNumber(d.lostCartoBodies))}
+          value={d.lostCartoValue}
+          estimate
+        />
+      )}
+      {!bio && !carto && <span className="text-zinc-600">{t.stats.lostNothing}</span>}
+    </>
+  )
+}
+
+function Rebuy({ d }: { d: DeathView }) {
   const option = d.rebuyOption ? (t.stats.rebuyOption[d.rebuyOption] ?? d.rebuyOption) : null
+  if (option) {
+    return (
+      <>
+        <div className="truncate text-zinc-300" title={option}>
+          {option}
+        </div>
+        {d.rebuyCost !== null && (
+          <div className="text-xs">
+            {d.rebuyCost > 0 ? (
+              <Credits value={d.rebuyCost} className="text-zinc-200" />
+            ) : (
+              <span className="text-zinc-500">{t.stats.rebuyFree}</span>
+            )}
+          </div>
+        )}
+      </>
+    )
+  }
+  if (d.rebuyCost !== null && d.rebuyCost > 0) return <Credits value={d.rebuyCost} className="text-zinc-200" />
+  return <span className="text-zinc-600">{t.common.unknown}</span>
+}
+
+function DeathRow({ d }: { d: DeathView }) {
   return (
     <tr className="align-top">
       <td className="py-3.5 pr-4" title={eventFull(d.at) ?? undefined}>
@@ -78,75 +163,54 @@ function DeathRow({ d }: { d: DeathView }) {
         <div className="text-xs text-zinc-500 tabular-nums">{eventTime(d.at)}</div>
       </td>
       <td className="py-3.5 pr-4">
-        <div className="truncate text-zinc-100" title={d.system ?? undefined}>
-          {d.system ?? <span className="text-zinc-400">{t.stats.unknownSystem}</span>}
-        </div>
-        {body && (
-          <div className="truncate text-xs text-zinc-500" title={d.body ?? undefined}>
-            {body}
-          </div>
-        )}
+        <Place d={d} />
       </td>
       <td className="py-3.5 pr-4">
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800/70 px-2 py-0.5 text-xs whitespace-nowrap text-zinc-300">
-          <ContextIcon className="size-3.5 text-zinc-400" aria-hidden />
-          {t.stats.deathContext[d.context] ?? d.context}
-        </span>
+        <Context d={d} />
       </td>
       <td className="py-3.5 pr-4">
-        {d.killers.length === 0 ? (
-          <span className="text-zinc-500">{t.stats.noKiller}</span>
-        ) : (
-          <ul className="space-y-1.5">
-            {d.killers.map((k, i) => (
-              <Killer key={`${k.name}-${i}`} k={k} />
-            ))}
-          </ul>
-        )}
+        <Killers d={d} />
       </td>
       <td className="space-y-1 py-3.5 pr-4">
-        {bio && (
-          <LostLine
-            icon={Leaf}
-            iconTone="text-emerald-400/70"
-            text={t.stats.lostBio(d.lostBioCount, formatNumber(d.lostBioCount))}
-            value={d.lostBioValue}
-          />
-        )}
-        {carto && (
-          <LostLine
-            icon={MapIcon}
-            iconTone="text-sky-400/70"
-            text={t.stats.lostCarto(d.lostCartoBodies, formatNumber(d.lostCartoBodies))}
-            value={d.lostCartoValue}
-            estimate
-          />
-        )}
-        {!bio && !carto && <span className="text-zinc-600">{t.stats.lostNothing}</span>}
+        <Lost d={d} />
       </td>
       <td className="py-3.5">
-        {option ? (
-          <>
-            <div className="truncate text-zinc-300" title={option}>
-              {option}
-            </div>
-            {d.rebuyCost !== null && (
-              <div className="text-xs">
-                {d.rebuyCost > 0 ? (
-                  <Credits value={d.rebuyCost} className="text-zinc-200" />
-                ) : (
-                  <span className="text-zinc-500">{t.stats.rebuyFree}</span>
-                )}
-              </div>
-            )}
-          </>
-        ) : d.rebuyCost !== null && d.rebuyCost > 0 ? (
-          <Credits value={d.rebuyCost} className="text-zinc-200" />
-        ) : (
-          <span className="text-zinc-600">{t.common.unknown}</span>
-        )}
+        <Rebuy d={d} />
       </td>
     </tr>
+  )
+}
+
+/** A narrow screen: the columns as labelled lines. */
+function DeathCard({ d }: { d: DeathView }) {
+  const label = 'pt-0.5 text-[11px] font-medium tracking-wider text-zinc-500 uppercase'
+  return (
+    <li className="py-3.5 text-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="whitespace-nowrap" title={eventFull(d.at) ?? undefined}>
+          <span className="font-medium text-zinc-100">{eventDay(d.at) ?? t.common.unknown}</span>{' '}
+          <span className="text-xs text-zinc-500 tabular-nums">{eventTime(d.at)}</span>
+        </div>
+        <Context d={d} />
+      </div>
+      <div className="mt-1.5 min-w-0">
+        <Place d={d} />
+      </div>
+      <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2.5">
+        <dt className={label}>{t.stats.deathCol.killers}</dt>
+        <dd className="min-w-0">
+          <Killers d={d} />
+        </dd>
+        <dt className={label}>{t.stats.deathCol.lost}</dt>
+        <dd className="min-w-0 space-y-1">
+          <Lost d={d} />
+        </dd>
+        <dt className={label}>{t.stats.deathCol.rebuy}</dt>
+        <dd className="min-w-0">
+          <Rebuy d={d} />
+        </dd>
+      </dl>
+    </li>
   )
 }
 
@@ -157,7 +221,13 @@ function DeathTable({ deaths }: { deaths: readonly DeathView[] }) {
   const th = 'pb-2 pr-4 text-left text-[11px] font-medium tracking-wider text-zinc-500 uppercase'
   return (
     <div className="min-w-0">
-      <div className="relative overflow-x-auto">
+      {/* Narrower than lg the table's free columns (where, who) would shrink to nothing. */}
+      <ul className="divide-y divide-zinc-800/70 border-t border-zinc-800 lg:hidden" aria-label={t.stats.deathHistory}>
+        {shown.map((d, i) => (
+          <DeathCard key={`${d.at}-${i}`} d={d} />
+        ))}
+      </ul>
+      <div className="relative hidden overflow-x-auto lg:block">
         <table className="w-full table-fixed text-sm">
           <caption className="sr-only">{t.stats.deathHistory}</caption>
           <colgroup>

@@ -213,13 +213,13 @@ function BodyRow({
       </div>
 
       {/* Desktop: one column per value */}
-      <div className={`hidden text-right text-[15px] font-medium lg:block ${valueTone}`}>
+      <div className={`hidden text-right text-[15px] font-medium tabular-nums lg:block ${valueTone}`}>
         <Credits value={body.fssValue} />
       </div>
-      <div className={`hidden text-right text-[15px] font-medium lg:block ${toMap ? 'text-emerald-300' : valueTone}`}>
+      <div className={`hidden text-right text-[15px] font-medium tabular-nums lg:block ${toMap ? 'text-emerald-300' : valueTone}`}>
         {hasDss ? <Credits value={body.dssValue} /> : <span className="text-zinc-600">{t.common.unknown}</span>}
       </div>
-      <div className="hidden text-right text-[15px] font-medium lg:block">
+      <div className="hidden text-right text-[15px] font-medium tabular-nums lg:block">
         {hasBio ? (
           <CreditRange min={bio.min} max={bio.max} className={bioTone} />
         ) : (
@@ -228,7 +228,7 @@ function BodyRow({
       </div>
 
       {/* Phone: best carto value + bio range, stacked */}
-      <div className="flex flex-col items-end gap-0.5 text-right lg:hidden">
+      <div className="flex flex-col items-end gap-0.5 text-right tabular-nums lg:hidden">
         <span className={`text-base font-semibold ${toMap ? 'text-emerald-300' : valueTone}`}>
           <Credits value={primary} />
         </span>

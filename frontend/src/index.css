@@ -19,8 +19,9 @@ body {
   @apply bg-zinc-950 text-zinc-100 antialiased;
 }
 
+/* Proportional figures by default: Inter's tabular ones also widen the hyphen ("ALL - TIME",
+   "LN - S b4 - 3"). Numbers that line up in a column or change in place take `tabular-nums`. */
 body {
-  font-variant-numeric: tabular-nums;
   overscroll-behavior-y: none;
 }
 

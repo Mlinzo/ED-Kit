@@ -77,13 +77,32 @@ function markSingleRows(root: HTMLElement): HTMLElement[] {
 }
 
 /**
+ * Widens the tab until its side-scrolling tables fit (Deaths, Firsts on a phone): the copy shows
+ * a scroll box as it stands, so their right columns would be cut off. Returns the undo.
+ */
+function fitScrollBoxes(root: HTMLElement): () => void {
+  let extra = 0
+  // The same boxes index.css stops from scrolling in the copy.
+  for (const el of root.querySelectorAll<HTMLElement>('.overflow-auto, .overflow-x-auto, .overflow-y-auto')) {
+    extra = Math.max(extra, el.scrollWidth - el.clientWidth)
+  }
+  if (extra <= 1) return () => {}
+  const width = root.style.width
+  root.style.width = `${root.offsetWidth + extra}px`
+  return () => {
+    root.style.width = width
+  }
+}
+
+/**
  * The tab with a margin of page around it, twice as sharp as the screen when it fits. What stays
  * out is hidden on the page for the moment (index.css): the copy takes sizes as laid out, so
  * leaving nodes out of it would not close the gaps.
  */
 async function capture(node: HTMLElement, showName: boolean): Promise<Blob> {
   node.setAttribute('data-snapshot', showName ? '' : 'no-name')
-  // After the controls are hidden: lines are measured as the picture lays them out.
+  const unfit = fitScrollBoxes(node)
+  // After the controls are hidden and the tab widened: lines are measured as the picture lays them out.
   const lines = markSingleLines(node)
   const rows = markSingleRows(node)
   try {
@@ -101,6 +120,7 @@ async function capture(node: HTMLElement, showName: boolean): Promise<Blob> {
     })
   } finally {
     node.removeAttribute('data-snapshot')
+    unfit()
     for (const el of lines) el.removeAttribute('data-snapshot-line')
     for (const el of rows) el.removeAttribute('data-snapshot-row')
   }

@@ -79,7 +79,7 @@ function BigDistance({ metres }: { metres: number }) {
   const value = km ? formatNumber(metres / 1_000, 1) : String(Math.round(metres))
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span className="text-7xl leading-none font-semibold tracking-tighter text-zinc-50 sm:text-8xl xl:text-9xl">
+      <span className="text-7xl leading-none font-semibold tracking-tighter text-zinc-50 tabular-nums sm:text-8xl xl:text-9xl">
         {value}
       </span>
       <span className="text-3xl font-medium text-zinc-400 sm:text-4xl">{km ? t.units.km : t.units.m}</span>
@@ -154,7 +154,7 @@ function SampleState({ scan, position }: { scan: ActiveScanView; position: Posit
         ) : (
           <MoveUpRight className="size-8 shrink-0" aria-hidden />
         )}
-        <span>
+        <span className="tabular-nums">
           {canSample
             ? t.surface.canSample
             : blockedByUnknown

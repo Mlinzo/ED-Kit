@@ -311,7 +311,8 @@ function FirstsTable({ entries }: { entries: readonly FirstEntry[] }) {
         <p className="mt-6 text-sm text-zinc-500">{t.stats.noFirstsFilter}</p>
       ) : (
         <div className="relative overflow-x-auto">
-          <table className="mt-5 w-full table-fixed border-separate border-spacing-0 text-sm">
+          {/* A minimum width, or the free column (type) shrinks to nothing on a phone: the box scrolls instead. */}
+          <table className="mt-5 w-full min-w-[43rem] table-fixed border-separate border-spacing-0 text-sm">
             <caption className="sr-only">{t.stats.firsts}</caption>
             <colgroup>
               <col className="w-[6.5rem]" />
