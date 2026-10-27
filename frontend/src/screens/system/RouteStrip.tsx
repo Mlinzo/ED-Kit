@@ -1,6 +1,7 @@
 // The route, seen from the System tab: this system's stop (what is left here, its bodies marked
 // below), or once it is done, skipped or not on the route at all, where to go next. One line, so
-// the map under it keeps its height; the secondary parts give way on narrower screens.
+// the map under it keeps its height; the secondary parts give way on narrower screens. On a phone
+// the text takes the whole width and wraps, the button goes under it.
 import { ArrowRight, CircleCheck, Navigation, Route, Zap, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { RouteView } from '../../api/types'
@@ -14,9 +15,11 @@ function Strip({ tone, icon: Icon, children, onShowRoute }: { tone: 'accent' | '
   const ring = tone === 'done' ? 'bg-emerald-500/[0.07] ring-emerald-500/25' : 'bg-sky-500/[0.07] ring-sky-500/25'
   return (
     <div className={`mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl px-4 py-2.5 ring-1 ring-inset sm:flex-nowrap ${ring}`}>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-zinc-300 sm:flex-nowrap sm:overflow-hidden sm:whitespace-nowrap">
-        <Icon className={`size-4 shrink-0 ${tone === 'done' ? 'text-emerald-400' : 'text-accent'}`} aria-hidden />
-        {children}
+      <div className="flex min-w-0 grow basis-full items-start gap-2.5 sm:basis-0 sm:items-center">
+        <Icon className={`mt-0.5 size-4 shrink-0 sm:mt-0 ${tone === 'done' ? 'text-emerald-400' : 'text-accent'}`} aria-hidden />
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-zinc-300 sm:flex-nowrap sm:overflow-hidden sm:whitespace-nowrap">
+          {children}
+        </div>
       </div>
       <button
         type="button"
@@ -59,7 +62,7 @@ export function RouteStrip({
         <span className="font-medium text-zinc-50 sm:shrink-0">{t.system.route.stop(stop.seq, total)}</span>
         {left.max > 0 && (
           <span className="sm:shrink-0">
-            {t.system.route.left}: <CreditRange min={left.min} max={left.max} className="font-semibold text-emerald-300" />
+            {t.system.route.left}: <CreditRange min={left.min} max={left.max} className="font-semibold whitespace-nowrap text-emerald-300" />
           </span>
         )}
         {marked > 0 && <span className="min-w-0 truncate text-zinc-400">{t.system.route.targets(marked)}</span>}
@@ -88,18 +91,21 @@ export function RouteStrip({
   return (
     <Strip tone={stop?.done ? 'done' : 'accent'} icon={stop?.done ? CircleCheck : Navigation} onShowRoute={onShowRoute}>
       {lead}
-      <span className="inline-flex min-w-0 items-center gap-1">
-        <span className="sm:shrink-0">{t.system.route.next}:</span>
-        <span className="truncate font-semibold text-zinc-50 proportional-nums" title={next.name}>
-          {next.name}
-        </span>
-        <CopyButton text={next.name} />
-        {next.neutron && (
-          <span className="inline-flex shrink-0 items-center gap-1 text-xs text-sky-300" title={t.route.transit.neutron}>
-            <Zap className="size-3.5" aria-hidden />
-            {t.route.transit.neutronShort}
+      {/* On a phone the name goes under the label rather than being cut. */}
+      <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1 sm:flex-nowrap">
+        <span className="shrink-0 whitespace-nowrap">{t.system.route.next}:</span>
+        <span className="inline-flex min-w-0 items-center gap-1">
+          <span className="min-w-0 font-semibold break-words text-zinc-50 proportional-nums sm:truncate" title={next.name}>
+            {next.name}
           </span>
-        )}
+          <CopyButton text={next.name} />
+          {next.neutron && (
+            <span className="inline-flex shrink-0 items-center gap-1 text-xs text-sky-300" title={t.route.transit.neutron}>
+              <Zap className="size-3.5" aria-hidden />
+              {t.route.transit.neutronShort}
+            </span>
+          )}
+        </span>
       </span>
       {where && <span className="text-zinc-400 sm:shrink-0">{where}</span>}
       <span className="hidden shrink-0 text-zinc-500 xl:inline">{more.join(' · ')}</span>
