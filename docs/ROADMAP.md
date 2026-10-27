@@ -2,7 +2,39 @@
 
 Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 
+The aim (2026-10-28): everything a player now does on other sites can be done in this app. A tool
+from another site is not copied whole: only what is most useful in it comes over.
+
 ## Doing
+
+### Mining statistics (2026-10-28)
+On the Mining tab, a "Your mining" block. All of it comes from the journal, which the database
+already keeps in full, so earlier mining counts too.
+- The current run, live: tonnes refined per commodity (`MiningRefined`, one event per tonne),
+  tonnes per hour, limpets used per tonne (`LaunchDrone` by type), asteroids prospected and their
+  content (`ProspectedAsteroid`: Low/Medium/High, motherlodes), cores cracked (`AsteroidCracked`),
+  minutes left until the hold is full (`Cargo` against the Loadout's cargo capacity).
+- Past runs: ring, date, duration, tonnes, tonnes per hour, limpets per tonne, to compare rings.
+- Earnings: `MarketSell` of mined commodities, credits and credits per hour. A sale does not say
+  the goods were mined: take mineable commodities with `AvgPricePaid` 0; bought goods of the same
+  kind in the hold blur the numbers.
+- Lifetime: the game's own counters from `Statistics` (`Mining_Profits`, `Quantity_Mined`), which
+  cover the time before the journals but change only at login.
+- Not in the journal: which ring a refined tonne came from (take your location at that moment),
+  which asteroid gave it, fragments left behind.
+
+### High Grade Emissions finder (2026-10-28)
+What is useful in edgalaxy.net/hge, in the app, so that the player does not need that site: systems
+where other players saw High Grade Emissions since the last BGS tick, grouped by the grade 5
+materials they give (Imperial Shielding; Core Dynamics & Proprietary Composites; Proto Alloys &
+Heat Radiators; Military Grade Alloys & Supercapacitors; Pharmaceutical Isolators; Improvised
+Components), how many signals and how long ago, plus what we add: distance from you, nearest
+first, and the player's own HGE scans from the journal (`FSSSignalDiscovered`).
+- Source: EDDN `fsssignaldiscovered/1` keeps USS signals with `USSType`, `SpawningState`,
+  `SpawningFaction` (`TimeRemaining` is dropped). The app hears EDDN only while it runs, and today
+  only while the "Players now" layer is open, so a full list since the tick needs the listener on
+  whenever the app runs (filtered to this schema), or another source. To settle before building.
+- The site's tip goes along: signals not there on arrival come back after a jump out and back in.
 
 ### Flight safety: what is left
 - Refuelling stops in our own route planner: not needed for now. The game plots the jumps between
@@ -440,5 +472,5 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   copied lines and the app reads none of them; zlib per row gives only 2.3 times. Left as is so
   that later features can use the whole history; the journals stay on disk too.
 - More for miners (a Discord player's request, 2026-10-17): places in the galaxy are on the Mining
-  tab (2026-10-27); places on planets are bookmarks; refinery output in tonnes per hour is still
-  open. The journal has it (`ProspectedAsteroid`, `AsteroidCracked`, `MiningRefined`).
+  tab (2026-10-27); places on planets are bookmarks; refinery output in tonnes per hour is part of
+  "Mining statistics" under Doing (2026-10-28).
