@@ -243,21 +243,21 @@ export function TopBar({ tab, onTab, surfaceLive }: { tab: Tab; onTab: (t: Tab) 
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/85 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 lg:gap-6 lg:px-6 xl:gap-4 2xl:gap-5">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 lg:gap-6 lg:px-6 xl:gap-4">
         <div className="flex min-w-0 items-center gap-2.5 xl:shrink-0">
           <Logo />
-          {/* The name gives way to the tab names from xl: nine of them fill the bar there. */}
+          {/* The name gives way to the tabs from xl: ten of them fill the bar there. */}
           <span className="truncate text-[15px] font-semibold tracking-tight whitespace-nowrap text-zinc-100 max-[379px]:sr-only xl:sr-only">{t.appName}</span>
         </div>
         <div className="hidden min-w-0 lg:block">
           <TopTabs tab={tab} onTab={onTab} surfaceLive={surfaceLive} />
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 xl:gap-3 2xl:gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4 xl:gap-3">
           {mock && <MockBadge />}
           {session.data && <AtRisk session={session.data} onOpen={() => onTab('session')} />}
-          {/* Below 2xl the tabs, the unsold value and the app name need the room (the name is on the Session tab too). */}
+          {/* Below 1600 px the tabs and the unsold value need the room (the name is on the Session tab too). */}
           {commander && (
-            <span className="hidden text-sm text-zinc-500 2xl:inline">
+            <span className="hidden text-sm text-zinc-500 min-[1600px]:inline">
               {t.common.commander} <span className="font-medium text-zinc-200">{commander}</span>
             </span>
           )}
