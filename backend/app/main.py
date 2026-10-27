@@ -36,6 +36,7 @@ from app import (
     fuel,
     galaxy,
     history,
+    mining,
     navroute,
     neutron,
     regionmap,
@@ -64,6 +65,7 @@ from app.schemas import (
     JournalDirRequest,
     LiveStatus,
     LiveView,
+    MiningView,
     NavRouteView,
     NetworkInfo,
     NeutronRequest,
@@ -136,6 +138,7 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         else None
     )
     shops = shop.ShopFinder(settings.db_path) if settings.online else None
+    miners = mining.MiningFinder(shops) if shops else None
     if rebuild:
         service.request_rebuild()
     local = threading.local()
@@ -224,6 +227,13 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         conn = read_conn()
         view = shop.shop_view(conn, views.cmdr_state(conn, active_fid(conn)), shops, item, carriers)
         return view.model_copy(update={"places": bookmarks.mark_stations(conn, view.places)})
+
+    @app.get("/api/view/mining", response_model=MiningView, response_model_by_alias=True)
+    def view_mining(item: str | None = None, carriers: bool = False) -> MiningView:
+        """Where to mine a commodity (journal symbol) near you and where to sell it, from Spansh."""
+        conn = read_conn()
+        state = views.cmdr_state(conn, active_fid(conn))
+        return mining.mining_view(conn, state, miners, item, carriers)
 
     @app.get("/api/view/stats", response_model=StatsView, response_model_by_alias=True)
     def view_stats() -> StatsView:

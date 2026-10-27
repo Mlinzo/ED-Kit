@@ -603,6 +603,90 @@ class ShopView(CamelModel):
     traded: bool = True
 
 
+class MiningCommodityView(CamelModel):
+    symbol: str  # journal symbol, lower case
+    name: str  # the game's name, e.g. "Low Temperature Diamonds"
+    hotspots: bool  # rings can have hotspots of it (Osmium: none)
+
+
+class MiningBuyerView(CamelModel):
+    """A market paying for the commodity (Spansh's station search)."""
+
+    station: str
+    kind: str  # as in SellStationView
+    system_name: str
+    system_address: str | None
+    distance_ly: float  # from you
+    jumps: int | None
+    dist_ls: int | None
+    pad: str | None  # its largest landing pad: L | M | S
+    price: int  # credits it pays a tonne
+    demand: int  # tonnes it wants
+    market_at: str | None  # when Spansh last had its market (ISO)
+    permit: bool  # the system needs a permit
+    access: str | None  # a carrier: all | unknown
+
+
+class MiningSellView(CamelModel):
+    """The buyer nearest to a ring."""
+
+    station: str
+    system_name: str
+    distance_ly: float  # from the ring
+    price: int
+
+
+class MiningSignalView(CamelModel):
+    name: str  # e.g. "Platinum"
+    count: int
+
+
+class MiningRingView(CamelModel):
+    """A ring with hotspots of the commodity (Spansh's body search)."""
+
+    name: str  # e.g. "Diso 5 A Ring"
+    body: str
+    system_name: str
+    system_address: str | None
+    distance_ly: float  # from you
+    jumps: int | None
+    dist_ls: int | None  # the body's distance from the arrival star
+    type: str | None  # Metallic | Metal Rich | Rocky | Icy
+    reserve: str | None  # the body's: Pristine | Major | Common | Low | Depleted
+    count: int  # hotspots of the commodity
+    others: list[MiningSignalView]  # the ring's other hotspots
+    reported_at: str | None  # when its hotspots reached Spansh (ISO)
+    sell: MiningSellView | None
+
+
+class MiningTripView(CamelModel):
+    """The shortest trip: from you to a ring, then to the ring's nearest buyer."""
+
+    ring: str
+    system_name: str
+    distance_ly: float  # from you to the ring
+    sell: MiningSellView
+    total_ly: float
+
+
+class MiningView(CamelModel):
+    # ready | unknown_item | offline | unknown_position | failed
+    state: str
+    commodities: list[MiningCommodityView]  # what can be chosen, in the tab's order
+    item: str | None  # the chosen commodity's symbol
+    name: str | None  # and its name
+    hotspots: bool
+    ship: str | None  # the current ship's name
+    pad: str | None  # the landing pad it needs
+    carriers: bool  # fleet carriers listed (asked for)
+    buyers: list[MiningBuyerView]  # the best price first
+    better_carrier: MiningBuyerView | None  # carriers hidden: one paying more than every buyer
+    rings: list[MiningRingView]  # nearest first
+    trip: MiningTripView | None
+    searched_at: str | None  # when Spansh was asked (ISO)
+    reach_ly: float  # buyers are asked for within it
+
+
 class RiskPoint(CamelModel):
     """Unsold data when you left a system (the first point: right after the last sale)."""
 
