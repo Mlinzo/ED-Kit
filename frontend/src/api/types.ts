@@ -820,6 +820,8 @@ export interface MiningView {
   searchedAt: string | null
   /** Buyers are asked for within it. */
   reachLy: number
+  /** Your ship's hold, t (the latest Loadout): the "your hold" demand filter. */
+  cargo: number | null
 }
 
 export interface MiningCommodityView {

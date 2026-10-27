@@ -1,9 +1,11 @@
 // The Mining tab: choose a commodity worth mining; the nearest rings with its hotspots (each with
 // the market nearest to it), the markets paying the most for it, and the shortest trip through
-// both. Spansh answers; the backend keeps the answer an hour while you stay near.
+// both. Spansh answers; the backend keeps the answer an hour while you stay near. Filters sit in
+// the list they narrow (rings: reserves, distance from the star; markets: demand, how fresh,
+// distance from the star) and are remembered per browser.
 
 import { ArrowDown, ArrowRight, CircleDot, LoaderCircle, MapPin, Navigation, Pickaxe, Route, Store } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useView } from '../../api/hooks'
 import type { MiningBuyerView, MiningRingView, MiningTripView, MiningView } from '../../api/types'
 import { CopyButton } from '../../components/CopyButton'
@@ -15,11 +17,29 @@ import { exactCredits, formatLs, formatLy, formatMonthYear, formatNumber, format
 import { readStored, readStoredText, writeStored } from '../../lib/storage'
 import { CarriersSwitch } from '../session/WhereToSell'
 import { Chip } from '../shop/parts'
-import { BUYER_ORDERS, orderBuyers, ringLabel, type BuyerOrder } from './helpers'
+import {
+  BUYER_ORDERS,
+  buyersFiltered,
+  DEMAND_LIMITS,
+  FRESH_DAYS,
+  LS_LIMITS,
+  miningParams,
+  orderBuyers,
+  parseFilters,
+  RESERVES,
+  ringParts,
+  ringsFiltered,
+  type BuyerOrder,
+  type MiningFilters,
+  type Reserve,
+} from './helpers'
 
 const ITEM_KEY = 'edk.miningItem'
 const CARRIERS_KEY = 'edk.miningCarriers'
 const ORDER_KEY = 'edk.miningOrder'
+const FILTERS_KEY = 'edk.miningFilters'
+/** A filter changed waits this long before asking Spansh, so a few quick clicks ask once. */
+const SETTLE_MS = 450
 /** Rows shown before "Show all". */
 const FIRST_ROWS = 8
 /** Reported earlier than this, a market is marked as old. */
@@ -32,6 +52,11 @@ const quietButton =
   'focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-zinc-300 ring-1 ring-zinc-800 ring-inset hover:bg-zinc-800 hover:text-zinc-50 sm:h-8'
 
 const perTonne = (price: number) => t.shop.perTonne(exactCredits(price))
+/** "ABC 1 · ring A": the body to fly to, then its ring (or the ring's whole name). */
+function ringName(ring: MiningRingView): string {
+  const parts = ringParts(ring)
+  return parts.ring ? t.mining.ringOf(parts.body, parts.ring) : ring.name
+}
 /** From a ring to its buyer. */
 const fromRing = (ly: number) => (ly < 0.5 ? t.mining.sameSystem : t.mining.fromRing(formatLy(ly)))
 const distance = (ly: number, jumps: number | null) => (ly < 0.5 ? t.route.youAreHere : formatLy(ly) + (jumps ? ` · ${t.route.jumps(jumps)}` : ''))
@@ -108,7 +133,7 @@ function Trip({ trip, rings }: { trip: MiningTripView; rings: readonly MiningRin
           icon={<CircleDot className="size-4" />}
           title={trip.systemName}
           copy={trip.systemName}
-          sub={ring ? `${ringLabel(ring)} · ${m.hotspots(ring.count)}` : trip.ring}
+          sub={ring ? `${ringName(ring)} · ${m.hotspots(ring.count)}` : trip.ring}
         />
         <Leg ly={trip.sell.distanceLy} />
         <Stop
@@ -157,7 +182,7 @@ function Ring({ ring, now, onRouteTo }: { ring: MiningRingView; now: number; onR
   return (
     <Row system={ring.systemName} ly={ring.distanceLy} jumps={ring.jumps} onRouteTo={onRouteTo}>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="min-w-0 break-words text-zinc-200">{ringLabel(ring)}</span>
+        <span className="min-w-0 break-words text-zinc-200">{ringName(ring)}</span>
         <span
           title={m.hotspots(ring.count)}
           className={`rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-inset ${
@@ -281,6 +306,76 @@ function BetterCarrier({ carrier, onShow }: { carrier: MiningBuyerView; onShow: 
   )
 }
 
+type Option = { value: string; text: string }
+
+/** A filter's choices as a small native select (a phone opens its own picker). */
+function Limit({ label, value, options, onChange }: { label: string; value: string; options: readonly Option[]; onChange: (value: string) => void }) {
+  return (
+    <label className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
+      {label}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="focus-ring h-9 rounded-lg bg-zinc-800/70 px-2 text-sm text-zinc-200 ring-1 ring-zinc-700 ring-inset hover:bg-zinc-800 sm:h-8"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.text}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+const numberOr = (value: string): number | null => (value === '' ? null : Number(value))
+const lsOptions = (): Option[] => [
+  { value: '', text: t.mining.filters.anyDistance },
+  ...LS_LIMITS.map((ls) => ({ value: String(ls), text: t.mining.filters.upToLs(formatLs(ls)) })),
+]
+
+function RingFilters({ filters, onChange }: { filters: MiningFilters; onChange: (next: MiningFilters) => void }) {
+  const f = t.mining.filters
+  const toggle = (r: Reserve) =>
+    onChange({ ...filters, reserves: filters.reserves.includes(r) ? filters.reserves.filter((x) => x !== r) : [...filters.reserves, r] })
+  return (
+    <div className="mt-3 space-y-2">
+      <div role="group" aria-label={f.reserves} title={f.anyReserves} className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-xs text-zinc-500">{f.reserves}</span>
+        {RESERVES.map((r) => (
+          <Chip key={r} active={filters.reserves.includes(r)} onClick={() => toggle(r)}>
+            {f.reserveNames[r]}
+          </Chip>
+        ))}
+      </div>
+      <Limit label={f.fromStar} value={String(filters.ringLs ?? '')} options={lsOptions()} onChange={(v) => onChange({ ...filters, ringLs: numberOr(v) })} />
+    </div>
+  )
+}
+
+function BuyerFilters({ filters, cargo, onChange }: { filters: MiningFilters; cargo: number | null; onChange: (next: MiningFilters) => void }) {
+  const f = t.mining.filters
+  const tonnes = (n: number) => `${formatNumber(n)} ${t.units.t}`
+  const demand: Option[] = [
+    { value: '', text: f.anyDemand },
+    { value: 'hold', text: cargo ? f.hold(tonnes(cargo)) : f.holdUnknown },
+    ...DEMAND_LIMITS.map((d) => ({ value: String(d), text: f.atLeast(tonnes(d)) })),
+  ]
+  const age: Option[] = [{ value: '', text: f.anyAge }, ...FRESH_DAYS.map((d) => ({ value: String(d), text: f.days(d) }))]
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <Limit
+        label={f.demand}
+        value={String(filters.demand ?? '')}
+        options={demand}
+        onChange={(v) => onChange({ ...filters, demand: v === 'hold' ? 'hold' : numberOr(v) })}
+      />
+      <Limit label={f.prices} value={String(filters.freshDays ?? '')} options={age} onChange={(v) => onChange({ ...filters, freshDays: numberOr(v) })} />
+      <Limit label={f.fromStar} value={String(filters.stationLs ?? '')} options={lsOptions()} onChange={(v) => onChange({ ...filters, stationLs: numberOr(v) })} />
+    </div>
+  )
+}
+
 function Status({ view, failed, onRetry }: { view: MiningView | null; failed: boolean; onRetry: () => void }) {
   const s = t.shop
   if (!view && !failed)
@@ -323,12 +418,14 @@ export function MiningScreen({ onRouteTo }: { onRouteTo: (system: string) => voi
   const [item, setItem] = useState<string | null>(() => readStoredText(ITEM_KEY))
   const [carriers, setCarriers] = useState(() => readStored(CARRIERS_KEY, ['on', 'off'], 'off') === 'on')
   const [order, setOrder] = useState<BuyerOrder>(() => readStored(ORDER_KEY, BUYER_ORDERS, 'price'))
-  const params: Record<string, string> = {}
-  if (item) params.item = item
-  if (carriers) params.carriers = 'true'
-  const { data, error, refetch } = useView('mining', params)
-  // The answer for the previous choice stays while the new one loads.
+  // `filters` are shown; `asked` are what the results are asked for (they trail a change).
+  const [filters, setFilters] = useState<MiningFilters>(() => parseFilters(readStoredText(FILTERS_KEY)))
+  const [asked, setAsked] = useState<MiningFilters>(filters)
+  const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(settle.current), [])
+  // The answer for the previous choice stays while the new one loads; it knows your hold.
   const [last, setLast] = useState<MiningView | null>(null)
+  const { data, error, refetch } = useView('mining', miningParams(item, carriers, asked, last?.cargo ?? null))
   if (data && data !== last) setLast(data)
   const view = data ?? last
   const settled = data !== null
@@ -345,6 +442,12 @@ export function MiningScreen({ onRouteTo }: { onRouteTo: (system: string) => voi
   const changeOrder = (next: BuyerOrder) => {
     setOrder(next)
     writeStored(ORDER_KEY, next)
+  }
+  const changeFilters = (next: MiningFilters) => {
+    setFilters(next)
+    writeStored(FILTERS_KEY, JSON.stringify(next))
+    clearTimeout(settle.current)
+    settle.current = setTimeout(() => setAsked(next), SETTLE_MS)
   }
   const fade = settled ? '' : 'opacity-60'
   const reach = formatLy(view?.reachLy ?? 500)
@@ -369,10 +472,11 @@ export function MiningScreen({ onRouteTo }: { onRouteTo: (system: string) => voi
               {view.hotspots ? (
                 <>
                   <p className="mt-2 text-xs text-zinc-500">{m.mineHint}</p>
+                  <RingFilters filters={filters} onChange={changeFilters} />
                   {view.rings.length > 0 ? (
                     <Rows key={view.item} items={view.rings} render={(r) => <Ring key={r.name} ring={r} now={now} onRouteTo={onRouteTo} />} />
                   ) : (
-                    ready && <p className="mt-3 text-sm text-zinc-400">{m.noRings}</p>
+                    ready && <p className="mt-3 text-sm text-zinc-400">{ringsFiltered(asked) ? m.filters.noMatch : m.noRings}</p>
                   )}
                 </>
               ) : (
@@ -394,6 +498,7 @@ export function MiningScreen({ onRouteTo }: { onRouteTo: (system: string) => voi
                 {m.sellHint(reach)}
                 {view.ship && view.pad && ` · ${t.shop.padNote(view.ship, t.session.sell.pad[view.pad])}`}
               </p>
+              <BuyerFilters filters={filters} cargo={view.cargo} onChange={changeFilters} />
               {!carriers && view.betterCarrier && <BetterCarrier carrier={view.betterCarrier} onShow={() => toggleCarriers(true)} />}
               {view.buyers.length > 0 ? (
                 <Rows
@@ -402,7 +507,7 @@ export function MiningScreen({ onRouteTo }: { onRouteTo: (system: string) => voi
                   render={(b) => <Buyer key={`${b.systemName}/${b.station}`} buyer={b} now={now} onRouteTo={onRouteTo} />}
                 />
               ) : (
-                ready && <p className="mt-3 text-sm text-zinc-400">{m.noBuyers(reach)}</p>
+                ready && <p className="mt-3 text-sm text-zinc-400">{buyersFiltered(asked) ? m.filters.noMatch : m.noBuyers(reach)}</p>
               )}
             </section>
           </div>

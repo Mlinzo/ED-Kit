@@ -1,5 +1,5 @@
 // Demo answers of the Mining tab (?mock=1): rings and markets around Colonia, the same for any
-// commodity (its name and price scale change).
+// commodity (its name and price scale change), narrowed by the filters as the server does.
 
 import type { MiningBuyerView, MiningCommodityView, MiningRingView, MiningView } from '../api/types'
 
@@ -41,7 +41,11 @@ function buyer(station: string, systemName: string, distanceLy: number, price: n
   }
 }
 
-export function buildMining(item: string | null, carriers: boolean, now = Date.now()): MiningView {
+export function buildMining(query: URLSearchParams, now = Date.now()): MiningView {
+  const item = query.get('item')
+  const carriers = query.get('carriers') === 'true'
+  const limit = (key: string) => (query.get(key) === null ? Infinity : Number(query.get(key)))
+  const reserves = query.get('reserves')?.split(',') ?? []
   const commodities: MiningCommodityView[] = COMMODITIES.map(([symbol, name]) => ({ symbol, name, hotspots: symbol !== 'osmium' }))
   const chosen = COMMODITIES.find(([symbol]) => symbol === item)
   const empty: MiningView = {
@@ -59,6 +63,7 @@ export function buildMining(item: string | null, carriers: boolean, now = Date.n
     trip: null,
     searchedAt: null,
     reachLy: 500,
+    cargo: 720,
   }
   if (!item) return empty
   if (!chosen) return { ...empty, state: 'unknown_item' }
@@ -73,7 +78,11 @@ export function buildMining(item: string | null, carriers: boolean, now = Date.n
     buyer('Vonarburg Co-operative', 'Kojeara', 31.6, price(1.18), 9_800, { distLs: 1_050, marketAt: daysAgo(4, now) }),
     buyer('Pinzon Hub', 'Tir', 41.2, price(1), 22_000, { distLs: 4_900, marketAt: daysAgo(0.5, now), permit: true }),
   ]
-  const buyers = (carriers ? [carrier, ...stations] : [...stations]).sort((a, b) => b.price - a.price || a.distanceLy - b.distanceLy)
+  const wanted = (b: MiningBuyerView) =>
+    b.demand >= limit('demand') &&
+    (b.distLs ?? 0) <= limit('stationLs') &&
+    (b.marketAt === null || now - Date.parse(b.marketAt) <= limit('freshDays') * 86_400_000)
+  const buyers = (carriers ? [carrier, ...stations] : [...stations]).filter(wanted).sort((a, b) => b.price - a.price || a.distanceLy - b.distanceLy)
   const sell = (b: MiningBuyerView, ly: number) => ({ station: b.station, systemName: b.systemName, distanceLy: ly, price: b.price })
   const ring = (n: string, systemName: string, distanceLy: number, count: number, extra: Partial<MiningRingView>): MiningRingView => ({
     name: `${systemName} ${n}`,
@@ -99,7 +108,9 @@ export function buildMining(item: string | null, carriers: boolean, now = Date.n
           ring('4 A Ring', 'Ratraii', 14.3, 2, { others: [{ name: 'Monazite', count: 1 }], sell: sell(hillary, 0) }),
           ring('7 A Ring', 'Kojeara', 31.6, 1, { type: 'Metal Rich', reserve: 'Major', sell: sell(stations[4], 0) }),
           ring('2 B Ring', 'Eol Prou LW-L c8-198', 22.8, 3, { type: 'Icy', reserve: 'Common', distLs: 310, sell: sell(stations[3], 0), reportedAt: daysAgo(120, now) }),
-        ].sort((a, b) => a.distanceLy - b.distanceLy)
+        ]
+          .filter((r) => (!reserves.length || reserves.includes(r.reserve ?? '')) && (r.distLs ?? 0) <= limit('ringLs'))
+          .sort((a, b) => a.distanceLy - b.distanceLy)
   const nearest = rings.at(0)
   return {
     ...empty,
@@ -107,7 +118,7 @@ export function buildMining(item: string | null, carriers: boolean, now = Date.n
     name,
     hotspots: symbol !== 'osmium',
     buyers,
-    betterCarrier: carriers ? null : carrier,
+    betterCarrier: carriers || !wanted(carrier) ? null : carrier,
     rings,
     trip: nearest?.sell
       ? { ring: nearest.name, systemName: nearest.systemName, distanceLy: nearest.distanceLy, sell: nearest.sell, totalLy: nearest.distanceLy + nearest.sell.distanceLy }

@@ -189,7 +189,7 @@ export function createMockTransport(): Transport {
     '/api/view/sessions': () => sessions,
     '/api/view/sell': (query) => buildSell(query.get('carriers') === 'true'),
     '/api/view/shop': (query) => buildShop(query.get('item'), query.get('carriers') === 'true'),
-    '/api/view/mining': (query) => buildMining(query.get('item'), query.get('carriers') === 'true'),
+    '/api/view/mining': (query) => buildMining(query),
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,
     '/api/view/route': () => route.view(),

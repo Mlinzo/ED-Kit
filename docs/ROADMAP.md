@@ -52,7 +52,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   kept an hour. At the edge of the bubble: Platinum rings 4-16 ly away, buyers up to
   333,030 cr/t. Ten tabs: the phone bar's cells take the width their label needs from 360 px (a
   pixel smaller below 390 px), and the top bar shows tab names from 1440 px and the commander's
-  name from 1600 px.
+  name from 1600 px. Then filters, asked of Spansh so they reach past the first answers: rings by
+  the body's reserves (any of the five levels) and distance from the arrival star; markets by
+  least demand (your hold from the latest Loadout, or 1,000-10,000 t), how fresh the prices are
+  (a day to a month) and distance from the star. A ring reads "ABC 1 · ring A": "ABC 1 A Ring"
+  read as a body "ABC 1 A" to fly to.
 - Systems the game knew in advance (2026-10-27): in most populated systems the honk finds every
   body known at once (Progress 1.0) and the journal gets no Scan, not even the arrival star's, nor
   FSSAllBodiesFound, so "Bodies found" read 0/31 while the game's FSS showed 31/31. A system
