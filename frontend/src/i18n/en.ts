@@ -932,7 +932,8 @@ export const en: Strings = {
     noRich: 'No such body nearby',
     goals: {
       title: 'Engineering goals',
-      hint: 'What you want engineers to do. The materials of all goals are added up and checked against your stock from the journal; grade N takes N rolls, as at an engineer’s top access level.',
+      hint: 'What you want engineers to do. The materials of all goals are added up and checked against your stock from the journal. “Now” comes from your current ship when it has such a module.',
+      rolls: 'Rolls as at access level 5 with an engineer: grade N takes N. At a lower level each grade takes more rolls, so more materials.',
       count: (n: number) => `${n} ${plural(n, ['goal', 'goals'])}`,
       missingCount: (n: number) => `${n} ${plural(n, ['material', 'materials'])} short`,
       enough: 'everything there',

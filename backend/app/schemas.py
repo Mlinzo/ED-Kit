@@ -501,6 +501,14 @@ class EngineeringNeedView(CamelModel):
     have: int
 
 
+class EngineeringFittedView(CamelModel):
+    """A module of your current ship engineers work on (a new goal starts from its grade)."""
+
+    module: str  # an EngineeringKindView key
+    blueprint: str | None  # None: not engineered, or a blueprint the catalog lacks
+    grade: int  # 0 with no blueprint
+
+
 class EngineeringView(CamelModel):
     """GET /api/view/engineering: your goals and what they take against your stock."""
 
@@ -508,6 +516,7 @@ class EngineeringView(CamelModel):
     needs: list[EngineeringNeedView]  # every material the goals take
     stock: dict[str, int]  # your materials by symbol (the journal's latest list and since)
     stock_at: str | None  # when the journal last listed them all (None: never)
+    fitted: list[EngineeringFittedView]  # your current ship's modules engineers work on
 
 
 class ShopMaterialView(CamelModel):

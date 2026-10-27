@@ -761,6 +761,7 @@
  "blueprints": {
   "cbh_br": {
    "name": "Blast Resistant",
+   "symbol": "armour_explosive",
    "grades": [
     {
      "nickel": 1
@@ -788,6 +789,7 @@
   },
   "cbh_hd": {
    "name": "Heavy Duty",
+   "symbol": "armour_heavyduty",
    "grades": [
     {
      "carbon": 1
@@ -815,6 +817,7 @@
   },
   "cbh_kr": {
    "name": "Kinetic Resistant",
+   "symbol": "armour_kinetic",
    "grades": [
     {
      "nickel": 1
@@ -842,6 +845,7 @@
   },
   "cbh_lw": {
    "name": "Light Weight",
+   "symbol": "armour_advanced",
    "grades": [
     {
      "iron": 1
@@ -869,6 +873,7 @@
   },
   "cbh_tr": {
    "name": "Thermal Resistant",
+   "symbol": "armour_thermic",
    "grades": [
     {
      "heatconductionwiring": 1
@@ -896,6 +901,7 @@
   },
   "cfsd_fb": {
    "name": "Faster Boot",
+   "symbol": "fsd_fastboot",
    "grades": [
     {
      "gridresistors": 1
@@ -923,6 +929,7 @@
   },
   "cfsd_ir": {
    "name": "Increased Range",
+   "symbol": "fsd_longrange",
    "grades": [
     {
      "disruptedwakeechoes": 1
@@ -950,6 +957,7 @@
   },
   "cfsd_sh": {
    "name": "Shielded",
+   "symbol": "fsd_shielded",
    "grades": [
     {
      "nickel": 1
@@ -977,6 +985,7 @@
   },
   "cpd_b": {
    "name": "Balanced",
+   "symbol": "powerdistributor_balanced",
    "grades": [
     {},
     {
@@ -1005,6 +1014,7 @@
   },
   "cpd_ce": {
    "name": "Charge Enhanced",
+   "symbol": "powerdistributor_highfrequency",
    "grades": [
     {
      "legacyfirmware": 1
@@ -1032,6 +1042,7 @@
   },
   "cpd_ef": {
    "name": "Engine Focused",
+   "symbol": "powerdistributor_priorityengines",
    "grades": [
     {
      "sulphur": 1
@@ -1059,6 +1070,7 @@
   },
   "cpd_hc": {
    "name": "High Charge Capacity",
+   "symbol": "powerdistributor_highcapacity",
    "grades": [
     {
      "sulphur": 1
@@ -1086,6 +1098,7 @@
   },
   "cpd_sf": {
    "name": "System Focused",
+   "symbol": "powerdistributor_prioritysystems",
    "grades": [
     {
      "sulphur": 1
@@ -1113,6 +1126,7 @@
   },
   "cpd_sh": {
    "name": "Shielded",
+   "symbol": "powerdistributor_shielded",
    "grades": [
     {
      "wornshieldemitters": 1
@@ -1140,6 +1154,7 @@
   },
   "cpd_uf": {
    "name": "Support Focused",
+   "symbol": "powerdistributor_supportfocused",
    "grades": [
     {},
     {
@@ -1168,6 +1183,7 @@
   },
   "cpd_wf": {
    "name": "Weapon Focused",
+   "symbol": "powerdistributor_priorityweapons",
    "grades": [
     {
      "sulphur": 1
@@ -1195,6 +1211,7 @@
   },
   "cpp_arm": {
    "name": "Armoured",
+   "symbol": "powerplant_armoured",
    "grades": [
     {
      "wornshieldemitters": 1
@@ -1222,6 +1239,7 @@
   },
   "cpp_le": {
    "name": "Low Emissions",
+   "symbol": "powerplant_stealth",
    "grades": [
     {
      "iron": 1
@@ -1249,6 +1267,7 @@
   },
   "cpp_oc": {
    "name": "Overcharged",
+   "symbol": "powerplant_boosted",
    "grades": [
     {
      "sulphur": 1
@@ -1276,6 +1295,7 @@
   },
   "cs_lr": {
    "name": "Long Range",
+   "symbol": "sensor_longrange",
    "grades": [
     {
      "iron": 1
@@ -1303,6 +1323,7 @@
   },
   "cs_lw": {
    "name": "Light Weight",
+   "symbol": "sensor_lightweight",
    "grades": [
     {
      "phosphorus": 1
@@ -1330,6 +1351,7 @@
   },
   "cs_wa": {
    "name": "Wide Angle",
+   "symbol": "sensor_wideangle",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -1357,6 +1379,7 @@
   },
   "ct_ct": {
    "name": "Clean Tuning",
+   "symbol": "engine_tuned",
    "grades": [
     {
      "sulphur": 1
@@ -1384,6 +1407,7 @@
   },
   "ct_dt": {
    "name": "Dirty Tuning",
+   "symbol": "engine_dirty",
    "grades": [
     {
      "legacyfirmware": 1
@@ -1411,6 +1435,7 @@
   },
   "ct_str": {
    "name": "Strengthening",
+   "symbol": "engine_reinforced",
    "grades": [
     {
      "carbon": 1
@@ -1438,6 +1463,7 @@
   },
   "icr_xcr": {
    "name": "Extended Cargo Rack",
+   "symbol": "cargorack_extended",
    "grades": [
     {},
     {
@@ -1466,6 +1492,7 @@
   },
   "ifs_sre": {
    "name": "Scoop Rate Enhanced",
+   "symbol": "fuelscoop_scooprateenhanced",
    "grades": [
     {
      "phosphorus": 1,
@@ -1496,6 +1523,7 @@
   },
   "ifsdi_eca": {
    "name": "Expanded Capture Arc",
+   "symbol": "fsdinterdictor_expanded",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -1523,6 +1551,7 @@
   },
   "ifsdi_lr": {
    "name": "Longer Range",
+   "symbol": "fsdinterdictor_longrange",
    "grades": [
     {
      "encryptedfiles": 1
@@ -1550,6 +1579,7 @@
   },
   "ihrp_br": {
    "name": "Blast Resistant",
+   "symbol": "hullreinforcement_explosive",
    "grades": [
     {
      "nickel": 1
@@ -1577,6 +1607,7 @@
   },
   "ihrp_hd": {
    "name": "Heavy Duty",
+   "symbol": "hullreinforcement_heavyduty",
    "grades": [
     {
      "carbon": 1
@@ -1604,6 +1635,7 @@
   },
   "ihrp_kr": {
    "name": "Kinetic Resistant",
+   "symbol": "hullreinforcement_kinetic",
    "grades": [
     {
      "nickel": 1
@@ -1631,6 +1663,7 @@
   },
   "ihrp_lw": {
    "name": "Light Weight",
+   "symbol": "hullreinforcement_advanced",
    "grades": [
     {
      "iron": 1
@@ -1658,6 +1691,7 @@
   },
   "ihrp_tr": {
    "name": "Thermal Resistant",
+   "symbol": "hullreinforcement_thermic",
    "grades": [
     {
      "heatconductionwiring": 1
@@ -1685,6 +1719,7 @@
   },
   "imrp_hd": {
    "name": "Heavy Duty",
+   "symbol": "mrp_heavyduty",
    "grades": [
     {},
     {
@@ -1713,6 +1748,7 @@
   },
   "iscb_rc": {
    "name": "Rapid Charge",
+   "symbol": "shieldcellbank_rapid",
    "grades": [
     {
      "sulphur": 1
@@ -1735,6 +1771,7 @@
   },
   "iscb_sp": {
    "name": "Specialised",
+   "symbol": "shieldcellbank_specialised",
    "grades": [
     {
      "legacyfirmware": 1
@@ -1757,6 +1794,7 @@
   },
   "isg_elp": {
    "name": "Enhanced, Low Power",
+   "symbol": "shieldgenerator_optimised",
    "grades": [
     {
      "shieldcyclerecordings": 1
@@ -1784,6 +1822,7 @@
   },
   "isg_kr": {
    "name": "Kinetic Resistant",
+   "symbol": "shieldgenerator_kinetic",
    "grades": [
     {
      "shieldcyclerecordings": 1
@@ -1811,6 +1850,7 @@
   },
   "isg_rf": {
    "name": "Reinforced",
+   "symbol": "shieldgenerator_reinforced",
    "grades": [
     {
      "phosphorus": 1
@@ -1838,6 +1878,7 @@
   },
   "isg_tr": {
    "name": "Thermal Resistant",
+   "symbol": "shieldgenerator_thermic",
    "grades": [
     {
      "shieldcyclerecordings": 1
@@ -1865,6 +1906,7 @@
   },
   "iss_er": {
    "name": "Expanded Radius",
+   "symbol": "sensor_expanded",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -1892,6 +1934,7 @@
   },
   "iss_lrd": {
    "name": "Long Range",
+   "symbol": "sensor_longrangedss",
    "grades": [
     {},
     {
@@ -1920,6 +1963,7 @@
   },
   "misc_agzr": {
    "name": "Anti-Guardian Zone Resistance",
+   "symbol": "guardianmodule_sturdy",
    "grades": [
     {
      "tg_abrasion03": 2
@@ -1934,6 +1978,7 @@
   },
   "misc_lw": {
    "name": "Lightweight",
+   "symbol": "misc_lightweight",
    "grades": [
     {
      "phosphorus": 1
@@ -1961,6 +2006,7 @@
   },
   "misc_rf": {
    "name": "Reinforced",
+   "symbol": "misc_reinforced",
    "grades": [
     {
      "nickel": 1
@@ -1988,6 +2034,7 @@
   },
   "misc_sh": {
    "name": "Shielded",
+   "symbol": "misc_shielded",
    "grades": [
     {
      "wornshieldemitters": 1
@@ -2015,6 +2062,7 @@
   },
   "scan_fs": {
    "name": "Fast Scan",
+   "symbol": "sensor_fastscan",
    "grades": [
     {
      "phosphorus": 1
@@ -2042,6 +2090,7 @@
   },
   "scan_lr": {
    "name": "Long Range",
+   "symbol": "sensor_longrange",
    "grades": [
     {
      "iron": 1
@@ -2069,6 +2118,7 @@
   },
   "scan_wa": {
    "name": "Wide Angle",
+   "symbol": "sensor_wideangle",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -2096,6 +2146,7 @@
   },
   "ucl_ammo": {
    "name": "Ammo Capacity",
+   "symbol": "misc_chaffcapacity",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -2104,6 +2155,7 @@
   },
   "uhsl_ammo": {
    "name": "Ammo Capacity",
+   "symbol": "misc_heatsinkcapacity",
    "grades": [
     {
      "mechanicalscrap": 1,
@@ -2114,6 +2166,7 @@
   },
   "upd_ammo": {
    "name": "Ammo Capacity",
+   "symbol": "misc_pointdefensecapacity",
    "grades": [
     {
      "mechanicalscrap": 1,
@@ -2124,6 +2177,7 @@
   },
   "usb_br": {
    "name": "Blast Resistant",
+   "symbol": "shieldbooster_explosive",
    "grades": [
     {
      "iron": 1
@@ -2151,6 +2205,7 @@
   },
   "usb_hd": {
    "name": "Heavy Duty",
+   "symbol": "shieldbooster_heavyduty",
    "grades": [
     {
      "gridresistors": 1
@@ -2178,6 +2233,7 @@
   },
   "usb_kr": {
    "name": "Kinetic Resistant",
+   "symbol": "shieldbooster_kinetic",
    "grades": [
     {
      "iron": 1
@@ -2205,6 +2261,7 @@
   },
   "usb_ra": {
    "name": "Resistance Augmented",
+   "symbol": "shieldbooster_resistive",
    "grades": [
     {
      "phosphorus": 1
@@ -2232,6 +2289,7 @@
   },
   "usb_tr": {
    "name": "Thermal Resistant",
+   "symbol": "shieldbooster_thermic",
    "grades": [
     {
      "iron": 1
@@ -2259,6 +2317,7 @@
   },
   "wpn_drsk": {
    "name": "Drag Seeker",
+   "symbol": "weapon_dragseeker",
    "grades": [
     {},
     {
@@ -2287,6 +2346,7 @@
   },
   "wpn_ds": {
    "name": "Double Shot",
+   "symbol": "weapon_doubleshot",
    "grades": [
     {
      "carbon": 1
@@ -2314,6 +2374,7 @@
   },
   "wpn_dscr": {
    "name": "Double Screaming",
+   "symbol": "weapon_doublescreaming",
    "grades": [
     {},
     {
@@ -2342,6 +2403,7 @@
   },
   "wpn_ef": {
    "name": "Enduring Feedback",
+   "symbol": "weapon_enduringfeedback",
    "grades": [
     {},
     {
@@ -2370,6 +2432,7 @@
   },
   "wpn_eff": {
    "name": "Efficient",
+   "symbol": "weapon_efficient",
    "grades": [
     {
      "sulphur": 1
@@ -2397,12 +2460,14 @@
   },
   "wpn_exp": {
    "name": "Exposing Seeker",
+   "symbol": null,
    "grades": [
     {}
    ]
   },
   "wpn_fi": {
    "name": "Force Impact",
+   "symbol": "cannon_forceimpact",
    "grades": [
     {},
     {},
@@ -2413,6 +2478,7 @@
   },
   "wpn_foc": {
    "name": "Focused",
+   "symbol": "weapon_focused",
    "grades": [
     {
      "iron": 1
@@ -2440,6 +2506,7 @@
   },
   "wpn_fr": {
    "name": "Far-Reaching",
+   "symbol": "weapon_farreaching",
    "grades": [
     {},
     {
@@ -2468,6 +2535,7 @@
   },
   "wpn_hc": {
    "name": "High Capacity",
+   "symbol": "weapon_highcapacity",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -2495,6 +2563,7 @@
   },
   "wpn_hy": {
    "name": "High-Yield",
+   "symbol": "weapon_highyieldenzyme",
    "grades": [
     {},
     {
@@ -2523,6 +2592,7 @@
   },
   "wpn_ld": {
    "name": "Lockdown",
+   "symbol": "weapon_lockdownseeker",
    "grades": [
     {},
     {
@@ -2551,6 +2621,7 @@
   },
   "wpn_lr": {
    "name": "Long Range",
+   "symbol": "weapon_longrange",
    "grades": [
     {
      "sulphur": 1
@@ -2578,6 +2649,7 @@
   },
   "wpn_lrml": {
    "name": "Long Range Mining Laser",
+   "symbol": "weapon_longrangemininglaser",
    "grades": [
     {},
     {
@@ -2606,6 +2678,7 @@
   },
   "wpn_lw": {
    "name": "Light Weight",
+   "symbol": "weapon_lightweight",
    "grades": [
     {
      "phosphorus": 1
@@ -2633,6 +2706,7 @@
   },
   "wpn_lwts": {
    "name": "Lightweight Thermal Seeker",
+   "symbol": "weapon_lightweightthermalseeker",
    "grades": [
     {},
     {
@@ -2661,6 +2735,7 @@
   },
   "wpn_oc": {
    "name": "Overcharged",
+   "symbol": "weapon_overcharged",
    "grades": [
     {
      "nickel": 1
@@ -2688,6 +2763,7 @@
   },
   "wpn_ol": {
    "name": "Overloaded",
+   "symbol": "beamlaser_overloaded",
    "grades": [
     {},
     {
@@ -2716,6 +2792,7 @@
   },
   "wpn_pc": {
    "name": "Plasma Conversion",
+   "symbol": "weapon_plasmaconversion",
    "grades": [
     {
      "phosphorus": 1,
@@ -2745,6 +2822,7 @@
   },
   "wpn_reg": {
    "name": "Regenerative",
+   "symbol": "burstlaser_regenerative",
    "grades": [
     {},
     {
@@ -2773,6 +2851,7 @@
   },
   "wpn_rf": {
    "name": "Rapid Fire",
+   "symbol": "weapon_rapidfire",
    "grades": [
     {
      "mechanicalscrap": 1
@@ -2800,6 +2879,7 @@
   },
   "wpn_rp": {
    "name": "Rapid Phase",
+   "symbol": "weapon_rapidphase",
    "grades": [
     {},
     {
@@ -2828,6 +2908,7 @@
   },
   "wpn_sr": {
    "name": "Short Range",
+   "symbol": "weapon_shortrange",
    "grades": [
     {
      "nickel": 1
@@ -2855,6 +2936,7 @@
   },
   "wpn_stu": {
    "name": "Sturdy",
+   "symbol": "weapon_sturdy",
    "grades": [
     {
      "nickel": 1

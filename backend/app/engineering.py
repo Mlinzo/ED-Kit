@@ -12,6 +12,10 @@ Stock: the journal's latest Materials event (written at each login: the whole in
 what came and went after it (`DELTAS`), read from the events table when asked; each material
 capped at its grade's storage (300 for grade 1 down to 100 for grade 5).
 
+Your ship (`fitted`): the engineering on the current ship's modules, from the latest Loadout and
+the rolls at engineers after it (the game writes no Loadout after a roll), so that a new goal
+starts from the grade the module has.
+
 Goals are yours (`engineering_goals`), never rebuilt from the journal.
 """
 
@@ -30,6 +34,7 @@ from app.schemas import (
     EngineeringBlueprintView,
     EngineeringCatalogView,
     EngineeringExperimentalView,
+    EngineeringFittedView,
     EngineeringGoalView,
     EngineeringKindView,
     EngineeringMaterialView,
@@ -186,6 +191,71 @@ def stock(conn: sqlite3.Connection) -> tuple[dict[str, int], str | None]:
     return {s: n for s, n in have.items() if n > 0}, row["ts"]
 
 
+# --------------------------------------------------------------------------- your ship
+
+
+@cache
+def _module_kinds() -> dict[str, str]:
+    """Module symbol (journal, lower case) -> its kind (EDSY's key), from the Shop's catalog."""
+    return {
+        v["symbol"]: m["type"]
+        for m in json.loads(SHOP.read_text("utf-8"))["modules"]
+        if m.get("type")
+        for v in m["variants"]
+    }
+
+
+@cache
+def _blueprint_keys() -> dict[tuple[str, str], str]:
+    """(kind, the journal's blueprint name, lower case) -> EDSY's key: some sensors share a name."""
+    data = _catalog()
+    return {
+        (kind["key"], symbol): key
+        for kind in data["modules"]
+        for key in kind["blueprints"]
+        if (symbol := data["blueprints"][key].get("symbol"))
+    }
+
+
+def fitted(conn: sqlite3.Connection) -> list[EngineeringFittedView]:
+    """The modules of your current ship that engineers work on, with their blueprint and grade."""
+    row = conn.execute(
+        "SELECT id, raw FROM events WHERE event = 'Loadout' ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    if row is None:
+        return []
+    # Slot -> (module symbol, blueprint name, grade)
+    slots: dict[str, tuple[str, str, int]] = {}
+    for m in json.loads(row["raw"]).get("Modules") or []:
+        if isinstance(m, dict) and m.get("Slot") and m.get("Item"):
+            done = m.get("Engineering") or {}
+            slots[m["Slot"]] = (
+                str(m["Item"]).lower(),
+                str(done.get("BlueprintName") or "").lower(),
+                int(done.get("Level") or 0),
+            )
+    for (raw,) in conn.execute(
+        "SELECT raw FROM events WHERE id > ? AND event = 'EngineerCraft' ORDER BY id", (row["id"],)
+    ):
+        ev = json.loads(raw)
+        if ev.get("Slot") and ev.get("Module") and ev.get("BlueprintName"):
+            slots[ev["Slot"]] = (
+                str(ev["Module"]).lower(),
+                str(ev["BlueprintName"]).lower(),
+                int(ev.get("Level") or 0),
+            )
+    kinds, keys = _module_kinds(), _blueprint_keys()
+    engineered = {k["key"] for k in _catalog()["modules"]}
+    out = []
+    for item, blueprint, grade in slots.values():
+        kind = kinds.get(item)
+        if kind not in engineered:
+            continue
+        key = keys.get((kind, blueprint))
+        out.append(EngineeringFittedView(module=kind, blueprint=key, grade=grade if key else 0))
+    return out
+
+
 # --------------------------------------------------------------------------- your goals
 
 
@@ -311,4 +381,5 @@ def engineering_view(conn: sqlite3.Connection) -> EngineeringView:
         ],
         stock=have,
         stock_at=listed_at,
+        fitted=fitted(conn),
     )

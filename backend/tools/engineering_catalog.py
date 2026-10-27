@@ -3,9 +3,10 @@ each kind of ship module, with the materials every grade takes (the Shop's engin
 
 Everything comes from EDSY's data (https://edsy.org/eddb.js; EDSY by taleden, CC BY-NC 4.0; the
 game data in it is Frontier's): `mtype` (a kind of module: its blueprints and experimental
-effects), `blueprint` (a recipe per grade), `expeffect` (one recipe) and `material` (its journal
-name; the few FDevIDs lacks, new Thargoid ones, come with EDSY's name, type and grade). EDSY's
-file is JavaScript: Node reads it. Kinds are listed core first, then optional,
+effects), `blueprint` (a recipe per grade, and the name the journal gives it: `symbol`, lower
+case, the same for some blueprints of different kinds), `expeffect` (one recipe) and `material`
+(its journal name; the few FDevIDs lacks, new Thargoid ones, come with EDSY's name, type and
+grade). EDSY's file is JavaScript: Node reads it. Kinds are listed core first, then optional,
 hardpoints and utility mounts (EDSY's `group`), each by name; a recipe names the materials by
 journal symbol, lower case, as the journal's Materials event does.
 
@@ -87,7 +88,11 @@ def build() -> dict[str, Any]:
         "extra_materials": dict(sorted(extra.items())),
         "modules": kinds,
         "blueprints": {
-            key: {"name": b["name"], "grades": [recipe(g) for g in b["mats"]]}
+            key: {
+                "name": b["name"],
+                "symbol": str(b["fdname"]).lower() if b.get("fdname") else None,
+                "grades": [recipe(g) for g in b["mats"]],
+            }
             for key, b in sorted(data["blueprint"].items())
             if key in used_bp
         },

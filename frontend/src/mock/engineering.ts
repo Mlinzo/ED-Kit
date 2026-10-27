@@ -24,5 +24,6 @@ export function buildEngineering(now = Date.now()): EngineeringView {
     needs: needs.map(([symbol, need, have]) => ({ symbol, need, have })),
     stock: Object.fromEntries(needs.filter(([, , have]) => have > 0).map(([symbol, , have]) => [symbol, have])),
     stockAt: daysAgo(0.2, now),
+    fitted: [{ module: 'cfsd', blueprint: null, grade: 0 }],
   }
 }

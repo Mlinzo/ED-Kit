@@ -686,6 +686,16 @@ export interface EngineeringNeedView {
   have: number
 }
 
+/** A module of your current ship engineers work on (a new goal starts from its grade). */
+export interface EngineeringFittedView {
+  /** An EngineeringKindView key. */
+  module: string
+  /** null: not engineered, or a blueprint the catalog lacks. */
+  blueprint: string | null
+  /** 0 with no blueprint. */
+  grade: number
+}
+
 /** GET /api/view/engineering: your goals and what they take against your stock. */
 export interface EngineeringView {
   goals: EngineeringGoalView[]
@@ -694,6 +704,8 @@ export interface EngineeringView {
   stock: Record<string, number>
   /** When the journal last listed them all (null: never). */
   stockAt: string | null
+  /** Your current ship's modules engineers work on (the latest Loadout and the rolls since). */
+  fitted: EngineeringFittedView[]
 }
 
 /** A material: never sold, exchanged at material traders of its type. */

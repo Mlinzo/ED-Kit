@@ -42,6 +42,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Engineering goals start from your ship (2026-10-27): a new goal, or another module or
+  blueprint in the form, takes its "now" grade from such a module on your current ship (the
+  latest Loadout and the rolls at engineers after it; 0 when it has another blueprint or none,
+  the lowest of several; the SCO frame shift drive counts as one); a line under the goals says
+  rolls are counted as at access level 5 and a lower level takes more.
 - Your path on the globe, checked on real play (2026-10-27): the first two days recorded 1,412
   points in 15 stretches on 6 planets, about 1 h 50 min near the ground and 100 km of path, in
   210 KB with the index (150 bytes a point, about 110 KB an hour: you stand still while sampling).

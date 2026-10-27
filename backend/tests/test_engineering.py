@@ -7,8 +7,8 @@ import pytest
 
 from app import engineering
 from app.projector import Projector
-from app.schemas import EngineeringGoalView
-from tests.test_projector import conn, feed, proj  # noqa: F401 - fixtures
+from app.schemas import EngineeringFittedView, EngineeringGoalView
+from tests.test_projector import CMDR, conn, feed, proj  # noqa: F401 - fixtures
 
 TS = "2026-10-26T17:00:00Z"
 
@@ -142,6 +142,43 @@ def test_material_events_refresh_the_engineering_view(
 ) -> None:
     assert proj.apply(ev("MaterialCollected", Name="iron", Count=1), 1) == {"engineering"}
     assert proj.apply(ev("Materials", Raw=[]), 2) == {"engineering"}
+    feed(conn, proj, [CMDR])
+    assert "engineering" in proj.apply(ev("Loadout", Ship="explorer_nx", Modules=[]), 3)
+
+
+def test_your_ship_from_the_loadout_and_the_rolls_after_it(
+    conn: sqlite3.Connection,  # noqa: F811
+    proj: Projector,  # noqa: F811
+) -> None:
+    assert engineering.fitted(conn) == []
+    # The user's FSD: the SCO drive, Increased Range (FSD_LongRange in the journal).
+    fsd = "int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii"
+    feed(
+        conn,
+        proj,
+        [
+            ev("Loadout", Ship="explorer_nx", Modules=[
+                {"Slot": "FrameShiftDrive", "Item": fsd,
+                 "Engineering": {"BlueprintName": "FSD_LongRange", "Level": 2, "Quality": 1.0}},
+                {"Slot": "PowerDistributor", "Item": "int_powerdistributor_size5_class5"},
+                {"Slot": "Slot01_Size1", "Item": "int_dockingcomputer_advanced"},  # not engineered
+            ]),
+            # A roll at the engineer writes no Loadout: it moves the grade on by itself.
+            ev("EngineerCraft", Slot="FrameShiftDrive", Module=fsd, BlueprintName="FSD_LongRange",
+               Level=3, Quality=0.2, Ingredients=[]),
+        ],
+    )  # fmt: skip
+    assert engineering.fitted(conn) == [
+        EngineeringFittedView(module="cfsdo", blueprint="cfsd_ir", grade=3),  # the SCO kind
+        EngineeringFittedView(module="cpd", blueprint=None, grade=0),
+    ]
+    assert engineering.engineering_view(conn).fitted == engineering.fitted(conn)
+    # Another ship: its own Loadout, the rolls before it no longer count.
+    feed(conn, proj, [ev("Loadout", Ship="cobramkiii", Modules=[
+        {"Slot": "FrameShiftDrive", "Item": "int_hyperdrive_size4_class5"},
+    ])])  # fmt: skip
+    plain = EngineeringFittedView(module="cfsd", blueprint=None, grade=0)
+    assert engineering.fitted(conn) == [plain]
 
 
 def test_planet_materials_by_symbol_the_most_first() -> None:

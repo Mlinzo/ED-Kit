@@ -1,11 +1,12 @@
 // The Shop's engineering goals: what you want engineers to do, several at once, and the
 // materials all of it takes against your stock from the journal. A material's name chooses it
-// in the Shop (its traders, and planets rich in it).
+// in the Shop (its traders, and planets rich in it). A goal's "now" grade comes from your
+// current ship when it has such a module.
 
 import { Check, ChevronDown, Pencil, Plus, Trash2, Wrench } from 'lucide-react'
 import { useState } from 'react'
 import { useStore, useView } from '../../api/hooks'
-import type { EngineeringCatalogView, EngineeringGoalView } from '../../api/types'
+import type { EngineeringCatalogView, EngineeringFittedView, EngineeringGoalView } from '../../api/types'
 import { Label } from '../../components/States'
 import { useNow } from '../../hooks/useNow'
 import { t } from '../../i18n'
@@ -39,14 +40,37 @@ function fit(catalog: EngineeringCatalogView, draft: Draft): Draft {
   }
 }
 
+/** Kinds engineers treat as one: the SCO frame shift drive takes the same blueprints. */
+const SAME_KIND: Record<string, string> = { cfsdo: 'cfsd' }
+const kindOf = (key: string) => SAME_KIND[key] ?? key
+
+/**
+ * The grade a module of this kind on your current ship has with this blueprint (0 when it has
+ * another or none; the lowest of several such modules), or null when the ship has no such module.
+ */
+function shipGrade(fitted: readonly EngineeringFittedView[], module: string, blueprint: string): number | null {
+  const same = fitted.filter((f) => kindOf(f.module) === kindOf(module))
+  if (same.length === 0) return null
+  return Math.min(...same.map((f) => (f.blueprint === blueprint ? f.grade : 0)))
+}
+
+/** A draft that starts from the grade your ship has, when it has such a module. */
+function fromShip(catalog: EngineeringCatalogView, fitted: readonly EngineeringFittedView[], draft: Draft): Draft {
+  const fitting = fit(catalog, draft)
+  const grade = shipGrade(fitted, fitting.module, fitting.blueprint)
+  return grade === null ? fitting : fit(catalog, { ...fitting, gradeFrom: grade, gradeTo: Math.max(fitting.gradeTo, grade) })
+}
+
 function GoalForm({
   catalog,
+  fitted,
   start,
   saving,
   onSave,
   onCancel,
 }: {
   catalog: EngineeringCatalogView
+  fitted: readonly EngineeringFittedView[]
   start: Draft
   saving: boolean
   onSave: (draft: Draft) => void
@@ -54,7 +78,9 @@ function GoalForm({
 }) {
   const g = t.shop.goals
   const [draft, setDraft] = useState(() => fit(catalog, start))
-  const set = (patch: Partial<Draft>) => setDraft(fit(catalog, { ...draft, ...patch }))
+  // Another module or blueprint: "now" is what your ship has.
+  const set = (patch: Partial<Draft>) =>
+    setDraft('module' in patch || 'blueprint' in patch ? fromShip(catalog, fitted, { ...draft, ...patch }) : fit(catalog, { ...draft, ...patch }))
   const kind = catalog.modules.find((k) => k.key === draft.module) ?? catalog.modules[0]
   const top = topGrade(catalog, draft.blueprint)
   const grades = Array.from({ length: top + 1 }, (_, i) => i)
@@ -210,6 +236,7 @@ export function EngineeringGoals({
   const goals = data?.goals ?? []
   const needs = [...(data?.needs ?? [])].sort((a, b) => b.need - b.have - (a.need - a.have) || names(a.symbol).localeCompare(names(b.symbol)))
   const short = needs.filter((n) => n.have < n.need).length
+  const fitted = data?.fitted ?? []
   const fresh: Draft = { module: 'cfsd', blueprint: 'cfsd_ir', gradeFrom: 0, gradeTo: 5, experimental: null, count: 1 }
 
   return (
@@ -239,40 +266,51 @@ export function EngineeringGoals({
         <>
           <p className="mt-2 text-xs text-zinc-500">{g.hint}</p>
           {goals.length > 0 && (
-            <ul className="mt-3 divide-y divide-zinc-800/80">
-              {goals.map((goal) => (
-                <li key={goal.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
-                  <span className="min-w-0 text-sm break-words text-zinc-200">{goalLine(catalog, goal)}</span>
-                  <span className="flex shrink-0 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setEditing({ id: goal.id, start: goal })}
-                      aria-label={`${g.edit}: ${goalLine(catalog, goal)}`}
-                      title={g.edit}
-                      className="focus-ring flex size-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 sm:size-8"
-                    >
-                      <Pencil className="size-4" aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => run(() => store.transport.send('DELETE', `/api/engineering/goals/${goal.id}`))}
-                      aria-label={`${g.remove}: ${goalLine(catalog, goal)}`}
-                      title={g.remove}
-                      className="focus-ring flex size-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 sm:size-8"
-                    >
-                      <Trash2 className="size-4" aria-hidden />
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="mt-3 divide-y divide-zinc-800/80">
+                {goals.map((goal) => (
+                  <li key={goal.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
+                    <span className="min-w-0 text-sm break-words text-zinc-200">{goalLine(catalog, goal)}</span>
+                    <span className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEditing({ id: goal.id, start: goal })}
+                        aria-label={`${g.edit}: ${goalLine(catalog, goal)}`}
+                        title={g.edit}
+                        className="focus-ring flex size-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 sm:size-8"
+                      >
+                        <Pencil className="size-4" aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => run(() => store.transport.send('DELETE', `/api/engineering/goals/${goal.id}`))}
+                        aria-label={`${g.remove}: ${goalLine(catalog, goal)}`}
+                        title={g.remove}
+                        className="focus-ring flex size-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 sm:size-8"
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-xs text-zinc-500">{g.rolls}</p>
+            </>
           )}
           {editing ? (
-            <GoalForm key={editing.id ?? 'new'} catalog={catalog} start={editing.start} saving={saving} onSave={save} onCancel={() => setEditing(null)} />
+            <GoalForm
+              key={editing.id ?? 'new'}
+              catalog={catalog}
+              fitted={fitted}
+              start={editing.start}
+              saving={saving}
+              onSave={save}
+              onCancel={() => setEditing(null)}
+            />
           ) : (
             <button
               type="button"
-              onClick={() => setEditing({ id: null, start: fresh })}
+              onClick={() => setEditing({ id: null, start: fromShip(catalog, fitted, fresh) })}
               className={`${button} mt-3 text-zinc-300 ring-zinc-800 hover:bg-zinc-800 hover:text-zinc-50`}
             >
               <Plus className="size-3.5" aria-hidden />

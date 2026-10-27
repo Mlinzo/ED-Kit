@@ -281,7 +281,8 @@ class Projector:
         if isinstance(jump_range, int | float) and jump_range > 0:
             values["jump_range"] = float(jump_range)
         self._update_state(**values)
-        return frozenset({"route", "navroute"})
+        # Engineering: a new goal starts from the grade a module of this ship has.
+        return frozenset({"route", "navroute", "engineering"})
 
     def _fuel_scoop(self, ev: dict[str, Any], _: int) -> frozenset[str]:
         total = _number(ev.get("Total"))
