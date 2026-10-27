@@ -50,6 +50,11 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Biology still to earn (2026-10-27): on the System tab a planet's bio figure (list, map card,
+  body card and its total) drops each species you have analysed there, at its value with the
+  bonus, down to 0; the order by value keeps the whole worth, so planets do not move while you
+  sample. The Surface tab no longer hands you back to the tab you were on when a species is done:
+  the next one is often on the same planet.
 - Time spent (2026-10-27): how long you stayed in each system and at each planet (from the
   approach to leaving, landings included), every visit together, and what the stay brought per
   hour (the estimate of your scans and analysed species; stays under 10 minutes get none). The

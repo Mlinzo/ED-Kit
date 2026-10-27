@@ -15,7 +15,7 @@ import { TimeSpent } from '../../components/TimeSpent'
 import { HelpTip } from '../../guide/HelpTip'
 import { t } from '../../i18n'
 import type { TopicId } from '../../guide/topics'
-import { bodyLabel } from '../../lib/body'
+import { bioAnalysed, bioLeft, bodyLabel } from '../../lib/body'
 import { formatMass, formatGravity, formatKelvin, formatKm, formatLs } from '../../lib/format'
 
 function Section({
@@ -256,6 +256,9 @@ export function BodyDetail({
 }) {
   const hasBio = body.signals.bio > 0 || body.species.length > 0
   const isPlanet = body.kind === 'planet'
+  // Biology still to earn: the analysed species drop out of the tile and of the total.
+  const bio = bioLeft(body)
+  const total = body.totalValue - bioAnalysed(body)
   const otherSignals = [
     { label: t.body.signalGeo, n: body.signals.geo },
     { label: t.body.signalMining, n: body.signals.mining },
@@ -350,7 +353,7 @@ export function BodyDetail({
         help="dss"
         aside={
           <span className="text-sm text-zinc-500">
-            {t.body.total} <Credits value={body.totalValue} className="font-semibold text-zinc-200" />
+            {t.body.total} <Credits value={total} className="font-semibold text-zinc-200" />
           </span>
         }
       >
@@ -366,7 +369,7 @@ export function BodyDetail({
             tone={body.bioValueMax > 0 ? 'text-emerald-300' : 'text-zinc-500'}
             className="col-span-2"
           >
-            {body.bioValueMax > 0 ? <CreditRange min={body.bioValueMin} max={body.bioValueMax} /> : t.common.unknown}
+            {body.bioValueMax > 0 ? <CreditRange min={bio.min} max={bio.max} /> : t.common.unknown}
           </ValueTile>
         </div>
       </Section>

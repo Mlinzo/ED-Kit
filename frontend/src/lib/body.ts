@@ -15,6 +15,20 @@ export function sortBodies(bodies: readonly BodyView[], sort: BodySort): BodyVie
   )
 }
 
+/**
+ * Credits of the species you have analysed on the body: they sit in both ends of its bio range
+ * (at their value with the bonus).
+ */
+export function bioAnalysed(body: BodyView): number {
+  return body.species.reduce((sum, s) => (s.status === 'analysed' ? sum + s.bonusValue : sum), 0)
+}
+
+/** The body's biology still to earn: its estimate less the species analysed there. */
+export function bioLeft(body: BodyView): { min: number; max: number } {
+  const done = bioAnalysed(body)
+  return { min: Math.max(0, body.bioValueMin - done), max: Math.max(0, body.bioValueMax - done) }
+}
+
 /** Bodies worth a glance; the rest are dimmed in the list. */
 export function isNotable(body: BodyView): boolean {
   return (

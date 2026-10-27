@@ -8,7 +8,7 @@ import { sourceMarker } from '../components/source'
 import type { RouteTarget } from '../components/BodyBadges'
 import { CommunityGlyph, SourceIcon } from '../components/SourceBadge'
 import { t } from '../i18n'
-import { bodyLabel } from '../lib/body'
+import { bioLeft, bodyLabel } from '../lib/body'
 import { formatLs } from '../lib/format'
 import type { MapRegistry } from './context'
 import type { MapNode } from './layout'
@@ -165,6 +165,7 @@ function Card({
   const carto = body.kind === 'planet' && body.dssValue > 0 ? body.dssValue : body.fssValue
   const cartoLabel = body.kind === 'planet' && body.dssValue > 0 ? t.system.dss : t.system.fss
   const mapTone = body.worthMapping && !body.mappedByMe ? 'text-emerald-300' : 'text-zinc-200'
+  const bio = bioLeft(body)
   return (
     <div className="pointer-events-none w-60 rounded-xl bg-zinc-950/88 p-3 shadow-2xl ring-1 shadow-black/60 ring-white/12 backdrop-blur-md ring-inset">
       <div className="flex items-baseline gap-2">
@@ -229,7 +230,7 @@ function Card({
           <div>
             <dt className="text-[10px] font-medium tracking-wide text-zinc-500 uppercase">{t.system.bio}</dt>
             <dd className="text-sm font-semibold text-emerald-300">
-              <CreditRange min={body.bioValueMin} max={body.bioValueMax} />
+              <CreditRange min={bio.min} max={bio.max} />
             </dd>
           </div>
         )}

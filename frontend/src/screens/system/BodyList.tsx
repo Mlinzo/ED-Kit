@@ -9,7 +9,7 @@ import { CreditRange, Credits } from '../../components/Credits'
 import { sourceMarker } from '../../components/source'
 import { SourceTag } from '../../components/SourceBadge'
 import { t } from '../../i18n'
-import { bodyLabel } from '../../lib/body'
+import { bioLeft, bodyLabel } from '../../lib/body'
 import { formatLs } from '../../lib/format'
 import { bodyColor } from '../../map/visuals/colors'
 
@@ -153,6 +153,8 @@ function BodyRow({
   const caption = dim ? 'text-zinc-400' : 'text-zinc-500'
   const hasDss = body.kind === 'planet' && body.dssValue > 0
   const hasBio = body.bioValueMax > 0
+  // What is still to earn: the figure goes down with every species you analyse.
+  const bio = bioLeft(body)
   const primary = hasDss ? body.dssValue : body.fssValue
   const valueTone = high ? 'text-zinc-100' : 'text-zinc-400'
   const toMap = body.worthMapping && !body.mappedByMe
@@ -219,7 +221,7 @@ function BodyRow({
       </div>
       <div className="hidden text-right text-[15px] font-medium lg:block">
         {hasBio ? (
-          <CreditRange min={body.bioValueMin} max={body.bioValueMax} className={bioTone} />
+          <CreditRange min={bio.min} max={bio.max} className={bioTone} />
         ) : (
           <span className="text-zinc-600">{t.common.unknown}</span>
         )}
@@ -236,7 +238,7 @@ function BodyRow({
         {hasBio && (
           <span className={`text-sm font-semibold ${bioTone}`}>
             <span className="sr-only">{t.system.bio} </span>
-            <CreditRange min={body.bioValueMin} max={body.bioValueMax} />
+            <CreditRange min={bio.min} max={bio.max} />
           </span>
         )}
       </div>

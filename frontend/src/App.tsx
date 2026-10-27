@@ -71,31 +71,19 @@ export default function App() {
   const liveKey = useSurfaceLiveKey()
   const surfaceLive = liveKey !== null
 
-  // Auto-switch to Surface when a sampling run starts (or resumes), and back when it ends —
-  // but never against the user: any manual tab choice cancels the way back, and leaving
-  // Surface by hand during a run keeps it closed until a different run starts.
+  // Auto-switch to Surface when a sampling run starts (or resumes). A finished run stays there
+  // (the next species is often on the same planet); leaving Surface by hand during a run keeps
+  // it closed until a different run starts.
   const [seenKey, setSeenKey] = useState<string | null>(null)
-  const [autoFrom, setAutoFrom] = useState<Tab | null>(null)
   const [dismissedKey, setDismissedKey] = useState<string | null>(null)
   if (liveKey !== seenKey) {
     setSeenKey(liveKey)
-    if (liveKey !== null) {
-      if (tab !== 'surface' && liveKey !== dismissedKey) {
-        setAutoFrom(tab)
-        setPage({ tab: 'surface', address: null })
-      }
-    } else {
-      if (tab === 'surface' && autoFrom) setPage({ tab: autoFrom, address: autoFrom === 'system' ? pastAddress : null })
-      setAutoFrom(null)
-    }
+    if (liveKey !== null && tab !== 'surface' && liveKey !== dismissedKey) setPage({ tab: 'surface', address: null })
   }
 
   // Back / Forward: the page in the address bar, chosen by the user like a click.
   useEffect(() => {
-    const onPop = () => {
-      setPage(parsePath(window.location.pathname) ?? { tab: 'system', address: null })
-      setAutoFrom(null)
-    }
+    const onPop = () => setPage(parsePath(window.location.pathname) ?? { tab: 'system', address: null })
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
@@ -105,7 +93,6 @@ export default function App() {
       if (next.tab !== tab || next.address !== page.address) window.scrollTo({ top: 0 })
       if (here() !== urlOf(next)) window.history.pushState(null, '', urlOf(next))
       setPage(next)
-      setAutoFrom(null)
       setDismissedKey(liveKey !== null && next.tab !== 'surface' ? liveKey : null)
     },
     [liveKey, page.address, tab],
