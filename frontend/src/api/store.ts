@@ -47,21 +47,25 @@ export interface ViewEntry<T> {
   loading: boolean
 }
 
-export const TOPICS: readonly Topic[] = [
-  'system',
-  'surface',
-  'session',
-  'sessions',
-  'sell',
-  'shop',
-  'stats',
-  'history',
-  'route',
-  'navroute',
-  'galaxy',
-  'bookmarks',
-  'live',
-]
+// Every topic: a (re)connection refreshes them all, and a view retained before it would never
+// load otherwise. A Record, so that a topic left out does not compile.
+const EVERY_TOPIC: Record<Topic, true> = {
+  system: true,
+  surface: true,
+  session: true,
+  sessions: true,
+  sell: true,
+  shop: true,
+  stats: true,
+  history: true,
+  route: true,
+  navroute: true,
+  galaxy: true,
+  bookmarks: true,
+  engineering: true,
+  live: true,
+}
+export const TOPICS = Object.keys(EVERY_TOPIC) as readonly Topic[]
 
 /** Minimum gap between two requests for the same view (coalesces invalidate bursts). */
 const MIN_GAP_MS = 250
