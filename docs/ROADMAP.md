@@ -13,14 +13,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Check texts about game mechanics against sources: mechanics change, and a wrong guide for a
   newcomer is worse than none. Re-check the guide after big game updates.
 
-### Your path on the globe: check the recording
-- Check how the path is built (`app/track.py`: a point every 5 m on foot, 20 m in the SRV, 50 m
-  in the ship below 5 km; stretches; the globe gets new points every 5 s) and whether it fills the
-  database. Measured 2026-10-26: 110 bytes a point with its index, so about 0.4 MB an hour on foot,
-  0.5 MB in the SRV, up to 1.6 MB in low flight (the 0.25 s status poll caps it at 4 points a
-  second). Not yet seen on real play. If it grows too much: thin old stretches (Douglas–Peucker),
-  keep the latest visits per body, and count the table in the database size check.
-
 ## Deferred
 - Rank progress (Explorer, Exobiologist).
 - Ship condition: module wear, AFMU ammo, FSD damage from neutron boosts.
@@ -50,6 +42,13 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Your path on the globe, checked on real play (2026-10-27): the first two days recorded 1,412
+  points in 15 stretches on 6 planets, about 1 h 50 min near the ground and 100 km of path, in
+  210 KB with the index (150 bytes a point, about 110 KB an hour: you stand still while sampling).
+  That is 1 % of the database, so old stretches are not thinned. A stretch starts when you come
+  below 5 km after supercruise (its first seconds are fast flight, points up to 1.4 km apart), on
+  a relog, or after flying high; it is also split where Status.json briefly loses the position
+  (launching the SRV), on the same spot, so the line goes on unbroken.
 - Biology still to earn (2026-10-27): on the System tab a planet's bio figure (list, map card,
   body card and its total) drops each species you have analysed there, at its value with the
   bonus, down to 0; the order by value keeps the whole worth, so planets do not move while you
