@@ -9,6 +9,7 @@ import { GuideProvider } from './guide/GuideProvider'
 import { BookmarksScreen } from './screens/bookmarks/BookmarksScreen'
 import { GalaxyScreen } from './screens/galaxy/GalaxyScreen'
 import { HistoryScreen } from './screens/history/HistoryScreen'
+import { MiningScreen } from './screens/mining/MiningScreen'
 import { RouteScreen } from './screens/route/RouteScreen'
 import { SessionScreen } from './screens/session/SessionScreen'
 import { ShopScreen } from './screens/shop/ShopScreen'
@@ -144,6 +145,7 @@ export default function App() {
             {tab === 'galaxy' && <GalaxyScreen onShowHistory={() => goTo('history')} />}
             {tab === 'bookmarks' && <BookmarksScreen onOpenSystem={openSystem} onShowSurface={() => goTo('surface')} />}
             {tab === 'shop' && <ShopScreen onRouteTo={planRouteTo} />}
+            {tab === 'mining' && <MiningScreen onRouteTo={planRouteTo} />}
             {tab === 'stats' && <StatsScreen />}
           </main>
           <BottomTabs tab={tab} onTab={selectTab} surfaceLive={surfaceLive} />

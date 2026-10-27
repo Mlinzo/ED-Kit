@@ -20,6 +20,7 @@ import { createMockBookmarks } from './bookmarks'
 import { createMockRoute } from './route'
 import { buildSessions } from './sessions'
 import { buildEngineering } from './engineering'
+import { buildMining } from './mining'
 import { buildShop } from './shop'
 import { buildGalaxy, buildLive, buildNavRoute } from './travel'
 import { buildStats } from './stats'
@@ -188,6 +189,7 @@ export function createMockTransport(): Transport {
     '/api/view/sessions': () => sessions,
     '/api/view/sell': (query) => buildSell(query.get('carriers') === 'true'),
     '/api/view/shop': (query) => buildShop(query.get('item'), query.get('carriers') === 'true'),
+    '/api/view/mining': (query) => buildMining(query.get('item'), query.get('carriers') === 'true'),
     '/api/view/stats': () => stats,
     '/api/view/history': () => history,
     '/api/view/route': () => route.view(),

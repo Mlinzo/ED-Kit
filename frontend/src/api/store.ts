@@ -7,6 +7,7 @@ import type {
   IngestState,
   LiveStatus,
   LiveView,
+  MiningView,
   NavRouteView,
   RouteView,
   SellView,
@@ -27,6 +28,7 @@ export interface ViewMap {
   sessions: SessionsView
   sell: SellView
   shop: ShopView
+  mining: MiningView
   stats: StatsView
   history: HistoryView
   route: RouteView
@@ -56,6 +58,7 @@ const EVERY_TOPIC: Record<Topic, true> = {
   sessions: true,
   sell: true,
   shop: true,
+  mining: true,
   stats: true,
   history: true,
   route: true,

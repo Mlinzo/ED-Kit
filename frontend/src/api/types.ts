@@ -796,6 +796,100 @@ export interface ShopView {
   traded: boolean
 }
 
+/** GET /api/view/mining: a commodity worth mining, where to mine it and where to sell it (Spansh). */
+export interface MiningView {
+  state: 'ready' | 'unknown_item' | 'offline' | 'unknown_position' | 'failed'
+  /** What can be chosen, in the tab's order. */
+  commodities: MiningCommodityView[]
+  /** The chosen commodity's journal symbol, and its name. */
+  item: string | null
+  name: string | null
+  /** Rings can have hotspots of it (Osmium: none). */
+  hotspots: boolean
+  ship: string | null
+  pad: 'S' | 'M' | 'L' | null
+  carriers: boolean
+  /** The markets paying the most for it, the best price first. */
+  buyers: MiningBuyerView[]
+  /** Carriers hidden: one paying more than every buyer listed. */
+  betterCarrier: MiningBuyerView | null
+  /** The nearest rings with its hotspots. */
+  rings: MiningRingView[]
+  /** The shortest trip: to a ring, then to the ring's nearest buyer. */
+  trip: MiningTripView | null
+  searchedAt: string | null
+  /** Buyers are asked for within it. */
+  reachLy: number
+}
+
+export interface MiningCommodityView {
+  symbol: string
+  name: string
+  hotspots: boolean
+}
+
+export interface MiningBuyerView {
+  station: string
+  kind: SellStationView['kind']
+  systemName: string
+  systemAddress: string | null
+  /** From you. */
+  distanceLy: number
+  jumps: number | null
+  distLs: number | null
+  /** Its largest landing pad. */
+  pad: 'S' | 'M' | 'L' | null
+  /** Credits it pays a tonne. */
+  price: number
+  /** Tonnes it wants. */
+  demand: number
+  /** When Spansh last had its market (ISO). */
+  marketAt: string | null
+  permit: boolean
+  access: 'all' | 'unknown' | null
+}
+
+/** The buyer nearest to a ring. */
+export interface MiningSellView {
+  station: string
+  systemName: string
+  /** From the ring. */
+  distanceLy: number
+  price: number
+}
+
+export interface MiningRingView {
+  /** E.g. "Diso 5 A Ring". */
+  name: string
+  body: string
+  systemName: string
+  systemAddress: string | null
+  /** From you. */
+  distanceLy: number
+  jumps: number | null
+  /** The body's distance from the arrival star. */
+  distLs: number | null
+  type: string | null
+  /** The body's reserves: Pristine, Major, Common, Low or Depleted. */
+  reserve: string | null
+  /** Hotspots of the commodity. */
+  count: number
+  /** The ring's other hotspots. */
+  others: { name: string; count: number }[]
+  /** When its hotspots reached Spansh (ISO). */
+  reportedAt: string | null
+  sell: MiningSellView | null
+}
+
+export interface MiningTripView {
+  ring: string
+  systemName: string
+  /** From you to the ring. */
+  distanceLy: number
+  sell: MiningSellView
+  totalLy: number
+}
+
 /** A landable body with much of a raw material (Spansh's body search). */
 export interface ShopBodyView {
   name: string
@@ -1523,6 +1617,7 @@ export type Topic =
   | 'sessions'
   | 'sell'
   | 'shop'
+  | 'mining'
   | 'stats'
   | 'history'
   | 'route'

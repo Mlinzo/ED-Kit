@@ -42,6 +42,17 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
   instead.
 
 ## Done
+- Mining tab (2026-10-27), after EDTools' Miner's Tool: choose one of 14 commodities worth mining
+  (the 13 with ring hotspots, and Osmium); the nearest rings with its hotspots (how many,
+  highlighted from two up as they may overlap, the ring type, the body's reserves, the other
+  hotspots there, the nearest buyer listed), the markets within 500 ly paying the most for it
+  (price, demand, how old the market data is, pads for your ship; ordered by price, distance or
+  demand; fleet carriers on request, the best-paying one named while hidden: carriers' buy orders
+  often pay far more), and the shortest trip from you to a ring, then to its buyer. Spansh data,
+  kept an hour. At the edge of the bubble: Platinum rings 4-16 ly away, buyers up to
+  333,030 cr/t. Ten tabs: the phone bar's cells take the width their label needs from 360 px (a
+  pixel smaller below 390 px), and the top bar shows tab names from 1440 px and the commander's
+  name from 1600 px.
 - Systems the game knew in advance (2026-10-27): in most populated systems the honk finds every
   body known at once (Progress 1.0) and the journal gets no Scan, not even the arrival star's, nor
   FSSAllBodiesFound, so "Bodies found" read 0/31 while the game's FSS showed 31/31. A system
@@ -422,6 +433,6 @@ Decisions as of 2026-10-17. The order under "Doing" is a list, not a priority.
 - Keeping fewer journal events in the database (2026-10-25): `StoredModules` alone is 29 % of the
   copied lines and the app reads none of them; zlib per row gives only 2.3 times. Left as is so
   that later features can use the whole history; the journals stay on disk too.
-- A separate interface for miners (a Discord player's request, 2026-10-17): places in the galaxy,
-  places on planets, refinery output in tonnes per hour. The journal has it (`ProspectedAsteroid`,
-  `AsteroidCracked`, `MiningRefined`). First find out which tools he uses.
+- More for miners (a Discord player's request, 2026-10-17): places in the galaxy are on the Mining
+  tab (2026-10-27); places on planets are bookmarks; refinery output in tonnes per hour is still
+  open. The journal has it (`ProspectedAsteroid`, `AsteroidCracked`, `MiningRefined`).

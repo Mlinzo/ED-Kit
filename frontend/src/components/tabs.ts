@@ -1,7 +1,7 @@
-import { Bookmark, ChartNoAxesColumn, Galaxy, History, Orbit, Radar, Route, ShoppingCart, Wallet, type LucideIcon } from 'lucide-react'
+import { Bookmark, ChartNoAxesColumn, Galaxy, History, Orbit, Pickaxe, Radar, Route, ShoppingCart, Wallet, type LucideIcon } from 'lucide-react'
 import { t } from '../i18n'
 
-export type Tab = 'system' | 'surface' | 'route' | 'session' | 'history' | 'galaxy' | 'bookmarks' | 'shop' | 'stats'
+export type Tab = 'system' | 'surface' | 'route' | 'session' | 'history' | 'galaxy' | 'bookmarks' | 'shop' | 'mining' | 'stats'
 
 export const TABS: ReadonlyArray<{ id: Tab; label: string; short: string; icon: LucideIcon }> = [
   { id: 'system', label: t.tabs.system, short: t.tabs.short.system, icon: Orbit },
@@ -12,6 +12,7 @@ export const TABS: ReadonlyArray<{ id: Tab; label: string; short: string; icon: 
   { id: 'galaxy', label: t.tabs.galaxy, short: t.tabs.short.galaxy, icon: Galaxy },
   { id: 'bookmarks', label: t.tabs.bookmarks, short: t.tabs.short.bookmarks, icon: Bookmark },
   { id: 'shop', label: t.tabs.shop, short: t.tabs.short.shop, icon: ShoppingCart },
+  { id: 'mining', label: t.tabs.mining, short: t.tabs.short.mining, icon: Pickaxe },
   { id: 'stats', label: t.tabs.stats, short: t.tabs.short.stats, icon: ChartNoAxesColumn },
 ]
 
