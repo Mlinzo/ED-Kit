@@ -7,9 +7,20 @@ A ship missing here needs an unknown pad: nothing is filtered for it.
 
 from __future__ import annotations
 
-from typing import Literal
+import json
+import sqlite3
+from typing import Any, Literal
 
 Pad = Literal["S", "M", "L"]
+
+
+def latest_loadout(conn: sqlite3.Connection) -> tuple[int, dict[str, Any]] | None:
+    """Your current ship as the latest Loadout event has it: its event id and the event."""
+    row = conn.execute(
+        "SELECT id, raw FROM events WHERE event = 'Loadout' ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    return None if row is None else (row[0], json.loads(row[1]))
+
 
 SHIPS: dict[str, tuple[str, Pad]] = {
     "adder": ("Adder", "S"),

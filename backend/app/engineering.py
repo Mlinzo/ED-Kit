@@ -41,6 +41,7 @@ from app.schemas import (
     EngineeringNeedView,
     EngineeringView,
 )
+from app.ships import latest_loadout
 
 DATA = Path(__file__).parent / "data" / "engineering.json"
 SHOP = DATA.with_name("shop.json")
@@ -219,14 +220,13 @@ def _blueprint_keys() -> dict[tuple[str, str], str]:
 
 def fitted(conn: sqlite3.Connection) -> list[EngineeringFittedView]:
     """The modules of your current ship that engineers work on, with their blueprint and grade."""
-    row = conn.execute(
-        "SELECT id, raw FROM events WHERE event = 'Loadout' ORDER BY id DESC LIMIT 1"
-    ).fetchone()
-    if row is None:
+    loadout = latest_loadout(conn)
+    if loadout is None:
         return []
+    loadout_id, ship = loadout
     # Slot -> (module symbol, blueprint name, grade)
     slots: dict[str, tuple[str, str, int]] = {}
-    for m in json.loads(row["raw"]).get("Modules") or []:
+    for m in ship.get("Modules") or []:
         if isinstance(m, dict) and m.get("Slot") and m.get("Item"):
             done = m.get("Engineering") or {}
             slots[m["Slot"]] = (
@@ -235,7 +235,7 @@ def fitted(conn: sqlite3.Connection) -> list[EngineeringFittedView]:
                 int(done.get("Level") or 0),
             )
     for (raw,) in conn.execute(
-        "SELECT raw FROM events WHERE id > ? AND event = 'EngineerCraft' ORDER BY id", (row["id"],)
+        "SELECT raw FROM events WHERE id > ? AND event = 'EngineerCraft' ORDER BY id", (loadout_id,)
     ):
         ev = json.loads(raw)
         if ev.get("Slot") and ev.get("Module") and ev.get("BlueprintName"):
