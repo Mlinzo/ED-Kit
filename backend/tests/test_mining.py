@@ -1,20 +1,25 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from app import db, mining, spansh, views
-from app.mining import MiningFinder
+from app.mining import BuyerFilters, MiningFinder, RingFilters
 from app.projector import Projector
 from app.shop import Item, ShopFinder
 from tests.test_projector import CMDR, feed, jump
 from tests.test_shop import raw
 
-TYPE9 = {"timestamp": "2026-10-15T20:01:00Z", "event": "Loadout", "Ship": "Type9"}
+TYPE9 = {
+    "timestamp": "2026-10-15T20:01:00Z",
+    "event": "Loadout",
+    "Ship": "Type9",
+    "CargoCapacity": 720,
+}
 PERMIT_SYSTEM = 777
 
 
@@ -40,7 +45,12 @@ def ring(name: str, kind: str, signals: dict[str, int]) -> dict[str, Any]:
 
 
 def body(
-    name: str, system: str, x: float, rings: list[dict[str, Any]], reserve: str = "Pristine"
+    name: str,
+    system: str,
+    x: float,
+    rings: list[dict[str, Any]],
+    reserve: str = "Pristine",
+    ls: float = 812.4,
 ) -> dict[str, Any]:
     return {
         "name": name,
@@ -49,7 +59,7 @@ def body(
         "system_x": x,
         "system_y": 0.0,
         "system_z": 0.0,
-        "distance_to_arrival": 812.4,
+        "distance_to_arrival": ls,
         "reserve_level": reserve,
         "rings": rings,
     }
@@ -75,13 +85,20 @@ class FakeFinder(MiningFinder):
         self, stations: list[dict[str, Any]], bodies: list[dict[str, Any]] | None = None
     ) -> None:
         self.asked: list[str] = []
+        self.filters: list[RingFilters | BuyerFilters] = []
 
-        def buyers(item: Item, here: tuple[float, float, float], large: bool) -> list[Any]:
+        def buyers(
+            item: Item, here: tuple[float, float, float], large: bool, filters: BuyerFilters
+        ) -> list[Any]:
             self.asked.append(f"buyers {item.symbol} {'L' if large else '-'}")
+            self.filters.append(filters)
             return [b for r in stations if (b := mining.bid(r, item)) is not None]
 
-        def rings(item: Item, here: tuple[float, float, float]) -> list[dict[str, Any]]:
+        def rings(
+            item: Item, here: tuple[float, float, float], filters: RingFilters
+        ) -> list[dict[str, Any]]:
             self.asked.append(f"rings {item.symbol}")
+            self.filters.append(filters)
             return bodies or []
 
         super().__init__(ShopFinder(None, permits=lambda: {PERMIT_SYSTEM}), buyers, rings)
@@ -168,6 +185,7 @@ def test_where_to_sell_and_where_to_mine(conn: sqlite3.Connection, proj: Project
     view = mining.mining_view(conn, state(conn), finder, "painite")
     assert view.state == "ready" and view.item == "painite" and view.name == "Painite"
     assert view.hotspots and view.pad == "L" and view.searched_at is not None
+    assert view.cargo == 720  # the hold of the latest Loadout
     assert finder.asked == ["buyers painite L", "rings painite"]
 
     # Where to sell: the best price first; no outpost for a Type-9, no market without demand,
@@ -237,11 +255,50 @@ def test_rings_with_no_buyer_near(conn: sqlite3.Connection, proj: Projector) -> 
 def test_failed_search(conn: sqlite3.Connection, proj: Projector) -> None:
     feed(conn, proj, [CMDR, jump()])
 
-    def fail(item: Item, here: tuple[float, float, float], large: bool) -> list[Any]:
+    def fail(item: Item, here: Any, large: bool, filters: BuyerFilters) -> list[Any]:
         raise spansh.SpanshError("down")
 
-    finder = MiningFinder(ShopFinder(None, permits=lambda: set()), fail, lambda item, here: [])
+    finder = MiningFinder(ShopFinder(None, permits=lambda: set()), fail, lambda *_: [])
     assert mining.mining_view(conn, state(conn), finder, "painite").state == "failed"
+
+
+def test_filters_narrow_both_lists(conn: sqlite3.Connection, proj: Projector) -> None:
+    feed(conn, proj, [CMDR, jump()])
+    now = datetime.now(UTC)
+    fresh = {"market_updated_at": (now - timedelta(days=2)).isoformat()}
+    finder = FakeFinder(
+        [
+            raw("Kept", "Lave", 11, ls=400, market=[bid("Painite", 900, 300_000)]) | fresh,
+            raw("Old", "Lave", 11, ls=400, market=[bid("Painite", 900, 310_000)])
+            | {"market_updated_at": (now - timedelta(days=40)).isoformat()},
+            raw("Far out", "Lave", 11, ls=3_000, market=[bid("Painite", 900, 320_000)]) | fresh,
+            raw("Small", "Lave", 11, ls=400, market=[bid("Painite", 100, 330_000)]) | fresh,
+        ],
+        [
+            body("Lave 1", "Lave", 12, [ring("Lave 1 A Ring", "Metallic", {"Painite": 1})]),
+            body("Lave 2", "Lave", 12, [ring("Lave 2 A Ring", "Rocky", {"Painite": 1})], "Major"),
+            body("Lave 3", "Lave", 12, [ring("Lave 3 A Ring", "Icy", {"Painite": 1})], "Depleted"),
+            body("Lave 4", "Lave", 12, [ring("Lave 4 A Ring", "Icy", {"Painite": 1})], ls=9_000),
+        ],
+    )
+    rings = RingFilters(reserves=frozenset({"Pristine", "Major"}), max_ls=5_000)
+    buyers = BuyerFilters(min_demand=720, max_age_days=7, max_ls=1_000)
+    view = mining.mining_view(conn, state(conn), finder, "painite", False, rings, buyers)
+    # Spansh is asked with them, and what it sends against them is left out too.
+    assert finder.filters == [buyers, rings]
+    assert [r.name for r in view.rings] == ["Lave 1 A Ring", "Lave 2 A Ring"]
+    assert [b.station for b in view.buyers] == ["Kept"]
+    # Other filters: another answer; the same ones: the kept answer.
+    mining.mining_view(conn, state(conn), finder, "painite")
+    mining.mining_view(conn, state(conn), finder, "painite", False, rings, buyers)
+    assert len(finder.asked) == 4
+
+
+def test_filters_from_the_query() -> None:
+    assert mining.parse_reserves(None) == frozenset()
+    assert mining.parse_reserves("Pristine,Major") == frozenset({"Pristine", "Major"})
+    with pytest.raises(ValueError):
+        mining.parse_reserves("Pristine,Rich")
 
 
 def test_searches_ask_spansh_for_buyers_by_price_and_rings_with_hotspots(
@@ -270,7 +327,9 @@ def test_searches_ask_spansh_for_buyers_by_price_and_rings_with_hotspots(
     station_asks = [a for a in asked if a[0] == "stations"]
     assert len(station_asks) == 2  # stations and carriers
     for _, filters, sort in station_asks:
-        assert filters["market"] == [{"name": "Painite", "demand": mining.IN_DEMAND}]
+        assert filters["market"] == [
+            {"name": "Painite", "demand": {"value": [1, 10**9], "comparison": "<=>"}}
+        ]
         assert filters["has_large_pad"] == {"value": True}
         assert sort[0] == {"market_sell_price": [{"name": "Painite", "direction": "desc"}]}
 
@@ -278,6 +337,27 @@ def test_searches_ask_spansh_for_buyers_by_price_and_rings_with_hotspots(
     [(_, filters, fields)] = [a for a in asked if a[0] == "bodies"]
     assert filters == {"ring_signals": [{"name": "Painite", "value": [1, 99], "comparison": "<=>"}]}
     assert "rings" in fields and "reserve_level" in fields
+
+    # With filters: Spansh does the filtering (the forms it does not ignore, checked 2026-10-27).
+    asked.clear()
+    now = datetime(2026, 10, 27, 12, 0, tzinfo=UTC)
+    narrow = BuyerFilters(min_demand=720, max_age_days=7, max_ls=1_000)
+    mining.search_buyers(painite, (0, 0, 0), False, narrow, now)
+    for _, filters, _ in asked:
+        assert filters["market"] == [
+            {"name": "Painite", "demand": {"value": [720, 10**9], "comparison": "<=>"}}
+        ]
+        assert filters["market_updated_at"] == {
+            "value": ["2026-10-20T12:00:00Z", "2026-10-28T12:00:00Z"],
+            "comparison": "<=>",
+        }
+        assert filters["distance_to_arrival"] == {"value": [0, 1_000], "comparison": "<=>"}
+        assert "has_large_pad" not in filters
+    asked.clear()
+    mining.search_rings(painite, (0, 0, 0), RingFilters(frozenset({"Major", "Pristine"}), 5_000))
+    [(_, filters, _)] = asked
+    assert filters["reserve_level"] == {"value": ["Pristine", "Major"]}
+    assert filters["distance_to_arrival"] == {"value": [0, 5_000], "comparison": "<=>"}
 
 
 def test_endpoint_lists_the_commodities_offline(tmp_path: Path) -> None:
@@ -293,3 +373,7 @@ def test_endpoint_lists_the_commodities_offline(tmp_path: Path) -> None:
             "hotspots": True,
         }
         assert client.get("/api/view/mining?item=painite").json()["state"] == "offline"
+        query = "reserves=Pristine,Major&ringLs=5000&demand=720&freshDays=7&stationLs=1000"
+        assert client.get(f"/api/view/mining?item=painite&{query}").json()["state"] == "offline"
+        assert client.get("/api/view/mining?item=painite&reserves=Rich").status_code == 422
+        assert client.get("/api/view/mining?item=painite&demand=0").status_code == 422

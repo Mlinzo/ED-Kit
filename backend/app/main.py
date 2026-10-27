@@ -15,9 +15,9 @@ import webbrowser
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -229,11 +229,27 @@ def create_app(settings: Settings | None = None, *, rebuild: bool = False) -> Fa
         return view.model_copy(update={"places": bookmarks.mark_stations(conn, view.places)})
 
     @app.get("/api/view/mining", response_model=MiningView, response_model_by_alias=True)
-    def view_mining(item: str | None = None, carriers: bool = False) -> MiningView:
-        """Where to mine a commodity (journal symbol) near you and where to sell it, from Spansh."""
+    def view_mining(
+        item: str | None = None,
+        carriers: bool = False,
+        reserves: str | None = None,
+        ring_ls: Annotated[int | None, Query(alias="ringLs", ge=1)] = None,
+        demand: Annotated[int | None, Query(ge=1)] = None,
+        fresh_days: Annotated[int | None, Query(alias="freshDays", ge=1)] = None,
+        station_ls: Annotated[int | None, Query(alias="stationLs", ge=1)] = None,
+    ) -> MiningView:
+        """Where to mine a commodity (journal symbol) near you and where to sell it, from Spansh;
+        rings on bodies with these `reserves` ("Pristine,Major") within `ringLs` of the star,
+        markets wanting `demand` t, reported within `freshDays`, within `stationLs`."""
+        try:
+            kept = mining.parse_reserves(reserves)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
         conn = read_conn()
         state = views.cmdr_state(conn, active_fid(conn))
-        return mining.mining_view(conn, state, miners, item, carriers)
+        rings = mining.RingFilters(kept, ring_ls)
+        buyers = mining.BuyerFilters(demand or 1, fresh_days, station_ls)
+        return mining.mining_view(conn, state, miners, item, carriers, rings, buyers)
 
     @app.get("/api/view/stats", response_model=StatsView, response_model_by_alias=True)
     def view_stats() -> StatsView:

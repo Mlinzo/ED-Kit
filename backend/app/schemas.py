@@ -685,6 +685,7 @@ class MiningView(CamelModel):
     trip: MiningTripView | None
     searched_at: str | None  # when Spansh was asked (ISO)
     reach_ly: float  # buyers are asked for within it
+    cargo: int | None  # your ship's hold (the latest Loadout), t: the "your hold" demand filter
 
 
 class RiskPoint(CamelModel):
