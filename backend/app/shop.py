@@ -402,15 +402,17 @@ class ShopFinder:
     def stations(self, item: Item | None, here: Vec) -> tuple[list[dict[str, Any]], datetime]:
         """The offers for `item` (None: the shops) and when Spansh was asked; raises
         spansh.SpanshError."""
-        return self._kept(item.symbol if item else "", here, lambda: self._find(item, here))
+        return self.kept(item.symbol if item else "", here, lambda: self._find(item, here))
 
     def bodies(self, item: Item, here: Vec) -> list[dict[str, Any]]:
         """The landable bodies with much of a raw material; raises spansh.SpanshError."""
-        return self._kept(f"bodies:{item.symbol}", here, lambda: self._find_bodies(item, here))[0]
+        return self.kept(f"bodies:{item.symbol}", here, lambda: self._find_bodies(item, here))[0]
 
-    def _kept(
+    def kept(
         self, key: str, here: Vec, ask: Callable[[], list[dict[str, Any]]]
     ) -> tuple[list[dict[str, Any]], datetime]:
+        """The answer kept under `key` when it is fresh and was asked near `here`, else what
+        `ask` gives now (kept from then on), and when it was asked."""
         with self._lock:
             item_lock = self._item_locks.setdefault(key, threading.Lock())
         with item_lock:
@@ -436,39 +438,39 @@ class ShopFinder:
         return self._permit_ids
 
 
-def _pads(o: dict[str, Any]) -> tuple[int, int, int] | None:
+def pads_of(o: dict[str, Any]) -> tuple[int, int, int] | None:
     pads = tuple(int(o.get(k) or 0) for k in ("small_pads", "medium_pads", "large_pads"))
     return (pads[0], pads[1], pads[2]) if any(pads) else None
 
 
-def _position(o: dict[str, Any]) -> Vec | None:
+def position_of(o: dict[str, Any]) -> Vec | None:
     x, y, z = (o.get(k) for k in ("system_x", "system_y", "system_z"))
     if not all(isinstance(v, int | float) for v in (x, y, z)):
         return None
     return (float(x), float(y), float(z))  # type: ignore[arg-type]
 
 
+Near = tuple[float, dict[str, Any]]  # distance from you, an offer
 Place = tuple[float, list[dict[str, Any]], int]  # distance, stations shown, others there
 
 
-def pick(
+def usable(
     offers: list[dict[str, Any]],
     here: Vec,
     pad: Pad | None,
     now: datetime,
     carriers: bool = False,
-    limit: int = PLACES,
     pledged: str | None = None,
-) -> tuple[list[Place], tuple[float, dict[str, Any]] | None]:
-    """The nearest systems selling it (stations where your ship can land, the best first), and
-    (carriers hidden) the nearest carrier when it is nearer than all of them. Carriers closed
-    to the public or not seen for 30 days are never used, nor megaships not heard of for a year,
-    nor the Stronghold Carriers of a Power other than the one you are `pledged` to."""
-    usable: list[tuple[float, dict[str, Any]]] = []
-    hidden: list[tuple[float, dict[str, Any]]] = []
+) -> tuple[list[Near], list[Near]]:
+    """The offers at places where your ship can land, and (carriers hidden) the carriers left
+    out. Carriers closed to the public or not seen for 30 days are never used, nor megaships not
+    heard of for a year, nor the Stronghold Carriers of a Power other than the one you are
+    `pledged` to."""
+    found: list[Near] = []
+    hidden: list[Near] = []
     for o in offers:
-        position = _position(o)
-        if position is None or not o.get("name") or not fits(_pads(o), pad):
+        position = position_of(o)
+        if position is None or not o.get("name") or not fits(pads_of(o), pad):
             continue
         kind = kind_of(o.get("type"))
         if not may_dock(str(o["name"]), owner_of(o), pledged):
@@ -482,13 +484,27 @@ def pick(
             if not carriers:
                 hidden.append((distance, o))
                 continue
-        usable.append((distance, o))
+        found.append((distance, o))
+    return found, hidden
 
-    systems: dict[Any, list[tuple[float, dict[str, Any]]]] = {}
-    for distance, o in usable:
+
+def pick(
+    offers: list[dict[str, Any]],
+    here: Vec,
+    pad: Pad | None,
+    now: datetime,
+    carriers: bool = False,
+    limit: int = PLACES,
+    pledged: str | None = None,
+) -> tuple[list[Place], Near | None]:
+    """The nearest systems selling it (the `usable` offers, the best station first), and
+    (carriers hidden) the nearest carrier when it is nearer than all of them."""
+    found, hidden = usable(offers, here, pad, now, carriers, pledged)
+    systems: dict[Any, list[Near]] = {}
+    for distance, o in found:
         systems.setdefault(o.get("system_id64") or o.get("system_name"), []).append((distance, o))
 
-    def rank(entry: tuple[float, dict[str, Any]]) -> tuple[bool, float]:
+    def rank(entry: Near) -> tuple[bool, float]:
         o = entry[1]
         ls = o.get("distance_to_arrival")
         return (
@@ -509,6 +525,18 @@ def pick(
 
 
 # --------------------------------------------------------------------------- the view
+
+
+def here_of(conn: sqlite3.Connection, state: sqlite3.Row | None) -> Vec | None:
+    """Where you are: your system's position (None: no system, or one with no known position)."""
+    row = (
+        conn.execute(
+            "SELECT x, y, z FROM systems WHERE address = ?", (state["system_address"],)
+        ).fetchone()
+        if state and state["system_address"] is not None
+        else None
+    )
+    return None if row is None or row["x"] is None else (row["x"], row["y"], row["z"])
 
 
 def ranks(conn: sqlite3.Connection) -> dict[Navy, int]:
@@ -563,7 +591,7 @@ def _station_view(o: dict[str, Any], permits: set[int]) -> ShopStationView:
 def _body_view(
     raw: dict[str, Any], item: Item, here: Vec, jump_range: float | None
 ) -> ShopBodyView | None:
-    position = _position(raw)
+    position = position_of(raw)
     share = next(
         (
             m.get("share")
@@ -619,16 +647,9 @@ def shop_view(
         )
     if finder is None:
         return view.model_copy(update={"state": "offline"})
-    here_row = (
-        conn.execute(
-            "SELECT x, y, z FROM systems WHERE address = ?", (state["system_address"],)
-        ).fetchone()
-        if state and state["system_address"] is not None
-        else None
-    )
-    if here_row is None or here_row["x"] is None:
+    here = here_of(conn, state)
+    if here is None:
         return view.model_copy(update={"state": "unknown_position"})
-    here = (here_row["x"], here_row["y"], here_row["z"])
     material = _materials().get(item.symbol) if item and item.kind == "material" else None
     traded = material is None or material["group"] is not None
     bodies: list[ShopBodyView] = []

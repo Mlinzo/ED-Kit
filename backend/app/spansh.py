@@ -123,14 +123,19 @@ def stations(
     return [{k: r.get(k) for k in STATION_FIELDS} | {"services": _service_names(r)} for r in found]
 
 
+NEAREST_FIRST = [{"distance": {"direction": "asc"}}]
+
+
 def station_search(
     filters: dict[str, Any],
     coords: tuple[float, float, float],
     size: int,
     types: list[str] | None = None,
+    sort: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Stations matching `filters` (Spansh's form), of the given types if any, nearest to
-    `coords` first, as Spansh sends them (with the whole market, shipyard and outfitting)."""
+    """Stations matching `filters` (Spansh's form), of the given types if any, in the `sort`
+    order (Spansh's form; nearest to `coords` first by default), as Spansh sends them (with the
+    whole market, shipyard and outfitting)."""
     x, y, z = coords
     if types:
         filters = filters | {"type": {"value": types}}
@@ -138,7 +143,7 @@ def station_search(
         STATIONS_SEARCH,
         {
             "filters": filters,
-            "sort": [{"distance": {"direction": "asc"}}],
+            "sort": sort or NEAREST_FIRST,
             "size": size,
             "page": 0,
             "reference_coords": {"x": x, "y": y, "z": z},
@@ -148,24 +153,25 @@ def station_search(
 
 
 def body_search(
-    filters: dict[str, Any], coords: tuple[float, float, float], size: int
+    filters: dict[str, Any],
+    coords: tuple[float, float, float],
+    size: int,
+    fields: tuple[str, ...] = BODY_FIELDS,
 ) -> list[dict[str, Any]]:
-    """Bodies matching `filters` (Spansh's form), nearest to `coords` first, with the fields
-    the planner reads (`BODY_FIELDS`)."""
+    """Bodies matching `filters` (Spansh's form), nearest to `coords` first, with `fields`
+    (by default the ones the planner reads)."""
     x, y, z = coords
     data = _post(
         BODIES_SEARCH,
         {
             "filters": filters,
-            "sort": [{"distance": {"direction": "asc"}}],
+            "sort": NEAREST_FIRST,
             "size": size,
             "page": 0,
             "reference_coords": {"x": x, "y": y, "z": z},
         },
     )
-    return [
-        {k: r.get(k) for k in BODY_FIELDS} for r in data.get("results") or [] if isinstance(r, dict)
-    ]
+    return [{k: r.get(k) for k in fields} for r in data.get("results") or [] if isinstance(r, dict)]
 
 
 def _service_names(station: dict[str, Any]) -> list[str]:
