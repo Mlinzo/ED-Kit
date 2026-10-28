@@ -1,6 +1,6 @@
 // The Shop cards: a ship (blueprint, price, figures, slots), a module (icon, price, figures,
-// variant buttons), a commodity (its category) or a material (type, grade, where it comes from),
-// with arrows to flip through the catalog.
+// variant buttons), a commodity (its category) or a material (type, grade, what of your materials
+// a trader takes for it, where it comes from), with arrows to flip through the catalog.
 
 import { Atom, Binary, ChevronLeft, ChevronRight, Cog, ExternalLink, Package, ShieldAlert } from 'lucide-react'
 import { createElement, type ReactNode } from 'react'
@@ -8,6 +8,7 @@ import type { ShopCommodityView, ShopMaterialView, ShopModuleView, ShopRankView,
 import { t } from '../../i18n'
 import { formatNumber } from '../../lib/format'
 import { SHIP_ORDERS, type ShipOrder } from './catalog'
+import type { Offer } from './exchange'
 import { Variants } from './parts'
 import { SHIP_ROLES } from './roles'
 import { ShipSketchView } from './ShipSketch'
@@ -323,6 +324,7 @@ export function MaterialCard({
   group,
   position,
   onStep,
+  exchange,
 }: {
   material: ShopMaterialView
   /** Its type, or "special" when no trader takes it, in the chosen language. */
@@ -331,6 +333,8 @@ export function MaterialCard({
   group: string | null
   position: string
   onStep: (step: number) => void
+  /** What of your materials a trader takes for it (none when no trader takes it). */
+  exchange?: ReactNode
 }) {
   const s = t.shop
   const c = s.card
@@ -351,6 +355,7 @@ export function MaterialCard({
         <Flip position={position} onStep={onStep} />
       </div>
       <p className="mt-3 rounded-xl bg-zinc-800/40 p-3 text-sm text-zinc-300 ring-1 ring-zinc-700/60">{material.group === null ? c.notTraded : c.notSold}</p>
+      {exchange}
       {material.sources.length > 0 && (
         <>
           <h3 className="mt-4 text-xs font-medium tracking-wide text-zinc-500 uppercase">{c.sources}</h3>
@@ -371,5 +376,78 @@ export function MaterialCard({
         <ExternalLink className="size-3.5" aria-hidden />
       </a>
     </section>
+  )
+}
+
+/**
+ * A material's exchange at a trader: whether your materials get you some now (and how many),
+ * then each of your materials of its type with the rate, what you have and what it gives.
+ */
+export function MaterialExchange({
+  have,
+  capacity,
+  offers,
+  total,
+  known,
+  needs,
+  groupName,
+}: {
+  /** How many of it you have, and can hold. */
+  have: number
+  capacity: number
+  offers: readonly Offer[]
+  total: number
+  /** Whether the journal has listed your materials yet. */
+  known: boolean
+  /** What your engineering goals take of each material: those are marked, not to be traded away. */
+  needs: Readonly<Record<string, number>>
+  groupName: (group: string) => string | null
+}) {
+  const x = t.shop.exchange
+  const verdict = !known
+    ? null
+    : offers.length === 0
+      ? x.nothing
+      : have >= capacity
+        ? x.full
+        : total > 0
+          ? x.canGet(total)
+          : x.notEnough
+  return (
+    <>
+      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h3 className="text-xs font-medium tracking-wide text-zinc-500 uppercase">{x.title}</h3>
+        {known && <span className="text-xs text-zinc-400 tabular-nums">{x.have(have, capacity)}</span>}
+      </div>
+      {verdict ? (
+        <p className={`mt-1.5 text-sm ${total > 0 ? 'text-emerald-300' : 'text-zinc-300'}`}>{verdict}</p>
+      ) : (
+        <p className="mt-1.5 text-sm text-zinc-400">{t.shop.goals.noStock}</p>
+      )}
+      {offers.length > 0 && (
+        <ul className="mt-1.5 divide-y divide-zinc-800/60">
+          {offers.map((o) => (
+            <li key={o.material.symbol} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1.5 text-sm">
+              <span className={`min-w-0 break-words ${o.gives > 0 ? 'text-zinc-200' : 'text-zinc-400'}`}>
+                {o.material.name}
+                <span className="ml-2 text-xs text-zinc-500">
+                  {[t.shop.grade(o.material.grade), o.material.group === null ? null : groupName(o.material.group)].filter(Boolean).join(' · ')}
+                </span>
+                {(needs[o.material.symbol] ?? 0) > 0 && <span className="ml-2 inline-block text-xs whitespace-nowrap text-amber-200">{x.goalsNeed(needs[o.material.symbol])}</span>}
+              </span>
+              {/* Right-aligned also when it wraps under the name (phones), so the columns line up. */}
+              <span className="ml-auto flex shrink-0 items-baseline gap-3 tabular-nums">
+                <span className="min-w-16 text-right font-mono text-zinc-300" title={x.rateHint(o.rate.give, o.rate.get)}>
+                  {o.rate.give} → {o.rate.get}
+                </span>
+                <span className="min-w-14 text-right text-zinc-400">{x.stock(o.have)}</span>
+                <span className={`min-w-14 text-right ${o.gives > 0 ? 'text-emerald-300' : 'text-zinc-600'}`}>{o.gives > 0 ? x.gives(o.gives) : '—'}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-1.5 text-xs text-zinc-500">{x.rules}</p>
+    </>
   )
 }

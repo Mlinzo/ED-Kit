@@ -1,8 +1,9 @@
 // The Shop tab: the nearest shipyards and outfitting as soon as it opens, and where to buy a
 // ship, a module or a commodity once one is chosen, by words or from the lists. A module's class,
 // mount, rating and guidance are buttons above its results; a commodity's stations say how much
-// they had in stock. A material (never sold) brings the nearest material traders of its type
-// and, a raw one, the nearest landable bodies with much of it.
+// they had in stock. A material (never sold) brings the nearest material traders of its type,
+// what of your materials they would take for it, and, a raw one, the nearest landable bodies
+// with much of it.
 
 import { ArrowLeftRight, ChevronDown, LoaderCircle, Navigation, Pickaxe, Search, ShoppingCart, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -39,7 +40,8 @@ import {
   type Want,
 } from './catalog'
 import { EngineeringGoals } from './EngineeringGoals'
-import { CommodityCard, MaterialCard, ModuleCard, ShipCard } from './ItemCard'
+import { CAPACITY, offers, total } from './exchange'
+import { CommodityCard, MaterialCard, MaterialExchange, ModuleCard, ShipCard } from './ItemCard'
 import { Chip, ShipRow } from './parts'
 import { fitsRole, ROLE_FILTERS, type RoleFilter } from './roles'
 
@@ -502,6 +504,8 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
   if (query) params.item = query
   if (carriers) params.carriers = 'true'
   const { data, error, refetch } = useView('shop', params)
+  // Your materials (the engineering goals' stock): what a trader would take for the chosen one.
+  const { data: engineering } = useView('engineering')
   // The answer for the previous choice stays while the new one loads.
   const [last, setLast] = useState<ShopView | null>(null)
   if (data && data !== last) setLast(data)
@@ -581,6 +585,8 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
   } else if (catalog && chosen?.kind === 'material') {
     const kind = materialKind(chosen.material)
     const group = materialsOf(catalog, kind)
+    const stock = engineering?.stock ?? {}
+    const offered = offers(chosen.material, catalog.materials, stock)
     card = (
       <MaterialCard
         material={chosen.material}
@@ -591,6 +597,20 @@ export function ShopScreen({ onRouteTo }: { onRouteTo: (system: string) => void 
           const next = neighbour(group, chosen.material, step)
           if (next) choose(next.symbol, FLIP_SETTLE_MS)
         }}
+        exchange={
+          chosen.material.group !== null &&
+          engineering && (
+            <MaterialExchange
+              have={stock[chosen.material.symbol] ?? 0}
+              capacity={CAPACITY[chosen.material.grade]}
+              offers={offered}
+              total={total(chosen.material, offered, stock)}
+              known={engineering.stockAt !== null}
+              needs={Object.fromEntries(engineering.needs.map((n) => [n.symbol, n.need]))}
+              groupName={(g) => materialGroupName(kind, g)}
+            />
+          )
+        }
       />
     )
   } else if (catalog && chosen?.kind === 'module') {

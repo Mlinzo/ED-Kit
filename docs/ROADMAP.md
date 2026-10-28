@@ -74,6 +74,11 @@ first, and the player's own HGE scans from the journal (`FSSSignalDiscovered`).
   instead.
 
 ## Done
+- Material exchange on the Shop's material card (2026-10-28): whether your materials get you some
+  of it at a trader now and how many, then each of your materials of its type with the rate (a
+  grade lower gives 3, a grade higher takes 6, another category takes 6 more, as on the wiki and
+  in the author's journal trades), how many you have and how many it gives, within the storage
+  left for it (100 to 300 by grade); the ones your engineering goals need are marked with how many.
 - Mining tab (2026-10-27), after EDTools' Miner's Tool: choose one of 14 commodities worth mining
   (the 13 with ring hotspots, and Osmium); the nearest rings with its hotspots (how many,
   highlighted from two up as they may overlap, the ring type, the body's reserves, the other
